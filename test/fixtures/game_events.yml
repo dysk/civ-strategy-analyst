@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  game: one
+  seq: 1
+  session_index: 0
+  turn: 0
+  event_type: session_started
+  payload: '{}'
+
+two:
+  game: two
+  seq: 2
+  session_index: 0
+  turn: 0
+  event_type: session_started
+  payload: '{}'

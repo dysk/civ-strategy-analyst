@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: First Game
+  map_script: Continents
+  map_size: Standard
+  game_speed: Standard
+  max_turns: 500
+  start_era: Ancient
+  completed: false
+
+two:
+  name: Second Game
+  map_script: Pangaea
+  map_size: Small
+  game_speed: Quick
+  max_turns: 330
+  start_era: Ancient
+  completed: true
+  winner_civ: Rome
+  victory_type: domination

@@ -9,6 +9,11 @@ gem "pg", "~> 1.1"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 
+# LLM client, configurable provider (RubyLLM) [https://github.com/crmne/ruby_llm]
+gem "ruby_llm"
+# Render markdown analysis reports in the UI
+gem "redcarpet"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
