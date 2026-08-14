@@ -25,7 +25,7 @@ class AnalyzeGameTest < ActiveSupport::TestCase
 
     expected_digest = DigestBuilder.new(@game, winner_civ: "Rome", victory_type: "domination").call
     assert_equal "test-model", stub.received[:model]
-    assert_equal File.read(Rails.root.join("app/prompts/analyze_game_v1.md")), stub.received[:system_prompt]
+    assert_equal File.read(Rails.root.join("app/prompts/analyze_game_v3.md")), stub.received[:system_prompt]
     assert_equal JSON.parse(expected_digest.to_json), JSON.parse(stub.received[:input])
   end
 

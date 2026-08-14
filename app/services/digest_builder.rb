@@ -5,6 +5,13 @@ class DigestBuilder
     military_might military_units population cities techs
   ].freeze
 
+  # LEKMOD rule: every owned city raises the cost of researching a new tech
+  # by +5%, and the cost of a culture-bought policy by +10% (additive per
+  # city). These multipliers let the LLM interpret raw tech/policy counts
+  # correctly instead of comparing wide and tall empires at face value.
+  TECH_COST_PER_CITY = 0.05
+  POLICY_COST_PER_CITY = 0.10
+
   def initialize(game, winner_civ: nil, victory_type: nil)
     @game = game
     @winner_civ = winner_civ
@@ -16,6 +23,7 @@ class DigestBuilder
       game: game_settings,
       roster: roster,
       outcome: outcome,
+      standings: standings,
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
       key_moments: key_moments
@@ -23,6 +31,10 @@ class DigestBuilder
   end
 
   private
+
+  def standings
+    MetricSeries.new(@game).final_ranking("score")
+  end
 
   def game_settings
     {
@@ -63,8 +75,18 @@ class DigestBuilder
       nearest_turn = turns.keys.select { |t| t <= checkpoint }.max
       next unless nearest_turn
 
-      result[checkpoint] = turns[nearest_turn].slice(*SNAPSHOT_METRICS)
+      metrics = turns[nearest_turn].slice(*SNAPSHOT_METRICS)
+      result[checkpoint] = metrics.merge(cost_multipliers(metrics["cities"]))
     end
+  end
+
+  def cost_multipliers(cities)
+    return {} unless cities
+
+    {
+      "tech_cost_multiplier" => (1 + TECH_COST_PER_CITY * cities).round(3),
+      "policy_cost_multiplier" => (1 + POLICY_COST_PER_CITY * cities).round(3)
+    }
   end
 
   def timelines_by_civ

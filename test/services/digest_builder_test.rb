@@ -40,6 +40,15 @@ class DigestBuilderTest < ActiveSupport::TestCase
     )
   end
 
+  test "includes a pre-sorted final standings ranking by score" do
+    snapshot("Rome", 10, score: 300)
+    snapshot("Greece", 10, score: 500)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal %w[Greece Rome], digest[:standings]
+  end
+
   test "summarizes metrics per civ at ~25-turn checkpoints, using the nearest prior snapshot" do
     snapshot("Rome", 10, score: 50, science: 5)
     snapshot("Rome", 20, score: 80, science: 10)
@@ -55,6 +64,31 @@ class DigestBuilderTest < ActiveSupport::TestCase
       },
       digest[:metrics]["Rome"]
     )
+  end
+
+  test "adds tech/policy cost multipliers per checkpoint, derived from city count" do
+    snapshot("Rome", 25, score: 80, cities: 4)
+    snapshot("Greece", 25, score: 60, cities: 1)
+
+    digest = DigestBuilder.new(@game).call
+
+    rome_checkpoint = digest[:metrics]["Rome"][25]
+    assert_equal 4, rome_checkpoint["cities"]
+    assert_equal 1.2, rome_checkpoint["tech_cost_multiplier"]
+    assert_equal 1.4, rome_checkpoint["policy_cost_multiplier"]
+
+    greece_checkpoint = digest[:metrics]["Greece"][25]
+    assert_equal 1.05, greece_checkpoint["tech_cost_multiplier"]
+    assert_equal 1.1, greece_checkpoint["policy_cost_multiplier"]
+  end
+
+  test "omits cost multipliers when a checkpoint has no city count" do
+    snapshot("Rome", 25, score: 80)
+
+    digest = DigestBuilder.new(@game).call
+
+    refute digest[:metrics]["Rome"][25].key?("tech_cost_multiplier")
+    refute digest[:metrics]["Rome"][25].key?("policy_cost_multiplier")
   end
 
   test "includes per-civ timelines from PlayerTimeline" do

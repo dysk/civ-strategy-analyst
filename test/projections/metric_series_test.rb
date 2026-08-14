@@ -55,6 +55,15 @@ class MetricSeriesTest < ActiveSupport::TestCase
     )
   end
 
+  test "final_ranking returns the ranking at the last known turn" do
+    assert_equal %w[Rome Greece], @series.final_ranking("score")
+  end
+
+  test "final_ranking is empty when there is no data" do
+    game = Game.create!(name: "Empty Game")
+    assert_equal [], MetricSeries.new(game).final_ranking("score")
+  end
+
   test "leader_changes is empty when the same civ leads throughout" do
     game = Game.create!(name: "No Change Game")
     seq = 0

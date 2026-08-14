@@ -24,6 +24,11 @@ class MetricSeries
     end
   end
 
+  def final_ranking(metric)
+    last_turn = all_turns.max
+    last_turn ? ranking(metric)[last_turn] : []
+  end
+
   def leader_changes(metric)
     previous_leader = nil
 
