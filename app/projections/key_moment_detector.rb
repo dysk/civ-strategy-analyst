@@ -1,6 +1,7 @@
 class KeyMomentDetector
   UNIT_LOST_SPIKE_THRESHOLD = 3
   LEADER_CHANGE_METRICS = %w[score science].freeze
+  MILITARY_MIGHT_COLLAPSE_THRESHOLD = 0.15
 
   def initialize(game)
     @game = game
@@ -35,6 +36,21 @@ class KeyMomentDetector
         { type: :religion_founded, turn: e.turn, civ: e.civ, religion: e.payload["religion"],
           holy_city: e.payload["holy_city"], order: index + 1 }
       end
+  end
+
+  def military_might_collapses
+    metric_series = MetricSeries.new(@game)
+
+    civs_with_snapshots.flat_map do |civ|
+      metric_series.values("military_might", civ).each_cons(2).filter_map do |(_prev_turn, prev), (turn, value)|
+        next if prev.to_i.zero?
+
+        pct_change = (value - prev).to_f / prev
+        next if pct_change > -MILITARY_MIGHT_COLLAPSE_THRESHOLD
+
+        { type: :military_might_collapse, civ: civ, turn: turn, from: prev, to: value, pct_change: pct_change.round(3) }
+      end
+    end.sort_by { |moment| moment[:turn] }
   end
 
   def wars
@@ -91,6 +107,10 @@ class KeyMomentDetector
 
   def of_type(event_type)
     @events.select { |e| e.event_type == event_type }
+  end
+
+  def civs_with_snapshots
+    of_type("snapshot").map(&:civ).uniq
   end
 
   def team_pair(a, b)

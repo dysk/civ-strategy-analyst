@@ -115,6 +115,26 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "military_might_collapses flags single-turn drops beyond 15%, ignores smaller dips" do
+    snapshot("Rome", 1, military_might: 1000)
+    snapshot("Rome", 2, military_might: 900)  # -10%, below threshold
+    snapshot("Rome", 3, military_might: 700)  # -22.2%, collapse
+    snapshot("Rome", 4, military_might: 750)  # gain, never a collapse
+
+    snapshot("Greece", 1, military_might: 500)
+    snapshot("Greece", 2, military_might: 500)
+
+    moments = detector.military_might_collapses
+
+    assert_equal 1, moments.size
+    collapse = moments.first
+    assert_equal :military_might_collapse, collapse[:type]
+    assert_equal "Rome", collapse[:civ]
+    assert_equal 3, collapse[:turn]
+    assert_equal 900, collapse[:from]
+    assert_equal 700, collapse[:to]
+  end
+
   private
 
   def detector
