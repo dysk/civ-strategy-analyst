@@ -66,7 +66,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     )
   end
 
-  test "adds tech/policy cost multipliers per checkpoint, derived from city count" do
+  test "adds tech/policy cost multipliers per checkpoint, derived from cities beyond the capital" do
     snapshot("Rome", 25, score: 80, cities: 4)
     snapshot("Greece", 25, score: 60, cities: 1)
 
@@ -74,12 +74,22 @@ class DigestBuilderTest < ActiveSupport::TestCase
 
     rome_checkpoint = digest[:metrics]["Rome"][25]
     assert_equal 4, rome_checkpoint["cities"]
-    assert_equal 1.2, rome_checkpoint["tech_cost_multiplier"]
-    assert_equal 1.4, rome_checkpoint["policy_cost_multiplier"]
+    assert_equal 1.15, rome_checkpoint["tech_cost_multiplier"]
+    assert_equal 1.3, rome_checkpoint["policy_cost_multiplier"]
 
     greece_checkpoint = digest[:metrics]["Greece"][25]
-    assert_equal 1.05, greece_checkpoint["tech_cost_multiplier"]
-    assert_equal 1.1, greece_checkpoint["policy_cost_multiplier"]
+    assert_equal 1.0, greece_checkpoint["tech_cost_multiplier"]
+    assert_equal 1.0, greece_checkpoint["policy_cost_multiplier"]
+  end
+
+  test "never drops the cost multiplier below 1.0 when a civ has no cities" do
+    snapshot("Rome", 25, score: 80, cities: 0)
+
+    digest = DigestBuilder.new(@game).call
+
+    rome_checkpoint = digest[:metrics]["Rome"][25]
+    assert_equal 1.0, rome_checkpoint["tech_cost_multiplier"]
+    assert_equal 1.0, rome_checkpoint["policy_cost_multiplier"]
   end
 
   test "omits cost multipliers when a checkpoint has no city count" do

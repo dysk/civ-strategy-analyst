@@ -83,9 +83,11 @@ class DigestBuilder
   def cost_multipliers(cities)
     return {} unless cities
 
+    cities_beyond_capital = [ cities - 1, 0 ].max
+
     {
-      "tech_cost_multiplier" => (1 + TECH_COST_PER_CITY * cities).round(3),
-      "policy_cost_multiplier" => (1 + POLICY_COST_PER_CITY * cities).round(3)
+      "tech_cost_multiplier" => (1 + TECH_COST_PER_CITY * cities_beyond_capital).round(3),
+      "policy_cost_multiplier" => (1 + POLICY_COST_PER_CITY * cities_beyond_capital).round(3)
     }
   end
 
