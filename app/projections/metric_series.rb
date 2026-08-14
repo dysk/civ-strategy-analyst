@@ -19,7 +19,7 @@ class MetricSeries
 
   def ranking(metric)
     all_turns.each_with_object({}) do |turn, result|
-      civs_at_turn = @by_civ_turn.keys.select { |civ| @by_civ_turn[civ].key?(turn) }
+      civs_at_turn = @by_civ_turn.keys.select { |civ| @by_civ_turn[civ][turn]&.payload&.[](metric) }
       result[turn] = civs_at_turn.sort_by { |civ| -@by_civ_turn[civ][turn].payload[metric] }
     end
   end
