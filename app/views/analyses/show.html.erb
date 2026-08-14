@@ -1,0 +1,14 @@
+<%= link_to "&laquo; All analyses".html_safe, game_analyses_path(@game), class: "back-link" %>
+
+<h1><%= @game.name %></h1>
+<p class="meta">
+  Model: <%= @analysis.model %> &middot; generated <%= @analysis.created_at.strftime("%Y-%m-%d %H:%M") %>
+  <% if @analysis.input_tokens && @analysis.output_tokens %>
+    &middot; <%= @analysis.input_tokens %> in + <%= @analysis.output_tokens %> out tokens
+    <% if @analysis.cost_usd %>
+      (~$<%= format("%.4f", @analysis.cost_usd) %>)
+    <% end %>
+  <% end %>
+</p>
+
+<div class="report"><%= render_markdown(@analysis.report) %></div>

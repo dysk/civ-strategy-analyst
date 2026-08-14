@@ -128,6 +128,7 @@
       <% end %>
     <% end %>
   </p>
+  <p><%= link_to "View all #{pluralize(@game.analyses.count, "analysis", plural: "analyses")}", game_analyses_path(@game) %></p>
   <div class="report"><%= render_markdown(@latest_analysis.report) %></div>
 <% else %>
   <p class="empty-state">Not analyzed yet. Run <code>bin/civ analyze <%= @game.id %></code>.</p>

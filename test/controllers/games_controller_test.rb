@@ -51,6 +51,27 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "strong", "wins"
   end
 
+  test "show links to the analyses list even when there is only one analysis" do
+    game = Game.create!(name: "Single Analysis Game")
+    game.analyses.create!(model: "m", report: "report", digest: {})
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "a[href=?]", game_analyses_path(game), text: /View all 1 analysis\b/
+  end
+
+  test "show links to the analyses list when there is more than one analysis" do
+    game = Game.create!(name: "Multi Analysis Game")
+    game.analyses.create!(model: "m1", report: "older", digest: {})
+    game.analyses.create!(model: "m2", report: "newer", digest: {})
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "a[href=?]", game_analyses_path(game), text: /View all 2 analyses/
+  end
+
   test "show tells the user no analysis exists yet" do
     game = Game.create!(name: "Unanalyzed Game")
 
