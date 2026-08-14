@@ -100,6 +100,21 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "religion_foundings reports each founding in order, tagged with how early it was" do
+    event("Greece", "religion_founded", 50, holy_city: "Athens", religion: "RELIGION_POLYTHEISM", beliefs: %w[BELIEF_X])
+    event("Rome", "religion_founded", 35, holy_city: "Roma", religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y])
+
+    moments = detector.religion_foundings
+
+    assert_equal(
+      [
+        { type: :religion_founded, turn: 35, civ: "Rome", religion: "RELIGION_JUDAISM", holy_city: "Roma", order: 1 },
+        { type: :religion_founded, turn: 50, civ: "Greece", religion: "RELIGION_POLYTHEISM", holy_city: "Athens", order: 2 }
+      ],
+      moments
+    )
+  end
+
   private
 
   def detector

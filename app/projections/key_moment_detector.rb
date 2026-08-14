@@ -28,6 +28,15 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
+  def religion_foundings
+    of_type("religion_founded")
+      .sort_by(&:turn)
+      .each_with_index.map do |e, index|
+        { type: :religion_founded, turn: e.turn, civ: e.civ, religion: e.payload["religion"],
+          holy_city: e.payload["holy_city"], order: index + 1 }
+      end
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])
