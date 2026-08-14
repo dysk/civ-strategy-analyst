@@ -2,6 +2,8 @@ class KeyMomentDetector
   UNIT_LOST_SPIKE_THRESHOLD = 3
   LEADER_CHANGE_METRICS = %w[score science].freeze
   MILITARY_MIGHT_COLLAPSE_THRESHOLD = 0.15
+  SNOWBALL_WINDOW = 10
+  SNOWBALL_MIN_STRETCH = 15
 
   def initialize(game)
     @game = game
@@ -51,6 +53,23 @@ class KeyMomentDetector
         { type: :military_might_collapse, civ: civ, turn: turn, from: prev, to: value, pct_change: pct_change.round(3) }
       end
     end.sort_by { |moment| moment[:turn] }
+  end
+
+  def snowballs(metric)
+    metric_series = MetricSeries.new(@game)
+    rolling = civs_with_snapshots.each_with_object({}) do |civ, h|
+      h[civ] = rolling_slope(metric_series.values(metric, civ))
+    end
+
+    common_turns = rolling.values.map(&:keys).reduce(:&) || []
+    return [] if common_turns.empty?
+
+    pace_leader_runs(common_turns.sort, rolling)
+      .select { |run| run[:end_turn] - run[:start_turn] >= SNOWBALL_MIN_STRETCH }
+      .map do |run|
+        { type: :snowball, civ: run[:civ], turn: run[:start_turn], turn_end: run[:end_turn],
+          duration_turns: run[:end_turn] - run[:start_turn] }
+      end
   end
 
   def wars
@@ -111,6 +130,30 @@ class KeyMomentDetector
 
   def civs_with_snapshots
     of_type("snapshot").map(&:civ).uniq
+  end
+
+  def rolling_slope(values)
+    values.each_cons(SNOWBALL_WINDOW + 1).each_with_object({}) do |window, slopes|
+      first_turn, first_value = window.first
+      last_turn, last_value = window.last
+      slopes[last_turn] = (last_value - first_value).to_f / (last_turn - first_turn)
+    end
+  end
+
+  def pace_leader_runs(turns, rolling)
+    runs = []
+
+    turns.each do |turn|
+      leader = rolling.max_by { |_civ, slopes| slopes[turn] }.first
+
+      if runs.any? && runs.last[:civ] == leader
+        runs.last[:end_turn] = turn
+      else
+        runs << { civ: leader, start_turn: turn, end_turn: turn }
+      end
+    end
+
+    runs
   end
 
   def team_pair(a, b)

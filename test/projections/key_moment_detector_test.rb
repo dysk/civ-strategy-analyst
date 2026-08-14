@@ -135,6 +135,48 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal 700, collapse[:to]
   end
 
+  test "snowballs flags a civ whose growth pace stays well ahead for 15+ turns" do
+    # A grows 10/turn, B grows 2/turn, every turn from 1 to 30: A's 10-turn
+    # rolling pace is consistently ahead once the window fills at turn 11,
+    # and stays ahead through the last turn (a 19-turn stretch).
+    (1..30).each do |t|
+      snapshot("A", t, score: t * 10)
+      snapshot("B", t, score: t * 2)
+    end
+
+    moments = detector.snowballs("score")
+
+    assert_equal(
+      [ { type: :snowball, civ: "A", turn: 11, turn_end: 30, duration_turns: 19 } ],
+      moments
+    )
+  end
+
+  test "snowballs is generic over the metric name (e.g. population)" do
+    (1..30).each do |t|
+      snapshot("A", t, population: t * 10)
+      snapshot("B", t, population: t * 2)
+    end
+
+    moments = detector.snowballs("population")
+
+    assert_equal(
+      [ { type: :snowball, civ: "A", turn: 11, turn_end: 30, duration_turns: 19 } ],
+      moments
+    )
+  end
+
+  test "snowballs ignores pace-leadership stretches shorter than 15 turns" do
+    # Leadership alternates every few turns, never holding for 15+ turns.
+    (1..30).each do |t|
+      leader_is_a = (t / 5).even?
+      snapshot("A", t, score: leader_is_a ? t * 10 : t * 3)
+      snapshot("B", t, score: leader_is_a ? t * 3 : t * 10)
+    end
+
+    assert_equal [], detector.snowballs("score")
+  end
+
   private
 
   def detector
