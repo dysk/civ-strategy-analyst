@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   resources :games, only: [ :index, :show ] do
     resources :analyses, only: [ :index, :show ]
+    resources :events, only: [ :index ], controller: "game_events"
   end
 
   # Defines the root path route ("/")

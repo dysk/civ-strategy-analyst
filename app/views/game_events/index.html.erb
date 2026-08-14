@@ -1,0 +1,43 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Raw Events</h1>
+<p class="subtitle"><%= @game.name %> &mdash; page <%= @page %> of <%= @total_pages %></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Seq</th>
+      <th>Turn</th>
+      <th>Civ</th>
+      <th>Event Type</th>
+      <th>Payload</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @game_events.each do |event| %>
+      <tr>
+        <td><%= event.seq %></td>
+        <td><%= event.turn %></td>
+        <td><%= event.civ %></td>
+        <td><%= event.event_type %></td>
+        <td>
+          <details>
+            <summary>payload</summary>
+            <pre><%= JSON.pretty_generate(event.payload) %></pre>
+          </details>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p class="pagination">
+  <% if @page > 1 %>
+    <%= link_to "First", game_events_path(@game, page: 1) %>
+    <%= link_to "Previous", game_events_path(@game, page: @page - 1) %>
+  <% end %>
+  <% if @page < @total_pages %>
+    <%= link_to "Next", game_events_path(@game, page: @page + 1) %>
+    <%= link_to "Last", game_events_path(@game, page: @total_pages) %>
+  <% end %>
+</p>

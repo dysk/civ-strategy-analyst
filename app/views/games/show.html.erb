@@ -5,6 +5,7 @@
   <%= @game.map_script %> &middot; <%= @game.map_size %> &middot; <%= @game.game_speed %> &middot;
   max turns: <%= @game.max_turns %>
 </p>
+<p><%= link_to "View raw event data", game_events_path(@game) %></p>
 
 <h2>Outcome</h2>
 <p>

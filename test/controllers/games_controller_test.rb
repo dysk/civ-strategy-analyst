@@ -87,6 +87,15 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "show links to the raw event data" do
+    game = Game.create!(name: "Linked Game")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "a[href=?]", game_events_path(game)
+  end
+
   private
 
   def snapshot(game, civ, turn, metrics)
