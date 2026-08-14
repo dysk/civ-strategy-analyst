@@ -10,5 +10,6 @@
     <% end %>
   <% end %>
 </p>
+<p><%= link_to "View prompt snapshot", prompt_game_analysis_path(@game, @analysis) %></p>
 
 <div class="report"><%= render_markdown(@analysis.report) %></div>

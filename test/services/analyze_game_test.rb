@@ -49,6 +49,14 @@ class AnalyzeGameTest < ActiveSupport::TestCase
     assert_in_delta 0.0321, analysis.cost_usd, 0.0001
   end
 
+  test "persists a snapshot of the prompt used to generate the report" do
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(@game, model: "test-model", llm_client: stub, reports_dir: @reports_dir).call
+
+    assert_equal File.read(Rails.root.join("app/prompts/analyze_game_v3.md")), analysis.prompt
+  end
+
   test "persists nil tokens and cost when the llm client doesn't report them" do
     stub = StubLlmClient.new(content: "report")
 

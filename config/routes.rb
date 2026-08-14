@@ -10,7 +10,9 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   resources :games, only: [ :index, :show ] do
-    resources :analyses, only: [ :index, :show ]
+    resources :analyses, only: [ :index, :show ] do
+      get :prompt, on: :member
+    end
     resources :events, only: [ :index ], controller: "game_events"
   end
 

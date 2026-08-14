@@ -44,4 +44,34 @@ class AnalysesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "show links to the prompt snapshot" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(model: "m", report: "report", digest: {}, prompt: "system prompt text")
+
+    get game_analysis_url(game, analysis)
+
+    assert_response :success
+    assert_select "a[href=?]", prompt_game_analysis_path(game, analysis)
+  end
+
+  test "prompt displays the snapshot of the prompt used to generate the analysis" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(model: "m", report: "report", digest: {}, prompt: "You are a strategy analyst.")
+
+    get prompt_game_analysis_url(game, analysis)
+
+    assert_response :success
+    assert_match "You are a strategy analyst.", response.body
+  end
+
+  test "prompt 404s for an analysis id that doesn't belong to the game" do
+    game = Game.create!(name: "History Game")
+    other_game = Game.create!(name: "Other Game")
+    other_analysis = other_game.analyses.create!(model: "m", report: "report", digest: {})
+
+    get prompt_game_analysis_url(game, other_analysis)
+
+    assert_response :not_found
+  end
 end

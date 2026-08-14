@@ -9,6 +9,10 @@ class AnalysesController < ApplicationController
     @analysis = @game.analyses.find(params[:id])
   end
 
+  def prompt
+    @analysis = @game.analyses.find(params[:id])
+  end
+
   private
 
   def set_game

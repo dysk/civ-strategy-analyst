@@ -19,7 +19,7 @@ class AnalyzeGame
     response = @llm_client.call(model: @model, system_prompt: prompt, input: digest.to_json)
 
     analysis = @game.analyses.create!(
-      model: @model, report: response.content, digest: digest,
+      model: @model, report: response.content, digest: digest, prompt: prompt,
       input_tokens: response.input_tokens, output_tokens: response.output_tokens, cost_usd: response.cost_usd
     )
     write_report_file(analysis)
