@@ -1,0 +1,102 @@
+{"event":"session_started","game_speed":"GAMESPEED_QUICK","map_script":"Assets\\Maps\\Lekmap v5.2\\LekmapPangaeaFractalv5.2.lua","map_size":"WORLDSIZE_TINY","max_turns":330,"players":[{"civ":"Chile","handicap":"HANDICAP_PRINCE","human":true,"name":"AztecMontezuma"},{"civ":"Vietnam","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Nhi and Trac Trung"},{"civ":"Bolivia","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Manuel Belzu"},{"civ":"Iroquois","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Hiawatha"}],"start_era":"ERA_ANCIENT","turn":0}
+{"civ":"Chile","event":"improvement_built","improvement":"IMPROVEMENT_CHILE_DOCK","turn":149,"x":15,"y":28}
+{"civ":"Chile","event":"great_person_expended","great_person":"UNIT_GREAT_ADMIRAL","turn":149}
+{"civ":"Chile","event":"unit_lost","turn":149,"unit":"UNIT_GREAT_ADMIRAL","x":15,"y":28,"cause":"expended","confidence":"confirmed"}
+{"civ":"Chile","event":"improvement_built","improvement":"IMPROVEMENT_MANUFACTORY","turn":149,"x":13,"y":25}
+{"civ":"Chile","event":"great_person_expended","great_person":"UNIT_ENGINEER","turn":149}
+{"civ":"Chile","event":"unit_lost","turn":149,"unit":"UNIT_ENGINEER","x":13,"y":25,"cause":"expended","confidence":"confirmed"}
+{"city":"Concepción","civ":"Chile","event":"city_converted","religion":"TXT_KEY_RELIGION_CONFUCIANISM","turn":149,"x":9,"y":22}
+{"city":"Onondaga","civ":"Iroquois","event":"city_converted","religion":"TXT_KEY_RELIGION_BUDDHISM","turn":149,"x":31,"y":14}
+{"city":"Onondaga","civ":"Iroquois","event":"city_converted","religion":"TXT_KEY_RELIGION_BUDDHISM","turn":149,"x":31,"y":14}
+{"building":"BUILDING_OBSERVATORY","city":"Hà Noi","civ":"Vietnam","event":"building_constructed","turn":150}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_created","turn":150,"unit":"UNIT_WRITER","x":12,"y":19}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_created","turn":150,"unit":"UNIT_CARAVAN","x":12,"y":19}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_trained","turn":150,"unit":"UNIT_CARAVAN"}
+{"change":1,"civs":["Vietnam"],"event":"tech_researched","team":1,"tech":"TECH_CHEMISTRY","turn":150}
+{"cities":9,"civ":"Vietnam","culture":57,"event":"snapshot","faith":45,"gold":26,"gold_per_turn":11.09,"happiness":-6,"military_might":2567,"military_units":29,"population":72,"science":160.03,"score":1413,"techs":38,"turn":150}
+{"building":"BUILDING_TEMPLE","city":"Sucre","civ":"Bolivia","event":"building_constructed","turn":150}
+{"city":"La Paz","civ":"Bolivia","event":"population_changed","new_population":19,"old_population":18,"turn":150,"x":31,"y":21}
+{"building":"BUILDING_GARDEN","city":"La Paz","civ":"Bolivia","event":"building_constructed","turn":150}
+{"building":"BUILDING_LIBRARY","city":"Cochabamba","civ":"Bolivia","event":"building_constructed","turn":150}
+{"city":"Tarija","civ":"Bolivia","event":"plot_acquired","turn":150,"x":31,"y":30}
+{"bought_with":"culture","city":"Tarija","civ":"Bolivia","event":"plot_bought","turn":150,"x":31,"y":30}
+{"building":"BUILDING_COLOSSEUM","city":"Antofagasta","civ":"Bolivia","event":"building_constructed","turn":150}
+{"building":"BUILDING_BARRACKS","city":"Montero","civ":"Bolivia","event":"building_constructed","turn":150}
+{"city":"Montero","civ":"Bolivia","event":"plot_acquired","turn":150,"x":39,"y":25}
+{"bought_with":"culture","city":"Montero","civ":"Bolivia","event":"plot_bought","turn":150,"x":39,"y":25}
+{"change":1,"civs":["Bolivia"],"event":"tech_researched","team":2,"tech":"TECH_CHIVALRY","turn":150}
+{"city":"La Paz","civ":"Bolivia","event":"unit_lost","turn":150,"unit":"UNIT_CARAVAN","x":31,"y":21,"cause":"used_up","confidence":"confirmed"}
+{"city":"La Paz","civ":"Bolivia","event":"unit_created","turn":150,"unit":"UNIT_CARAVAN","x":31,"y":21}
+{"cities":9,"civ":"Bolivia","culture":42,"event":"snapshot","faith":19,"gold":91,"gold_per_turn":-29.17,"happiness":-1,"military_might":4415,"military_units":34,"population":68,"science":102.5,"score":1220,"techs":29,"turn":150}
+{"allied":true,"city_state":"Cahokia","civ":"Chile","event":"city_state_alliance_changed","new_friendship":94,"old_friendship":54,"turn":150}
+{"city_state":"Cahokia","event":"city_state_ally_changed","new_ally":"Chile","turn":150}
+{"allied":true,"city_state":"Wittenberg","civ":"Chile","event":"city_state_alliance_changed","new_friendship":88,"old_friendship":53,"turn":150}
+{"city_state":"Wittenberg","event":"city_state_ally_changed","new_ally":"Chile","old_ally":"Iroquois","turn":150}
+{"city":"Onondaga","civ":"Iroquois","event":"unit_created","turn":150,"unit":"UNIT_CARAVAN","x":31,"y":14}
+{"city":"Onondaga","civ":"Iroquois","event":"unit_trained","turn":150,"unit":"UNIT_CARAVAN"}
+{"city":"Onondaga","civ":"Iroquois","event":"plot_acquired","turn":150,"x":28,"y":10}
+{"bought_with":"culture","city":"Onondaga","civ":"Iroquois","event":"plot_bought","turn":150,"x":28,"y":10}
+{"change":1,"civs":["Iroquois"],"event":"tech_researched","team":3,"tech":"TECH_ECONOMICS","turn":150}
+{"cities":10,"civ":"Iroquois","culture":69,"event":"snapshot","faith":61,"gold":0,"gold_per_turn":-3.52,"happiness":-5,"military_might":1736,"military_units":27,"population":68,"science":177.43,"score":1286,"techs":36,"turn":150}
+{"civ":"Vietnam","event":"great_person_expended","great_person":"UNIT_WRITER","turn":150}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_lost","turn":150,"unit":"UNIT_WRITER","x":12,"y":19,"cause":"expended","confidence":"confirmed"}
+{"civ":"Bolivia","event":"unit_created","turn":150,"unit":"UNIT_KNIGHT","x":34,"y":26}
+{"civ":"Bolivia","event":"unit_upgraded","from":"UNIT_HORSEMAN","to":"UNIT_KNIGHT","turn":150}
+{"civ":"Bolivia","event":"unit_lost","turn":150,"unit":"UNIT_HORSEMAN","x":34,"y":26,"cause":"killed","killer":"Barbarians","confidence":"inferred"}
+{"civ":"Iroquois","event":"improvement_built","improvement":"IMPROVEMENT_MINE","turn":150,"x":2,"y":20}
+{"building":"BUILDING_HARBOR","city":"Concepción","civ":"Chile","event":"building_constructed","turn":150}
+{"city":"Concepción","civ":"Chile","event":"plot_acquired","turn":150,"x":5,"y":20}
+{"bought_with":"culture","city":"Concepción","civ":"Chile","event":"plot_bought","turn":150,"x":5,"y":20}
+{"city":"Valparaiso","civ":"Chile","event":"plot_acquired","turn":150,"x":9,"y":34}
+{"bought_with":"culture","city":"Valparaiso","civ":"Chile","event":"plot_bought","turn":150,"x":9,"y":34}
+{"cities":3,"civ":"Chile","culture":221,"event":"snapshot","faith":88,"gold":886,"gold_per_turn":211.07,"happiness":58,"military_might":2853,"military_units":26,"population":57,"science":254.76,"score":1408,"techs":42,"turn":150}
+{"event":"session_started","game_speed":"GAMESPEED_QUICK","map_script":"Assets\\Maps\\Lekmap v5.2\\LekmapPangaeaFractalv5.2.lua","map_size":"WORLDSIZE_TINY","max_turns":330,"players":[{"civ":"Chile","handicap":"HANDICAP_PRINCE","human":true,"name":"AztecMontezuma"},{"civ":"Vietnam","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Nhi and Trac Trung"},{"civ":"Bolivia","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Manuel Belzu"},{"civ":"Iroquois","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Hiawatha"}],"start_era":"ERA_ANCIENT","turn":149}
+{"city":"Concepción","civ":"Chile","event":"city_converted","religion":"TXT_KEY_RELIGION_CONFUCIANISM","turn":149,"x":9,"y":22}
+{"city":"Onondaga","civ":"Iroquois","event":"city_converted","religion":"TXT_KEY_RELIGION_BUDDHISM","turn":149,"x":31,"y":14}
+{"city":"Onondaga","civ":"Iroquois","event":"city_converted","religion":"TXT_KEY_RELIGION_BUDDHISM","turn":149,"x":31,"y":14}
+{"building":"BUILDING_OBSERVATORY","city":"Hà Noi","civ":"Vietnam","event":"building_constructed","turn":150}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_created","turn":150,"unit":"UNIT_WRITER","x":12,"y":19}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_created","turn":150,"unit":"UNIT_CARAVAN","x":12,"y":19}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_trained","turn":150,"unit":"UNIT_CARAVAN"}
+{"change":1,"civs":["Vietnam"],"event":"tech_researched","team":1,"tech":"TECH_CHEMISTRY","turn":150}
+{"cities":9,"civ":"Vietnam","culture":57,"event":"snapshot","faith":45,"gold":26,"gold_per_turn":11.09,"happiness":-6,"military_might":2567,"military_units":29,"population":72,"science":160.03,"score":1413,"techs":38,"turn":150}
+{"allied":true,"city_state":"Cahokia","civ":"Chile","event":"city_state_alliance_changed","new_friendship":94,"old_friendship":54,"turn":150}
+{"city_state":"Cahokia","event":"city_state_ally_changed","new_ally":"Chile","turn":150}
+{"city":"Onondaga","civ":"Iroquois","event":"unit_created","turn":150,"unit":"UNIT_CARAVAN","x":31,"y":14}
+{"city":"Onondaga","civ":"Iroquois","event":"unit_trained","turn":150,"unit":"UNIT_CARAVAN"}
+{"city":"Onondaga","civ":"Iroquois","event":"plot_acquired","turn":150,"x":28,"y":10}
+{"bought_with":"culture","city":"Onondaga","civ":"Iroquois","event":"plot_bought","turn":150,"x":28,"y":10}
+{"city":"Grand River","civ":"Iroquois","event":"unit_created","turn":150,"unit":"UNIT_SETTLER","x":27,"y":14}
+{"city":"Grand River","civ":"Iroquois","event":"unit_trained","turn":150,"unit":"UNIT_SETTLER"}
+{"change":1,"civs":["Iroquois"],"event":"tech_researched","team":3,"tech":"TECH_ECONOMICS","turn":150}
+{"cities":10,"civ":"Iroquois","culture":69,"event":"snapshot","faith":69,"gold":0,"gold_per_turn":2.77,"happiness":-1,"military_might":1736,"military_units":27,"population":68,"science":181.95,"score":1286,"techs":36,"turn":150}
+{"building":"BUILDING_TEMPLE","city":"Sucre","civ":"Bolivia","event":"building_constructed","turn":150}
+{"city":"La Paz","civ":"Bolivia","event":"population_changed","new_population":19,"old_population":18,"turn":150,"x":31,"y":21}
+{"building":"BUILDING_GARDEN","city":"La Paz","civ":"Bolivia","event":"building_constructed","turn":150}
+{"building":"BUILDING_LIBRARY","city":"Cochabamba","civ":"Bolivia","event":"building_constructed","turn":150}
+{"city":"Tarija","civ":"Bolivia","event":"plot_acquired","turn":150,"x":31,"y":30}
+{"bought_with":"culture","city":"Tarija","civ":"Bolivia","event":"plot_bought","turn":150,"x":31,"y":30}
+{"building":"BUILDING_COLOSSEUM","city":"Antofagasta","civ":"Bolivia","event":"building_constructed","turn":150}
+{"building":"BUILDING_BARRACKS","city":"Montero","civ":"Bolivia","event":"building_constructed","turn":150}
+{"city":"Montero","civ":"Bolivia","event":"plot_acquired","turn":150,"x":39,"y":25}
+{"bought_with":"culture","city":"Montero","civ":"Bolivia","event":"plot_bought","turn":150,"x":39,"y":25}
+{"change":1,"civs":["Bolivia"],"event":"tech_researched","team":2,"tech":"TECH_CHIVALRY","turn":150}
+{"city":"La Paz","civ":"Bolivia","event":"unit_lost","turn":150,"unit":"UNIT_CARAVAN","x":31,"y":21,"cause":"used_up","confidence":"confirmed"}
+{"city":"La Paz","civ":"Bolivia","event":"unit_created","turn":150,"unit":"UNIT_CARAVAN","x":31,"y":21}
+{"cities":9,"civ":"Bolivia","culture":42,"event":"snapshot","faith":19,"gold":91,"gold_per_turn":-29.57,"happiness":-1,"military_might":4415,"military_units":34,"population":68,"science":102.5,"score":1220,"techs":29,"turn":150}
+{"civ":"Vietnam","event":"unit_created","turn":150,"unit":"UNIT_MUSKETMAN","x":12,"y":17}
+{"civ":"Vietnam","event":"unit_upgraded","from":"UNIT_LONGSWORDSMAN","to":"UNIT_MUSKETMAN","turn":150}
+{"civ":"Vietnam","event":"great_person_expended","great_person":"UNIT_WRITER","turn":150}
+{"civ":"Vietnam","event":"unit_lost","turn":150,"unit":"UNIT_LONGSWORDSMAN","x":12,"y":17,"cause":"killed","killer":"Barbarians","confidence":"inferred"}
+{"city":"Hai Phòng","civ":"Vietnam","event":"unit_lost","turn":150,"unit":"UNIT_WRITER","x":12,"y":19,"cause":"expended","confidence":"confirmed"}
+{"civ":"Bolivia","event":"unit_created","turn":150,"unit":"UNIT_KNIGHT","x":34,"y":26}
+{"civ":"Bolivia","event":"unit_upgraded","from":"UNIT_HORSEMAN","to":"UNIT_KNIGHT","turn":150}
+{"civ":"Bolivia","event":"unit_lost","turn":150,"unit":"UNIT_HORSEMAN","x":34,"y":26,"cause":"killed","killer":"Barbarians","confidence":"inferred"}
+{"civ":"Iroquois","event":"improvement_built","improvement":"IMPROVEMENT_MINE","turn":150,"x":2,"y":20}
+{"building":"BUILDING_HARBOR","city":"Concepción","civ":"Chile","event":"building_constructed","turn":150}
+{"city":"Concepción","civ":"Chile","event":"plot_acquired","turn":150,"x":5,"y":20}
+{"bought_with":"culture","city":"Concepción","civ":"Chile","event":"plot_bought","turn":150,"x":5,"y":20}
+{"city":"Valparaiso","civ":"Chile","event":"plot_acquired","turn":150,"x":9,"y":34}
+{"bought_with":"culture","city":"Valparaiso","civ":"Chile","event":"plot_bought","turn":150,"x":9,"y":34}
+{"cities":3,"civ":"Chile","culture":221,"event":"snapshot","faith":76,"gold":886,"gold_per_turn":211.07,"happiness":54,"military_might":2853,"military_units":26,"population":57,"science":254.76,"score":1408,"techs":42,"turn":150}
+{"belief":"BELIEF_APOSTOLIC_PALACE","civ":"Chile","event":"reformation_added","religion":"TXT_KEY_RELIGION_CONFUCIANISM","turn":150}
