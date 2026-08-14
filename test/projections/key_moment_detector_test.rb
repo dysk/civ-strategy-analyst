@@ -80,6 +80,26 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "era_leads reports which civs reached each era first, sorted by turn" do
+    event(nil, "era_entered", 40, team: 1, civs: %w[Rome], era: "ERA_CLASSICAL")
+    event(nil, "era_entered", 45, team: 2, civs: %w[Greece], era: "ERA_CLASSICAL")
+
+    # Both teams reach the medieval era on the same turn: a tie.
+    event(nil, "era_entered", 90, team: 1, civs: %w[Rome], era: "ERA_MEDIEVAL")
+    event(nil, "era_entered", 90, team: 3, civs: %w[Egypt], era: "ERA_MEDIEVAL")
+    event(nil, "era_entered", 95, team: 2, civs: %w[Greece], era: "ERA_MEDIEVAL")
+
+    moments = detector.era_leads
+
+    assert_equal(
+      [
+        { type: :era_lead, turn: 40, era: "ERA_CLASSICAL", civs: %w[Rome] },
+        { type: :era_lead, turn: 90, era: "ERA_MEDIEVAL", civs: %w[Rome Egypt] }
+      ],
+      moments
+    )
+  end
+
   private
 
   def detector

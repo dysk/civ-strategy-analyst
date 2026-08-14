@@ -17,6 +17,17 @@ class KeyMomentDetector
     end.sort_by { |moment| moment[:turn] }
   end
 
+  def era_leads
+    of_type("era_entered")
+      .group_by { |e| e.payload["era"] }
+      .map do |era, events|
+        first_turn = events.map(&:turn).min
+        civs = events.select { |e| e.turn == first_turn }.flat_map { |e| Array(e.payload["civs"]) }
+        { type: :era_lead, turn: first_turn, era: era, civs: civs }
+      end
+      .sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])
