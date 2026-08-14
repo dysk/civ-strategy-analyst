@@ -1,7 +1,8 @@
 <h1>Games</h1>
+<p class="subtitle">Imported Civilization 5 + LEKMOD games.</p>
 
 <% if @games.empty? %>
-  <p>No games imported yet. Run <code>bin/civ import path.jsonl</code>.</p>
+  <p class="empty-state">No games imported yet. Run <code>bin/civ import path.jsonl</code>.</p>
 <% else %>
   <table>
     <thead>
@@ -15,8 +16,14 @@
         <tr>
           <td><%= link_to game.name, game_path(game) %></td>
           <td>
-            <%= game.analyses.exists? ? "analyzed" : "not analyzed" %>
-            <%= "(completed)" if game.completed? %>
+            <% if game.analyses.exists? %>
+              <span class="badge badge--analyzed">analyzed</span>
+            <% else %>
+              <span class="badge">not analyzed</span>
+            <% end %>
+            <% if game.completed? %>
+              <span class="badge">completed</span>
+            <% end %>
           </td>
         </tr>
       <% end %>
