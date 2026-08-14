@@ -72,6 +72,15 @@ class KeyMomentDetector
       end
   end
 
+  def nuclear_detonations
+    of_type("nuclear_detonation")
+      .map do |e|
+        { type: :nuclear_detonation, turn: e.turn, civ: e.civ, city: e.payload["city"],
+          bystander_war: e.payload["bystander_war"] }
+      end
+      .sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])

@@ -177,6 +177,21 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal [], detector.snowballs("score")
   end
 
+  test "nuclear_detonations lists each detonation sorted by turn" do
+    event("Rome", "nuclear_detonation", 200, city: "Athens", war: true, bystander_war: false)
+    event("Greece", "nuclear_detonation", 190, city: "Roma", war: true, bystander_war: false)
+
+    moments = detector.nuclear_detonations
+
+    assert_equal(
+      [
+        { type: :nuclear_detonation, turn: 190, civ: "Greece", city: "Roma", bystander_war: false },
+        { type: :nuclear_detonation, turn: 200, civ: "Rome", city: "Athens", bystander_war: false }
+      ],
+      moments
+    )
+  end
+
   private
 
   def detector
