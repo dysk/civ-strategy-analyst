@@ -1,0 +1,100 @@
+<p><%= link_to "&laquo; All games".html_safe, games_path %></p>
+
+<h1><%= @game.name %></h1>
+<p>
+  <%= @game.map_script %> &middot; <%= @game.map_size %> &middot; <%= @game.game_speed %> &middot;
+  max turns: <%= @game.max_turns %>
+</p>
+
+<h2>Outcome</h2>
+<p>
+  <% if @outcome[:winner_civ] %>
+    <strong><%= @outcome[:winner_civ] %></strong>
+    <%= "(#{@outcome[:victory_type]})" if @outcome[:victory_type] %>
+    <%= @outcome[:source] == :inferred ? "(inferred leader)" : "(declared winner)" %>
+  <% else %>
+    No leader yet.
+  <% end %>
+  &mdash;
+  <%= @outcome[:in_progress] ? "game in progress" : "game complete" %>
+</p>
+
+<h2>Final Standings</h2>
+<% if @standings.empty? %>
+  <p>No snapshots yet.</p>
+<% else %>
+  <ol>
+    <% @standings.each do |civ| %>
+      <li><%= civ %></li>
+    <% end %>
+  </ol>
+<% end %>
+
+<h2>Key Moments</h2>
+
+<h3>Wars</h3>
+<ul>
+  <% @key_moments.wars.each do |war| %>
+    <li>
+      Turn <%= war[:turn] %>: <%= war[:attacker_civs].join(", ") %> declared war on <%= war[:defender_civs].join(", ") %>
+      <%= war[:turn_peace] ? "(peace at turn #{war[:turn_peace]})" : "(ongoing)" %>
+    </li>
+  <% end %>
+</ul>
+
+<h3>Leader Changes</h3>
+<ul>
+  <% @key_moments.leader_changes.each do |change| %>
+    <li>Turn <%= change[:turn] %>: <%= change[:metric] %> lead passed from <%= change[:from] %> to <%= change[:to] %></li>
+  <% end %>
+</ul>
+
+<h3>Era Leads</h3>
+<ul>
+  <% @key_moments.era_leads.each do |lead| %>
+    <li>Turn <%= lead[:turn] %>: <%= lead[:civs].join(", ") %> reached <%= lead[:era] %> first</li>
+  <% end %>
+</ul>
+
+<h3>Religion Foundings</h3>
+<ul>
+  <% @key_moments.religion_foundings.each do |founding| %>
+    <li>Turn <%= founding[:turn] %>: <%= founding[:civ] %> founded <%= founding[:religion] %> (##<%= founding[:order] %>)</li>
+  <% end %>
+</ul>
+
+<h3>Military Might Collapses</h3>
+<ul>
+  <% @key_moments.military_might_collapses.each do |collapse| %>
+    <li>Turn <%= collapse[:turn] %>: <%= collapse[:civ] %> military might dropped from <%= collapse[:from] %> to <%= collapse[:to] %></li>
+  <% end %>
+</ul>
+
+<h3>Snowballs (Score)</h3>
+<ul>
+  <% @key_moments.snowballs("score").each do |snowball| %>
+    <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
+  <% end %>
+</ul>
+
+<h3>Nuclear Detonations</h3>
+<ul>
+  <% @key_moments.nuclear_detonations.each do |detonation| %>
+    <li>Turn <%= detonation[:turn] %>: <%= detonation[:civ] %> detonated a nuclear weapon on <%= detonation[:city] %></li>
+  <% end %>
+</ul>
+
+<h3>City-State Ally Takeovers</h3>
+<ul>
+  <% @key_moments.city_state_ally_takeovers.each do |takeover| %>
+    <li>Turn <%= takeover[:turn] %>: <%= takeover[:to] %> took <%= takeover[:city_state] %>'s alliance from <%= takeover[:from] %></li>
+  <% end %>
+</ul>
+
+<h2>Strategy Report</h2>
+<% if @latest_analysis %>
+  <p><em>Model: <%= @latest_analysis.model %>, generated <%= @latest_analysis.created_at %></em></p>
+  <%= render_markdown(@latest_analysis.report) %>
+<% else %>
+  <p>Not analyzed yet. Run <code>bin/civ analyze <%= @game.id %></code>.</p>
+<% end %>
