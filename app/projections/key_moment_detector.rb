@@ -81,6 +81,16 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
+  def city_state_ally_takeovers
+    of_type("city_state_ally_changed")
+      .select { |e| e.payload["old_ally"].present? && e.payload["new_ally"].present? }
+      .map do |e|
+        { type: :city_state_ally_takeover, turn: e.turn, city_state: e.payload["city_state"],
+          from: e.payload["old_ally"], to: e.payload["new_ally"] }
+      end
+      .sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])

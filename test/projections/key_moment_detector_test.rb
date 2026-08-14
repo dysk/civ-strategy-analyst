@@ -192,6 +192,22 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "city_state_ally_takeovers reports only ally changes that steal from an existing ally" do
+    # First alliance ever (no previous ally) is not a takeover.
+    event(nil, "city_state_ally_changed", 10, city_state: "Cahokia", old_ally: nil, new_ally: "Rome")
+    # Rome loses Cahokia's alliance to Greece: a takeover.
+    event(nil, "city_state_ally_changed", 40, city_state: "Cahokia", old_ally: "Rome", new_ally: "Greece")
+    # Losing an ally with no replacement is not a takeover either.
+    event(nil, "city_state_ally_changed", 60, city_state: "Cahokia", old_ally: "Greece", new_ally: nil)
+
+    moments = detector.city_state_ally_takeovers
+
+    assert_equal(
+      [ { type: :city_state_ally_takeover, turn: 40, city_state: "Cahokia", from: "Rome", to: "Greece" } ],
+      moments
+    )
+  end
+
   private
 
   def detector
