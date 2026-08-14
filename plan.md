@@ -120,3 +120,30 @@ Import przykładowego `filtered.jsonl` jako smoke test od iteracji 2.
 
 API przyjmujące eventy, wykresy w UI, analizy cross-game (schemat je umożliwia),
 automatyczny watcher plików, porównania wielu analiz LLM.
+
+## Status implementacji
+
+Wszystkie 9 iteracji zaimplementowane (TDD, czerwone testy → review → implementacja,
+commit per iteracja/heurystyka). 89 testów, zielone. Zobacz `README.md` po instrukcje
+uruchomienia.
+
+## Pomysły niezaimplementowane / na przyszłość
+
+- **Korelacja panteonów/wierzeń ze zwycięstwem (cross-game)** — pomysł zgłoszony przez
+  użytkownika przy okazji `KeyMomentDetector#religion_foundings`: śledzić, które
+  wierzenia (pantheon i religia założona) gracze wybierają w wielu grach, i ocenić,
+  które z nich częściej korelują ze zwycięstwem. Wymaga warstwy cross-game analysis
+  (patrz "Poza zakresem" wyżej) — dane per gra już są dostępne przez
+  `PlayerTimeline#religion` + `OutcomeResolver`, brakuje tylko agregacji między grami.
+  Zapisane też w pamięci Claude (`idea-belief-winrate-analysis`).
+- **Rozmiar digestu LLM** — `DigestBuilder` daje ~52 kB na `filtered.jsonl` zamiast
+  zakładanych 10–20 kB (dominują `timelines.city_states` i `timelines.techs/policies`).
+  Świadomie zostawione bez przycinania do czasu oceny jakości promptu na prawdziwym
+  LLM (iteracja 7) — jeśli rozmiar/koszt/jakość odpowiedzi faktycznie przeszkadza,
+  najpierw skrócić `city_states` do podsumowania (ostatni status sojuszu per city-state
+  zamiast pełnej listy zmian przyjaźni), potem ew. `techs`/`policies` do samych liczników.
+- **Inne metryki w `MetricSeries`/`KeyMomentDetector#snowballs`** — obie klasy są już
+  generyczne względem nazwy metryki (dowolny klucz z payloadu `snapshot`: `culture`,
+  `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
+  więc dodanie nowej metryki do analizy nie wymaga zmian w kodzie — tylko wywołania
+  z inną nazwą stringa.

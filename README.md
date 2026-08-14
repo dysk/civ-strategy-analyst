@@ -1,24 +1,103 @@
-# README
+# Civ Strategy Analyst
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Analyzes Civilization 5 + LEKMOD game logs (JSONL events from the sibling
+`civ-narrative-logger` project) to explain why a strategy won or lost, and to
+surface the key turning points of a game. See `plan.md` for the full design.
 
-Things you may want to cover:
+## Requirements
 
-* Ruby version
+- Ruby 4.0.6 (pinned in `.ruby-version` / `mise.toml` — `mise install` picks it
+  up automatically if you use [mise](https://mise.jdx.dev/))
+- PostgreSQL (any recent version; developed against 17)
+- An API key for at least one LLM provider if you want to actually run
+  `analyze` against a real model (OpenAI and/or Anthropic — see Configuration)
 
-* System dependencies
+## Setup
 
-* Configuration
+```sh
+bundle install
+bin/rails db:create db:migrate
+```
 
-* Database creation
+## Configuration
 
-* Database initialization
+The LLM provider/model is configurable via environment variables, read in
+`config/initializers/ruby_llm.rb`:
 
-* How to run the test suite
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` — provider credentials (set whichever
+  you plan to use)
+- `CIV_ANALYST_MODEL` — default model id (falls back to `gpt-4o-mini`); can
+  also be overridden per run with `bin/civ analyze --model ...`
 
-* Services (job queues, cache servers, search engines, etc.)
+Without an API key, everything except actually calling an LLM works fine
+(import, the projections, the CLI, the UI) — `AnalyzeGame`'s test suite stubs
+the LLM client, so `bin/rails test` never needs network access either.
 
-* Deployment instructions
+## Running the test suite
 
-* ...
+```sh
+bin/rails test
+```
+
+TDD workflow for this project: red tests first, reviewed, then the smallest
+implementation that turns them green. See `plan.md` for the iteration history.
+
+## CLI (`bin/civ`)
+
+The CLI is the primary interface. Each subcommand is a thin wrapper around a
+service object (`ImportGame`, `AnalyzeGame`, `Game`).
+
+**Import a game log:**
+
+```sh
+bin/civ import path/to/events.jsonl [--name "My Game"]
+```
+
+Streams the file line by line, builds the game + player roster from the first
+`session_started` event, and deduplicates events that got replayed by a
+pitboss restart (see `plan.md` for the exact dedup rule). Prints the imported/
+deduped event counts and the roster.
+
+**Analyze a game:**
+
+```sh
+bin/civ analyze GAME_ID [--winner Chile] [--victory-type domination] [--model gpt-4o-mini]
+```
+
+Builds a compact JSON digest of the game (roster, settings, per-civ metric
+checkpoints, timelines, detected key moments), sends it to the configured LLM
+with the prompt in `app/prompts/analyze_game_v1.md`, and saves the result both
+as an `Analysis` record and as `reports/<game>-<timestamp>.md`.
+
+`--winner`/`--victory-type` are optional: without them, the outcome is
+inferred from the last score snapshot and flagged as "in progress" if the
+game hasn't reached its recorded `max_turns` yet — there's no explicit
+victory event in the log to confirm a result either way.
+
+**List imported games:**
+
+```sh
+bin/civ list
+```
+
+Shows each game's id, name, and whether it's been analyzed yet.
+
+## Web UI
+
+```sh
+bin/rails server
+```
+
+Then visit `http://localhost:3000` for the games list, or a game's page for
+its standings, all detected key moments, and the latest analysis report
+(rendered from Markdown) if one exists. Read-only skeleton, no charts yet.
+
+## Project structure
+
+- `app/services/` — `ImportGame`, `DigestBuilder`, `AnalyzeGame`, `CivCli`
+- `app/projections/` — pure, deterministic Ruby classes that read events from
+  the DB: `MetricSeries`, `PlayerTimeline`, `KeyMomentDetector`,
+  `OutcomeResolver`
+- `app/prompts/` — versioned LLM prompt templates (`analyze_game_v1.md`, ...)
+- `app/controllers` / `app/views/games/` — the UI skeleton
+- `bin/civ` — the CLI entry point
