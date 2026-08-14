@@ -60,8 +60,16 @@ class CivCli
 
     options[:llm_client] = @llm_client if @llm_client
     analysis = AnalyzeGame.new(game, **options).call
-    @out.puts "Analysis ##{analysis.id} saved for game ##{game.id} (model: #{analysis.model})"
+    @out.puts "Analysis ##{analysis.id} saved for game ##{game.id} (model: #{analysis.model})#{usage_summary(analysis)}"
     0
+  end
+
+  def usage_summary(analysis)
+    return "" unless analysis.input_tokens && analysis.output_tokens
+
+    summary = " — #{analysis.input_tokens} in + #{analysis.output_tokens} out tokens"
+    summary += " (~$#{format("%.4f", analysis.cost_usd)})" if analysis.cost_usd
+    summary
   end
 
   def list(_args)

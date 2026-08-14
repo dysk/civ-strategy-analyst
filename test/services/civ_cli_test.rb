@@ -32,7 +32,9 @@ class CivCliTest < ActiveSupport::TestCase
       seq: 1, session_index: 0, turn: 1, event_type: "snapshot", civ: "Rome",
       payload: { "event" => "snapshot", "turn" => 1, "civ" => "Rome", "score" => 10 }
     )
-    stub = StubLlmClient.new("## Final Standings\n\nRome wins.")
+    stub = StubLlmClient.new(
+      content: "## Final Standings\n\nRome wins.", input_tokens: 1000, output_tokens: 250, cost_usd: 0.0321
+    )
 
     Dir.mktmpdir do |reports_dir|
       status = cli(llm_client: stub).run(
@@ -46,6 +48,21 @@ class CivCliTest < ActiveSupport::TestCase
     analysis = game.analyses.last
     assert_equal "Rome", analysis.digest["outcome"]["winner_civ"]
     assert_match(/Analysis ##{analysis.id} saved for game ##{game.id}/, @out.string)
+    assert_match(/1000 in \+ 250 out tokens/, @out.string)
+    assert_match(/\$0\.0321/, @out.string)
+  end
+
+  test "analyze prints without cost details when the llm client doesn't report them" do
+    game = Game.create!(name: "No Usage Game")
+    stub = StubLlmClient.new(content: "report")
+
+    Dir.mktmpdir do |reports_dir|
+      status = cli(llm_client: stub).run([ "analyze", game.id.to_s, "--reports-dir", reports_dir ])
+      assert_equal 0, status
+    end
+
+    assert_match(/Analysis #\d+ saved for game ##{game.id}/, @out.string)
+    assert_no_match(/tokens/, @out.string)
   end
 
   test "analyze without a game id prints usage to stderr and fails" do
@@ -92,13 +109,15 @@ class CivCliTest < ActiveSupport::TestCase
   class StubLlmClient
     attr_reader :received
 
-    def initialize(report)
-      @report = report
+    def initialize(content:, input_tokens: nil, output_tokens: nil, cost_usd: nil)
+      @response = AnalyzeGame::LlmResponse.new(
+        content: content, input_tokens: input_tokens, output_tokens: output_tokens, cost_usd: cost_usd
+      )
     end
 
     def call(model:, system_prompt:, input:)
       @received = { model_input_winner: JSON.parse(input)["outcome"]["winner_civ"] }
-      @report
+      @response
     end
   end
 end

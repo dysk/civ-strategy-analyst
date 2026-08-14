@@ -10,15 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_13_180232) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_14_131235) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "analyses", force: :cascade do |t|
+    t.decimal "cost_usd", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.jsonb "digest", default: {}, null: false
     t.bigint "game_id", null: false
+    t.integer "input_tokens"
     t.string "model", null: false
+    t.integer "output_tokens"
     t.text "report", null: false
     t.datetime "updated_at", null: false
     t.index ["game_id"], name: "index_analyses_on_game_id"

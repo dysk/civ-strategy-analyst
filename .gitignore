@@ -29,3 +29,7 @@
 # Claude Code local settings
 /.claude/
 
+# Generated analysis reports (tied to games in the local database)
+/reports/*
+!/reports/.keep
+

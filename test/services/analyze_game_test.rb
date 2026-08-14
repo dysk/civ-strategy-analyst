@@ -16,7 +16,7 @@ class AnalyzeGameTest < ActiveSupport::TestCase
   end
 
   test "sends the digest and versioned prompt to the injected llm client, and saves the report" do
-    stub = StubLlmClient.new("## Final Standings\n\nRome is winning.")
+    stub = StubLlmClient.new(content: "## Final Standings\n\nRome is winning.")
 
     analysis = AnalyzeGame.new(
       @game, winner_civ: "Rome", victory_type: "domination",
@@ -29,8 +29,11 @@ class AnalyzeGameTest < ActiveSupport::TestCase
     assert_equal JSON.parse(expected_digest.to_json), JSON.parse(stub.received[:input])
   end
 
-  test "persists the analysis with model, report and digest" do
-    stub = StubLlmClient.new("## Final Standings\n\nRome is winning.")
+  test "persists the analysis with model, report, digest, tokens and cost" do
+    stub = StubLlmClient.new(
+      content: "## Final Standings\n\nRome is winning.",
+      input_tokens: 1200, output_tokens: 340, cost_usd: 0.0321
+    )
 
     analysis = AnalyzeGame.new(
       @game, winner_civ: "Rome", model: "test-model", llm_client: stub, reports_dir: @reports_dir
@@ -41,10 +44,23 @@ class AnalyzeGameTest < ActiveSupport::TestCase
     assert_equal "test-model", analysis.model
     assert_equal "## Final Standings\n\nRome is winning.", analysis.report
     assert_equal "Rome", analysis.digest["outcome"]["winner_civ"]
+    assert_equal 1200, analysis.input_tokens
+    assert_equal 340, analysis.output_tokens
+    assert_in_delta 0.0321, analysis.cost_usd, 0.0001
+  end
+
+  test "persists nil tokens and cost when the llm client doesn't report them" do
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(@game, llm_client: stub, reports_dir: @reports_dir).call
+
+    assert_nil analysis.input_tokens
+    assert_nil analysis.output_tokens
+    assert_nil analysis.cost_usd
   end
 
   test "defaults the model to RubyLLM's configured default when none is given" do
-    stub = StubLlmClient.new("report")
+    stub = StubLlmClient.new(content: "report")
 
     analysis = AnalyzeGame.new(@game, llm_client: stub, reports_dir: @reports_dir).call
 
@@ -53,7 +69,7 @@ class AnalyzeGameTest < ActiveSupport::TestCase
   end
 
   test "writes the report to reports_dir as <game>-<timestamp>.md" do
-    stub = StubLlmClient.new("## Final Standings\n\nRome is winning.")
+    stub = StubLlmClient.new(content: "## Final Standings\n\nRome is winning.")
 
     travel_to Time.utc(2026, 1, 2, 3, 4, 5) do
       AnalyzeGame.new(@game, model: "test-model", llm_client: stub, reports_dir: @reports_dir).call
@@ -67,13 +83,15 @@ class AnalyzeGameTest < ActiveSupport::TestCase
   class StubLlmClient
     attr_reader :received
 
-    def initialize(report)
-      @report = report
+    def initialize(content:, input_tokens: nil, output_tokens: nil, cost_usd: nil)
+      @response = AnalyzeGame::LlmResponse.new(
+        content: content, input_tokens: input_tokens, output_tokens: output_tokens, cost_usd: cost_usd
+      )
     end
 
     def call(model:, system_prompt:, input:)
       @received = { model: model, system_prompt: system_prompt, input: input }
-      @report
+      @response
     end
   end
 end

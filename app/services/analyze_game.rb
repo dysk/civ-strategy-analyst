@@ -1,6 +1,8 @@
 class AnalyzeGame
   PROMPT_PATH = Rails.root.join("app/prompts/analyze_game_v1.md")
 
+  LlmResponse = Struct.new(:content, :input_tokens, :output_tokens, :cost_usd, keyword_init: true)
+
   def initialize(game, winner_civ: nil, victory_type: nil, model: nil,
                  llm_client: RubyLlmClient.new, reports_dir: Rails.root.join("reports"))
     @game = game
@@ -14,9 +16,12 @@ class AnalyzeGame
   def call
     digest = DigestBuilder.new(@game, winner_civ: @winner_civ, victory_type: @victory_type).call
 
-    report = @llm_client.call(model: @model, system_prompt: prompt, input: digest.to_json)
+    response = @llm_client.call(model: @model, system_prompt: prompt, input: digest.to_json)
 
-    analysis = @game.analyses.create!(model: @model, report: report, digest: digest)
+    analysis = @game.analyses.create!(
+      model: @model, report: response.content, digest: digest,
+      input_tokens: response.input_tokens, output_tokens: response.output_tokens, cost_usd: response.cost_usd
+    )
     write_report_file(analysis)
     analysis
   end
@@ -38,7 +43,15 @@ class AnalyzeGame
   # interface instead of RubyLLM::Chat's full API.
   class RubyLlmClient
     def call(model:, system_prompt:, input:)
-      RubyLLM.chat(model: model).with_instructions(system_prompt).ask(input).content
+      message = RubyLLM.chat(model: model).with_instructions(system_prompt).ask(input)
+      cost = message.cost(model: model)
+
+      LlmResponse.new(
+        content: message.content,
+        input_tokens: message.tokens&.input,
+        output_tokens: message.tokens&.output,
+        cost_usd: cost&.total
+      )
     end
   end
 end

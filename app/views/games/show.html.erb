@@ -93,7 +93,17 @@
 
 <h2>Strategy Report</h2>
 <% if @latest_analysis %>
-  <p><em>Model: <%= @latest_analysis.model %>, generated <%= @latest_analysis.created_at %></em></p>
+  <p>
+    <em>
+      Model: <%= @latest_analysis.model %>, generated <%= @latest_analysis.created_at %>
+      <% if @latest_analysis.input_tokens && @latest_analysis.output_tokens %>
+        &mdash; <%= @latest_analysis.input_tokens %> in + <%= @latest_analysis.output_tokens %> out tokens
+        <% if @latest_analysis.cost_usd %>
+          (~$<%= format("%.4f", @latest_analysis.cost_usd) %>)
+        <% end %>
+      <% end %>
+    </em>
+  </p>
   <%= render_markdown(@latest_analysis.report) %>
 <% else %>
   <p>Not analyzed yet. Run <code>bin/civ analyze <%= @game.id %></code>.</p>
