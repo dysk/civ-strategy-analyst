@@ -37,7 +37,7 @@
 <% if [
      @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
      @key_moments.religion_foundings, @key_moments.military_might_collapses,
-     @key_moments.snowballs("score"), @key_moments.nuclear_detonations,
+     @key_moments.snowballs("score"), @key_moments.snowballs("science"), @key_moments.nuclear_detonations,
      @key_moments.city_state_ally_takeovers
    ].all?(&:empty?) %>
   <p class="empty-state">No key moments detected yet.</p>
@@ -95,6 +95,15 @@
   <h3>Snowballs (Score)</h3>
   <ul>
     <% @key_moments.snowballs("score").each do |snowball| %>
+      <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.snowballs("science").any? %>
+  <h3>Snowballs (Science)</h3>
+  <ul>
+    <% @key_moments.snowballs("science").each do |snowball| %>
       <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
     <% end %>
   </ul>

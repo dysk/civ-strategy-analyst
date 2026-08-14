@@ -119,6 +119,7 @@ class DigestBuilder
       military_might_collapses: detector.military_might_collapses,
       snowballs_score: detector.snowballs("score"),
       snowballs_population: detector.snowballs("population"),
+      snowballs_science: detector.snowballs("science"),
       nuclear_detonations: detector.nuclear_detonations,
       city_state_ally_takeovers: detector.city_state_ally_takeovers
     }
