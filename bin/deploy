@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Run as the `deploy` user on the server, from the app checkout:
+#   cd ~/civ-strategy-analyst && bin/deploy
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+set -a
+source .env.production
+set +a
+export RAILS_ENV=production
+
+git pull --ff-only
+bundle install
+bin/rails assets:precompile
+bin/rails db:migrate
+sudo systemctl restart civ-strategy-analyst
