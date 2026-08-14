@@ -57,10 +57,41 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal({}, war[:cities_captured])
   end
 
+  test "leader_changes reports score and science leadership crossovers together, sorted by turn" do
+    snapshot("Rome", 1, score: 100, science: 20)
+    snapshot("Greece", 1, score: 90, science: 10)
+
+    # Score flips to Greece; science leader (Rome) unchanged.
+    snapshot("Rome", 2, score: 100, science: 20)
+    snapshot("Greece", 2, score: 110, science: 15)
+
+    # Score leader unchanged (Greece still ahead); science flips to Greece.
+    snapshot("Rome", 3, score: 100, science: 12)
+    snapshot("Greece", 3, score: 110, science: 25)
+
+    moments = detector.leader_changes
+
+    assert_equal(
+      [
+        { type: :leader_change, metric: "score", turn: 2, from: "Rome", to: "Greece" },
+        { type: :leader_change, metric: "science", turn: 3, from: "Rome", to: "Greece" }
+      ],
+      moments
+    )
+  end
+
   private
 
   def detector
     @detector ||= KeyMomentDetector.new(@game)
+  end
+
+  def snapshot(civ, turn, **metrics)
+    @seq += 1
+    payload = metrics.stringify_keys.merge("event" => "snapshot", "turn" => turn, "civ" => civ)
+    @game.game_events.create!(
+      seq: @seq, session_index: 0, turn: turn, event_type: "snapshot", civ: civ, payload: payload
+    )
   end
 
   def event(civ, event_type, turn, extra = {})

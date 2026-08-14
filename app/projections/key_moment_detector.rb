@@ -1,8 +1,20 @@
 class KeyMomentDetector
   UNIT_LOST_SPIKE_THRESHOLD = 3
+  LEADER_CHANGE_METRICS = %w[score science].freeze
 
   def initialize(game)
+    @game = game
     @events = game.game_events.order(:seq).to_a
+  end
+
+  def leader_changes
+    metric_series = MetricSeries.new(@game)
+
+    LEADER_CHANGE_METRICS.flat_map do |metric|
+      metric_series.leader_changes(metric).map do |change|
+        { type: :leader_change, metric: metric, turn: change[:turn], from: change[:from], to: change[:to] }
+      end
+    end.sort_by { |moment| moment[:turn] }
   end
 
   def wars
