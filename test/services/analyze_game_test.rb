@@ -2,6 +2,8 @@ require "test_helper"
 require "tmpdir"
 
 class AnalyzeGameTest < ActiveSupport::TestCase
+  LEKMOD_FIXTURES_ROOT = Rails.root.join("test/fixtures/lekmod")
+
   setup do
     @game = Game.create!(name: "Analyze Test Game", max_turns: 100)
     @game.game_events.create!(
@@ -102,6 +104,31 @@ class AnalyzeGameTest < ActiveSupport::TestCase
     ).call
 
     assert_equal "34.15", analysis.lekmod_version
+  end
+
+  test "resolves lekmod reference data into the digest using the game's stored version" do
+    @game.update!(lekmod_version: "1.5")
+    @game.players.create!(civ: "Chile", leader_name: "Test", human: true, handicap: "PRINCE")
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(
+      @game, llm_client: stub, reports_dir: @reports_dir, lekmod_root: LEKMOD_FIXTURES_ROOT
+    ).call
+
+    assert_equal "1.5", analysis.digest["lekmod"]["version"]
+    assert_equal [ "Chile" ], analysis.digest["lekmod"]["civilizations"].keys
+    assert_match(/v1\.5 text for Chile/, analysis.digest["lekmod"]["civilizations"]["Chile"])
+  end
+
+  test "resolves lekmod reference data using an explicit override instead of the game's stored version" do
+    @game.update!(lekmod_version: "1.0")
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(
+      @game, lekmod_version: "1.5", llm_client: stub, reports_dir: @reports_dir, lekmod_root: LEKMOD_FIXTURES_ROOT
+    ).call
+
+    assert_equal "1.5", analysis.digest["lekmod"]["version"]
   end
 
   test "writes the report to reports_dir as <game>-<timestamp>.md" do
