@@ -1,0 +1,8 @@
+Convert this excerpt of a Civilization 5 mod reference document into clean Markdown.
+Format rules:
+- Lines that are section titles (like "World Wonders", "Ancient Era:", "PANTHEONS", "Level 1", "Freedom Tenets") become headings: top-level sections "## Title", subsections (eras, levels) "### Title". Normalize ALL-CAPS titles to Title Case. Drop trailing colons in headings.
+- Each named item (a wonder, unit, building, pantheon, belief, tenet, promotion, improvement) becomes a bullet with its name in bold: "- **Name:** effect text".
+- Paragraphs of general rules that are not named items stay as plain paragraphs under their heading.
+- Join lines that were wrapped mid-sentence into one line.
+- Copy all effect text VERBATIM. Do not paraphrase, shorten, reorder, or add anything.
+- Output only the Markdown, nothing else.

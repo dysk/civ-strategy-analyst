@@ -1,0 +1,8 @@
+Convert this excerpt of a Civilization 5 mod reference document into clean Markdown.
+Format rules:
+- Each civilization entry begins with a line like "CivName - LeaderName". Emit it as a level-2 heading: "## CivName (LeaderName)".
+- Below the heading emit one bullet per labeled item, keeping the label and the item name in bold: "- **Ability — Name:** text", "- **Unit — Name:** text", "- **Building — Name:** text", "- **Improvement — Name:** text", "- **Bias:** text". Keep any other labeled item the same way with its own label.
+- Named sub-items inside an entry (for example a list of promotion names with effects) become indented sub-bullets under their parent bullet.
+- Join lines that were wrapped mid-sentence into one line.
+- Copy all effect text VERBATIM. Do not paraphrase, shorten, reorder, or add anything.
+- Output only the Markdown, nothing else.

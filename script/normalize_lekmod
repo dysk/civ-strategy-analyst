@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Normalizes a raw LEKMOD documentation dump into a reference Markdown file
+# using the local helper model (ask-local / LM Studio). See db/lekmod/README.md
+# for the full procedure, including verification steps this script can't do.
+#
+# Usage:
+#   script/normalize_lekmod SOURCE TARGET --prompt entity|section --title TITLE \
+#     [--note TEXT] [--boundary REGEX] [--chunk-chars N] [--workdir DIR]
+#
+# Example (civilizations, entries delimited by their "Ability:" line):
+#   script/normalize_lekmod lekmod-civilization.txt db/lekmod/34.16/civilizations.md \
+#     --prompt entity --title "LEKMOD civilizations (34.16)" --boundary '^Ability:'
+
+require "optparse"
+require "fileutils"
+
+PROMPTS_DIR = File.expand_path("../db/lekmod/prompts", __dir__)
+ASK_LOCAL_ENV = {
+  "LOCAL_LLM_MAX_TOKENS" => ENV.fetch("LOCAL_LLM_MAX_TOKENS", "8000"),
+  "LOCAL_LLM_TIMEOUT" => ENV.fetch("LOCAL_LLM_TIMEOUT", "600")
+}.freeze
+COMPARISON_PARENTHETICALS = [/ ?\((?:vs\.|from) [^)]*\)/, / ?\(\d[^)]*(?<![A-Za-z])vs\.? \d[^)]*\)/].freeze
+NAMED_ITEM = /^\s*([A-Z][A-Za-z0-9'’ .&()\/-]{1,60}?):\s+\S/
+
+def parse_options(argv)
+  options = { chunk_chars: 10_000 }
+  parser = OptionParser.new do |o|
+    o.on("--prompt KIND", %w[entity section]) { |v| options[:prompt] = v }
+    o.on("--title TITLE") { |v| options[:title] = v }
+    o.on("--note TEXT") { |v| options[:note] = v }
+    o.on("--boundary REGEX") { |v| options[:boundary] = Regexp.new(v) }
+    o.on("--chunk-chars N", Integer) { |v| options[:chunk_chars] = v }
+    o.on("--workdir DIR") { |v| options[:workdir] = v }
+  end
+  options[:source], options[:target] = parser.parse(argv)
+  abort parser.to_s unless options[:source] && options[:target] && options[:prompt] && options[:title]
+  options
+end
+
+def chunk_paragraphs(text, max_chars, boundary)
+  paragraphs = text.split(/\n{2,}/).map(&:strip).reject(&:empty?)
+  paragraphs.each_with_object([]) do |paragraph, chunks|
+    breakable = boundary.nil? || paragraph.match?(boundary)
+    if chunks.empty? || (breakable && chunks.last.length + paragraph.length > max_chars)
+      chunks << paragraph.dup
+    else
+      chunks.last << "\n\n" << paragraph
+    end
+  end
+end
+
+def run_chunk(prompt, chunk, out_path)
+  return if File.exist?(out_path) && !File.empty?(out_path)
+
+  IO.popen(ASK_LOCAL_ENV, ["ask-local", prompt], "r+") do |io|
+    io.write(chunk)
+    io.close_write
+    File.write(out_path, io.read)
+  end
+  abort "ask-local failed on #{out_path} — is LM Studio running?" unless $?.success? && !File.empty?(out_path)
+end
+
+def normalize_quotes(text)
+  text.unicode_normalize(:nfkd).tr("’‘", "''")
+end
+
+def missing_names(source, output)
+  haystack = normalize_quotes(output)
+  source.scan(NAMED_ITEM).flatten.map(&:strip).uniq.reject { |name| haystack.include?(normalize_quotes(name)) }
+end
+
+def assemble(outputs, title, note)
+  body = outputs.join("\n\n").gsub(/^# (?!#)/, "## ")
+  COMPARISON_PARENTHETICALS.each { |pattern| body = body.gsub(pattern, "") }
+  ["# #{title}", note, body.strip, ""].compact.join("\n\n")
+end
+
+options = parse_options(ARGV)
+prompt = File.read(File.join(PROMPTS_DIR, "#{options[:prompt]}-chunk-prompt.txt"))
+source = File.read(options[:source])
+workdir = options[:workdir] || File.join("tmp/normalize_lekmod", File.basename(options[:source], ".*"))
+FileUtils.mkdir_p(workdir)
+
+chunks = chunk_paragraphs(source, options[:chunk_chars], options[:boundary])
+puts "#{chunks.length} chunks (~#{chunks.sum(&:length) / chunks.length} chars each) -> #{workdir}"
+
+outputs = chunks.each_with_index.map do |chunk, i|
+  out_path = File.join(workdir, format("chunk-%02d.md", i + 1))
+  run_chunk(prompt, chunk, out_path)
+  puts "  chunk #{i + 1}/#{chunks.length} done"
+  File.read(out_path)
+end
+
+missing = missing_names(source, outputs.join("\n"))
+unless missing.empty?
+  abort "Named items from the source are missing in the output:\n  #{missing.join("\n  ")}\n" \
+        "Inspect #{workdir}, fix or delete the offending chunk-NN.md, and re-run."
+end
+
+FileUtils.mkdir_p(File.dirname(options[:target]))
+File.write(options[:target], assemble(outputs, options[:title], options[:note]))
+puts "Wrote #{options[:target]} — all #{source.scan(NAMED_ITEM).flatten.uniq.length} named items present."
+puts "Now: spot-check entries against the source and annotate internal IDs (see db/lekmod/README.md)."
