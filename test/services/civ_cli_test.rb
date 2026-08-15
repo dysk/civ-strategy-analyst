@@ -19,6 +19,16 @@ class CivCliTest < ActiveSupport::TestCase
     assert_match(/Rome, Greece/, @out.string)
   end
 
+  test "import accepts --lekmod-version and stores it on the game" do
+    status = cli.run(
+      [ "import", SAMPLE_PATH.to_s, "--name", "Modded Game", "--lekmod-version", "34.15" ]
+    )
+
+    assert_equal 0, status
+    game = Game.find_by(name: "Modded Game")
+    assert_equal "34.15", game.lekmod_version
+  end
+
   test "import without a path prints usage to stderr and fails" do
     status = cli.run([ "import" ])
 
@@ -50,6 +60,21 @@ class CivCliTest < ActiveSupport::TestCase
     assert_match(/Analysis ##{analysis.id} saved for game ##{game.id}/, @out.string)
     assert_match(/1000 in \+ 250 out tokens/, @out.string)
     assert_match(/\$0\.0321/, @out.string)
+  end
+
+  test "analyze accepts --lekmod-version as an override and persists it on the analysis" do
+    game = Game.create!(name: "Modded Analyze Game", lekmod_version: "34.10")
+    stub = StubLlmClient.new(content: "report")
+
+    Dir.mktmpdir do |reports_dir|
+      status = cli(llm_client: stub).run(
+        [ "analyze", game.id.to_s, "--lekmod-version", "34.15", "--reports-dir", reports_dir ]
+      )
+
+      assert_equal 0, status
+    end
+
+    assert_equal "34.15", game.analyses.last.lekmod_version
   end
 
   test "analyze prints without cost details when the llm client doesn't report them" do

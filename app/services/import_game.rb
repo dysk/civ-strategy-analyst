@@ -16,17 +16,18 @@ class ImportGame
 
   Result = Struct.new(:game, :imported_count, :skipped_count, keyword_init: true)
 
-  def self.call(path, name: nil)
-    new(path, name: name).call
+  def self.call(path, name: nil, lekmod_version: nil)
+    new(path, name: name, lekmod_version: lekmod_version).call
   end
 
-  def initialize(path, name: nil)
+  def initialize(path, name: nil, lekmod_version: nil)
     @path = path.to_s
     @name = name.presence || File.basename(@path, ".*")
+    @lekmod_version = lekmod_version
   end
 
   def call
-    game = Game.create!(name: @name, completed: false)
+    game = Game.create!(name: @name, completed: false, lekmod_version: @lekmod_version)
 
     @session_index = -1
     @seq = 0

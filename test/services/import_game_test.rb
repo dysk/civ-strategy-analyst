@@ -80,6 +80,18 @@ class ImportGameTest < ActiveSupport::TestCase
     assert_equal 0, result.skipped_count
   end
 
+  test "stores the given lekmod_version on the game" do
+    result = ImportGame.call(SAMPLE_PATH, name: "Test Game", lekmod_version: "34.15")
+
+    assert_equal "34.15", result.game.lekmod_version
+  end
+
+  test "leaves lekmod_version nil when not given" do
+    result = ImportGame.call(SAMPLE_PATH, name: "Test Game")
+
+    assert_nil result.game.lekmod_version
+  end
+
   test "increments session_index on each session_started and only builds the roster once" do
     result = ImportGame.call(DEDUP_FRAGMENT_PATH, name: "Real Fragment")
 

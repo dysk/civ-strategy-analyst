@@ -76,6 +76,34 @@ class AnalyzeGameTest < ActiveSupport::TestCase
     assert_equal RubyLLM.config.default_model, stub.received[:model]
   end
 
+  test "persists nil lekmod_version when neither the game nor an override provides one" do
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(@game, llm_client: stub, reports_dir: @reports_dir).call
+
+    assert_nil analysis.lekmod_version
+  end
+
+  test "resolves lekmod_version from the game when no override is given" do
+    @game.update!(lekmod_version: "34.15")
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(@game, llm_client: stub, reports_dir: @reports_dir).call
+
+    assert_equal "34.15", analysis.lekmod_version
+  end
+
+  test "overrides the game's stored lekmod_version when given explicitly" do
+    @game.update!(lekmod_version: "34.10")
+    stub = StubLlmClient.new(content: "report")
+
+    analysis = AnalyzeGame.new(
+      @game, lekmod_version: "34.15", llm_client: stub, reports_dir: @reports_dir
+    ).call
+
+    assert_equal "34.15", analysis.lekmod_version
+  end
+
   test "writes the report to reports_dir as <game>-<timestamp>.md" do
     stub = StubLlmClient.new(content: "## Final Standings\n\nRome is winning.")
 

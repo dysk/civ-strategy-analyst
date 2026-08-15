@@ -3,12 +3,15 @@ class AnalyzeGame
 
   LlmResponse = Struct.new(:content, :input_tokens, :output_tokens, :cost_usd, keyword_init: true)
 
-  def initialize(game, winner_civ: nil, victory_type: nil, model: nil,
+  attr_reader :lekmod_version
+
+  def initialize(game, winner_civ: nil, victory_type: nil, model: nil, lekmod_version: nil,
                  llm_client: RubyLlmClient.new, reports_dir: Rails.root.join("reports"))
     @game = game
     @winner_civ = winner_civ
     @victory_type = victory_type
     @model = model || RubyLLM.config.default_model
+    @lekmod_version = lekmod_version || game.lekmod_version
     @llm_client = llm_client
     @reports_dir = reports_dir
   end
@@ -20,6 +23,7 @@ class AnalyzeGame
 
     analysis = @game.analyses.create!(
       model: @model, report: response.content, digest: digest, prompt: prompt,
+      lekmod_version: @lekmod_version,
       input_tokens: response.input_tokens, output_tokens: response.output_tokens, cost_usd: response.cost_usd
     )
     write_report_file(analysis)

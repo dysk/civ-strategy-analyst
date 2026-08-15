@@ -25,14 +25,15 @@ class CivCli
   def import(args)
     options = {}
     parser = OptionParser.new do |o|
-      o.banner = "Usage: civ import PATH [--name NAME]"
+      o.banner = "Usage: civ import PATH [--name NAME] [--lekmod-version VERSION]"
       o.on("--name NAME", "Game name (default: file basename)") { |v| options[:name] = v }
+      o.on("--lekmod-version VERSION", "LEKMOD version this game was played on") { |v| options[:lekmod_version] = v }
     end
 
     path = parser.parse!(args).first
     return usage_error(parser) if path.nil?
 
-    result = ImportGame.call(path, name: options[:name])
+    result = ImportGame.call(path, name: options[:name], lekmod_version: options[:lekmod_version])
     @out.puts "Imported game ##{result.game.id} \"#{result.game.name}\": " \
               "#{result.imported_count} events (#{result.skipped_count} deduped)"
     @out.puts "Roster: #{result.game.players.pluck(:civ).join(", ")}"
@@ -42,10 +43,12 @@ class CivCli
   def analyze(args)
     options = {}
     parser = OptionParser.new do |o|
-      o.banner = "Usage: civ analyze GAME_ID [--winner CIV] [--victory-type TYPE] [--model MODEL] [--reports-dir DIR]"
+      o.banner = "Usage: civ analyze GAME_ID [--winner CIV] [--victory-type TYPE] [--model MODEL] " \
+                 "[--lekmod-version VERSION] [--reports-dir DIR]"
       o.on("--winner CIV") { |v| options[:winner_civ] = v }
       o.on("--victory-type TYPE") { |v| options[:victory_type] = v }
       o.on("--model MODEL") { |v| options[:model] = v }
+      o.on("--lekmod-version VERSION", "Override the game's stored LEKMOD version") { |v| options[:lekmod_version] = v }
       o.on("--reports-dir DIR") { |v| options[:reports_dir] = v }
     end
 
