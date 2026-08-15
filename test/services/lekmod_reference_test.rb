@@ -1,7 +1,7 @@
 require "test_helper"
 
 class LekmodReferenceTest < ActiveSupport::TestCase
-  ROOT = Rails.root.join("test/fixtures/lekmod")
+  ROOT = Rails.root.join("test/support/lekmod")
 
   test "resolves an exact version match with no resolution note" do
     result = reference(version: "1.5").call
@@ -28,6 +28,7 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_equal({}, result[:policies])
     assert_equal({}, result[:beliefs])
     assert_nil result[:general_rules]
+    assert_equal [], result[:unmatched_ids]
   end
 
   test "returns no reference data when no version is given" do
@@ -36,6 +37,7 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_nil result[:version]
     assert result[:resolution_note].present?
     assert_equal({}, result[:civilizations])
+    assert_equal [], result[:unmatched_ids]
   end
 
   test "extracts only the civilizations present in the roster, by exact civ name" do
@@ -69,16 +71,46 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_match(/\+5% gold for each Trade Route/, result[:policies]["POLICY_ECONOMIC_UNION"])
   end
 
-  test "omits a policy ID that isn't found anywhere in the reference data" do
+  test "reports a policy ID that isn't found anywhere as unmatched" do
     result = reference(version: "1.5", policy_ids: [ "POLICY_DOES_NOT_EXIST" ]).call
 
     assert_equal({}, result[:policies])
+    assert_equal [ "POLICY_DOES_NOT_EXIST" ], result[:unmatched_ids]
   end
 
-  test "omits a belief ID that isn't found anywhere in the reference data" do
+  test "reports a belief ID that isn't found anywhere as unmatched" do
     result = reference(version: "1.5", belief_ids: [ "BELIEF_DOES_NOT_EXIST" ]).call
 
     assert_equal({}, result[:beliefs])
+    assert_equal [ "BELIEF_DOES_NOT_EXIST" ], result[:unmatched_ids]
+  end
+
+  test "resolves a belief via ids.yml when neither an inline ID nor derivation from the ID matches" do
+    result = reference(version: "1.5", belief_ids: [ "BELIEF_ZAKATT" ]).call
+
+    assert_match(/\+8 Gold from the Palace/, result[:beliefs]["BELIEF_ZAKATT"])
+    assert_equal [], result[:unmatched_ids]
+  end
+
+  test "reports an ID as unmatched when ids.yml has no bullet matching its display name" do
+    result = reference(version: "1.5", belief_ids: [ "BELIEF_NOMATCH" ]).call
+
+    assert_equal({}, result[:beliefs])
+    assert_equal [ "BELIEF_NOMATCH" ], result[:unmatched_ids]
+  end
+
+  test "prefers an inline backtick ID annotation over a conflicting ids.yml entry" do
+    result = reference(version: "1.5", policy_ids: [ "POLICY_ARISTOCRACY" ]).call
+
+    assert_match(/\+15% Production towards Wonders/, result[:policies]["POLICY_ARISTOCRACY"])
+    assert_equal [], result[:unmatched_ids]
+  end
+
+  test "resolves gracefully, without ids.yml, when the version predates that file" do
+    result = reference(version: "1.0", belief_ids: [ "BELIEF_ZAKATT" ]).call
+
+    assert_equal({}, result[:beliefs])
+    assert_equal [ "BELIEF_ZAKATT" ], result[:unmatched_ids]
   end
 
   test "returns the full general.md content verbatim" do

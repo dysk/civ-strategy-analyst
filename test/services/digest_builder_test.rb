@@ -1,7 +1,7 @@
 require "test_helper"
 
 class DigestBuilderTest < ActiveSupport::TestCase
-  LEKMOD_FIXTURES_ROOT = Rails.root.join("test/fixtures/lekmod")
+  LEKMOD_FIXTURES_ROOT = Rails.root.join("test/support/lekmod")
 
   setup do
     @game = Game.create!(

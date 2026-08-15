@@ -1,7 +1,7 @@
 require "test_helper"
 
 class LekmodIdsExtractorTest < ActiveSupport::TestCase
-  SOURCE_DIR = Rails.root.join("test/fixtures/lekmod_source")
+  SOURCE_DIR = Rails.root.join("test/support/lekmod_source")
 
   test "resolves a policy name via a plain Row in the Policies table" do
     ids = LekmodIdsExtractor.new(SOURCE_DIR).call

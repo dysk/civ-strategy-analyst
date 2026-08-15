@@ -2,7 +2,7 @@ require "test_helper"
 require "tmpdir"
 
 class AnalyzeGameTest < ActiveSupport::TestCase
-  LEKMOD_FIXTURES_ROOT = Rails.root.join("test/fixtures/lekmod")
+  LEKMOD_FIXTURES_ROOT = Rails.root.join("test/support/lekmod")
 
   setup do
     @game = Game.create!(name: "Analyze Test Game", max_turns: 100)
