@@ -122,6 +122,7 @@ class DigestBuilder
       snowballs_score: detector.snowballs("score"),
       snowballs_population: detector.snowballs("population"),
       snowballs_science: detector.snowballs("science"),
+      snowballs_culture: detector.snowballs("culture"),
       nuclear_detonations: detector.nuclear_detonations,
       city_state_ally_takeovers: detector.city_state_ally_takeovers
     }
