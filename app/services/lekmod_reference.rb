@@ -1,3 +1,5 @@
+require "yaml"
+
 class LekmodReference
   VERSION_DIR_PATTERN = /\A\d+(\.\d+)*\z/
   NAMED_ID_BULLET = /^- \*\*(?<name>[^*]+?)\*\*\s*\(`(?<id>[A-Z_]+)`\):/
@@ -13,6 +15,7 @@ class LekmodReference
 
   def call
     version, note = resolve_version
+    @unmatched_ids = []
 
     {
       version: version,
@@ -20,7 +23,8 @@ class LekmodReference
       civilizations: version ? extract_civilizations(version) : {},
       policies: version ? extract_ids(version, %w[policies.md ideologies.md], @policy_ids) : {},
       beliefs: version ? extract_ids(version, %w[religion.md], @belief_ids) : {},
-      general_rules: version ? read_file(version, "general.md") : nil
+      general_rules: version ? read_file(version, "general.md") : nil,
+      unmatched_ids: @unmatched_ids
     }
   end
 
@@ -63,10 +67,29 @@ class LekmodReference
     return {} if ids.empty?
 
     id_index, name_index = index_bullets(version, filenames)
+    ids_yml = load_ids_yml(version)
 
     ids.each_with_object({}) do |id, result|
-      entry = id_index[id] || name_index[derived_name(id)]
-      result[id] = entry if entry
+      entry = id_index[id] || ids_yml_match(name_index, ids_yml, id) || name_index[derived_name(id)]
+
+      if entry
+        result[id] = entry
+      else
+        @unmatched_ids << id
+      end
+    end
+  end
+
+  def ids_yml_match(name_index, ids_yml, id)
+    name = ids_yml[id]
+    name_index[normalize(name)] if name
+  end
+
+  def load_ids_yml(version)
+    @ids_yml_cache ||= {}
+    @ids_yml_cache[version] ||= begin
+      path = File.join(@root, version, "ids.yml")
+      File.exist?(path) ? YAML.safe_load_file(path) : {}
     end
   end
 
