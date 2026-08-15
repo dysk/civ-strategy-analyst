@@ -1,6 +1,8 @@
 class KeyMomentDetector
   UNIT_LOST_SPIKE_THRESHOLD = 3
   LEADER_CHANGE_METRICS = %w[score science].freeze
+  LEADER_CHANGE_GRACE_PERIOD_QUICK = 67
+  LEADER_CHANGE_GRACE_PERIOD_DEFAULT = 100
   MILITARY_MIGHT_COLLAPSE_THRESHOLD = 0.15
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
@@ -17,7 +19,7 @@ class KeyMomentDetector
       metric_series.leader_changes(metric).map do |change|
         { type: :leader_change, metric: metric, turn: change[:turn], from: change[:from], to: change[:to] }
       end
-    end.sort_by { |moment| moment[:turn] }
+    end.select { |moment| moment[:turn] > leader_change_grace_period }.sort_by { |moment| moment[:turn] }
   end
 
   def era_leads
@@ -177,5 +179,9 @@ class KeyMomentDetector
 
   def team_pair(a, b)
     [ a, b ].sort
+  end
+
+  def leader_change_grace_period
+    @game.game_speed.to_s.upcase.include?("QUICK") ? LEADER_CHANGE_GRACE_PERIOD_QUICK : LEADER_CHANGE_GRACE_PERIOD_DEFAULT
   end
 end

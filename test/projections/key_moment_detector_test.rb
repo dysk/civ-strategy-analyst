@@ -58,24 +58,58 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
   end
 
   test "leader_changes reports score and science leadership crossovers together, sorted by turn" do
-    snapshot("Rome", 1, score: 100, science: 20)
-    snapshot("Greece", 1, score: 90, science: 10)
+    snapshot("Rome", 101, score: 100, science: 20)
+    snapshot("Greece", 101, score: 90, science: 10)
 
     # Score flips to Greece; science leader (Rome) unchanged.
-    snapshot("Rome", 2, score: 100, science: 20)
-    snapshot("Greece", 2, score: 110, science: 15)
+    snapshot("Rome", 102, score: 100, science: 20)
+    snapshot("Greece", 102, score: 110, science: 15)
 
     # Score leader unchanged (Greece still ahead); science flips to Greece.
-    snapshot("Rome", 3, score: 100, science: 12)
-    snapshot("Greece", 3, score: 110, science: 25)
+    snapshot("Rome", 103, score: 100, science: 12)
+    snapshot("Greece", 103, score: 110, science: 25)
 
     moments = detector.leader_changes
 
     assert_equal(
       [
-        { type: :leader_change, metric: "score", turn: 2, from: "Rome", to: "Greece" },
-        { type: :leader_change, metric: "science", turn: 3, from: "Rome", to: "Greece" }
+        { type: :leader_change, metric: "score", turn: 102, from: "Rome", to: "Greece" },
+        { type: :leader_change, metric: "science", turn: 103, from: "Rome", to: "Greece" }
       ],
+      moments
+    )
+  end
+
+  test "leader_changes excludes crossovers within the first 100 turns for non-quick speeds" do
+    @game.update!(game_speed: "GAMESPEED_STANDARD")
+    snapshot("Rome", 1, score: 100)
+    snapshot("Greece", 1, score: 90)
+    snapshot("Rome", 100, score: 100)
+    snapshot("Greece", 100, score: 110)
+    snapshot("Rome", 101, score: 120)
+    snapshot("Greece", 101, score: 110)
+
+    moments = detector.leader_changes
+
+    assert_equal(
+      [ { type: :leader_change, metric: "score", turn: 101, from: "Greece", to: "Rome" } ],
+      moments
+    )
+  end
+
+  test "leader_changes excludes crossovers within the first 67 turns for GAMESPEED_QUICK" do
+    @game.update!(game_speed: "GAMESPEED_QUICK")
+    snapshot("Rome", 1, score: 100)
+    snapshot("Greece", 1, score: 90)
+    snapshot("Rome", 67, score: 100)
+    snapshot("Greece", 67, score: 110)
+    snapshot("Rome", 68, score: 120)
+    snapshot("Greece", 68, score: 110)
+
+    moments = detector.leader_changes
+
+    assert_equal(
+      [ { type: :leader_change, metric: "score", turn: 68, from: "Greece", to: "Rome" } ],
       moments
     )
   end
