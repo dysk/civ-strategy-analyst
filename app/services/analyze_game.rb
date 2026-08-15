@@ -6,7 +6,8 @@ class AnalyzeGame
   attr_reader :lekmod_version
 
   def initialize(game, winner_civ: nil, victory_type: nil, model: nil, lekmod_version: nil,
-                 llm_client: RubyLlmClient.new, reports_dir: Rails.root.join("reports"))
+                 llm_client: RubyLlmClient.new, reports_dir: Rails.root.join("reports"),
+                 lekmod_root: Rails.root.join("db/lekmod"))
     @game = game
     @winner_civ = winner_civ
     @victory_type = victory_type
@@ -14,10 +15,14 @@ class AnalyzeGame
     @lekmod_version = lekmod_version || game.lekmod_version
     @llm_client = llm_client
     @reports_dir = reports_dir
+    @lekmod_root = lekmod_root
   end
 
   def call
-    digest = DigestBuilder.new(@game, winner_civ: @winner_civ, victory_type: @victory_type).call
+    digest = DigestBuilder.new(
+      @game, winner_civ: @winner_civ, victory_type: @victory_type,
+      lekmod_version: @lekmod_version, lekmod_root: @lekmod_root
+    ).call
 
     response = @llm_client.call(model: @model, system_prompt: prompt, input: digest.to_json)
 
