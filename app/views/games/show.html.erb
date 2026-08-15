@@ -87,7 +87,8 @@
   <ul>
     <% @key_moments.military_might_swings.each do |swing| %>
       <% verb = swing[:type] == :military_might_surge ? "jumped" : "dropped" %>
-      <li>Turn <%= swing[:turn] %>: <%= swing[:civ] %> military might <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
+      <% turn_label = swing[:turn] == swing[:turn_end] ? "Turn #{swing[:turn]}" : "Turns #{swing[:turn]}&ndash;#{swing[:turn_end]}".html_safe %>
+      <li><%= turn_label %>: <%= swing[:civ] %> military might <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
     <% end %>
   </ul>
 <% end %>

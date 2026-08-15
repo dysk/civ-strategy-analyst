@@ -46,15 +46,17 @@ class KeyMomentDetector
     metric_series = MetricSeries.new(@game)
 
     civs_with_snapshots.flat_map do |civ|
-      metric_series.values("military_might", civ).each_cons(2).filter_map do |(_prev_turn, prev), (turn, value)|
+      candidates = metric_series.values("military_might", civ).each_cons(2).filter_map do |(prev_turn, prev), (turn, value)|
         next if prev.to_i.zero?
 
         pct_change = (value - prev).to_f / prev
         next if pct_change.abs < MILITARY_MIGHT_SWING_THRESHOLD
 
         type = pct_change.negative? ? :military_might_collapse : :military_might_surge
-        { type: type, civ: civ, turn: turn, from: prev, to: value, pct_change: pct_change.round(3) }
+        { type: type, civ: civ, from_turn: prev_turn, to_turn: turn, from: prev, to: value }
       end
+
+      merge_swing_runs(candidates)
     end.select { |moment| moment[:turn] > early_game_grace_period }.sort_by { |moment| moment[:turn] }
   end
 
@@ -180,6 +182,26 @@ class KeyMomentDetector
 
   def team_pair(a, b)
     [ a, b ].sort
+  end
+
+  def merge_swing_runs(candidates)
+    runs = []
+
+    candidates.each do |candidate|
+      last = runs.last
+
+      if last && last[:type] == candidate[:type] && last[:to_turn] == candidate[:from_turn]
+        last[:to_turn] = candidate[:to_turn]
+        last[:to] = candidate[:to]
+      else
+        runs << candidate.dup
+      end
+    end
+
+    runs.map do |run|
+      { type: run[:type], civ: run[:civ], turn: run[:from_turn], turn_end: run[:to_turn],
+        from: run[:from], to: run[:to], pct_change: ((run[:to] - run[:from]).to_f / run[:from]).round(3) }
+    end
   end
 
   def early_game_grace_period

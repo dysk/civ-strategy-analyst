@@ -153,7 +153,7 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     snapshot("Rome", 101, military_might: 1000)
     snapshot("Rome", 102, military_might: 900)  # -10%, below threshold
     snapshot("Rome", 103, military_might: 700)  # -22.2%, collapse
-    snapshot("Rome", 104, military_might: 850)  # +21.4%, surge
+    snapshot("Rome", 104, military_might: 850)  # +21.4%, surge (different direction, doesn't merge with the collapse)
     snapshot("Rome", 105, military_might: 900)  # +5.9%, below threshold
 
     snapshot("Greece", 101, military_might: 500)
@@ -163,39 +163,53 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
 
     assert_equal(
       [
-        { type: :military_might_collapse, civ: "Rome", turn: 103, from: 900, to: 700, pct_change: -0.222 },
-        { type: :military_might_surge, civ: "Rome", turn: 104, from: 700, to: 850, pct_change: 0.214 }
+        { type: :military_might_collapse, civ: "Rome", turn: 102, turn_end: 103, from: 900, to: 700, pct_change: -0.222 },
+        { type: :military_might_surge, civ: "Rome", turn: 103, turn_end: 104, from: 700, to: 850, pct_change: 0.214 }
       ],
+      moments
+    )
+  end
+
+  test "military_might_swings merges consecutive same-direction swings into a single run" do
+    snapshot("Rome", 101, military_might: 300)
+    snapshot("Rome", 102, military_might: 360)  # +20%, surge
+    snapshot("Rome", 103, military_might: 450)  # +25%, surge, chains onto the previous turn
+    snapshot("Rome", 104, military_might: 460)  # +2.2%, below threshold, ends the run
+
+    moments = detector.military_might_swings
+
+    assert_equal(
+      [ { type: :military_might_surge, civ: "Rome", turn: 101, turn_end: 103, from: 300, to: 450, pct_change: 0.5 } ],
       moments
     )
   end
 
   test "military_might_swings excludes swings within the first 100 turns for non-quick speeds" do
     @game.update!(game_speed: "GAMESPEED_STANDARD")
-    snapshot("Rome", 1, military_might: 3)
-    snapshot("Rome", 2, military_might: 2)  # barbarians kill a unit early on, -33%
-    snapshot("Rome", 100, military_might: 500)
-    snapshot("Rome", 101, military_might: 300)  # -40%, past the grace period
+    snapshot("Rome", 1, military_might: 300)
+    snapshot("Rome", 2, military_might: 200)   # -33%, within the grace period
+    snapshot("Rome", 101, military_might: 210) # +5% vs turn 2, below threshold
+    snapshot("Rome", 102, military_might: 126) # -40%, past the grace period
 
     moments = detector.military_might_swings
 
     assert_equal(
-      [ { type: :military_might_collapse, civ: "Rome", turn: 101, from: 500, to: 300, pct_change: -0.4 } ],
+      [ { type: :military_might_collapse, civ: "Rome", turn: 101, turn_end: 102, from: 210, to: 126, pct_change: -0.4 } ],
       moments
     )
   end
 
   test "military_might_swings excludes swings within the first 67 turns for GAMESPEED_QUICK" do
     @game.update!(game_speed: "GAMESPEED_QUICK")
-    snapshot("Rome", 1, military_might: 3)
-    snapshot("Rome", 2, military_might: 2)  # barbarians kill a unit early on, -33%
-    snapshot("Rome", 67, military_might: 500)
-    snapshot("Rome", 68, military_might: 300)  # -40%, past the grace period
+    snapshot("Rome", 1, military_might: 300)
+    snapshot("Rome", 2, military_might: 200)  # -33%, within the grace period
+    snapshot("Rome", 68, military_might: 210) # +5% vs turn 2, below threshold
+    snapshot("Rome", 69, military_might: 126) # -40%, past the grace period
 
     moments = detector.military_might_swings
 
     assert_equal(
-      [ { type: :military_might_collapse, civ: "Rome", turn: 68, from: 500, to: 300, pct_change: -0.4 } ],
+      [ { type: :military_might_collapse, civ: "Rome", turn: 68, turn_end: 69, from: 210, to: 126, pct_change: -0.4 } ],
       moments
     )
   end
