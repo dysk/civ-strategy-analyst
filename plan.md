@@ -147,3 +147,41 @@ uruchomienia.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   więc dodanie nowej metryki do analizy nie wymaga zmian w kodzie — tylko wywołania
   z inną nazwą stringa.
+
+## Plan: wstrzykiwanie danych LEKMOD do digestu (zaplanowane, nie zaczęte)
+
+Kontekst: modele LLM znają reguły podstawowej gry (BNW), a nie LEKMOD — nie znają
+cywilizacji dodanych przez mod (Chile, Vietnam, Bolivia...) ani zmienionych efektów.
+Dane referencyjne per wersja moda leżą już znormalizowane w `db/lekmod/<wersja>/`
+(patrz `db/lekmod/README.md`; procedura dodania nowej wersji: `script/normalize_lekmod`).
+Kluczowa pułapka: logi gier identyfikują polityki/tenety/wierzenia wewnętrznymi
+vanillowymi ID, które LEKMOD zachowuje mimo zmiany wyświetlanej nazwy
+(`POLICY_MERCHANT_NAVY` → "Colonialism", `BELIEF_WALLS` → "Goddess of Protection") —
+pliki referencyjne mają te ID inline i matchować należy po ID, nie po nazwie.
+
+Iteracje (każda: czerwone testy → review → implementacja → commit):
+
+1. **`lekmod_version` na `games`** — migracja (string, nullable — stare importy bez
+   wersji), flaga `bin/civ import --lekmod-version 34.15`, przechowanie w `ImportGame`;
+   override `bin/civ analyze --lekmod-version` dla już zaimportowanych gier.
+   `session_started` dziś nie niesie wersji moda ("Lekmap v5.2" w `map_script` to
+   wersja mapy, nie moda) — patrz punkt "poza tym repo" niżej.
+2. **`LekmodReference`** — czysta klasa czytająca `db/lekmod/<wersja>/`:
+   - rozwiązywanie wersji: dokładna → najbliższa starsza (z notką o rozbieżności) →
+     brak (z notką, że szczegóły rulesetu niedostępne);
+   - ekstrakcja per encja: sekcja `## Civ (Leader)` z `civilizations.md` po nazwie civ
+     z rosteru; wpisy z `policies.md`/`ideologies.md`/`religion.md` po ID
+     (`POLICY_*`/`BELIEF_*`) występujących w timeline'ach gry; `general.md` w całości
+     lub sekcjami (decyzja przy implementacji — patrz uwaga o rozmiarze digestu wyżej).
+3. **Rozszerzenie `DigestBuilder`** — nowy klucz `lekmod` w digeście:
+   `{version, resolution_note, civilizations, beliefs, policies, general_rules}`.
+   Wstrzykiwać tylko encje obecne w tej grze (roster/timeline), nie całe pliki.
+4. **Prompt v7** — notka: ruleset to LEKMOD; tam gdzie digest podaje opisy
+   uników/wierzeń/polityk, opierać się na nich, a nie na wiedzy o grze bazowej;
+   przy braku danych referencyjnych zaznaczać niepewność zamiast uzupełniać vanillą.
+5. **Weryfikacja end-to-end** — `bin/civ analyze` na chile-vs-vietnam z v7+digest
+   i porównanie A/B z raportami v5/v6 w `reports/` (ta sama gra, kolejne wersje promptu).
+
+Poza tym repo: patch do `civ-narrative-logger`, żeby `session_started` emitował wersję
+aktywnego moda (Lua `Modding.GetActivatedMods()` daje ID + wersję) — wtedy flaga
+z iteracji 1 staje się fallbackiem dla starych logów.
