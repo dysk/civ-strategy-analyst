@@ -148,7 +148,13 @@ uruchomienia.
   więc dodanie nowej metryki do analizy nie wymaga zmian w kodzie — tylko wywołania
   z inną nazwą stringa.
 
-## Plan: wstrzykiwanie danych LEKMOD do digestu (zaplanowane, nie zaczęte)
+## Plan: wstrzykiwanie danych LEKMOD do digestu (iteracje 1–4 zrobione, 5 czeka)
+
+Status: iteracje 1–4 zaimplementowane (commity `86c5b05`…`c04c3ae`: kolumny
+`lekmod_version`, `LekmodReference`, klucz `lekmod` w digeście, prompt v7).
+Iteracja 5 (A/B) wstrzymana do czasu domknięcia planu `ids.yml` poniżej —
+review promptu v7 na realnym digeście wykazał braki w mapowaniu ID, które
+zafałszowałyby porównanie.
 
 Kontekst: modele LLM znają reguły podstawowej gry (BNW), a nie LEKMOD — nie znają
 cywilizacji dodanych przez mod (Chile, Vietnam, Bolivia...) ani zmienionych efektów.
@@ -185,3 +191,52 @@ Iteracje (każda: czerwone testy → review → implementacja → commit):
 Poza tym repo: patch do `civ-narrative-logger`, żeby `session_started` emitował wersję
 aktywnego moda (Lua `Modding.GetActivatedMods()` daje ID + wersję) — wtedy flaga
 z iteracji 1 staje się fallbackiem dla starych logów.
+
+## Plan: `ids.yml` — autorytatywne mapowanie ID→nazwa ze źródeł moda (zaplanowane)
+
+Kontekst (z review promptu v7 na realnym digeście chile-vs-vietnam): 8 z 17 ID
+wierzeń tej gry nie znajduje wpisu w `lekmod.beliefs`, bo LEKMOD nadaje własnym
+wierzeniom ID z przekręconą pisownią (`BELIEF_ZAKATT`→"Zakat",
+`BELIEF_PEACE_GARDENZ`→"Peace Gardens", `BELIEF_DISCIPLEZ`→"Disciples"...) i
+derywacja nazwy z ID w `LekmodReference` nie trafia. Zamiast fuzzy matchingu
+(odrzucony: przy krótkich nazwach cichy błędny match podałby modelowi ZŁE reguły
+jako autorytet — gorzej niż brak wpisu) używamy źródeł moda jako ground truth:
+repo `/Users/dysk/projects/Lekmod` zawiera pełny łańcuch
+`<Type>BELIEF_ZAKATT` + `<ShortDescription>TXT_KEY_...` (tabele Beliefs/Policies)
+→ `<Replace Tag="TXT_KEY_..."><Text>Zakat` (tabele językowe). Zweryfikowane też
+dla vanillowego rename'u `TXT_KEY_POLICY_MERCHANT_NAVY`→"Colonialism", więc jeden
+mechanizm pokrywa i nowe ID moda, i rename'y. Uwaga: definicje są porozrzucane po
+plikach o mylących nazwach (wierzenia m.in. w `CIV5Units.xml`, teksty w
+`CIV5Units_Mongol.xml`) — parsować trzeba wszystkie XML-e, nie "właściwe" pliki.
+
+Iteracje (każda: czerwone testy → review → implementacja → commit):
+
+1. **`script/extract_lekmod_ids`** — argument: ścieżka do checkoutu moda; parsuje
+   wszystkie XML-e, buduje `Type→TXT_KEY` (Beliefs: `ShortDescription`, Policies:
+   `Description`) i `TXT_KEY→Text` (obie formy: `<Row Tag=...>` i `<Replace
+   Tag=...>` — Replace wygrywa, bo nadpisuje wcześniejsze teksty), składa i
+   zapisuje `db/lekmod/<wersja>/ids.yml` (`POLICY_*/BELIEF_*` → nazwa
+   wyświetlana). Czerwone testy na minimalnych fixture'ach XML z oboma formami.
+   `ids.yml` commitowany do repo — generacja to krok dev-time przy dodawaniu
+   wersji, runtime nie dotyka repo moda.
+2. **Warstwa lookupu w `LekmodReference`** — priorytet: annotacja inline w md
+   (ręczny override) → `ids.yml` → dotychczasowa derywacja z ID. Do wyniku
+   dochodzi `unmatched_ids` — ID z gry bez znalezionego wpisu — żeby braki były
+   jawnym sygnałem w digeście i wychodziły przy weryfikacji, nie w raporcie.
+3. **Prompt v8** — trzy uzupełnienia z review v7: (a) ID wymienione w
+   `lekmod.unmatched_ids` (lub bez wpisu w `lekmod.*`) = efekt nieznany, zaznacz
+   niepewność zamiast zgadywać z brzmienia ID lub wiedzy vanilla; (b) w
+   Per-Player Strategic Verdict rozważ, jak uniki cywilizacji z
+   `lekmod.civilizations` wspierały/kłóciły się z obraną strategią, gdy timeline
+   to potwierdza; (c) "(unchanged)" w danych = efekt jak w BNW — tam wiedza o
+   grze bazowej jest właściwa.
+4. **Procedura w `db/lekmod/README.md`** — nowy krok przy dodawaniu wersji:
+   checkout tagu/commita moda odpowiadającego wersji → `script/extract_lekmod_ids`
+   → commit `ids.yml` obok plików md.
+5. **Dopiero potem iteracja 5 z planu wyżej** (A/B na chile-vs-vietnam) — z
+   kompletnym mapowaniem, promptem v8 i polem `unmatched_ids` (docelowo pustym
+   dla tej gry).
+
+Odnotowane przy review v7, poza zakresem tego planu: `general_rules` idzie w
+całości (digest 58→95 kB) — pierwszy kandydat do cięcia, jeśli A/B pokaże
+problem jakości/kosztu.
