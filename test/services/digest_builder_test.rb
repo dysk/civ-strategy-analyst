@@ -1,6 +1,8 @@
 require "test_helper"
 
 class DigestBuilderTest < ActiveSupport::TestCase
+  LEKMOD_FIXTURES_ROOT = Rails.root.join("test/fixtures/lekmod")
+
   setup do
     @game = Game.create!(
       name: "Digest Test Game", map_script: "TestMap", map_size: "SMALL",
@@ -140,6 +142,66 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :policy_branch_completions
     assert_includes digest[:key_moments].keys, :nuclear_detonations
     assert_includes digest[:key_moments].keys, :city_state_ally_takeovers
+  end
+
+  test "includes lekmod reference data resolved from the given version, for roster civs only" do
+    @game.players.create!(civ: "Chile", leader_name: "Test Leader", human: true, handicap: "PRINCE")
+
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_equal "1.5", digest[:lekmod][:version]
+    assert_nil digest[:lekmod][:resolution_note]
+    assert_equal [ "Chile" ], digest[:lekmod][:civilizations].keys
+    assert_match(/v1\.5 text for Chile/, digest[:lekmod][:civilizations]["Chile"])
+  end
+
+  test "includes the LEKMOD entry for every policy adopted by any civ" do
+    event("Rome", "policy_adopted", 5, policy: "POLICY_ARISTOCRACY")
+
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_match(/\+15% Production towards Wonders/, digest[:lekmod][:policies]["POLICY_ARISTOCRACY"])
+  end
+
+  test "includes the LEKMOD entry for an adopted ideology tenet, matched by derived name" do
+    event("Rome", "policy_adopted", 5, policy: "POLICY_ECONOMIC_UNION")
+
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_match(/\+5% gold for each Trade Route/, digest[:lekmod][:policies]["POLICY_ECONOMIC_UNION"])
+  end
+
+  test "includes the LEKMOD entry for a belief founding a pantheon" do
+    event("Rome", "pantheon_founded", 5, belief: "BELIEF_GOD_SEA", city: "Roma")
+
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_match(/\+1 Faith and Culture from Fish/, digest[:lekmod][:beliefs]["BELIEF_GOD_SEA"])
+  end
+
+  test "includes the LEKMOD entries for beliefs chosen founding or enhancing a religion" do
+    event("Rome", "religion_founded", 20, religion: "RELIGION_X", holy_city: "Roma", beliefs: [ "BELIEF_GOD_SEA" ])
+
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_match(/\+1 Faith and Culture from Fish/, digest[:lekmod][:beliefs]["BELIEF_GOD_SEA"])
+  end
+
+  test "includes the full LEKMOD general rules text" do
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_match(/## World Wonders/, digest[:lekmod][:general_rules])
+  end
+
+  test "falls back to an empty lekmod block, with a note, when the game has no lekmod_version" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_nil digest[:lekmod][:version]
+    assert digest[:lekmod][:resolution_note].present?
+    assert_equal({}, digest[:lekmod][:civilizations])
+    assert_equal({}, digest[:lekmod][:policies])
+    assert_equal({}, digest[:lekmod][:beliefs])
+    assert_nil digest[:lekmod][:general_rules]
   end
 
   private
