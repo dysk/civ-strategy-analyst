@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+	<Beliefs>
+		<Row>
+			<ID>1</ID>
+			<Type>BELIEF_TEST_ONE</Type>
+			<Description>TXT_KEY_BELIEF_TEST_ONE</Description>
+			<ShortDescription>TXT_KEY_BELIEF_TEST_ONE_SHORT</ShortDescription>
+		</Row>
+		<Row>
+			<ID>2</ID>
+			<Type>BELIEF_TEST_UNRESOLVED</Type>
+			<Description>TXT_KEY_BELIEF_TEST_UNRESOLVED</Description>
+			<ShortDescription>TXT_KEY_BELIEF_TEST_UNRESOLVED_SHORT</ShortDescription>
+		</Row>
+	</Beliefs>
+	<Policies>
+		<Delete />
+		<Row>
+			<ID>1</ID>
+			<Type>POLICY_TEST_ONE</Type>
+			<Description>TXT_KEY_POLICY_TEST_ONE</Description>
+		</Row>
+	</Policies>
+</GameData>

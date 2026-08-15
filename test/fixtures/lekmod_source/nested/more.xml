@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+	<Beliefs>
+		<Row>
+			<ID>3</ID>
+			<Type>BELIEF_TEST_NESTED</Type>
+			<Description>TXT_KEY_BELIEF_TEST_NESTED</Description>
+			<ShortDescription>TXT_KEY_BELIEF_TEST_NESTED_SHORT</ShortDescription>
+		</Row>
+	</Beliefs>
+	<Language_en_US>
+		<Row Tag="TXT_KEY_BELIEF_TEST_NESTED_SHORT">
+			<Text>Nested Belief</Text>
+		</Row>
+	</Language_en_US>
+</GameData>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+	<Language_en_US>
+		<Replace Tag="TXT_KEY_BELIEF_TEST_ONE_SHORT">
+			<Text>New Name</Text>
+		</Replace>
+	</Language_en_US>
+	<Language_de_DE>
+		<Row Tag="TXT_KEY_BELIEF_TEST_ONE_SHORT">
+			<Text>Deutscher Name</Text>
+		</Row>
+		<Row Tag="TXT_KEY_POLICY_TEST_ONE">
+			<Text>Testrichtlinie</Text>
+		</Row>
+	</Language_de_DE>
+</GameData>

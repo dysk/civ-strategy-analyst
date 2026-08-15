@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+	<Language_en_US>
+		<Row Tag="TXT_KEY_BELIEF_TEST_ONE_SHORT">
+			<Text>Old Name</Text>
+		</Row>
+		<Row Tag="TXT_KEY_POLICY_TEST_ONE">
+			<Text>
+				Test Policy
+			</Text>
+		</Row>
+	</Language_en_US>
+</GameData>
