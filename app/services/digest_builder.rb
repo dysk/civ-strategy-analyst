@@ -12,10 +12,13 @@ class DigestBuilder
   TECH_COST_PER_CITY = 0.05
   POLICY_COST_PER_CITY = 0.10
 
-  def initialize(game, winner_civ: nil, victory_type: nil)
+  def initialize(game, winner_civ: nil, victory_type: nil, lekmod_version: nil,
+                 lekmod_root: Rails.root.join("db/lekmod"))
     @game = game
     @winner_civ = winner_civ
     @victory_type = victory_type
+    @lekmod_version = lekmod_version
+    @lekmod_root = lekmod_root
   end
 
   def call
@@ -26,7 +29,8 @@ class DigestBuilder
       standings: standings,
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
-      key_moments: key_moments
+      key_moments: key_moments,
+      lekmod: lekmod
     }
   end
 
@@ -140,5 +144,24 @@ class DigestBuilder
 
   def civs
     @game.players.order(:id).pluck(:civ)
+  end
+
+  def lekmod
+    LekmodReference.new(
+      @lekmod_version, civs: civs, policy_ids: policy_ids, belief_ids: belief_ids, root: @lekmod_root
+    ).call
+  end
+
+  def policy_ids
+    @game.game_events.where(event_type: "policy_adopted").filter_map { |e| e.payload["policy"] }.uniq
+  end
+
+  def belief_ids
+    singular = @game.game_events.where(event_type: %w[pantheon_founded reformation_added])
+      .filter_map { |e| e.payload["belief"] }
+    plural = @game.game_events.where(event_type: %w[religion_founded religion_enhanced])
+      .flat_map { |e| Array(e.payload["beliefs"]) }
+
+    (singular + plural).uniq
   end
 end
