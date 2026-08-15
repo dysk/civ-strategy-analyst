@@ -92,6 +92,13 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_equal [], result[:unmatched_ids]
   end
 
+  test "resolves a belief whose bullet name carries a parenthetical qualifier" do
+    result = reference(version: "1.5", belief_ids: [ "BELIEF_SYNAGOGUES" ]).call
+
+    assert_match(/costs 130 Faith/, result[:beliefs]["BELIEF_SYNAGOGUES"])
+    assert_equal [], result[:unmatched_ids]
+  end
+
   test "reports an ID as unmatched when ids.yml has no bullet matching its display name" do
     result = reference(version: "1.5", belief_ids: [ "BELIEF_NOMATCH" ]).call
 

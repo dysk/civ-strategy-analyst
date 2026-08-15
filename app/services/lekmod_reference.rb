@@ -4,6 +4,7 @@ class LekmodReference
   VERSION_DIR_PATTERN = /\A\d+(\.\d+)*\z/
   NAMED_ID_BULLET = /^- \*\*(?<name>[^*]+?)\*\*\s*\(`(?<id>[A-Z_]+)`\):/
   BOLD_NAME_BULLET = /^- \*\*(?<name>[^*]+?):\*\*/
+  NAME_QUALIFIER = /\s*\([^)]*\)\s*\z/
 
   def initialize(version, civs: [], policy_ids: [], belief_ids: [], root: Rails.root.join("db/lekmod"))
     @requested_version = version
@@ -100,13 +101,22 @@ class LekmodReference
     lines(version, filenames).each do |line|
       if (m = line.match(NAMED_ID_BULLET))
         id_index[m[:id]] = line.strip
-        name_index[normalize(m[:name])] = line.strip
+        index_name(name_index, m[:name], line.strip)
       elsif (m = line.match(BOLD_NAME_BULLET))
-        name_index[normalize(m[:name])] = line.strip
+        index_name(name_index, m[:name], line.strip)
       end
     end
 
     [ id_index, name_index ]
+  end
+
+  # A bullet named "Synagogues (Building)" is also reachable as
+  # "Synagogues", the display name ids.yml knows it by - but the bare
+  # form never displaces a bullet that carries that name exactly.
+  def index_name(name_index, name, entry)
+    name_index[normalize(name)] = entry
+    bare_name = name.sub(NAME_QUALIFIER, "")
+    name_index[normalize(bare_name)] ||= entry unless bare_name == name
   end
 
   def lines(version, filenames)
