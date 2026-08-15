@@ -58,6 +58,14 @@ Streams the file line by line, builds the game + player roster from the first
 pitboss restart (see `plan.md` for the exact dedup rule). Prints the imported/
 deduped event counts and the roster.
 
+Don't have a `civ-narrative-logger` log of your own yet? `examples/` has a
+real (in-progress, single human player) game log to import and poke around
+with:
+
+```sh
+bin/civ import examples/chile-vs-vietnam.jsonl
+```
+
 **Analyze a game:**
 
 ```sh
@@ -66,8 +74,9 @@ bin/civ analyze GAME_ID [--winner Chile] [--victory-type domination] [--model gp
 
 Builds a compact JSON digest of the game (roster, settings, per-civ metric
 checkpoints, timelines, detected key moments), sends it to the configured LLM
-with the prompt in `app/prompts/analyze_game_v3.md`, and saves the result both
-as an `Analysis` record and as `reports/<game>-<timestamp>.md`.
+with the current versioned prompt in `app/prompts/` (see `AnalyzeGame::PROMPT_PATH`),
+and saves the result both as an `Analysis` record and as
+`reports/<game>-<timestamp>.md`.
 
 `--winner`/`--victory-type` are optional: without them, the outcome is
 inferred from the last score snapshot and flagged as "in progress" if the
@@ -98,6 +107,8 @@ its standings, all detected key moments, and the latest analysis report
 - `app/projections/` — pure, deterministic Ruby classes that read events from
   the DB: `MetricSeries`, `PlayerTimeline`, `KeyMomentDetector`,
   `OutcomeResolver`
-- `app/prompts/` — versioned LLM prompt templates (`analyze_game_v3.md`, ...)
+- `app/prompts/` — versioned LLM prompt templates (`analyze_game_v1.md`, ...)
+- `examples/` — a sample `civ-narrative-logger` JSONL log (in-progress, one
+  human player) to import if you don't have a game of your own yet
 - `app/controllers` / `app/views/games/` — the UI skeleton
 - `bin/civ` — the CLI entry point
