@@ -39,8 +39,26 @@ class KeyMomentDetector
       .sort_by(&:turn)
       .each_with_index.map do |e, index|
         { type: :religion_founded, turn: e.turn, civ: e.civ, religion: e.payload["religion"],
-          holy_city: e.payload["holy_city"], order: index + 1 }
+          holy_city: e.payload["holy_city"], beliefs: e.payload["beliefs"], order: index + 1 }
       end
+  end
+
+  def pantheon_foundings
+    of_type("pantheon_founded")
+      .sort_by(&:turn)
+      .map { |e| { type: :pantheon_founded, turn: e.turn, civ: e.civ, city: e.payload["city"], belief: e.payload["belief"] } }
+  end
+
+  def religion_enhancements
+    of_type("religion_enhanced")
+      .sort_by(&:turn)
+      .map { |e| { type: :religion_enhanced, turn: e.turn, civ: e.civ, religion: e.payload["religion"], beliefs: e.payload["beliefs"] } }
+  end
+
+  def reformations
+    of_type("reformation_added")
+      .sort_by(&:turn)
+      .map { |e| { type: :reformation_added, turn: e.turn, civ: e.civ, religion: e.payload["religion"], belief: e.payload["belief"] } }
   end
 
   def military_might_swings

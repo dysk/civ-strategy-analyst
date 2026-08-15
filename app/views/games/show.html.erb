@@ -36,7 +36,8 @@
 
 <% if [
      @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
-     @key_moments.religion_foundings, @key_moments.military_might_swings,
+     @key_moments.religion_foundings, @key_moments.pantheon_foundings,
+     @key_moments.religion_enhancements, @key_moments.reformations, @key_moments.military_might_swings,
      @key_moments.happiness_swings, @key_moments.unhappiness_periods,
      @key_moments.snowballs("score"), @key_moments.snowballs("science"),
      @key_moments.snowballs("population"), @key_moments.snowballs("culture"), @key_moments.nuclear_detonations,
@@ -75,11 +76,38 @@
   </ul>
 <% end %>
 
+<% if @key_moments.pantheon_foundings.any? %>
+  <h3>Pantheon Foundings</h3>
+  <ul>
+    <% @key_moments.pantheon_foundings.each do |founding| %>
+      <li>Turn <%= founding[:turn] %>: <%= founding[:civ] %> founded a pantheon with <%= founding[:belief] %></li>
+    <% end %>
+  </ul>
+<% end %>
+
 <% if @key_moments.religion_foundings.any? %>
   <h3>Religion Foundings</h3>
   <ul>
     <% @key_moments.religion_foundings.each do |founding| %>
-      <li>Turn <%= founding[:turn] %>: <%= founding[:civ] %> founded <%= founding[:religion] %> (##<%= founding[:order] %>)</li>
+      <li>Turn <%= founding[:turn] %>: <%= founding[:civ] %> founded <%= founding[:religion] %> (##<%= founding[:order] %>) with <%= founding[:beliefs].to_a.join(", ") %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.religion_enhancements.any? %>
+  <h3>Religion Enhancements</h3>
+  <ul>
+    <% @key_moments.religion_enhancements.each do |enhancement| %>
+      <li>Turn <%= enhancement[:turn] %>: <%= enhancement[:civ] %> enhanced <%= enhancement[:religion] %> with <%= enhancement[:beliefs].to_a.join(", ") %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.reformations.any? %>
+  <h3>Reformations</h3>
+  <ul>
+    <% @key_moments.reformations.each do |reformation| %>
+      <li>Turn <%= reformation[:turn] %>: <%= reformation[:civ] %> added the reformation belief <%= reformation[:belief] %> to <%= reformation[:religion] %></li>
     <% end %>
   </ul>
 <% end %>

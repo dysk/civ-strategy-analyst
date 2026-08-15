@@ -134,16 +134,63 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
-  test "religion_foundings reports each founding in order, tagged with how early it was" do
+  test "religion_foundings reports each founding in order, tagged with how early it was and which beliefs were chosen" do
     event("Greece", "religion_founded", 50, holy_city: "Athens", religion: "RELIGION_POLYTHEISM", beliefs: %w[BELIEF_X])
-    event("Rome", "religion_founded", 35, holy_city: "Roma", religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y])
+    event("Rome", "religion_founded", 35, holy_city: "Roma", religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y BELIEF_Z])
 
     moments = detector.religion_foundings
 
     assert_equal(
       [
-        { type: :religion_founded, turn: 35, civ: "Rome", religion: "RELIGION_JUDAISM", holy_city: "Roma", order: 1 },
-        { type: :religion_founded, turn: 50, civ: "Greece", religion: "RELIGION_POLYTHEISM", holy_city: "Athens", order: 2 }
+        { type: :religion_founded, turn: 35, civ: "Rome", religion: "RELIGION_JUDAISM", holy_city: "Roma",
+          beliefs: %w[BELIEF_Y BELIEF_Z], order: 1 },
+        { type: :religion_founded, turn: 50, civ: "Greece", religion: "RELIGION_POLYTHEISM", holy_city: "Athens",
+          beliefs: %w[BELIEF_X], order: 2 }
+      ],
+      moments
+    )
+  end
+
+  test "pantheon_foundings reports each pantheon with the belief chosen" do
+    event("Greece", "pantheon_founded", 8, city: "Athens", belief: "BELIEF_GODDESS_OF_HARVEST")
+    event("Rome", "pantheon_founded", 5, city: "Roma", belief: "BELIEF_GOD_OF_THE_SEA")
+
+    moments = detector.pantheon_foundings
+
+    assert_equal(
+      [
+        { type: :pantheon_founded, turn: 5, civ: "Rome", city: "Roma", belief: "BELIEF_GOD_OF_THE_SEA" },
+        { type: :pantheon_founded, turn: 8, civ: "Greece", city: "Athens", belief: "BELIEF_GODDESS_OF_HARVEST" }
+      ],
+      moments
+    )
+  end
+
+  test "religion_enhancements reports the beliefs chosen when a religion is enhanced" do
+    event("Rome", "religion_enhanced", 90, religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y])
+    event("Greece", "religion_enhanced", 85, religion: "RELIGION_POLYTHEISM", beliefs: %w[BELIEF_X BELIEF_W])
+
+    moments = detector.religion_enhancements
+
+    assert_equal(
+      [
+        { type: :religion_enhanced, turn: 85, civ: "Greece", religion: "RELIGION_POLYTHEISM", beliefs: %w[BELIEF_X BELIEF_W] },
+        { type: :religion_enhanced, turn: 90, civ: "Rome", religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y] }
+      ],
+      moments
+    )
+  end
+
+  test "reformations reports the belief chosen for a reformation" do
+    event("Rome", "reformation_added", 130, religion: "RELIGION_JUDAISM", belief: "BELIEF_APOSTOLIC_PALACE")
+    event("Greece", "reformation_added", 120, religion: "RELIGION_POLYTHEISM", belief: "BELIEF_JESUIT_EDUCATION")
+
+    moments = detector.reformations
+
+    assert_equal(
+      [
+        { type: :reformation_added, turn: 120, civ: "Greece", religion: "RELIGION_POLYTHEISM", belief: "BELIEF_JESUIT_EDUCATION" },
+        { type: :reformation_added, turn: 130, civ: "Rome", religion: "RELIGION_JUDAISM", belief: "BELIEF_APOSTOLIC_PALACE" }
       ],
       moments
     )
