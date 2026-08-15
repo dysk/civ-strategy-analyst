@@ -62,6 +62,13 @@ class KeyMomentDetector
       .map { |e| { type: :reformation_added, turn: e.turn, civ: e.civ, religion: e.payload["religion"], belief: e.payload["belief"] } }
   end
 
+  def ideology_unlocks
+    of_type("policy_branch_unlocked")
+      .select { |e| IDEOLOGY_BRANCHES.include?(e.payload["branch"]) }
+      .sort_by(&:turn)
+      .map { |e| { type: :ideology_unlocked, turn: e.turn, civ: e.civ, ideology: e.payload["branch"] } }
+  end
+
   def ideology_adoptions
     of_type("policy_branch_adopted")
       .select { |e| IDEOLOGY_BRANCHES.include?(e.payload["branch"]) }

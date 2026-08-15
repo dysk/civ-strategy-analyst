@@ -196,6 +196,18 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "ideology_unlocks reports when a civ unlocks an ideology branch, ignoring non-ideology branches" do
+    event("Chile", "policy_branch_unlocked", 141, branch: "POLICY_BRANCH_FREEDOM")
+    event("Egypt", "policy_branch_unlocked", 111, branch: "POLICY_BRANCH_EXPLORATION")
+
+    moments = detector.ideology_unlocks
+
+    assert_equal(
+      [ { type: :ideology_unlocked, turn: 141, civ: "Chile", ideology: "POLICY_BRANCH_FREEDOM" } ],
+      moments
+    )
+  end
+
   test "ideology_adoptions reports which ideology each civ adopted, ignoring non-ideology branches" do
     event("Rome", "policy_branch_adopted", 200, branch: "POLICY_BRANCH_FREEDOM")
     event("Greece", "policy_branch_adopted", 210, branch: "POLICY_BRANCH_ORDER")

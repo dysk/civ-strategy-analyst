@@ -38,7 +38,7 @@
      @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
      @key_moments.religion_foundings, @key_moments.pantheon_foundings,
      @key_moments.religion_enhancements, @key_moments.reformations,
-     @key_moments.ideology_adoptions, @key_moments.tenet_adoptions, @key_moments.military_might_swings,
+     @key_moments.ideology_unlocks, @key_moments.ideology_adoptions, @key_moments.tenet_adoptions, @key_moments.military_might_swings,
      @key_moments.happiness_swings, @key_moments.unhappiness_periods,
      @key_moments.snowballs("score"), @key_moments.snowballs("science"),
      @key_moments.snowballs("population"), @key_moments.snowballs("culture"), @key_moments.nuclear_detonations,
@@ -109,6 +109,15 @@
   <ul>
     <% @key_moments.reformations.each do |reformation| %>
       <li>Turn <%= reformation[:turn] %>: <%= reformation[:civ] %> added the reformation belief <%= reformation[:belief] %> to <%= reformation[:religion] %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.ideology_unlocks.any? %>
+  <h3>Ideology Unlocks</h3>
+  <ul>
+    <% @key_moments.ideology_unlocks.each do |unlock| %>
+      <li>Turn <%= unlock[:turn] %>: <%= unlock[:civ] %> unlocked <%= unlock[:ideology] %></li>
     <% end %>
   </ul>
 <% end %>
