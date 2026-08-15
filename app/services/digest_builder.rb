@@ -118,7 +118,7 @@ class DigestBuilder
       leader_changes: detector.leader_changes,
       era_leads: detector.era_leads,
       religion_foundings: detector.religion_foundings,
-      military_might_collapses: detector.military_might_collapses,
+      military_might_swings: detector.military_might_swings,
       snowballs_score: detector.snowballs("score"),
       snowballs_population: detector.snowballs("population"),
       snowballs_science: detector.snowballs("science"),

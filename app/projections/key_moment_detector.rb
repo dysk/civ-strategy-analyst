@@ -1,9 +1,9 @@
 class KeyMomentDetector
   UNIT_LOST_SPIKE_THRESHOLD = 3
   LEADER_CHANGE_METRICS = %w[score science].freeze
-  LEADER_CHANGE_GRACE_PERIOD_QUICK = 67
-  LEADER_CHANGE_GRACE_PERIOD_DEFAULT = 100
-  MILITARY_MIGHT_COLLAPSE_THRESHOLD = 0.15
+  EARLY_GAME_GRACE_PERIOD_QUICK = 67
+  EARLY_GAME_GRACE_PERIOD_DEFAULT = 100
+  MILITARY_MIGHT_SWING_THRESHOLD = 0.15
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
 
@@ -19,7 +19,7 @@ class KeyMomentDetector
       metric_series.leader_changes(metric).map do |change|
         { type: :leader_change, metric: metric, turn: change[:turn], from: change[:from], to: change[:to] }
       end
-    end.select { |moment| moment[:turn] > leader_change_grace_period }.sort_by { |moment| moment[:turn] }
+    end.select { |moment| moment[:turn] > early_game_grace_period }.sort_by { |moment| moment[:turn] }
   end
 
   def era_leads
@@ -42,7 +42,7 @@ class KeyMomentDetector
       end
   end
 
-  def military_might_collapses
+  def military_might_swings
     metric_series = MetricSeries.new(@game)
 
     civs_with_snapshots.flat_map do |civ|
@@ -50,11 +50,12 @@ class KeyMomentDetector
         next if prev.to_i.zero?
 
         pct_change = (value - prev).to_f / prev
-        next if pct_change > -MILITARY_MIGHT_COLLAPSE_THRESHOLD
+        next if pct_change.abs < MILITARY_MIGHT_SWING_THRESHOLD
 
-        { type: :military_might_collapse, civ: civ, turn: turn, from: prev, to: value, pct_change: pct_change.round(3) }
+        type = pct_change.negative? ? :military_might_collapse : :military_might_surge
+        { type: type, civ: civ, turn: turn, from: prev, to: value, pct_change: pct_change.round(3) }
       end
-    end.sort_by { |moment| moment[:turn] }
+    end.select { |moment| moment[:turn] > early_game_grace_period }.sort_by { |moment| moment[:turn] }
   end
 
   def snowballs(metric)
@@ -181,7 +182,7 @@ class KeyMomentDetector
     [ a, b ].sort
   end
 
-  def leader_change_grace_period
-    @game.game_speed.to_s.upcase.include?("QUICK") ? LEADER_CHANGE_GRACE_PERIOD_QUICK : LEADER_CHANGE_GRACE_PERIOD_DEFAULT
+  def early_game_grace_period
+    @game.game_speed.to_s.upcase.include?("QUICK") ? EARLY_GAME_GRACE_PERIOD_QUICK : EARLY_GAME_GRACE_PERIOD_DEFAULT
   end
 end

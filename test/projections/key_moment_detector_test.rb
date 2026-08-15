@@ -149,24 +149,55 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
-  test "military_might_collapses flags single-turn drops beyond 15%, ignores smaller dips" do
-    snapshot("Rome", 1, military_might: 1000)
-    snapshot("Rome", 2, military_might: 900)  # -10%, below threshold
-    snapshot("Rome", 3, military_might: 700)  # -22.2%, collapse
-    snapshot("Rome", 4, military_might: 750)  # gain, never a collapse
+  test "military_might_swings flags single-turn drops and gains beyond 15%, ignores smaller moves" do
+    snapshot("Rome", 101, military_might: 1000)
+    snapshot("Rome", 102, military_might: 900)  # -10%, below threshold
+    snapshot("Rome", 103, military_might: 700)  # -22.2%, collapse
+    snapshot("Rome", 104, military_might: 850)  # +21.4%, surge
+    snapshot("Rome", 105, military_might: 900)  # +5.9%, below threshold
 
-    snapshot("Greece", 1, military_might: 500)
-    snapshot("Greece", 2, military_might: 500)
+    snapshot("Greece", 101, military_might: 500)
+    snapshot("Greece", 102, military_might: 500)
 
-    moments = detector.military_might_collapses
+    moments = detector.military_might_swings
 
-    assert_equal 1, moments.size
-    collapse = moments.first
-    assert_equal :military_might_collapse, collapse[:type]
-    assert_equal "Rome", collapse[:civ]
-    assert_equal 3, collapse[:turn]
-    assert_equal 900, collapse[:from]
-    assert_equal 700, collapse[:to]
+    assert_equal(
+      [
+        { type: :military_might_collapse, civ: "Rome", turn: 103, from: 900, to: 700, pct_change: -0.222 },
+        { type: :military_might_surge, civ: "Rome", turn: 104, from: 700, to: 850, pct_change: 0.214 }
+      ],
+      moments
+    )
+  end
+
+  test "military_might_swings excludes swings within the first 100 turns for non-quick speeds" do
+    @game.update!(game_speed: "GAMESPEED_STANDARD")
+    snapshot("Rome", 1, military_might: 3)
+    snapshot("Rome", 2, military_might: 2)  # barbarians kill a unit early on, -33%
+    snapshot("Rome", 100, military_might: 500)
+    snapshot("Rome", 101, military_might: 300)  # -40%, past the grace period
+
+    moments = detector.military_might_swings
+
+    assert_equal(
+      [ { type: :military_might_collapse, civ: "Rome", turn: 101, from: 500, to: 300, pct_change: -0.4 } ],
+      moments
+    )
+  end
+
+  test "military_might_swings excludes swings within the first 67 turns for GAMESPEED_QUICK" do
+    @game.update!(game_speed: "GAMESPEED_QUICK")
+    snapshot("Rome", 1, military_might: 3)
+    snapshot("Rome", 2, military_might: 2)  # barbarians kill a unit early on, -33%
+    snapshot("Rome", 67, military_might: 500)
+    snapshot("Rome", 68, military_might: 300)  # -40%, past the grace period
+
+    moments = detector.military_might_swings
+
+    assert_equal(
+      [ { type: :military_might_collapse, civ: "Rome", turn: 68, from: 500, to: 300, pct_change: -0.4 } ],
+      moments
+    )
   end
 
   test "snowballs flags a civ whose growth pace stays well ahead for 15+ turns" do

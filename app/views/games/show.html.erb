@@ -36,7 +36,7 @@
 
 <% if [
      @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
-     @key_moments.religion_foundings, @key_moments.military_might_collapses,
+     @key_moments.religion_foundings, @key_moments.military_might_swings,
      @key_moments.snowballs("score"), @key_moments.snowballs("science"), @key_moments.nuclear_detonations,
      @key_moments.city_state_ally_takeovers
    ].all?(&:empty?) %>
@@ -82,11 +82,12 @@
   </ul>
 <% end %>
 
-<% if @key_moments.military_might_collapses.any? %>
-  <h3>Military Might Collapses</h3>
+<% if @key_moments.military_might_swings.any? %>
+  <h3>Military Might Swings</h3>
   <ul>
-    <% @key_moments.military_might_collapses.each do |collapse| %>
-      <li>Turn <%= collapse[:turn] %>: <%= collapse[:civ] %> military might dropped from <%= collapse[:from] %> to <%= collapse[:to] %></li>
+    <% @key_moments.military_might_swings.each do |swing| %>
+      <% verb = swing[:type] == :military_might_surge ? "jumped" : "dropped" %>
+      <li>Turn <%= swing[:turn] %>: <%= swing[:civ] %> military might <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
     <% end %>
   </ul>
 <% end %>
