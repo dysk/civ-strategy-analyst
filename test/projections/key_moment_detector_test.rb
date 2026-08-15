@@ -242,6 +242,57 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "policy_branch_adoptions reports which branch each civ adopted, excluding ideology branches" do
+    event("Rome", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
+    event("Greece", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
+    event("Egypt", "policy_branch_adopted", 200, branch: "POLICY_BRANCH_FREEDOM")
+
+    moments = detector.policy_branch_adoptions
+
+    assert_equal(
+      [
+        { type: :policy_branch_adopted, turn: 6, civ: "Greece", branch: "POLICY_BRANCH_LIBERTY" },
+        { type: :policy_branch_adopted, turn: 11, civ: "Rome", branch: "POLICY_BRANCH_TRADITION" }
+      ],
+      moments
+    )
+  end
+
+  test "policy_branch_completions reports when a civ has adopted every policy in a known branch" do
+    event("Rome", "policy_adopted", 14, policy: "POLICY_LEGALISM")
+    event("Rome", "policy_adopted", 21, policy: "POLICY_LANDED_ELITE")
+    event("Rome", "policy_adopted", 33, policy: "POLICY_MONARCHY")
+    event("Rome", "policy_adopted", 46, policy: "POLICY_OLIGARCHY")
+    event("Rome", "policy_adopted", 57, policy: "POLICY_ARISTOCRACY")
+
+    event("Greece", "policy_adopted", 10, policy: "POLICY_REPUBLIC")
+    event("Greece", "policy_adopted", 14, policy: "POLICY_COLLECTIVE_RULE")
+    event("Greece", "policy_adopted", 24, policy: "POLICY_CITIZENSHIP")
+
+    moments = detector.policy_branch_completions
+
+    assert_equal(
+      [ { type: :policy_branch_completed, turn: 57, civ: "Rome", branch: "POLICY_BRANCH_TRADITION" } ],
+      moments
+    )
+  end
+
+  test "policy_branch_completions detects completion even when picks from multiple branches are interleaved" do
+    event("Rome", "policy_adopted", 10, policy: "POLICY_REPUBLIC")           # Liberty
+    event("Rome", "policy_adopted", 20, policy: "POLICY_ORGANIZED_RELIGION") # Piety
+    event("Rome", "policy_adopted", 30, policy: "POLICY_COLLECTIVE_RULE")    # Liberty
+    event("Rome", "policy_adopted", 40, policy: "POLICY_CITIZENSHIP")        # Liberty
+    event("Rome", "policy_adopted", 50, policy: "POLICY_REPRESENTATION")     # Liberty
+    event("Rome", "policy_adopted", 60, policy: "POLICY_MERITOCRACY")        # Liberty, completes the branch
+
+    moments = detector.policy_branch_completions
+
+    assert_equal(
+      [ { type: :policy_branch_completed, turn: 60, civ: "Rome", branch: "POLICY_BRANCH_LIBERTY" } ],
+      moments
+    )
+  end
+
   test "military_might_swings flags single-turn drops and gains beyond 15%, ignores smaller moves" do
     snapshot("Rome", 101, military_might: 1000)
     snapshot("Rome", 102, military_might: 900)  # -10%, below threshold

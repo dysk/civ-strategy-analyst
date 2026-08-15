@@ -38,7 +38,8 @@
      @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
      @key_moments.religion_foundings, @key_moments.pantheon_foundings,
      @key_moments.religion_enhancements, @key_moments.reformations,
-     @key_moments.ideology_unlocks, @key_moments.ideology_adoptions, @key_moments.tenet_adoptions, @key_moments.military_might_swings,
+     @key_moments.ideology_unlocks, @key_moments.ideology_adoptions, @key_moments.tenet_adoptions,
+     @key_moments.policy_branch_adoptions, @key_moments.policy_branch_completions, @key_moments.military_might_swings,
      @key_moments.happiness_swings, @key_moments.unhappiness_periods,
      @key_moments.snowballs("score"), @key_moments.snowballs("science"),
      @key_moments.snowballs("population"), @key_moments.snowballs("culture"), @key_moments.nuclear_detonations,
@@ -136,6 +137,24 @@
   <ul>
     <% @key_moments.tenet_adoptions.each do |adoption| %>
       <li>Turn <%= adoption[:turn] %>: <%= adoption[:civ] %> adopted the <%= adoption[:ideology] %> tenet <%= adoption[:tenet] %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.policy_branch_adoptions.any? %>
+  <h3>Policy Branch Adoptions</h3>
+  <ul>
+    <% @key_moments.policy_branch_adoptions.each do |adoption| %>
+      <li>Turn <%= adoption[:turn] %>: <%= adoption[:civ] %> adopted <%= adoption[:branch] %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.policy_branch_completions.any? %>
+  <h3>Policy Branch Completions</h3>
+  <ul>
+    <% @key_moments.policy_branch_completions.each do |completion| %>
+      <li>Turn <%= completion[:turn] %>: <%= completion[:civ] %> completed <%= completion[:branch] %></li>
     <% end %>
   </ul>
 <% end %>

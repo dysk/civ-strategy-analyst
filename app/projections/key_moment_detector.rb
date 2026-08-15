@@ -9,6 +9,21 @@ class KeyMomentDetector
   SNOWBALL_MIN_STRETCH = 15
   IDEOLOGY_BRANCHES = %w[POLICY_BRANCH_FREEDOM POLICY_BRANCH_ORDER POLICY_BRANCH_AUTOCRACY].freeze
 
+  # LEKMOD keeps the underlying policy IDs from vanilla Civ5 BNW even where it
+  # renames the displayed policy (e.g. POLICY_MERCHANT_NAVY is shown in-game
+  # as "Colonialism" under Exploration), so these are internal constant names.
+  BRANCH_POLICIES = {
+    "POLICY_BRANCH_TRADITION" => %w[POLICY_LEGALISM POLICY_LANDED_ELITE POLICY_MONARCHY POLICY_OLIGARCHY POLICY_ARISTOCRACY],
+    "POLICY_BRANCH_LIBERTY" => %w[POLICY_REPUBLIC POLICY_COLLECTIVE_RULE POLICY_CITIZENSHIP POLICY_REPRESENTATION POLICY_MERITOCRACY],
+    "POLICY_BRANCH_HONOR" => %w[POLICY_WARRIOR_CODE POLICY_PROFESSIONAL_ARMY POLICY_MILITARY_CASTE POLICY_DISCIPLINE POLICY_MILITARY_TRADITION],
+    "POLICY_BRANCH_PIETY" => %w[POLICY_ORGANIZED_RELIGION POLICY_REFORMATION POLICY_MANDATE_OF_HEAVEN POLICY_FREE_RELIGION POLICY_THEOCRACY],
+    "POLICY_BRANCH_EXPLORATION" => %w[POLICY_NAVAL_TRADITION POLICY_MARITIME_INFRASTRUCTURE POLICY_MERCHANT_NAVY POLICY_NAVIGATION_SCHOOL POLICY_TREASURE_FLEETS],
+    "POLICY_BRANCH_RATIONALISM" => %w[POLICY_SOVEREIGNTY POLICY_FREE_THOUGHT POLICY_HUMANISM POLICY_SCIENTIFIC_REVOLUTION POLICY_SECULARISM],
+    "POLICY_BRANCH_PATRONAGE" => %w[POLICY_MERCHANT_CONFEDERACY POLICY_SCHOLASTICISM POLICY_CULTURAL_DIPLOMACY POLICY_PHILANTHROPY POLICY_CONSULATES],
+    "POLICY_BRANCH_COMMERCE" => %w[POLICY_SILK_ROAD POLICY_MERCENARY_ARMY POLICY_ENTREPRENEURSHIP POLICY_MERCANTILISM POLICY_PROTECTIONISM],
+    "POLICY_BRANCH_AESTHETICS" => %w[POLICY_CULTURAL_CENTERS POLICY_CULTURAL_EXCHANGE POLICY_ARTISTIC_GENIUS POLICY_FLOURISHING_OF_THE_ARTS POLICY_FINE_ARTS]
+  }.freeze
+
   def initialize(game)
     @game = game
     @events = game.game_events.order(:seq).to_a
@@ -85,6 +100,29 @@ class KeyMomentDetector
       .map do |e|
         { type: :tenet_adopted, turn: e.turn, civ: e.civ, ideology: ideology_by_civ[e.civ][:ideology], tenet: e.payload["policy"] }
       end
+  end
+
+  def policy_branch_adoptions
+    of_type("policy_branch_adopted")
+      .reject { |e| IDEOLOGY_BRANCHES.include?(e.payload["branch"]) }
+      .sort_by(&:turn)
+      .map { |e| { type: :policy_branch_adopted, turn: e.turn, civ: e.civ, branch: e.payload["branch"] } }
+  end
+
+  def policy_branch_completions
+    of_type("policy_adopted")
+      .group_by(&:civ)
+      .flat_map do |civ, events|
+        adopted_policies = events.map { |e| e.payload["policy"] }
+
+        BRANCH_POLICIES.filter_map do |branch, policies|
+          next unless (policies - adopted_policies).empty?
+
+          completion_turn = events.select { |e| policies.include?(e.payload["policy"]) }.map(&:turn).max
+          { type: :policy_branch_completed, turn: completion_turn, civ: civ, branch: branch }
+        end
+      end
+      .sort_by { |moment| moment[:turn] }
   end
 
   def military_might_swings

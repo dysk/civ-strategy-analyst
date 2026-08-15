@@ -136,6 +136,8 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :ideology_unlocks
     assert_includes digest[:key_moments].keys, :ideology_adoptions
     assert_includes digest[:key_moments].keys, :tenet_adoptions
+    assert_includes digest[:key_moments].keys, :policy_branch_adoptions
+    assert_includes digest[:key_moments].keys, :policy_branch_completions
     assert_includes digest[:key_moments].keys, :nuclear_detonations
     assert_includes digest[:key_moments].keys, :city_state_ally_takeovers
   end
