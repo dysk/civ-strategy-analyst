@@ -148,13 +148,19 @@ uruchomienia.
   więc dodanie nowej metryki do analizy nie wymaga zmian w kodzie — tylko wywołania
   z inną nazwą stringa.
 
-## Plan: wstrzykiwanie danych LEKMOD do digestu (iteracje 1–4 zrobione, 5 czeka)
+## Plan: wstrzykiwanie danych LEKMOD do digestu (zrealizowany w całości)
 
 Status: iteracje 1–4 zaimplementowane (commity `86c5b05`…`c04c3ae`: kolumny
-`lekmod_version`, `LekmodReference`, klucz `lekmod` w digeście, prompt v7).
-Iteracja 5 (A/B) wstrzymana do czasu domknięcia planu `ids.yml` poniżej —
-review promptu v7 na realnym digeście wykazał braki w mapowaniu ID, które
-zafałszowałyby porównanie.
+`lekmod_version`, `LekmodReference`, klucz `lekmod` w digeście, prompt v7),
+plan `ids.yml` poniżej domknięty (prompt v8), iteracja 5 (A/B) wykonana
+2026-08-16 na v8: koszt +50% (0,15 USD, akceptowalny), Counterfactuals i
+Conclusion dobre, ale 5 defektów w raporcie (sprzeczne twierdzenia o
+liderowaniu w techach między sekcjami, sklejenie obu mnożników w jeden,
+zbagatelizowane przeciągające się -6 happiness, bonus produkcji z
+Aristocracy opisany jak koszt, powtórzony fałszywy "tech lead").
+Naprawione w prompcie v9 (+ nowa heurystyka od użytkownika: przy ocenie
+zysków z wojny uwzględniać kill-triggered yields z polityk Honoru /
+tenetów Autokracji, nie samą wymianę jednostek).
 
 Kontekst: modele LLM znają reguły podstawowej gry (BNW), a nie LEKMOD — nie znają
 cywilizacji dodanych przez mod (Chile, Vietnam, Bolivia...) ani zmienionych efektów.
