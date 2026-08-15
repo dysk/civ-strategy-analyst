@@ -12,6 +12,8 @@ db/lekmod/<version>/
   religion.md        pantheons and beliefs
   ideologies.md      Freedom / Order / Autocracy tenets
   policies.md        the nine policy trees
+  ids.yml            POLICY_*/BELIEF_* -> display name, extracted from
+                     the mod's own XML source (optional; see below)
 ```
 
 Format: one `## ` heading per entity, `- **Name:** effect` bullets,
@@ -21,6 +23,14 @@ logs use those IDs and LEKMOD keeps them even where it renames the
 displayed item (`POLICY_MERCHANT_NAVY` → "Colonialism",
 `POLICY_FREE_RELIGION` → "Religious Tolerance", `BELIEF_WALLS` →
 "Goddess of Protection").
+
+Some LEKMOD-original items give their own ID a misspelled or unrelated
+suffix (`BELIEF_ZAKATT` → "Zakat", `BELIEF_CRAFTWORKS` → "Jizya"), so
+the name can't always be derived from the ID or annotated confidently
+by hand. `ids.yml` covers those: `LekmodReference` looks up an ID
+there whenever no inline backtick annotation and no ID-derivation
+matches, before giving up on it. Manual inline annotation still wins
+when both exist - `ids.yml` is a fallback, not an override.
 
 ## Adding a new version
 
@@ -65,6 +75,25 @@ policies) into a plain-text file, then either:
   `prompts/entity-chunk-prompt.txt` / `prompts/section-chunk-prompt.txt`
   per chunk.
 
+**Either path, then generate `ids.yml`** from the mod's own XML source
+(ground truth for the display name behind an ID - see the trap note
+above; `script/extract_lekmod_ids` explains the extraction mechanics):
+
+```sh
+# in the mod checkout: find and check out the commit for this version -
+# there's no consistent tag/branch naming, so search commit messages
+cd /path/to/Lekmod && git log --oneline --all | grep -i '34\.16'
+git checkout <that-commit>
+
+cd -  # back to civ-strategy-analyst
+script/extract_lekmod_ids /path/to/Lekmod/LEKMOD/Override db/lekmod/34.16/ids.yml
+```
+
+Only scan `LEKMOD/Override`, not the whole checkout - a sibling
+`LEKMOD/Art/No Quitters Mod (v 11)/` tree carries German/Polish
+duplicate `Tag=` entries for the same keys that would silently corrupt
+the extracted English names if scanned.
+
 ## Verification checklist
 
 The script's name check is necessary but not sufficient. Before
@@ -81,4 +110,11 @@ committing:
 - Annotate internal IDs: list IDs from a recent game log
   (`grep -o '"policy":"[A-Z_]*"' <events.jsonl> | sort -u`, same for
   `"belief"`), match any without a direct name counterpart against the
-  changelog, and add them inline as `- **Name** (`ID`):`.
+  changelog, and add them inline as `- **Name** (`ID`):`. `ids.yml`
+  now covers most of these automatically, so this is mainly worth doing
+  for high-traffic IDs where having the mapping visible in the
+  Markdown itself (not just `ids.yml`) helps a human skimming the file.
+- After generating `ids.yml`, spot-check a couple of entries against
+  `LekmodReference`'s `unmatched_ids` for a recent game on this
+  version - anything still unmatched either needs a manual inline
+  annotation or genuinely has no resolvable text in the mod source.
