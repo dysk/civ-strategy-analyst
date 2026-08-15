@@ -37,6 +37,7 @@
 <% if [
      @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
      @key_moments.religion_foundings, @key_moments.military_might_swings,
+     @key_moments.happiness_swings, @key_moments.unhappiness_periods,
      @key_moments.snowballs("score"), @key_moments.snowballs("science"),
      @key_moments.snowballs("population"), @key_moments.snowballs("culture"), @key_moments.nuclear_detonations,
      @key_moments.city_state_ally_takeovers
@@ -90,6 +91,27 @@
       <% verb = swing[:type] == :military_might_surge ? "jumped" : "dropped" %>
       <% turn_label = swing[:turn] == swing[:turn_end] ? "Turn #{swing[:turn]}" : "Turns #{swing[:turn]}&ndash;#{swing[:turn_end]}".html_safe %>
       <li><%= turn_label %>: <%= swing[:civ] %> military might <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.happiness_swings.any? %>
+  <h3>Happiness Swings</h3>
+  <ul>
+    <% @key_moments.happiness_swings.each do |swing| %>
+      <% verb = swing[:type] == :happiness_surge ? "jumped" : "dropped" %>
+      <% turn_label = swing[:turn] == swing[:turn_end] ? "Turn #{swing[:turn]}" : "Turns #{swing[:turn]}&ndash;#{swing[:turn_end]}".html_safe %>
+      <li><%= turn_label %>: <%= swing[:civ] %> happiness <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @key_moments.unhappiness_periods.any? %>
+  <h3>Unhappiness Periods</h3>
+  <ul>
+    <% @key_moments.unhappiness_periods.each do |period| %>
+      <% turn_label = period[:turn] == period[:turn_end] ? "Turn #{period[:turn]}" : "Turns #{period[:turn]}&ndash;#{period[:turn_end]}".html_safe %>
+      <li><%= turn_label %>: <%= period[:civ] %> happiness stayed below zero</li>
     <% end %>
   </ul>
 <% end %>

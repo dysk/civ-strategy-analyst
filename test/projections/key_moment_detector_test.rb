@@ -214,6 +214,84 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "happiness_swings flags single-turn changes of at least 10 points, ignores smaller moves" do
+    snapshot("Rome", 101, happiness: 5)
+    snapshot("Rome", 102, happiness: -8)  # -13, collapse
+    snapshot("Rome", 103, happiness: -1)  # +7, below threshold
+    snapshot("Rome", 104, happiness: 12)  # +13, surge
+
+    moments = detector.happiness_swings
+
+    assert_equal(
+      [
+        { type: :happiness_collapse, civ: "Rome", turn: 101, turn_end: 102, from: 5, to: -8, delta: -13 },
+        { type: :happiness_surge, civ: "Rome", turn: 103, turn_end: 104, from: -1, to: 12, delta: 13 }
+      ],
+      moments
+    )
+  end
+
+  test "happiness_swings merges consecutive same-direction swings into a single run" do
+    snapshot("Rome", 101, happiness: 0)
+    snapshot("Rome", 102, happiness: 15)  # +15, surge
+    snapshot("Rome", 103, happiness: 30)  # +15, surge, chains onto the previous turn
+    snapshot("Rome", 104, happiness: 32)  # +2, below threshold, ends the run
+
+    moments = detector.happiness_swings
+
+    assert_equal(
+      [ { type: :happiness_surge, civ: "Rome", turn: 101, turn_end: 103, from: 0, to: 30, delta: 30 } ],
+      moments
+    )
+  end
+
+  test "happiness_swings excludes swings within the early-game grace period" do
+    @game.update!(game_speed: "GAMESPEED_STANDARD")
+    snapshot("Rome", 1, happiness: 20)
+    snapshot("Rome", 2, happiness: 5)    # -15, within the grace period
+    snapshot("Rome", 101, happiness: 5)
+    snapshot("Rome", 102, happiness: -10) # -15, past the grace period
+
+    moments = detector.happiness_swings
+
+    assert_equal(
+      [ { type: :happiness_collapse, civ: "Rome", turn: 101, turn_end: 102, from: 5, to: -10, delta: -15 } ],
+      moments
+    )
+  end
+
+  test "unhappiness_periods reports contiguous stretches where happiness stays below zero" do
+    snapshot("Rome", 1, happiness: 5)
+    snapshot("Rome", 2, happiness: -3)
+    snapshot("Rome", 3, happiness: -1)
+    snapshot("Rome", 4, happiness: 2)
+    snapshot("Rome", 5, happiness: -6)
+    snapshot("Rome", 6, happiness: 8)
+
+    moments = detector.unhappiness_periods
+
+    assert_equal(
+      [
+        { type: :unhappiness_period, civ: "Rome", turn: 2, turn_end: 3 },
+        { type: :unhappiness_period, civ: "Rome", turn: 5, turn_end: 5 }
+      ],
+      moments
+    )
+  end
+
+  test "unhappiness_periods reports an open-ended stretch that never recovers by the last snapshot" do
+    snapshot("Rome", 1, happiness: 5)
+    snapshot("Rome", 2, happiness: -3)
+    snapshot("Rome", 3, happiness: -7)
+
+    moments = detector.unhappiness_periods
+
+    assert_equal(
+      [ { type: :unhappiness_period, civ: "Rome", turn: 2, turn_end: 3 } ],
+      moments
+    )
+  end
+
   test "snowballs flags a civ whose growth pace stays well ahead for 15+ turns" do
     # A grows 10/turn, B grows 2/turn, every turn from 1 to 30: A's 10-turn
     # rolling pace is consistently ahead once the window fills at turn 11,

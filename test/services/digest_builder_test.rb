@@ -128,6 +128,8 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :snowballs_population
     assert_includes digest[:key_moments].keys, :snowballs_science
     assert_includes digest[:key_moments].keys, :snowballs_culture
+    assert_includes digest[:key_moments].keys, :happiness_swings
+    assert_includes digest[:key_moments].keys, :unhappiness_periods
     assert_includes digest[:key_moments].keys, :nuclear_detonations
     assert_includes digest[:key_moments].keys, :city_state_ally_takeovers
   end

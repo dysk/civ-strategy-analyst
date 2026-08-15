@@ -4,6 +4,7 @@ class KeyMomentDetector
   EARLY_GAME_GRACE_PERIOD_QUICK = 67
   EARLY_GAME_GRACE_PERIOD_DEFAULT = 100
   MILITARY_MIGHT_SWING_THRESHOLD = 0.15
+  HAPPINESS_SWING_THRESHOLD = 10
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
 
@@ -56,8 +57,44 @@ class KeyMomentDetector
         { type: type, civ: civ, from_turn: prev_turn, to_turn: turn, from: prev, to: value }
       end
 
-      merge_swing_runs(candidates)
+      merge_consecutive_runs(candidates).map do |run|
+        { type: run[:type], civ: run[:civ], turn: run[:from_turn], turn_end: run[:to_turn],
+          from: run[:from], to: run[:to], pct_change: ((run[:to] - run[:from]).to_f / run[:from]).round(3) }
+      end
     end.select { |moment| moment[:turn] > early_game_grace_period }.sort_by { |moment| moment[:turn] }
+  end
+
+  def happiness_swings
+    metric_series = MetricSeries.new(@game)
+
+    civs_with_snapshots.flat_map do |civ|
+      candidates = metric_series.values("happiness", civ).each_cons(2).filter_map do |(prev_turn, prev), (turn, value)|
+        next if prev.nil? || value.nil?
+
+        delta = value - prev
+        next if delta.abs < HAPPINESS_SWING_THRESHOLD
+
+        type = delta.negative? ? :happiness_collapse : :happiness_surge
+        { type: type, civ: civ, from_turn: prev_turn, to_turn: turn, from: prev, to: value }
+      end
+
+      merge_consecutive_runs(candidates).map do |run|
+        { type: run[:type], civ: run[:civ], turn: run[:from_turn], turn_end: run[:to_turn],
+          from: run[:from], to: run[:to], delta: run[:to] - run[:from] }
+      end
+    end.select { |moment| moment[:turn] > early_game_grace_period }.sort_by { |moment| moment[:turn] }
+  end
+
+  def unhappiness_periods
+    metric_series = MetricSeries.new(@game)
+
+    civs_with_snapshots.flat_map do |civ|
+      metric_series.values("happiness", civ)
+        .reject { |_turn, value| value.nil? }
+        .chunk_while { |(_, v1), (_, v2)| v1.negative? == v2.negative? }
+        .select { |chunk| chunk.first.last.negative? }
+        .map { |chunk| { type: :unhappiness_period, civ: civ, turn: chunk.first.first, turn_end: chunk.last.first } }
+    end.sort_by { |moment| moment[:turn] }
   end
 
   def snowballs(metric)
@@ -184,7 +221,7 @@ class KeyMomentDetector
     [ a, b ].sort
   end
 
-  def merge_swing_runs(candidates)
+  def merge_consecutive_runs(candidates)
     runs = []
 
     candidates.each do |candidate|
@@ -198,10 +235,7 @@ class KeyMomentDetector
       end
     end
 
-    runs.map do |run|
-      { type: run[:type], civ: run[:civ], turn: run[:from_turn], turn_end: run[:to_turn],
-        from: run[:from], to: run[:to], pct_change: ((run[:to] - run[:from]).to_f / run[:from]).round(3) }
-    end
+    runs
   end
 
   def early_game_grace_period

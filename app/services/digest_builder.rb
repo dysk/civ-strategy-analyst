@@ -119,6 +119,8 @@ class DigestBuilder
       era_leads: detector.era_leads,
       religion_foundings: detector.religion_foundings,
       military_might_swings: detector.military_might_swings,
+      happiness_swings: detector.happiness_swings,
+      unhappiness_periods: detector.unhappiness_periods,
       snowballs_score: detector.snowballs("score"),
       snowballs_population: detector.snowballs("population"),
       snowballs_science: detector.snowballs("science"),
