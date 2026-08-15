@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/ids.yml: an ID -> display name mapping extracted
+# from a checkout of the mod's XML source, used by LekmodReference to resolve
+# policy/belief IDs whose LEKMOD display name can't be derived from the ID
+# itself (see db/lekmod/README.md and LekmodIdsExtractor).
+#
+# Usage:
+#   script/extract_lekmod_ids SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_ids /path/to/Lekmod/LEKMOD/Override db/lekmod/34.16/ids.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+abort "Usage: script/extract_lekmod_ids SOURCE_DIR TARGET_YML" unless source_dir && target
+
+ids = LekmodIdsExtractor.new(source_dir).call
+abort "No IDs resolved from #{source_dir} - check the path points at LEKMOD/Override." if ids.empty?
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, ids.sort.to_h.to_yaml)
+
+puts "Wrote #{target} - #{ids.size} IDs resolved."
