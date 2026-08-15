@@ -121,6 +121,8 @@ class DigestBuilder
       pantheon_foundings: detector.pantheon_foundings,
       religion_enhancements: detector.religion_enhancements,
       reformations: detector.reformations,
+      ideology_adoptions: detector.ideology_adoptions,
+      tenet_adoptions: detector.tenet_adoptions,
       military_might_swings: detector.military_might_swings,
       happiness_swings: detector.happiness_swings,
       unhappiness_periods: detector.unhappiness_periods,

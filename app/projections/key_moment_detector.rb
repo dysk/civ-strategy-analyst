@@ -7,6 +7,7 @@ class KeyMomentDetector
   HAPPINESS_SWING_THRESHOLD = 10
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
+  IDEOLOGY_BRANCHES = %w[POLICY_BRANCH_FREEDOM POLICY_BRANCH_ORDER POLICY_BRANCH_AUTOCRACY].freeze
 
   def initialize(game)
     @game = game
@@ -59,6 +60,24 @@ class KeyMomentDetector
     of_type("reformation_added")
       .sort_by(&:turn)
       .map { |e| { type: :reformation_added, turn: e.turn, civ: e.civ, religion: e.payload["religion"], belief: e.payload["belief"] } }
+  end
+
+  def ideology_adoptions
+    of_type("policy_branch_adopted")
+      .select { |e| IDEOLOGY_BRANCHES.include?(e.payload["branch"]) }
+      .sort_by(&:turn)
+      .map { |e| { type: :ideology_adopted, turn: e.turn, civ: e.civ, ideology: e.payload["branch"] } }
+  end
+
+  def tenet_adoptions
+    ideology_by_civ = ideology_adoptions.index_by { |moment| moment[:civ] }
+
+    of_type("policy_adopted")
+      .select { |e| ideology_by_civ[e.civ] && e.turn >= ideology_by_civ[e.civ][:turn] }
+      .sort_by(&:turn)
+      .map do |e|
+        { type: :tenet_adopted, turn: e.turn, civ: e.civ, ideology: ideology_by_civ[e.civ][:ideology], tenet: e.payload["policy"] }
+      end
   end
 
   def military_might_swings

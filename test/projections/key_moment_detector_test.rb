@@ -196,6 +196,40 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "ideology_adoptions reports which ideology each civ adopted, ignoring non-ideology branches" do
+    event("Rome", "policy_branch_adopted", 200, branch: "POLICY_BRANCH_FREEDOM")
+    event("Greece", "policy_branch_adopted", 210, branch: "POLICY_BRANCH_ORDER")
+    event("Egypt", "policy_branch_adopted", 190, branch: "POLICY_BRANCH_TRADITION")
+
+    moments = detector.ideology_adoptions
+
+    assert_equal(
+      [
+        { type: :ideology_adopted, turn: 200, civ: "Rome", ideology: "POLICY_BRANCH_FREEDOM" },
+        { type: :ideology_adopted, turn: 210, civ: "Greece", ideology: "POLICY_BRANCH_ORDER" }
+      ],
+      moments
+    )
+  end
+
+  test "tenet_adoptions reports policies picked after a civ adopts an ideology, tagged with which ideology" do
+    event("Rome", "policy_adopted", 180, policy: "POLICY_LEGALISM")          # before the ideology, not a tenet
+    event("Rome", "policy_branch_adopted", 200, branch: "POLICY_BRANCH_FREEDOM")
+    event("Rome", "policy_adopted", 205, policy: "POLICY_CIVIL_SOCIETY")     # tenet
+    event("Rome", "policy_adopted", 220, policy: "POLICY_UNIVERSAL_SUFFRAGE") # tenet
+    event("Greece", "policy_adopted", 50, policy: "POLICY_REPUBLIC")         # never adopts an ideology
+
+    moments = detector.tenet_adoptions
+
+    assert_equal(
+      [
+        { type: :tenet_adopted, turn: 205, civ: "Rome", ideology: "POLICY_BRANCH_FREEDOM", tenet: "POLICY_CIVIL_SOCIETY" },
+        { type: :tenet_adopted, turn: 220, civ: "Rome", ideology: "POLICY_BRANCH_FREEDOM", tenet: "POLICY_UNIVERSAL_SUFFRAGE" }
+      ],
+      moments
+    )
+  end
+
   test "military_might_swings flags single-turn drops and gains beyond 15%, ignores smaller moves" do
     snapshot("Rome", 101, military_might: 1000)
     snapshot("Rome", 102, military_might: 900)  # -10%, below threshold
