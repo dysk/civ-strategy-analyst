@@ -12,6 +12,8 @@ class ImportGame
     peace_made natural_wonder_discovered era_entered policy_branch_unlocked
     policy_branch_adopted religion_founded pantheon_founded tech_from_ruins
     religion_enhanced trade_route_plundered reformation_added
+    congress_snapshot congress_founded congress_host_changed resolution_proposed
+    resolution_passed resolution_failed resolution_repealed united_nations_formed
   ].freeze
 
   Result = Struct.new(:game, :imported_count, :skipped_count, keyword_init: true)
