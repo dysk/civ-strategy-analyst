@@ -67,6 +67,34 @@
   <p><%= link_to "See how these shapes came about", game_geometry_path(@game) %></p>
 <% end %>
 
+<h2>Military</h2>
+<% if @army_rows.empty? %>
+  <p class="empty-state">No military data in this game's snapshots.</p>
+<% else %>
+  <table class="army">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Turn</th>
+        <th>Units</th>
+        <th>Might</th>
+        <th>Might per unit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @army_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:turn] %></td>
+          <td><%= row[:units] || "&mdash;".html_safe %></td>
+          <td><%= row[:might] || "&mdash;".html_safe %></td>
+          <td><%= row[:might_per_unit] || "&mdash;".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
 <h2>Key Moments</h2>
 
 <% if @key_moment_groups.empty? %>

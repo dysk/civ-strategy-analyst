@@ -91,13 +91,10 @@ class DigestBuilder
     end
   end
 
-  # Military might divided by unit count says what an army is made of:
-  # a large horde of obsolete units and a small modern one can carry the
-  # same total might.
   def army_quality(might, units)
-    return {} unless might && units&.positive?
+    ratio = ArmyComposition.might_per_unit(might, units)
 
-    { "might_per_unit" => (might.to_f / units).round(1) }
+    ratio ? { "might_per_unit" => ratio } : {}
   end
 
   def cost_multipliers(cities)

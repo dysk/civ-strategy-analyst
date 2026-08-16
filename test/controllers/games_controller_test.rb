@@ -155,6 +155,32 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show displays what each civilization's army is made of" do
+    game = Game.create!(name: "Army Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, military_might: 1000, military_units: 8)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.army" do
+      assert_select "td", "Rome"
+      assert_select "td", "8"
+      assert_select "td", "1000"
+      assert_select "td", "125.0"
+    end
+  end
+
+  test "show omits the army table for a game whose snapshots carry no military data" do
+    game = Game.create!(name: "Peaceful Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, score: 100)
+
+    get game_url(game)
+
+    assert_select "table.army", false
+  end
+
   test "show marks a civilization whose city count the timeline cannot account for" do
     game = Game.create!(name: "Razed City Game", map_width: 46)
     game.players.create!(civ: "Rome")

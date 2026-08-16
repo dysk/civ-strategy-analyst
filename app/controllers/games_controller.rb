@@ -12,6 +12,7 @@ class GamesController < ApplicationController
     @key_moment_groups = key_moment_groups
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
+    @army_rows = army_rows
     @latest_analysis = @game.analyses.order(created_at: :desc).first
   end
 
@@ -54,6 +55,14 @@ class GamesController < ApplicationController
   # The heading names the metric, so the moments themselves need not.
   def snowballs_by_metric(moments)
     SNOWBALL_METRICS.index_with { |metric| moments.snowballs(metric) }.transform_keys(&:capitalize)
+  end
+
+  def army_rows
+    armies = ArmyComposition.new(@game)
+
+    @game.players.order(:id).filter_map do |player|
+      armies.latest(player.civ)&.merge(civ: player.civ)
+    end
   end
 
   # The empire's shape as it stands, plus the first turn its city count
