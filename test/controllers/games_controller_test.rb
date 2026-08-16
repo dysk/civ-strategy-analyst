@@ -171,6 +171,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show links to the history behind the army table" do
+    game = Game.create!(name: "Army History Link Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, military_might: 1000, military_units: 8)
+
+    get game_url(game)
+
+    assert_select "a[href=?]", game_army_path(game)
+  end
+
   test "show omits the army table for a game whose snapshots carry no military data" do
     game = Game.create!(name: "Peaceful Game")
     game.players.create!(civ: "Rome")

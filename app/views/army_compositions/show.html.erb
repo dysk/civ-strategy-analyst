@@ -1,0 +1,45 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Military</h1>
+<p class="subtitle">
+  What each army was made of, sampled every
+  <%= ArmyCompositionsController::SAMPLE_INTERVAL %> turns and at the last turn recorded.
+</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No military data in this game's snapshots.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <table class="army">
+      <thead>
+        <tr>
+          <th>Turn</th>
+          <th>Units</th>
+          <th>Might</th>
+          <th>Might per unit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% history[:series].each do |entry| %>
+          <tr>
+            <td><%= entry[:turn] %></td>
+            <td><%= entry[:units] || "&mdash;".html_safe %></td>
+            <td><%= entry[:might] || "&mdash;".html_safe %></td>
+            <td><%= entry[:might_per_unit] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <p class="note">
+    Might per unit says what an army is made of, not how strong it is: a
+    horde of obsolete units and a small modern force can carry the same
+    total might. The figure climbs for everyone as better units become
+    available, so it is worth comparing between civilizations at the same
+    turn rather than along one civilization's own history. Losing a war
+    can raise it, because the weakest units die first.
+  </p>
+<% end %>

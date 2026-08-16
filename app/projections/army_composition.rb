@@ -16,8 +16,10 @@ class ArmyComposition
     series(civ).last
   end
 
+  # A turn can be snapshotted more than once - a resumed session repeats
+  # it - and the later snapshot is the state the turn ended in.
   def series(civ)
-    @snapshots.select { |e| e.civ == civ }.filter_map { |e| entry(e) }
+    @snapshots.select { |e| e.civ == civ }.filter_map { |e| entry(e) }.index_by { |entry| entry[:turn] }.values
   end
 
   private

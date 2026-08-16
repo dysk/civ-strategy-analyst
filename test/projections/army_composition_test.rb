@@ -16,6 +16,14 @@ class ArmyCompositionTest < ActiveSupport::TestCase
     )
   end
 
+  test "keeps one entry per turn when a turn was snapshotted twice" do
+    snapshot("Rome", 10, military_might: 300, military_units: 6)
+    snapshot("Rome", 10, military_might: 400, military_units: 7)
+
+    assert_equal [ { turn: 10, units: 7, might: 400, might_per_unit: 57.1 } ],
+                 ArmyComposition.new(@game).series("Rome")
+  end
+
   test "has nothing to report for a civilization with no snapshots" do
     snapshot("Rome", 10, military_might: 300, military_units: 6)
 

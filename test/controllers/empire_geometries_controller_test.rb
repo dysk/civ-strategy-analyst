@@ -65,7 +65,7 @@ class EmpireGeometriesControllerTest < ActionDispatch::IntegrationTest
 
     get game_geometry_url(game)
 
-    assert_select ".geometry-note", /inferred/i
+    assert_select ".note", /inferred/i
   end
 
   test "links back to the game" do
