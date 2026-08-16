@@ -23,6 +23,12 @@ class OutcomeResolver
 
     return { winner_civ: nil, victory_type: nil, in_progress: true, source: :inferred } if last_turn.nil?
 
+    domination_winner = domination_victor
+    return { winner_civ: domination_winner, victory_type: "domination", in_progress: false, source: :inferred } if domination_winner
+
+    science_winner = science_victor
+    return { winner_civ: science_winner, victory_type: "science", in_progress: false, source: :inferred } if science_winner
+
     diplomatic_winner = diplomatic_victor
     return { winner_civ: diplomatic_winner, victory_type: "diplomatic", in_progress: false, source: :inferred } if diplomatic_winner
 
@@ -33,6 +39,25 @@ class OutcomeResolver
     in_progress = @game.max_turns.nil? || last_turn < @game.max_turns
 
     { winner_civ: leader, victory_type: nil, in_progress: in_progress, source: :inferred }
+  end
+
+  # Checked against the whole original roster, not just currently-living
+  # majors like the cultural check - an eliminated rival's original
+  # capital still counts toward domination once captured.
+  def domination_victor
+    roster = @game.players.pluck(:civ)
+    return nil if roster.size < 2
+
+    timeline = CapitalsTimeline.new(@game)
+    roster.find do |civ|
+      capitals = timeline.latest(civ)&.[](:capitals)
+      capitals && (roster - capitals).empty?
+    end
+  end
+
+  def science_victor
+    timeline = SpaceshipTimeline.new(@game)
+    @game.players.pluck(:civ).find { |civ| SpaceshipTimeline.complete?(timeline.latest(civ)&.[](:spaceship)) }
   end
 
   # Compares the last known Congress snapshot's delegate votes against
