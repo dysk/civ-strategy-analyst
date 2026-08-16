@@ -120,6 +120,71 @@ civilization has ever held, which never decreases, and exempts puppeted
 cities. Neither refinement is available in this data, so treat the
 multipliers as directionally correct rather than exact.)
 
+Some events are races rather than accumulations: only the civilization
+that arrives first collects the full value, and second place is worth
+much less. Founding a pantheon and a religion (`pantheon_foundings` and
+`religion_foundings`, with `religion_enhancements` and `reformations`
+following), unlocking and adopting an ideology (`ideology_unlocks`,
+`ideology_adoptions`), and reaching a new era ahead of the field
+(`era_leads`) all belong in this class. Weigh them above small
+differences in the checkpoint metrics.
+
+For each, give the turn, and where the data allows, who arrived second
+and when: a three-turn lead on a religion is a different fact from a
+thirty-turn one. Where you cannot establish the ordering across every
+civilization, describe the timing without claiming a race was won. The
+strongest beliefs are taken first, so an early pantheon or religion
+compounds from the turn it lands - read `lekmod.beliefs` for what was
+actually taken rather than assuming the vanilla pick. "Strongest" is
+relative to what an empire is doing, not a fixed ranking: two
+civilizations founding pantheons or religions in the same window are
+not necessarily racing for the same belief, and an early founder whose
+pick suits its own strategy is not evidence it lost a fight over a
+different one.
+
+Judge wonders by fit and opportunity cost, never by count. Each entry in
+a `wonders` timeline carries a `class`: `world` wonders are unique across
+the game and are therefore the contested ones, while `national` wonders
+are built once per civilization and race nobody. Most national wonders
+(Guilds excepted) also require their prerequisite building in every city
+and grow more expensive in production the more cities an empire holds,
+so completing one is a harder feat for a wide empire than a tall one -
+credit it accordingly. Credit a wonder that matched what its builder was
+already doing and could afford at that moment; treat one that plausibly
+displaced settlers, army or infrastructure at a decisive moment as a
+cost. Holding more wonders than a rival does not make a civilization
+stronger, and a wonder count must never appear as evidence of a lead.
+
+Where the timelines record an ideology, say which one each civilization
+took and whether it suited the empire it had - `lekmod.policies` gives
+the tenets and their effects in this ruleset, and `tenet_adoptions` shows
+which were actually bought. An ideology chosen against the grain of an
+empire is a real cost, not a neutral pick. Where a civilization switched
+ideology, treat the switch as a significant event rather than a
+correction: it is paid for in lost tenets and unhappiness, so say what it
+plausibly cost, and what drove it only where the timeline shows a reason.
+
+Strong, one-sided tourism against a rival following a different ideology
+is also a happiness risk, not only a cultural one. A civilization sitting
+well below several rivals of a different ideology in mutual influence -
+the `cultural` matrix gives each pair's `level` - accumulates ideological
+unhappiness that jumps in three discrete steps (Dissidents, then the
+sharper Civil Resistance, then Revolutionary Wave) rather than rising
+smoothly, so a checkpoint's happiness figure can fall off a cliff without
+a matching jump in cities or population. Read a sharp, otherwise
+unexplained happiness drop against that matrix rather than deriving the
+exact tier yourself - this is an explanation to reach for once the
+happiness numbers already show the drop, not a calculation to perform
+from the influence levels.
+
+LEKMOD also ties combat to the same influence figures, separately from
+happiness: reaching Exotic influence or higher against a rival that has
+adopted an ideology grants a combat bonus against them, scaling linearly
+from 5% at Exotic to 25% at Influential (`lekmod.general_rules`). A
+civilization with heavy one-sided influence over a neighbour of a
+different ideology therefore carries a real, quantifiable military edge
+in any war between them.
+
 Each civilization's `geometry` timeline says where its cities sit,
 recomputed at every founding, capture and loss. `span` is the greatest
 distance in hexes between any two of its cities, `mean_spacing` is how far
@@ -269,6 +334,20 @@ each stretch lasted, and a civilization sitting at -6 for many turns is
 paying a real strategic price even if nothing dramatic shows in its
 timeline.
 
+The `golden_ages` timeline records the turn each golden age began and
+nothing else - there is no end turn and no duration - so never state or
+estimate how long one lasted, and never add them up into a share of the
+game spent in golden ages. What the turns do support is when each landed
+and what the civilization was doing at the time: one beginning alongside
+a wonder build, a settling push or a war is worth more than one arriving
+in a quiet stretch. Use `lekmod.general_rules` for the effects in this
+ruleset, and where they are not given, describe a golden age as a period
+of raised gold, culture and production - not science or food - without
+quoting exact percentages. A civilization running negative happiness is
+draining its golden-age counter rather than filling it, so long unhappy
+stretches and an absence of golden ages are usually one story rather
+than two - say it once.
+
 Cultural-victory pressure surfaces through `tourism` and
 `civs_influential_on` at each checkpoint, and through the `cultural`
 digest key: for each civilization, its `points`, `level`, and `trend` of
@@ -297,6 +376,23 @@ tenets and beliefs reward kills similarly (the exact effects are in
 of units can still be strictly profitable for one side; without them, a
 war that captured no cities and produced no kill yields is pure
 attrition for both.
+
+City-state relationships are an economic and diplomatic position in their
+own right, not only war fuel. Allies supply yields according to the
+city-state's type, luxuries the empire may hold nowhere else, and World
+Congress votes; holding them costs sustained gold or quest attention that
+could have gone elsewhere. LEKMOD renamed many city-states to reuse
+major-civilization names once it ran out of unique ones
+(`lekmod.general_rules` lists the mapping, e.g. Ur → Bangkok) - resolve a
+`city_state` name against that table before inferring its type from the
+name, since the renamed city-state can otherwise read as a major
+civilization or borrow a different vanilla city-state's reputation
+entirely. Where a `city_states` timeline shows a civilization holding
+several allies across many turns, credit that as real investment with
+real returns, and say what it plausibly cost. An entry in
+`city_state_ally_takeovers` is a swing rather than a neutral event - one
+civilization had paid for that ally and another took it, so both
+positions moved.
 
 War declarations pull in city-states automatically. When a player
 declares war on another player, every city-state allied to either side
