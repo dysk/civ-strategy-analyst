@@ -36,7 +36,7 @@ class GamesController < ApplicationController
                                      "Policy Branch Completions" => moments.policy_branch_completions } ],
       [ "Ideology Adoptions", { nil => moments.ideology_adoptions } ],
       [ "Tenet Adoptions", { nil => moments.tenet_adoptions } ],
-      [ "Military Might Swings", { nil => moments.military_might_swings } ],
+      [ "Army Power Swings", { nil => moments.army_power_swings } ],
       [ "Happiness", { "Happiness Swings" => moments.happiness_swings,
                        "Unhappiness Periods" => moments.unhappiness_periods } ],
       [ "Snowballs", snowballs_by_metric(moments) ],

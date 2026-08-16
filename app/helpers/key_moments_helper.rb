@@ -16,8 +16,8 @@ module KeyMomentsHelper
     tenet_adopted: ->(m) { "#{m[:civ]} adopted the #{m[:ideology]} tenet #{m[:tenet]}" },
     policy_branch_adopted: ->(m) { "#{m[:civ]} adopted #{m[:branch]}" },
     policy_branch_completed: ->(m) { "#{m[:civ]} completed #{m[:branch]}" },
-    military_might_surge: ->(m) { "#{m[:civ]} military might jumped from #{m[:from]} to #{m[:to]}" },
-    military_might_collapse: ->(m) { "#{m[:civ]} military might dropped from #{m[:from]} to #{m[:to]}" },
+    army_power_surge: ->(m) { "#{m[:civ]} army power jumped from #{m[:from]} to #{m[:to]}" },
+    army_power_collapse: ->(m) { "#{m[:civ]} army power dropped from #{m[:from]} to #{m[:to]}" },
     happiness_surge: ->(m) { "#{m[:civ]} happiness jumped from #{m[:from]} to #{m[:to]}" },
     happiness_collapse: ->(m) { "#{m[:civ]} happiness dropped from #{m[:from]} to #{m[:to]}" },
     unhappiness_period: ->(m) { "#{m[:civ]} happiness stayed below zero" },
@@ -27,7 +27,7 @@ module KeyMomentsHelper
   }.freeze
 
   TRENDS = {
-    military_might_surge: :up, military_might_collapse: :down,
+    army_power_surge: :up, army_power_collapse: :down,
     happiness_surge: :up, happiness_collapse: :down
   }.freeze
 

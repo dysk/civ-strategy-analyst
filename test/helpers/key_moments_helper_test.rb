@@ -44,7 +44,7 @@ class KeyMomentsHelperTest < ActionView::TestCase
   end
 
   test "marks a swing downwards" do
-    moment = { type: :military_might_collapse, civ: "Chile", turn: 80, turn_end: 85, from: 200, to: 100 }
+    moment = { type: :army_power_collapse, civ: "Chile", turn: 80, turn_end: 85, from: 200, to: 100 }
 
     assert_match(/trend--down/, key_moment_trend(moment))
   end
@@ -62,8 +62,8 @@ class KeyMomentsHelperTest < ActionView::TestCase
   end
 
   test "distinguishes a military collapse from a surge" do
-    moment = { type: :military_might_collapse, civ: "Chile", turn: 80, turn_end: 85, from: 200, to: 100 }
+    moment = { type: :army_power_collapse, civ: "Chile", turn: 80, turn_end: 85, from: 200, to: 100 }
 
-    assert_equal "Turns 80–85: Chile military might dropped from 200 to 100", key_moment_sentence(moment)
+    assert_equal "Turns 80–85: Chile army power dropped from 200 to 100", key_moment_sentence(moment)
   end
 end

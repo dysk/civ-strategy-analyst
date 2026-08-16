@@ -149,7 +149,7 @@ class DigestBuilder
       tenet_adoptions: detector.tenet_adoptions,
       policy_branch_adoptions: detector.policy_branch_adoptions,
       policy_branch_completions: detector.policy_branch_completions,
-      military_might_swings: detector.military_might_swings,
+      army_power_swings: detector.army_power_swings,
       happiness_swings: detector.happiness_swings,
       unhappiness_periods: detector.unhappiness_periods,
       snowballs_score: detector.snowballs("score"),

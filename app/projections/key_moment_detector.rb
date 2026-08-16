@@ -125,17 +125,20 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
-  def military_might_swings
-    metric_series = MetricSeries.new(@game)
+  # Measured on army power rather than the game's own military might,
+  # which the treasury inflates - a civilization banking gold would
+  # otherwise show a build-up it never built.
+  def army_power_swings
+    armies = ArmyComposition.new(@game)
 
     civs_with_snapshots.flat_map do |civ|
-      candidates = metric_series.values("military_might", civ).each_cons(2).filter_map do |(prev_turn, prev), (turn, value)|
+      candidates = army_power_values(armies, civ).each_cons(2).filter_map do |(prev_turn, prev), (turn, value)|
         next if prev.to_i.zero?
 
         pct_change = (value - prev).to_f / prev
         next if pct_change.abs < MILITARY_MIGHT_SWING_THRESHOLD
 
-        type = pct_change.negative? ? :military_might_collapse : :military_might_surge
+        type = pct_change.negative? ? :army_power_collapse : :army_power_surge
         { type: type, civ: civ, from_turn: prev_turn, to_turn: turn, from: prev, to: value }
       end
 
@@ -236,6 +239,12 @@ class KeyMomentDetector
   end
 
   private
+
+  # A snapshot with no treasury cannot have the multiplier divided out,
+  # so it takes no part in the comparison rather than being guessed at.
+  def army_power_values(armies, civ)
+    armies.series(civ).filter_map { |entry| [ entry[:turn], entry[:army_power] ] if entry[:army_power] }
+  end
 
   def war_declarations
     declarations = of_type("war_declared").group_by { |e| team_pair(e.payload["attacker_team"], e.payload["defender_team"]) }

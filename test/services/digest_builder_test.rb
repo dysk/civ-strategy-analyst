@@ -181,7 +181,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :leader_changes
     assert_includes digest[:key_moments].keys, :era_leads
     assert_includes digest[:key_moments].keys, :religion_foundings
-    assert_includes digest[:key_moments].keys, :military_might_swings
+    assert_includes digest[:key_moments].keys, :army_power_swings
     assert_includes digest[:key_moments].keys, :snowballs_score
     assert_includes digest[:key_moments].keys, :snowballs_population
     assert_includes digest[:key_moments].keys, :snowballs_science
