@@ -297,7 +297,35 @@ Iterations (each: failing tests → review → implementation → commit):
    win chances from influence levels and trends. A/B against the previous
    prompt version on the first game logged with the new snapshot.
 
-## Plan: World Congress / diplomatic victory analysis (blocked on logger data)
+## Plan: World Congress / diplomatic victory analysis (implemented; A/B pending a real log)
+
+Status: iterations 1–5 implemented 2026-08-16 (commits `478392c`…`dc4d277`),
+against the event shapes confirmed in `civ-narrative-logger` commit `e7f5cd1`.
+Two deviations from the plan below, found while implementing:
+
+- Fixed a real bug on the way: `tools/filter-major.sh` in the logger repo
+  silently dropped `united_nations_formed` and `resolution_passed/failed/
+  repealed` (no civ-name string anywhere in those records) before this work
+  started - patched there first (`civ-narrative-logger` commit `51449b5`).
+- **Dropped "resolutions targeting a specific civ"** (iteration 3): the
+  league API's `GetEnactProposals`/`GetRepealProposals` expose no target-civ
+  field at all - a documented limit, not a logger gap - so `resolution_proposed/
+  passed/failed/repealed` never carry one. Substituted a plain
+  `resolutions_passed` key moment (type/proposer/turn, no target) instead.
+- Iteration 2 ("resolution names via ids.yml") turned out feasible as
+  planned, but only after finding the real source: `CIV5Resolutions.xml` in
+  the mod's `Override` is an empty stub, and the actual `<Resolutions>`
+  table lives, unmodified from vanilla BNW bar a few tweaked fields, in the
+  misleadingly-named `CIV5Units.xml` (its text in `CIV5Units_Mongol.xml`) -
+  exactly the pitfall `db/lekmod/README.md` already warns about for other
+  tables. `lekmod.resolutions` is therefore a display-name-only map (no
+  per-resolution effect prose exists to extract, unlike policies/beliefs).
+
+Prompt v18 teaches the model to read `congress.*` and is explicit that
+individual member votes are never available. Iteration 5's A/B against v17
+is still pending an actual game logged with Congress data.
+
+## Plan: World Congress / diplomatic victory analysis (original plan text)
 
 Context: the logger's plan now includes polling the World Congress once per
 turn (no DLL hook covers it — verified in `CvVotingClasses.cpp`): a per-turn
