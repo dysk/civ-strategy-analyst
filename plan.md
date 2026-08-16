@@ -247,7 +247,15 @@ Noted during the v7 review, out of scope for this plan: `general_rules` goes in
 full (digest 58→95 kB) — the first candidate to trim if A/B shows a
 quality/cost problem.
 
-## Plan: demographics + tourism analysis (blocked on logger data)
+## Plan: demographics + tourism analysis (implemented; A/B pending a real log)
+
+Status: iterations 1–5 implemented 2026-08-16 (commits `a23797d`…`cd79745`),
+against the snapshot shape confirmed in `civ-narrative-logger` commits
+`f837f71`/`ef745e4`. Prompt v17 teaches the model to read `tourism`,
+`civs_influential_on` and the new `cultural` digest key. Iteration 5's A/B
+against v16 is still pending an actual game logged with the extended
+snapshot — nothing in this repo's fixtures exercises real LEKMOD tourism
+numbers yet.
 
 Context: the logger's plan (`civ-narrative-logger/docs/planned-changes.md`) now
 includes two snapshot extensions, both verified against the Lekmod DLL sources:
