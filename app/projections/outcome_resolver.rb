@@ -23,6 +23,9 @@ class OutcomeResolver
 
     return { winner_civ: nil, victory_type: nil, in_progress: true, source: :inferred } if last_turn.nil?
 
+    diplomatic_winner = diplomatic_victor
+    return { winner_civ: diplomatic_winner, victory_type: "diplomatic", in_progress: false, source: :inferred } if diplomatic_winner
+
     cultural_winner = cultural_victor_at(last_turn)
     return { winner_civ: cultural_winner, victory_type: "cultural", in_progress: false, source: :inferred } if cultural_winner
 
@@ -30,6 +33,22 @@ class OutcomeResolver
     in_progress = @game.max_turns.nil? || last_turn < @game.max_turns
 
     { winner_civ: leader, victory_type: nil, in_progress: in_progress, source: :inferred }
+  end
+
+  # Compares the last known Congress snapshot's delegate votes against
+  # that same snapshot's threshold, not a later one - the threshold
+  # itself moves as delegates enter with later eras.
+  def diplomatic_victor
+    last_snapshot = @game.game_events.where(event_type: "congress_snapshot").order(:turn).last
+    return nil unless last_snapshot
+
+    votes_needed = last_snapshot.payload["votes_needed_for_diplo_victory"]
+    return nil unless votes_needed
+
+    Array(last_snapshot.payload["delegates"])
+      .select { |delegate| delegate["votes"] && delegate["votes"] >= votes_needed }
+      .max_by { |delegate| delegate["votes"] }
+      &.[]("civ")
   end
 
   # Living majors is the count of civs the final turn's snapshots cover -

@@ -79,6 +79,46 @@ class OutcomeResolverTest < ActiveSupport::TestCase
     )
   end
 
+  test "infers diplomatic victory when a civ's delegate votes meet the threshold at the final Congress snapshot" do
+    snapshot("Rome", 100, score: 100)
+    snapshot("Greece", 100, score: 300)
+    congress_snapshot(100, delegates: [ { "civ" => "Rome", "votes" => 14 }, { "civ" => "Greece", "votes" => 3 } ], votes_needed: 12)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: "diplomatic", in_progress: false, source: :inferred },
+      outcome
+    )
+  end
+
+  test "falls back to the score leader when no civ's delegate votes meet the threshold" do
+    snapshot("Rome", 50, score: 300)
+    snapshot("Greece", 50, score: 200)
+    congress_snapshot(50, delegates: [ { "civ" => "Rome", "votes" => 5 }, { "civ" => "Greece", "votes" => 3 } ], votes_needed: 12)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: nil, in_progress: true, source: :inferred },
+      outcome
+    )
+  end
+
+  test "prefers diplomatic victory over a simultaneous cultural-victory reading" do
+    snapshot("Rome", 100, score: 100, civs_influential_on: 2)
+    snapshot("Greece", 100, score: 300, civs_influential_on: 0)
+    snapshot("Egypt", 100, score: 250, civs_influential_on: 0)
+    congress_snapshot(100, delegates: [ { "civ" => "Greece", "votes" => 14 } ], votes_needed: 12)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Greece", victory_type: "diplomatic", in_progress: false, source: :inferred },
+      outcome
+    )
+  end
+
   test "reports in progress with no leader when there are no snapshots yet" do
     outcome = OutcomeResolver.new(@game).call
 
@@ -89,6 +129,13 @@ class OutcomeResolverTest < ActiveSupport::TestCase
   end
 
   private
+
+  def congress_snapshot(turn, delegates:, votes_needed:)
+    @seq += 1
+    payload = { "event" => "congress_snapshot", "turn" => turn,
+                "delegates" => delegates, "votes_needed_for_diplo_victory" => votes_needed }
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn, event_type: "congress_snapshot", civ: nil, payload: payload)
+  end
 
   def snapshot(civ, turn, **metrics)
     @seq += 1
