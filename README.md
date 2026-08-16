@@ -76,7 +76,7 @@ bin/civ analyze GAME_ID [--winner Chile] [--victory-type domination] [--model gp
 
 Builds a compact JSON digest of the game (roster, settings, per-civ metric
 checkpoints, timelines, detected key moments), sends it to the configured LLM
-with the current versioned prompt in `app/prompts/` (see `AnalyzeGame::PROMPT_PATH`),
+with the prompt in `app/prompts/analyze_game.md` (see `AnalyzeGame::PROMPT_PATH`),
 and saves the result both as an `Analysis` record and as
 `reports/<game>-<timestamp>.md`.
 
@@ -109,7 +109,7 @@ its standings, all detected key moments, and the latest analysis report
 - `app/projections/` — pure, deterministic Ruby classes that read events from
   the DB: `MetricSeries`, `PlayerTimeline`, `KeyMomentDetector`,
   `OutcomeResolver`
-- `app/prompts/` — versioned LLM prompt templates (`analyze_game_v1.md`, ...)
+- `app/prompts/` — the LLM prompt template (`analyze_game.md`); history lives in git log
 - `examples/` — a sample `civ-narrative-logger` JSONL log (in-progress, one
   human player) to import if you don't have a game of your own yet
 - `app/controllers` / `app/views/games/` — the UI skeleton
