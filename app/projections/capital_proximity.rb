@@ -6,8 +6,10 @@
 # early aggression is possible in a way that fifty hexes does not.
 #
 # Only capitals are measured. Every civilization has exactly one, it is
-# founded on turn zero, and it never moves - so the distances hold for the
-# whole game and cannot be skewed by how much either side later expanded.
+# usually founded on turn zero (a settler moved before founding can push
+# that a turn or two), and it never moves afterward - so the distances
+# hold for the whole game and cannot be skewed by how much either side
+# later expanded.
 class CapitalProximity
   def self.for(game)
     new(game, grid: HexGrid.new(width: MapBounds.new(game).width))
