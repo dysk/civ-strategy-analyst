@@ -276,7 +276,7 @@ class KeyMomentDetector
   end
 
   def rolling_slope(values)
-    values.each_cons(SNOWBALL_WINDOW + 1).each_with_object({}) do |window, slopes|
+    values.reject { |_turn, value| value.nil? }.each_cons(SNOWBALL_WINDOW + 1).each_with_object({}) do |window, slopes|
       first_turn, first_value = window.first
       last_turn, last_value = window.last
       slopes[last_turn] = (last_value - first_value).to_f / (last_turn - first_turn)

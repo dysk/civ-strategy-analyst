@@ -25,6 +25,62 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/in progress/i, response.body)
   end
 
+  test "show keeps every key moment section collapsed until it is clicked" do
+    game = Game.create!(name: "Collapsed Game")
+    war(game, 10)
+
+    get game_url(game)
+
+    assert_select "details summary", "Wars (1)"
+    assert_select "details[open]", false
+  end
+
+  test "show marks the direction of a happiness swing in the list" do
+    game = Game.create!(name: "Swing Game", game_speed: "GAMESPEED_QUICK")
+    snapshot(game, "Rome", 100, happiness: 15)
+    snapshot(game, "Rome", 101, happiness: 1)
+
+    get game_url(game)
+
+    assert_select "details li .trend--down"
+  end
+
+  test "show gathers the religion moments into one section" do
+    game = Game.create!(name: "Religion Game")
+    event(game, "Rome", "pantheon_founded", 5, "belief" => "BELIEF_A")
+    event(game, "Rome", "reformation_added", 60, "religion" => "Christianity", "belief" => "BELIEF_B")
+
+    get game_url(game)
+
+    assert_select "details summary", "Religion (2)"
+    assert_select "details summary", text: /Pantheon/, count: 0
+  end
+
+  test "show keeps the kinds of religion moment apart inside the section" do
+    game = Game.create!(name: "Religion Order Game")
+    event(game, "Rome", "pantheon_founded", 5, "belief" => "BELIEF_A")
+    event(game, "Rome", "reformation_added", 60, "religion" => "Christianity", "belief" => "BELIEF_B")
+
+    get game_url(game)
+
+    assert_select "details h3", "Pantheon Foundings"
+    assert_select "details h3", "Reformations"
+  end
+
+  test "show gathers snowballs across every metric into one section" do
+    game = Game.create!(name: "Snowball Game")
+    (1..30).each do |turn|
+      snapshot(game, "Rome", turn, score: turn * 10, science: turn * 10)
+      snapshot(game, "Greece", turn, score: turn * 2, science: turn * 2)
+    end
+
+    get game_url(game)
+
+    assert_select "details summary", "Snowballs (2)"
+    assert_select "details h3", "Score"
+    assert_select "details h3", "Science"
+  end
+
   test "show displays key moments detected from the game's events" do
     game = Game.create!(name: "War Game")
     game.game_events.create!(
@@ -146,6 +202,21 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def war(game, turn)
+    event(
+      game, nil, "war_declared", turn,
+      "attacker_team" => 1, "attacker_civs" => [ "Rome" ],
+      "defender_team" => 2, "defender_civs" => [ "Greece" ]
+    )
+  end
+
+  def event(game, civ, event_type, turn, extra)
+    game.game_events.create!(
+      seq: game.game_events.count + 1, session_index: 0, turn: turn, event_type: event_type, civ: civ,
+      payload: extra.merge("event" => event_type, "turn" => turn)
+    )
+  end
 
   def city(game, civ, turn, x, y)
     game.game_events.create!(

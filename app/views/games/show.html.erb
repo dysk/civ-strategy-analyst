@@ -69,215 +69,24 @@
 
 <h2>Key Moments</h2>
 
-<% if [
-     @key_moments.wars, @key_moments.leader_changes, @key_moments.era_leads,
-     @key_moments.religion_foundings, @key_moments.pantheon_foundings,
-     @key_moments.religion_enhancements, @key_moments.reformations,
-     @key_moments.ideology_unlocks, @key_moments.ideology_adoptions, @key_moments.tenet_adoptions,
-     @key_moments.policy_branch_adoptions, @key_moments.policy_branch_completions, @key_moments.military_might_swings,
-     @key_moments.happiness_swings, @key_moments.unhappiness_periods,
-     @key_moments.snowballs("score"), @key_moments.snowballs("science"),
-     @key_moments.snowballs("population"), @key_moments.snowballs("culture"), @key_moments.nuclear_detonations,
-     @key_moments.city_state_ally_takeovers
-   ].all?(&:empty?) %>
+<% if @key_moment_groups.empty? %>
   <p class="empty-state">No key moments detected yet.</p>
 <% end %>
 
-<% if @key_moments.wars.any? %>
-  <h3>Wars</h3>
-  <ul>
-    <% @key_moments.wars.each do |war| %>
-      <li>
-        Turn <%= war[:turn] %>: <%= war[:attacker_civs].join(", ") %> declared war on <%= war[:defender_civs].join(", ") %>
-        <%= war[:turn_peace] ? "(peace at turn #{war[:turn_peace]})" : "(ongoing)" %>
-      </li>
+<% @key_moment_groups.each do |group| %>
+  <details class="moments">
+    <summary><%= group[:title] %> (<%= group[:count] %>)</summary>
+    <% group[:lists].each do |list| %>
+      <% if list[:title] %>
+        <h3><%= list[:title] %></h3>
+      <% end %>
+      <ul>
+        <% list[:moments].each do |moment| %>
+          <li><%= key_moment_trend(moment) %><%= key_moment_sentence(moment) %></li>
+        <% end %>
+      </ul>
     <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.leader_changes.any? %>
-  <h3>Leader Changes</h3>
-  <ul>
-    <% @key_moments.leader_changes.each do |change| %>
-      <li>Turn <%= change[:turn] %>: <%= change[:metric] %> lead passed from <%= change[:from] %> to <%= change[:to] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.era_leads.any? %>
-  <h3>Era Leads</h3>
-  <ul>
-    <% @key_moments.era_leads.each do |lead| %>
-      <li>Turn <%= lead[:turn] %>: <%= lead[:civs].join(", ") %> reached <%= lead[:era] %> first</li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.pantheon_foundings.any? %>
-  <h3>Pantheon Foundings</h3>
-  <ul>
-    <% @key_moments.pantheon_foundings.each do |founding| %>
-      <li>Turn <%= founding[:turn] %>: <%= founding[:civ] %> founded a pantheon with <%= founding[:belief] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.religion_foundings.any? %>
-  <h3>Religion Foundings</h3>
-  <ul>
-    <% @key_moments.religion_foundings.each do |founding| %>
-      <li>Turn <%= founding[:turn] %>: <%= founding[:civ] %> founded <%= founding[:religion] %> (##<%= founding[:order] %>) with <%= founding[:beliefs].to_a.join(", ") %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.religion_enhancements.any? %>
-  <h3>Religion Enhancements</h3>
-  <ul>
-    <% @key_moments.religion_enhancements.each do |enhancement| %>
-      <li>Turn <%= enhancement[:turn] %>: <%= enhancement[:civ] %> enhanced <%= enhancement[:religion] %> with <%= enhancement[:beliefs].to_a.join(", ") %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.reformations.any? %>
-  <h3>Reformations</h3>
-  <ul>
-    <% @key_moments.reformations.each do |reformation| %>
-      <li>Turn <%= reformation[:turn] %>: <%= reformation[:civ] %> added the reformation belief <%= reformation[:belief] %> to <%= reformation[:religion] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.ideology_unlocks.any? %>
-  <h3>Ideology Unlocks</h3>
-  <ul>
-    <% @key_moments.ideology_unlocks.each do |unlock| %>
-      <li>Turn <%= unlock[:turn] %>: <%= unlock[:civ] %> unlocked <%= unlock[:ideology] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.ideology_adoptions.any? %>
-  <h3>Ideology Adoptions</h3>
-  <ul>
-    <% @key_moments.ideology_adoptions.each do |adoption| %>
-      <li>Turn <%= adoption[:turn] %>: <%= adoption[:civ] %> adopted <%= adoption[:ideology] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.tenet_adoptions.any? %>
-  <h3>Tenet Adoptions</h3>
-  <ul>
-    <% @key_moments.tenet_adoptions.each do |adoption| %>
-      <li>Turn <%= adoption[:turn] %>: <%= adoption[:civ] %> adopted the <%= adoption[:ideology] %> tenet <%= adoption[:tenet] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.policy_branch_adoptions.any? %>
-  <h3>Policy Branch Adoptions</h3>
-  <ul>
-    <% @key_moments.policy_branch_adoptions.each do |adoption| %>
-      <li>Turn <%= adoption[:turn] %>: <%= adoption[:civ] %> adopted <%= adoption[:branch] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.policy_branch_completions.any? %>
-  <h3>Policy Branch Completions</h3>
-  <ul>
-    <% @key_moments.policy_branch_completions.each do |completion| %>
-      <li>Turn <%= completion[:turn] %>: <%= completion[:civ] %> completed <%= completion[:branch] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.military_might_swings.any? %>
-  <h3>Military Might Swings</h3>
-  <ul>
-    <% @key_moments.military_might_swings.each do |swing| %>
-      <% verb = swing[:type] == :military_might_surge ? "jumped" : "dropped" %>
-      <% turn_label = swing[:turn] == swing[:turn_end] ? "Turn #{swing[:turn]}" : "Turns #{swing[:turn]}&ndash;#{swing[:turn_end]}".html_safe %>
-      <li><%= turn_label %>: <%= swing[:civ] %> military might <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.happiness_swings.any? %>
-  <h3>Happiness Swings</h3>
-  <ul>
-    <% @key_moments.happiness_swings.each do |swing| %>
-      <% verb = swing[:type] == :happiness_surge ? "jumped" : "dropped" %>
-      <% turn_label = swing[:turn] == swing[:turn_end] ? "Turn #{swing[:turn]}" : "Turns #{swing[:turn]}&ndash;#{swing[:turn_end]}".html_safe %>
-      <li><%= turn_label %>: <%= swing[:civ] %> happiness <%= verb %> from <%= swing[:from] %> to <%= swing[:to] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.unhappiness_periods.any? %>
-  <h3>Unhappiness Periods</h3>
-  <ul>
-    <% @key_moments.unhappiness_periods.each do |period| %>
-      <% turn_label = period[:turn] == period[:turn_end] ? "Turn #{period[:turn]}" : "Turns #{period[:turn]}&ndash;#{period[:turn_end]}".html_safe %>
-      <li><%= turn_label %>: <%= period[:civ] %> happiness stayed below zero</li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.snowballs("score").any? %>
-  <h3>Snowballs (Score)</h3>
-  <ul>
-    <% @key_moments.snowballs("score").each do |snowball| %>
-      <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.snowballs("science").any? %>
-  <h3>Snowballs (Science)</h3>
-  <ul>
-    <% @key_moments.snowballs("science").each do |snowball| %>
-      <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.snowballs("population").any? %>
-  <h3>Snowballs (Population)</h3>
-  <ul>
-    <% @key_moments.snowballs("population").each do |snowball| %>
-      <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.snowballs("culture").any? %>
-  <h3>Snowballs (Culture)</h3>
-  <ul>
-    <% @key_moments.snowballs("culture").each do |snowball| %>
-      <li>Turns <%= snowball[:turn] %>&ndash;<%= snowball[:turn_end] %>: <%= snowball[:civ] %> pulled decisively ahead</li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.nuclear_detonations.any? %>
-  <h3>Nuclear Detonations</h3>
-  <ul>
-    <% @key_moments.nuclear_detonations.each do |detonation| %>
-      <li>Turn <%= detonation[:turn] %>: <%= detonation[:civ] %> detonated a nuclear weapon on <%= detonation[:city] %></li>
-    <% end %>
-  </ul>
-<% end %>
-
-<% if @key_moments.city_state_ally_takeovers.any? %>
-  <h3>City-State Ally Takeovers</h3>
-  <ul>
-    <% @key_moments.city_state_ally_takeovers.each do |takeover| %>
-      <li>Turn <%= takeover[:turn] %>: <%= takeover[:to] %> took <%= takeover[:city_state] %>'s alliance from <%= takeover[:from] %></li>
-    <% end %>
-  </ul>
+  </details>
 <% end %>
 
 <h2>Strategy Report</h2>

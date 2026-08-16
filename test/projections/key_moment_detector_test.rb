@@ -453,6 +453,15 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "snowballs finds nothing in a metric the snapshots never recorded" do
+    (1..30).each do |t|
+      snapshot("A", t, score: t * 10)
+      snapshot("B", t, score: t * 2)
+    end
+
+    assert_equal [], detector.snowballs("population")
+  end
+
   test "snowballs is generic over the metric name (e.g. population)" do
     (1..30).each do |t|
       snapshot("A", t, population: t * 10)

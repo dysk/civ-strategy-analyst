@@ -24,6 +24,8 @@
   --color-badge-bg: #f3f4f6;
   --color-badge-analyzed-bg: #ecfdf5;
   --color-badge-analyzed-fg: #047857;
+  --color-trend-up: #047857;
+  --color-trend-down: #b91c1c;
 }
 
 @media screen and (prefers-color-scheme: dark) {
@@ -38,6 +40,8 @@
     --color-badge-bg: #1e1e1e;
     --color-badge-analyzed-bg: #0d2818;
     --color-badge-analyzed-fg: #34d399;
+    --color-trend-up: #34d399;
+    --color-trend-down: #f87171;
   }
 }
 
@@ -187,6 +191,29 @@ blockquote {
 
 .empty-state {
   color: var(--color-muted);
+}
+
+.trend {
+  margin-right: 0.4rem;
+  font-size: 0.85em;
+}
+
+.trend--up {
+  color: var(--color-trend-up);
+}
+
+.trend--down {
+  color: var(--color-trend-down);
+}
+
+.moments {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 0;
+}
+
+.moments summary {
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .geometry-note {
