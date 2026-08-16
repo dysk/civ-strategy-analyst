@@ -69,6 +69,21 @@ class DigestBuilderTest < ActiveSupport::TestCase
     )
   end
 
+  test "checkpoint metrics include the demographics and tourism scalars" do
+    snapshot("Rome", 25, score: 80, production: 62, food: 18, gross_gold: 45, plots: 87,
+      tourism: 120, civs_influential_on: 1)
+
+    digest = DigestBuilder.new(@game).call
+
+    rome_checkpoint = digest[:metrics]["Rome"][25]
+    assert_equal 62, rome_checkpoint["production"]
+    assert_equal 18, rome_checkpoint["food"]
+    assert_equal 45, rome_checkpoint["gross_gold"]
+    assert_equal 87, rome_checkpoint["plots"]
+    assert_equal 120, rome_checkpoint["tourism"]
+    assert_equal 1, rome_checkpoint["civs_influential_on"]
+  end
+
   test "adds tech/policy cost multipliers per checkpoint, derived from cities beyond the capital" do
     snapshot("Rome", 25, score: 80, cities: 4)
     snapshot("Greece", 25, score: 60, cities: 1)

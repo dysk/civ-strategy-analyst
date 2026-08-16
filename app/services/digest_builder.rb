@@ -3,6 +3,7 @@ class DigestBuilder
   SNAPSHOT_METRICS = %w[
     score science culture gold gold_per_turn faith happiness
     military_might military_units population cities techs
+    production food gross_gold plots tourism civs_influential_on
   ].freeze
 
   # LEKMOD rule: every owned city raises the cost of researching a new tech
