@@ -34,6 +34,7 @@ class LekmodIdsExtractor
     documents.each_with_object({}) do |doc, result|
       extract_type_mapping(doc, "Beliefs", "ShortDescription", result)
       extract_type_mapping(doc, "Policies", "Description", result)
+      extract_type_mapping(doc, "Resolutions", "Description", result)
     end
   end
 

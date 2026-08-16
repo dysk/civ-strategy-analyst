@@ -22,4 +22,12 @@
 			<Description>TXT_KEY_POLICY_TEST_ONE</Description>
 		</Row>
 	</Policies>
+	<Resolutions>
+		<Delete />
+		<Row>
+			<ID>1</ID>
+			<Type>RESOLUTION_TEST_ONE</Type>
+			<Description>TXT_KEY_RESOLUTION_TEST_ONE</Description>
+		</Row>
+	</Resolutions>
 </GameData>

@@ -27,6 +27,7 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_equal({}, result[:civilizations])
     assert_equal({}, result[:policies])
     assert_equal({}, result[:beliefs])
+    assert_equal({}, result[:resolutions])
     assert_nil result[:general_rules]
     assert_equal [], result[:unmatched_ids]
   end
@@ -120,6 +121,27 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_equal [ "BELIEF_ZAKATT" ], result[:unmatched_ids]
   end
 
+  test "resolves a resolution's display name from ids.yml" do
+    result = reference(version: "1.5", resolution_ids: [ "RESOLUTION_WORLDS_FAIR" ]).call
+
+    assert_equal "World's Fair", result[:resolutions]["RESOLUTION_WORLDS_FAIR"]
+    assert_equal [], result[:unmatched_ids]
+  end
+
+  test "reports a resolution ID with no ids.yml entry as unmatched" do
+    result = reference(version: "1.5", resolution_ids: [ "RESOLUTION_DOES_NOT_EXIST" ]).call
+
+    assert_equal({}, result[:resolutions])
+    assert_equal [ "RESOLUTION_DOES_NOT_EXIST" ], result[:unmatched_ids]
+  end
+
+  test "resolves resolutions gracefully, without ids.yml, when the version predates that file" do
+    result = reference(version: "1.0", resolution_ids: [ "RESOLUTION_WORLDS_FAIR" ]).call
+
+    assert_equal({}, result[:resolutions])
+    assert_equal [ "RESOLUTION_WORLDS_FAIR" ], result[:unmatched_ids]
+  end
+
   test "returns the full general.md content verbatim" do
     result = reference(version: "1.5").call
 
@@ -129,9 +151,10 @@ class LekmodReferenceTest < ActiveSupport::TestCase
 
   private
 
-  def reference(version:, civs: [], policy_ids: [], belief_ids: [])
+  def reference(version:, civs: [], policy_ids: [], belief_ids: [], resolution_ids: [])
     LekmodReference.new(
-      version, civs: civs, policy_ids: policy_ids, belief_ids: belief_ids, root: ROOT
+      version, civs: civs, policy_ids: policy_ids, belief_ids: belief_ids,
+      resolution_ids: resolution_ids, root: ROOT
     )
   end
 end

@@ -15,6 +15,12 @@ class LekmodIdsExtractorTest < ActiveSupport::TestCase
     assert_equal "New Name", ids["BELIEF_TEST_ONE"]
   end
 
+  test "resolves a resolution name via a plain Row in the Resolutions table" do
+    ids = LekmodIdsExtractor.new(SOURCE_DIR).call
+
+    assert_equal "Test Resolution", ids["RESOLUTION_TEST_ONE"]
+  end
+
   test "ignores text defined outside the Language_en_US wrapper" do
     ids = LekmodIdsExtractor.new(SOURCE_DIR).call
 

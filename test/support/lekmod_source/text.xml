@@ -9,5 +9,8 @@
 				Test Policy
 			</Text>
 		</Row>
+		<Row Tag="TXT_KEY_RESOLUTION_TEST_ONE">
+			<Text>Test Resolution</Text>
+		</Row>
 	</Language_en_US>
 </GameData>

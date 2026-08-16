@@ -184,12 +184,17 @@ class DigestBuilder
 
   def lekmod
     LekmodReference.new(
-      @lekmod_version, civs: civs, policy_ids: policy_ids, belief_ids: belief_ids, root: @lekmod_root
+      @lekmod_version, civs: civs, policy_ids: policy_ids, belief_ids: belief_ids,
+      resolution_ids: resolution_ids, root: @lekmod_root
     ).call
   end
 
   def policy_ids
     @game.game_events.where(event_type: "policy_adopted").filter_map { |e| e.payload["policy"] }.uniq
+  end
+
+  def resolution_ids
+    CongressTimeline.new(@game).resolutions.map { |r| r[:resolution] }.uniq
   end
 
   def belief_ids

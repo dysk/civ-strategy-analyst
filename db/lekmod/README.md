@@ -12,9 +12,20 @@ db/lekmod/<version>/
   religion.md        pantheons and beliefs
   ideologies.md      Freedom / Order / Autocracy tenets
   policies.md        the nine policy trees
-  ids.yml            POLICY_*/BELIEF_* -> display name, extracted from
-                     the mod's own XML source (optional; see below)
+  ids.yml            POLICY_*/BELIEF_*/RESOLUTION_* -> display name,
+                     extracted from the mod's own XML source (optional;
+                     see below)
 ```
+
+There is no `resolutions.md`: LEKMOD leaves the base game's World
+Congress resolutions themselves untouched (`CIV5Resolutions.xml` in the
+mod's `Override` is an empty stub - the real `<Resolutions>` table lives,
+unmodified from vanilla BNW bar a few tweaked fields, in the
+misleadingly-named `CIV5Units.xml`, per the pitfall note below). Only a
+handful of resolutions get an actual rule change, called out in
+`general.md`'s "World Congress / United Nations" section; `ids.yml`'s
+`RESOLUTION_*` entries supply just the display name for every other one,
+not an effect description - there is no per-resolution prose to extract.
 
 Format: one `## ` heading per entity, `- **Name:** effect` bullets,
 effect text verbatim from the docs. Policies, tenets and beliefs carry

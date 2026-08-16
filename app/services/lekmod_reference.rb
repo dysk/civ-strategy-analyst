@@ -6,11 +6,13 @@ class LekmodReference
   BOLD_NAME_BULLET = /^- \*\*(?<name>[^*]+?):\*\*/
   NAME_QUALIFIER = /\s*\([^)]*\)\s*\z/
 
-  def initialize(version, civs: [], policy_ids: [], belief_ids: [], root: Rails.root.join("db/lekmod"))
+  def initialize(version, civs: [], policy_ids: [], belief_ids: [], resolution_ids: [],
+                 root: Rails.root.join("db/lekmod"))
     @requested_version = version
     @civs = civs
     @policy_ids = policy_ids
     @belief_ids = belief_ids
+    @resolution_ids = resolution_ids
     @root = root
   end
 
@@ -24,6 +26,7 @@ class LekmodReference
       civilizations: version ? extract_civilizations(version) : {},
       policies: version ? extract_ids(version, %w[policies.md ideologies.md], @policy_ids) : {},
       beliefs: version ? extract_ids(version, %w[religion.md], @belief_ids) : {},
+      resolutions: version ? extract_resolution_names(version, @resolution_ids) : {},
       general_rules: version ? read_file(version, "general.md") : nil,
       unmatched_ids: @unmatched_ids
     }
@@ -75,6 +78,26 @@ class LekmodReference
 
       if entry
         result[id] = entry
+      else
+        @unmatched_ids << id
+      end
+    end
+  end
+
+  # World Congress resolutions have no markdown entry to extract - LEKMOD
+  # leaves the base game's resolutions untouched (see general.md's World
+  # Congress section for the handful of exceptions), so ids.yml's display
+  # name is all there is to offer, not a description of the effect.
+  def extract_resolution_names(version, ids)
+    return {} if ids.empty?
+
+    ids_yml = load_ids_yml(version)
+
+    ids.each_with_object({}) do |id, result|
+      name = ids_yml[id]
+
+      if name
+        result[id] = name
       else
         @unmatched_ids << id
       end

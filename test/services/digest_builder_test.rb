@@ -278,6 +278,14 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_match(/\+1 Faith and Culture from Fish/, digest[:lekmod][:beliefs]["BELIEF_GOD_SEA"])
   end
 
+  test "includes the LEKMOD display name for every resolution proposed in this game's Congress" do
+    event(nil, "resolution_proposed", 20, resolution: "RESOLUTION_WORLDS_FAIR", proposer: "Rome", repeal: false)
+
+    digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+
+    assert_equal "World's Fair", digest[:lekmod][:resolutions]["RESOLUTION_WORLDS_FAIR"]
+  end
+
   test "includes the full LEKMOD general rules text" do
     digest = DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
 
