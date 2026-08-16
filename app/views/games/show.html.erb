@@ -33,6 +33,14 @@
 <% end %>
 
 <h2>Capital Distances</h2>
+<% if @capital_positions.any? %>
+  <svg class="capital-layout" viewBox="0 0 300 300" role="img" aria-label="Capital positions">
+    <% @capital_positions.each do |point| %>
+      <circle cx="<%= point[:cx] %>" cy="<%= point[:cy] %>" r="5" />
+      <text x="<%= point[:cx] %>" y="<%= point[:cy] - 10 %>"><%= point[:civ] %></text>
+    <% end %>
+  </svg>
+<% end %>
 <% if @capital_distances.empty? %>
   <p class="empty-state">No capital coordinates in this game's events.</p>
 <% else %>

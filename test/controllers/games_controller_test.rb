@@ -207,6 +207,32 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge", /map width estimated/
   end
 
+  test "show draws a point and label for every capital in the layout diagram" do
+    game = Game.create!(name: "Layout Game", map_width: 46)
+    %w[Rome Greece Carthage].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+    city(game, "Carthage", 0, 16, 20)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "svg.capital-layout circle", 3
+    assert_select "svg.capital-layout text" do |labels|
+      assert_equal %w[Rome Greece Carthage], labels.map(&:text)
+    end
+  end
+
+  test "show omits the capital layout diagram for a game with no city coordinates" do
+    game = Game.create!(name: "Coordinateless Layout Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "svg.capital-layout", false
+  end
+
   test "show displays each civilization's empire geometry" do
     game = Game.create!(name: "Geometry Game", map_width: 46)
     game.players.create!(civ: "Rome")

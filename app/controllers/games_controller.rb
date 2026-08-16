@@ -1,5 +1,7 @@
 class GamesController < ApplicationController
   SNOWBALL_METRICS = %w[score science population culture].freeze
+  CAPITAL_LAYOUT_SIZE = 300
+  CAPITAL_LAYOUT_PADDING = 20
 
   def index
     @games = Game.order(:id)
@@ -13,6 +15,7 @@ class GamesController < ApplicationController
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
     @capital_distances = capital_distances
+    @capital_positions = capital_positions
     @army_rows = army_rows
     @cultural_rows = cultural_rows
     @congress_summary = congress_summary
@@ -83,6 +86,30 @@ class GamesController < ApplicationController
   def capital_distances
     CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width))
       .distances.sort_by { |pair| pair[:distance] }
+  end
+
+  # Every capital scaled onto a fixed square canvas: both axes share one
+  # scale factor so relative distance is preserved, and whichever axis
+  # spans less than the other is centered rather than stretched to fit.
+  def capital_positions
+    capitals = CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width)).capitals.values
+    return [] if capitals.empty?
+
+    xs = capitals.map { |capital| capital[:x] }
+    ys = capitals.map { |capital| capital[:y] }
+    drawable = CAPITAL_LAYOUT_SIZE - 2 * CAPITAL_LAYOUT_PADDING
+    span = [ xs.max - xs.min, ys.max - ys.min, 1 ].max
+    scale = drawable / span.to_f
+    x_offset = CAPITAL_LAYOUT_PADDING + (span - (xs.max - xs.min)) * scale / 2
+    y_offset = CAPITAL_LAYOUT_PADDING + (span - (ys.max - ys.min)) * scale / 2
+
+    capitals.map do |capital|
+      {
+        civ: capital[:civ],
+        cx: (x_offset + (capital[:x] - xs.min) * scale).round(2),
+        cy: (CAPITAL_LAYOUT_SIZE - y_offset - (capital[:y] - ys.min) * scale).round(2)
+      }
+    end
   end
 
   def cultural_rows
