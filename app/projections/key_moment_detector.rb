@@ -1,6 +1,7 @@
 class KeyMomentDetector
   UNIT_LOST_SPIKE_THRESHOLD = 3
-  LEADER_CHANGE_METRICS = %w[score science].freeze
+  LEADER_CHANGE_METRICS = %w[score science production].freeze
+  INFLUENCE_TARGET_LEVELS = %w[INFLUENCE_LEVEL_INFLUENTIAL INFLUENCE_LEVEL_DOMINANT].freeze
   EARLY_GAME_GRACE_PERIOD_QUICK = 67
   EARLY_GAME_GRACE_PERIOD_DEFAULT = 100
   MILITARY_MIGHT_SWING_THRESHOLD = 0.15
@@ -216,6 +217,37 @@ class KeyMomentDetector
           from: e.payload["old_ally"], to: e.payload["new_ally"] }
       end
       .sort_by { |moment| moment[:turn] }
+  end
+
+  def influence_level_reached
+    timeline = InfluenceTimeline.new(@game)
+
+    civs_with_snapshots.flat_map do |civ|
+      timeline.opponents(civ).flat_map do |opponent|
+        timeline.level_changes(civ, opponent)
+          .select { |change| INFLUENCE_TARGET_LEVELS.include?(change[:to]) }
+          .map { |change| { type: :influence_level_reached, turn: change[:turn], civ: civ, opponent: opponent, level: change[:to] } }
+      end
+    end.sort_by { |moment| moment[:turn] }
+  end
+
+  # Living majors is the count of civs a turn's snapshots actually cover -
+  # the logger emits no elimination event, so a civ dropping out of the
+  # snapshot round is the only signal that it's gone.
+  def cultural_victory_imminent
+    of_type("snapshot").group_by(&:turn).sort.each_with_object([]) do |(turn, events), moments|
+      living_majors = events.map(&:civ).uniq.size
+      next if living_majors < 2
+
+      events.each do |e|
+        civs_influential_on = e.payload["civs_influential_on"]
+        next unless civs_influential_on && civs_influential_on >= living_majors - 1
+        next if moments.any? { |moment| moment[:civ] == e.civ }
+
+        moments << { type: :cultural_victory_imminent, turn: turn, civ: e.civ,
+                      civs_influential_on: civs_influential_on, living_majors: living_majors }
+      end
+    end.sort_by { |moment| moment[:turn] }
   end
 
   def wars

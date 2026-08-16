@@ -114,6 +114,18 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "leader_changes also reports production leadership crossovers" do
+    snapshot("Rome", 101, score: 100, science: 20, production: 30)
+    snapshot("Greece", 101, score: 90, science: 10, production: 20)
+
+    snapshot("Rome", 102, score: 100, science: 20, production: 30)
+    snapshot("Greece", 102, score: 90, science: 10, production: 40)
+
+    moments = detector.leader_changes
+
+    assert_includes moments, { type: :leader_change, metric: "production", turn: 102, from: "Rome", to: "Greece" }
+  end
+
   test "era_leads reports which civs reached each era first, sorted by turn" do
     event(nil, "era_entered", 40, team: 1, civs: %w[Rome], era: "ERA_CLASSICAL")
     event(nil, "era_entered", 45, team: 2, civs: %w[Greece], era: "ERA_CLASSICAL")
@@ -541,6 +553,68 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
       [ { type: :city_state_ally_takeover, turn: 40, city_state: "Cahokia", from: "Rome", to: "Greece" } ],
       moments
     )
+  end
+
+  test "influence_level_reached reports only transitions into Influential or Dominant" do
+    snapshot("Rome", 10, influence: [ { "civ" => "Greece", "points" => 50, "level" => "INFLUENCE_LEVEL_EXOTIC", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot("Rome", 20, influence: [ { "civ" => "Greece", "points" => 150, "level" => "INFLUENCE_LEVEL_POPULAR", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot("Rome", 30, influence: [ { "civ" => "Greece", "points" => 320, "level" => "INFLUENCE_LEVEL_INFLUENTIAL", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot("Rome", 40, influence: [ { "civ" => "Greece", "points" => 500, "level" => "INFLUENCE_LEVEL_DOMINANT", "trend" => "INFLUENCE_TREND_RISING" } ])
+
+    moments = detector.influence_level_reached
+
+    assert_equal(
+      [
+        { type: :influence_level_reached, turn: 30, civ: "Rome", opponent: "Greece", level: "INFLUENCE_LEVEL_INFLUENTIAL" },
+        { type: :influence_level_reached, turn: 40, civ: "Rome", opponent: "Greece", level: "INFLUENCE_LEVEL_DOMINANT" }
+      ],
+      moments
+    )
+  end
+
+  test "influence_level_reached covers every civ-opponent pair, sorted by turn" do
+    snapshot("Rome", 10, influence: [ { "civ" => "Greece", "points" => 50, "level" => "INFLUENCE_LEVEL_EXOTIC", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot("Rome", 40, influence: [ { "civ" => "Greece", "points" => 500, "level" => "INFLUENCE_LEVEL_DOMINANT", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot("Greece", 10, influence: [ { "civ" => "Rome", "points" => 60, "level" => "INFLUENCE_LEVEL_EXOTIC", "trend" => "INFLUENCE_TREND_STATIC" } ])
+    snapshot("Greece", 20, influence: [ { "civ" => "Rome", "points" => 310, "level" => "INFLUENCE_LEVEL_INFLUENTIAL", "trend" => "INFLUENCE_TREND_RISING" } ])
+
+    moments = detector.influence_level_reached
+
+    assert_equal(
+      [
+        { type: :influence_level_reached, turn: 20, civ: "Greece", opponent: "Rome", level: "INFLUENCE_LEVEL_INFLUENTIAL" },
+        { type: :influence_level_reached, turn: 40, civ: "Rome", opponent: "Greece", level: "INFLUENCE_LEVEL_DOMINANT" }
+      ],
+      moments
+    )
+  end
+
+  test "cultural_victory_imminent reports the first turn a civ is influential on all but one living major" do
+    snapshot("Rome", 10, civs_influential_on: 1)
+    snapshot("Greece", 10, civs_influential_on: 0)
+    snapshot("Egypt", 10, civs_influential_on: 0)
+
+    snapshot("Rome", 20, civs_influential_on: 2)
+    snapshot("Greece", 20, civs_influential_on: 0)
+    snapshot("Egypt", 20, civs_influential_on: 0)
+
+    # Stays imminent on turn 30 too, but only the first crossing is reported.
+    snapshot("Rome", 30, civs_influential_on: 2)
+    snapshot("Greece", 30, civs_influential_on: 0)
+    snapshot("Egypt", 30, civs_influential_on: 0)
+
+    moments = detector.cultural_victory_imminent
+
+    assert_equal(
+      [ { type: :cultural_victory_imminent, turn: 20, civ: "Rome", civs_influential_on: 2, living_majors: 3 } ],
+      moments
+    )
+  end
+
+  test "cultural_victory_imminent needs at least two living majors to mean anything" do
+    snapshot("Rome", 10, civs_influential_on: 0)
+
+    assert_equal [], detector.cultural_victory_imminent
   end
 
   private
