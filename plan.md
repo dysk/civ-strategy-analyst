@@ -246,3 +246,46 @@ Iterations (each: failing tests → review → implementation → commit):
 Noted during the v7 review, out of scope for this plan: `general_rules` goes in
 full (digest 58→95 kB) — the first candidate to trim if A/B shows a
 quality/cost problem.
+
+## Plan: demographics + tourism analysis (blocked on logger data)
+
+Context: the logger's plan (`civ-narrative-logger/docs/planned-changes.md`) now
+includes two snapshot extensions, both verified against the Lekmod DLL sources:
+the Demographics screen's raw inputs (`production`, `food`, `gross_gold`,
+`plots`) and cultural data (`tourism`, `civs_influential_on`, plus an
+`influence` list per opponent — `{civ, points, level, trend}`). Until a game is
+logged with the extended snapshot there is nothing to build against; the
+iterations below start when such a log exists. Import needs no changes — the
+jsonb payload absorbs new snapshot fields as-is, and dedup is unaffected.
+
+What the new data buys: the demographics scalars are the trend-of-potential
+indicators players actually watch in-game (production above all), and the
+influence data is the only way to see cultural-victory pressure. LEKMOD builds
+tourism output somewhat differently than BNW, but the victory rule itself is
+unchanged — and since we log resulting influence, not its sources, the
+difference doesn't matter for the analysis.
+
+Iterations (each: failing tests → review → implementation → commit):
+
+1. **New scalar metrics ride for free** — `MetricSeries` and
+   `KeyMomentDetector#snowballs` are metric-name generic, so `production`,
+   `food`, `gross_gold`, `plots`, `tourism` and `civs_influential_on` work by
+   passing the name. The only code change: add the chosen ones to the digest's
+   checkpoint metrics in `DigestBuilder` (production and tourism at minimum;
+   decide the rest by digest-size impact).
+2. **`InfluenceTimeline` projection** — a pure class over the nested
+   `influence` list (the one snapshot field `MetricSeries` can't handle):
+   per pair (civ → opponent) the level over time, level-transition events,
+   and points-delta as the current tourism-vs-culture rate.
+3. **`KeyMomentDetector` heuristics** (one per TDD cycle, as before):
+   influence level transitions reaching Influential or Dominant; a civ's
+   `civs_influential_on` reaching all-but-one of living majors (cultural
+   victory imminent); production-rank changes (the demographics trend signal).
+4. **`OutcomeResolver`** — infer cultural victory when the final snapshot
+   shows `civs_influential_on` == living majors − 1.
+5. **Digest + prompt vNext** — a cultural-standing section in the digest
+   (per-civ tourism at checkpoints, the influence matrix at the last
+   checkpoint, key influence transitions); prompt addition: assess cultural
+   win chances from influence levels and trends. A/B against the previous
+   prompt version on the first game logged with the new snapshot.
+
