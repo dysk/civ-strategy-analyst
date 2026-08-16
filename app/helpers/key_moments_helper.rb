@@ -7,6 +7,13 @@ module KeyMomentsHelper
                  "(#{m[:turn_peace] ? "peace at turn #{m[:turn_peace]}" : "ongoing"})" },
     leader_change: ->(m) { "#{m[:metric]} lead passed from #{m[:from]} to #{m[:to]}" },
     era_lead: ->(m) { "#{m[:civs].join(", ")} reached #{m[:era]} first" },
+    rush_tech_lead: ->(m) {
+      lead = "#{m[:civs].join(", ")} reached #{m[:tech]} first"
+      next "#{lead}, and nobody else got there" unless m[:next_turn]
+
+      gap = m[:next_turn] - m[:turn]
+      "#{lead}, #{gap} #{"turn".pluralize(gap)} ahead of #{m[:next_civs].join(", ")}"
+    },
     pantheon_founded: ->(m) { "#{m[:civ]} founded a pantheon with #{m[:belief]}" },
     religion_founded: ->(m) { "#{m[:civ]} founded #{m[:religion]} (##{m[:order]}) with #{Array(m[:beliefs]).join(", ")}" },
     religion_enhanced: ->(m) { "#{m[:civ]} enhanced #{m[:religion]} with #{Array(m[:beliefs]).join(", ")}" },

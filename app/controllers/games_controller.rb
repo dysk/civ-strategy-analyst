@@ -27,6 +27,7 @@ class GamesController < ApplicationController
       [ "Wars", { nil => moments.wars } ],
       [ "Leader Changes", { nil => moments.leader_changes } ],
       [ "Era Leads", { nil => moments.era_leads } ],
+      [ "Technology Rushes", { nil => moments.rush_tech_leads } ],
       [ "Religion", { "Pantheon Foundings" => moments.pantheon_foundings,
                       "Religion Foundings" => moments.religion_foundings,
                       "Religion Enhancements" => moments.religion_enhancements,

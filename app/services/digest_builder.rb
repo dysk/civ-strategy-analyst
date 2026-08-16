@@ -140,6 +140,7 @@ class DigestBuilder
       wars: detector.wars,
       leader_changes: detector.leader_changes,
       era_leads: detector.era_leads,
+      rush_tech_leads: detector.rush_tech_leads,
       religion_foundings: detector.religion_foundings,
       pantheon_foundings: detector.pantheon_foundings,
       religion_enhancements: detector.religion_enhancements,

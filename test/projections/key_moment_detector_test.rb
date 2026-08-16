@@ -114,6 +114,55 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "rush_tech_leads reports who reached a window-opening tech first and who followed" do
+    event(nil, "tech_researched", 120, team: 1, civs: %w[Rome], tech: "TECH_METALLURGY")
+    event(nil, "tech_researched", 148, team: 2, civs: %w[Greece], tech: "TECH_METALLURGY")
+
+    assert_equal(
+      [ { type: :rush_tech_lead, turn: 120, tech: "TECH_METALLURGY", civs: %w[Rome],
+          next_turn: 148, next_civs: %w[Greece] } ],
+      detector.rush_tech_leads
+    )
+  end
+
+  test "rush_tech_leads ignores technologies that open no window" do
+    event(nil, "tech_researched", 10, team: 1, civs: %w[Rome], tech: "TECH_POTTERY")
+    event(nil, "tech_researched", 20, team: 1, civs: %w[Rome], tech: "TECH_METAL_CASTING")
+
+    assert_empty detector.rush_tech_leads
+  end
+
+  test "rush_tech_leads shares the lead when a team reaches it on the same turn" do
+    event(nil, "tech_researched", 60, team: 1, civs: %w[Rome Egypt], tech: "TECH_MACHINERY")
+    event(nil, "tech_researched", 60, team: 3, civs: %w[Carthage], tech: "TECH_MACHINERY")
+    event(nil, "tech_researched", 75, team: 2, civs: %w[Greece], tech: "TECH_MACHINERY")
+
+    moment = detector.rush_tech_leads.first
+
+    assert_equal %w[Rome Egypt Carthage], moment[:civs]
+    assert_equal 75, moment[:next_turn]
+  end
+
+  test "rush_tech_leads omits the runner-up when nobody else got there" do
+    event(nil, "tech_researched", 200, team: 1, civs: %w[Rome], tech: "TECH_COMBUSTION")
+
+    moment = detector.rush_tech_leads.first
+
+    assert_equal %w[Rome], moment[:civs]
+    assert_not moment.key?(:next_turn)
+  end
+
+  test "rush_tech_leads sorts by the turn the window opened" do
+    event(nil, "tech_researched", 200, team: 1, civs: %w[Rome], tech: "TECH_FLIGHT")
+    event(nil, "tech_researched", 60, team: 1, civs: %w[Rome], tech: "TECH_CHIVALRY")
+    event(nil, "tech_researched", 150, team: 1, civs: %w[Rome], tech: "TECH_DYNAMITE")
+
+    assert_equal(
+      %w[TECH_CHIVALRY TECH_DYNAMITE TECH_FLIGHT],
+      detector.rush_tech_leads.map { |moment| moment[:tech] }
+    )
+  end
+
   test "era_leads reports which civs reached each era first, sorted by turn" do
     event(nil, "era_entered", 40, team: 1, civs: %w[Rome], era: "ERA_CLASSICAL")
     event(nil, "era_entered", 45, team: 2, civs: %w[Greece], era: "ERA_CLASSICAL")
