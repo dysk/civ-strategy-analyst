@@ -331,3 +331,32 @@ Iterations (each: failing tests → review → implementation → commit):
    are unknown, so voting intent must not be invented. A/B on the first game
    logged with Congress data.
 
+## Plan: domination + science victory progress (blocked on logger data)
+
+Context: the logger's plan now adds two snapshot fields, both mirroring what
+LEKMOD's own `VictoryProgress.lua` reads: `capitals` (original owners of the
+major capitals a player controls, own included) and `spaceship`
+(`{apollo, booster, cockpit, stasis_chamber, engine}` — parts counted only
+once assembled at the capital, which no event carries). Partly covered
+already: `project_completed` catches Apollo Program (space race unlocked) and
+Manhattan Project, `city_captured` has a `capital` flag, and `unit_trained`
+shows spaceship parts being built — but building ≠ assembling, and capital
+control from events alone means replaying every capture.
+
+Iterations (each: failing tests → review → implementation → commit):
+
+1. **Capital-count metric** — capitals-held count derived from the `capitals`
+   list in the same `{turn, value}` shape `MetricSeries` uses; the list
+   itself (who holds whose capital) goes to the timeline.
+2. **`KeyMomentDetector` heuristics** (one per TDD cycle): a civ taking or
+   losing an original capital (cross-check with the existing `city_captured`
+   flag), Apollo completion as space-race start, each spaceship-part
+   assembly (diff of the `spaceship` field), and assembly reaching 5 of 6
+   parts (science victory imminent).
+3. **`OutcomeResolver`** — infer domination victory when one civ's `capitals`
+   covers every living major's original capital, and science victory when
+   `spaceship` reaches all six parts.
+4. **Digest + prompt vNext** — victory-progress section: capitals held per
+   civ at checkpoints, spaceship state per civ, Apollo timing order; prompt
+   addition: distinguish parts built (`unit_trained`) from parts assembled
+   (`spaceship`) — a built part in transit is a target, not progress.
