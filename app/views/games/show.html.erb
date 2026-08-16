@@ -32,6 +32,33 @@
   </ol>
 <% end %>
 
+<h2>Capital Distances</h2>
+<% if @capital_distances.empty? %>
+  <p class="empty-state">No capital coordinates in this game's events.</p>
+<% else %>
+  <table class="capital-distances">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Civ</th>
+        <th>Hexes apart</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @capital_distances.each do |pair| %>
+        <tr>
+          <td><%= pair[:civs].first %></td>
+          <td><%= pair[:civs].last %></td>
+          <td><%= pair[:distance] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @map_bounds.estimated? %>
+    <p><span class="badge">map width estimated</span> distances across the map's edge may be shorter than shown</p>
+  <% end %>
+<% end %>
+
 <h2>Empire Geometry</h2>
 <% if @geometry_rows.empty? %>
   <p class="empty-state">No city coordinates in this game's events.</p>

@@ -12,6 +12,7 @@ class GamesController < ApplicationController
     @key_moment_groups = key_moment_groups
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
+    @capital_distances = capital_distances
     @army_rows = army_rows
     @cultural_rows = cultural_rows
     @congress_summary = congress_summary
@@ -75,6 +76,13 @@ class GamesController < ApplicationController
     @game.players.order(:id).filter_map do |player|
       armies.latest(player.civ)&.merge(civ: player.civ)
     end
+  end
+
+  # Closest neighbours first: who had to worry about whom is the reason to
+  # look at this table at all.
+  def capital_distances
+    CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width))
+      .distances.sort_by { |pair| pair[:distance] }
   end
 
   def cultural_rows

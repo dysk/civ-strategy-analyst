@@ -171,6 +171,42 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/not.{0,20}analyzed/i, response.body)
   end
 
+  test "show displays the distance between each pair of capitals, closest first" do
+    game = Game.create!(name: "Proximity Game", map_width: 46)
+    %w[Rome Greece Carthage].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+    city(game, "Carthage", 0, 16, 10)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.capital-distances tbody tr" do |rows|
+      assert_equal [ "6", "14", "20" ], rows.map { |row| row.css("td").last.text }
+    end
+  end
+
+  test "show omits the capital distances table for a game with no city coordinates" do
+    game = Game.create!(name: "Coordinateless Proximity Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.capital-distances", false
+  end
+
+  test "show flags capital distances measured against an estimated map width" do
+    game = Game.create!(name: "Estimated Width Game")
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 16, 10)
+
+    get game_url(game)
+
+    assert_select ".badge", /map width estimated/
+  end
+
   test "show displays each civilization's empire geometry" do
     game = Game.create!(name: "Geometry Game", map_width: 46)
     game.players.create!(civ: "Rome")
