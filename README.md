@@ -7,7 +7,9 @@ surface the key turning points of a game. See `plan.md` for the full design.
 ## Requirements
 
 - Ruby 4.0.6 (pinned in `.ruby-version` / `mise.toml` — `mise install` picks it
-  up automatically if you use [mise](https://mise.jdx.dev/))
+  up automatically if you use [mise](https://mise.jdx.dev/), and `rbenv
+  install` picks it up from `.ruby-version` if you use
+  [rbenv](https://github.com/rbenv/rbenv))
 - PostgreSQL (any recent version; developed against 17)
 - An API key for at least one LLM provider if you want to actually run
   `analyze` against a real model (OpenAI and/or Anthropic — see Configuration)
