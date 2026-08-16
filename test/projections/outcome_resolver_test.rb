@@ -42,6 +42,43 @@ class OutcomeResolverTest < ActiveSupport::TestCase
     )
   end
 
+  test "infers cultural victory when a civ is influential on all but one living major at the final snapshot" do
+    snapshot("Rome", 100, score: 100, civs_influential_on: 2)
+    snapshot("Greece", 100, score: 300, civs_influential_on: 0)
+    snapshot("Egypt", 100, score: 250, civs_influential_on: 0)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: "cultural", in_progress: false, source: :inferred },
+      outcome
+    )
+  end
+
+  test "falls back to the score leader when no civ nears a cultural victory" do
+    snapshot("Rome", 50, score: 300, civs_influential_on: 1)
+    snapshot("Greece", 50, score: 200, civs_influential_on: 0)
+    snapshot("Egypt", 50, score: 100, civs_influential_on: 0)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: nil, in_progress: true, source: :inferred },
+      outcome
+    )
+  end
+
+  test "does not infer a cultural victory with only one living major - that's domination, not culture" do
+    snapshot("Rome", 100, score: 500, civs_influential_on: 0)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: nil, in_progress: false, source: :inferred },
+      outcome
+    )
+  end
+
   test "reports in progress with no leader when there are no snapshots yet" do
     outcome = OutcomeResolver.new(@game).call
 
