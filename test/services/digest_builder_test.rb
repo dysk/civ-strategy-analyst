@@ -213,6 +213,26 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :policy_branch_completions
     assert_includes digest[:key_moments].keys, :nuclear_detonations
     assert_includes digest[:key_moments].keys, :city_state_ally_takeovers
+    assert_includes digest[:key_moments].keys, :influence_level_reached
+    assert_includes digest[:key_moments].keys, :cultural_victory_imminent
+  end
+
+  test "includes a cultural-standing matrix per civ from the latest known influence data" do
+    snapshot("Rome", 10, influence: [ { "civ" => "Greece", "points" => 100, "level" => "INFLUENCE_LEVEL_FAMILIAR", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot("Rome", 20, influence: [ { "civ" => "Greece", "points" => 320, "level" => "INFLUENCE_LEVEL_INFLUENTIAL", "trend" => "INFLUENCE_TREND_RISING" } ])
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      { "Greece" => { points: 320, level: "INFLUENCE_LEVEL_INFLUENTIAL", trend: "INFLUENCE_TREND_RISING" } },
+      digest[:cultural]["Rome"]
+    )
+  end
+
+  test "cultural matrix is empty for a civ with no influence data" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal({}, digest[:cultural]["Rome"])
   end
 
   test "includes lekmod reference data resolved from the given version, for roster civs only" do

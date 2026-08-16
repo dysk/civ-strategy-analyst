@@ -31,6 +31,7 @@ class DigestBuilder
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
       key_moments: key_moments,
+      cultural: cultural_by_civ,
       lekmod: lekmod
     }
   end
@@ -134,11 +135,26 @@ class DigestBuilder
     end
   end
 
+  def cultural_by_civ
+    timeline = InfluenceTimeline.new(@game)
+
+    civs.each_with_object({}) do |civ, result|
+      result[civ] = timeline.opponents(civ).each_with_object({}) do |opponent, matrix|
+        latest = timeline.series(civ, opponent).last
+        next unless latest
+
+        matrix[opponent] = latest.slice(:points, :level, :trend)
+      end
+    end
+  end
+
   def key_moments
     detector = KeyMomentDetector.new(@game)
 
     {
       wars: detector.wars,
+      influence_level_reached: detector.influence_level_reached,
+      cultural_victory_imminent: detector.cultural_victory_imminent,
       leader_changes: detector.leader_changes,
       era_leads: detector.era_leads,
       religion_foundings: detector.religion_foundings,
