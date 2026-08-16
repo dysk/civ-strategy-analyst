@@ -9,6 +9,16 @@ class KeyMomentDetector
   SNOWBALL_MIN_STRETCH = 15
   IDEOLOGY_BRANCHES = %w[POLICY_BRANCH_FREEDOM POLICY_BRANCH_ORDER POLICY_BRANCH_AUTOCRACY].freeze
 
+  # Technologies whose arrival opens a window rather than adding a increment:
+  # each unlocks a capability that has no ready answer at the moment it lands,
+  # so reaching one first is a strategy in itself. Only the tech is recorded -
+  # what it unlocks, and how strong that is, belongs to the ruleset reference
+  # rather than to this list, since LEKMOD rebalances several of these units.
+  RUSH_TECHS = %w[
+    TECH_MACHINERY TECH_CHIVALRY TECH_METALLURGY TECH_INDUSTRIALIZATION
+    TECH_DYNAMITE TECH_COMBUSTION TECH_FLIGHT TECH_RADAR
+  ].freeze
+
   # LEKMOD keeps the underlying policy IDs from vanilla Civ5 BNW even where it
   # renames the displayed policy (e.g. POLICY_MERCHANT_NAVY is shown in-game
   # as "Colonialism" under Exploration), so these are internal constant names.
@@ -37,6 +47,18 @@ class KeyMomentDetector
         { type: :leader_change, metric: metric, turn: change[:turn], from: change[:from], to: change[:to] }
       end
     end.select { |moment| moment[:turn] > early_game_grace_period }.sort_by { |moment| moment[:turn] }
+  end
+
+  # Who reached each window-opening technology first, and how long they had it
+  # alone. A three-turn lead and a thirty-turn lead are different facts, so the
+  # runner-up travels with the moment rather than being left to be worked out
+  # from the timelines.
+  def rush_tech_leads
+    of_type("tech_researched")
+      .select { |e| RUSH_TECHS.include?(e.payload["tech"]) }
+      .group_by { |e| e.payload["tech"] }
+      .map { |tech, events| rush_tech_lead(tech, events) }
+      .sort_by { |moment| moment[:turn] }
   end
 
   def era_leads
@@ -278,6 +300,21 @@ class KeyMomentDetector
 
   def of_type(event_type)
     @events.select { |e| e.event_type == event_type }
+  end
+
+  # One `tech_researched` covers a whole team, so a turn can carry several
+  # civilizations and they share the lead.
+  def rush_tech_lead(tech, events)
+    first, runner_up = events.group_by(&:turn).sort_by(&:first).first(2)
+
+    moment = { type: :rush_tech_lead, turn: first.first, tech: tech, civs: civs_in(first.last) }
+    return moment unless runner_up
+
+    moment.merge(next_turn: runner_up.first, next_civs: civs_in(runner_up.last))
+  end
+
+  def civs_in(events)
+    events.flat_map { |e| Array(e.payload["civs"]) }.uniq
   end
 
   def civs_with_snapshots
