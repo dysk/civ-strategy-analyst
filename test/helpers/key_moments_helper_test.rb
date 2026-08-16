@@ -15,6 +15,35 @@ class KeyMomentsHelperTest < ActionView::TestCase
     assert_equal "Turn 57: Chile declared war on Vietnam (ongoing)", key_moment_sentence(moment)
   end
 
+  test "narrates a rush technology with the lead it bought" do
+    moment = { type: :rush_tech_lead, turn: 120, tech: "TECH_METALLURGY",
+               civs: %w[Chile], next_turn: 148, next_civs: %w[Vietnam] }
+
+    assert_equal(
+      "Turn 120: Chile reached TECH_METALLURGY first, 28 turns ahead of Vietnam",
+      key_moment_sentence(moment)
+    )
+  end
+
+  test "narrates a rush technology nobody else reached" do
+    moment = { type: :rush_tech_lead, turn: 200, tech: "TECH_COMBUSTION", civs: %w[Chile] }
+
+    assert_equal(
+      "Turn 200: Chile reached TECH_COMBUSTION first, and nobody else got there",
+      key_moment_sentence(moment)
+    )
+  end
+
+  test "counts a one-turn rush lead in the singular" do
+    moment = { type: :rush_tech_lead, turn: 120, tech: "TECH_FLIGHT",
+               civs: %w[Chile], next_turn: 121, next_civs: %w[Vietnam] }
+
+    assert_equal(
+      "Turn 120: Chile reached TECH_FLIGHT first, 1 turn ahead of Vietnam",
+      key_moment_sentence(moment)
+    )
+  end
+
   test "leaves the snowballed metric to the heading above the list" do
     moment = { type: :snowball, civ: "Chile", turn: 50, turn_end: 70, duration_turns: 20 }
 
