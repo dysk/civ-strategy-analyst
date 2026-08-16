@@ -289,3 +289,45 @@ Iterations (each: failing tests → review → implementation → commit):
    win chances from influence levels and trends. A/B against the previous
    prompt version on the first game logged with the new snapshot.
 
+## Plan: World Congress / diplomatic victory analysis (blocked on logger data)
+
+Context: the logger's plan now includes polling the World Congress once per
+turn (no DLL hook covers it — verified in `CvVotingClasses.cpp`): a per-turn
+`congress_snapshot` record (host, delegates per civ, votes needed for
+diplomatic victory) plus diffed events — `congress_founded`,
+`congress_host_changed`, `resolution_proposed`, `resolution_passed` /
+`resolution_failed` / `resolution_repealed`, `united_nations_formed`. Known
+limit inherited from the game's Lua API: individual votes on Congress
+resolutions are not available, only proposals, proposers, delegate counts and
+outcomes. Important disambiguation: the `mp_vote` / `mp_proposal_result`
+events already in the data are LEKMOD's multiplayer voting (remap/irr among
+the human players), not the Congress — nothing currently in the log describes
+the Congress at all.
+
+Iterations (each: failing tests → review → implementation → commit):
+
+1. **`CongressTimeline` projection** — a pure class over `congress_snapshot`
+   and the resolution events: host over time, delegates per civ over time,
+   and each resolution's life (proposed by whom → outcome → repealed?).
+   `congress_snapshot` is a per-game record, not per-civ, so `MetricSeries`
+   doesn't apply directly; delegates-per-civ comes out of this class in the
+   same `{turn, value}` shape so downstream code can treat it like a metric.
+2. **Resolution names via the LEKMOD reference** — resolutions arrive as
+   `RESOLUTION_*` types; extend the `ids.yml` extraction to cover them (same
+   mechanism, same Type→TXT_KEY→Text chain) so the digest shows display
+   names, with unmatched IDs surfacing in `unmatched_ids` as before.
+3. **`KeyMomentDetector` heuristics** (one per TDD cycle): host changes,
+   United Nations formed, a civ's delegates crossing within reach of
+   `votes_needed` (diplomatic victory imminent), and passed resolutions that
+   target a specific civ (embargoes, ideology/religion picks) as key moments
+   for that civ.
+4. **`OutcomeResolver`** — infer diplomatic victory when the final snapshots
+   show a civ at or above `votes_needed` around a victory session.
+5. **Digest + prompt vNext** — a Congress section: host history, delegate
+   counts at checkpoints, passed resolutions with proposer and display name,
+   votes needed vs. best delegate count; prompt addition: weigh Congress
+   control (host, delegate lead, targeted resolutions) as a strategic lever
+   and assess diplomatic win chances; note explicitly that individual votes
+   are unknown, so voting intent must not be invented. A/B on the first game
+   logged with Congress data.
+
