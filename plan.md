@@ -367,7 +367,25 @@ Iterations (each: failing tests → review → implementation → commit):
    are unknown, so voting intent must not be invented. A/B on the first game
    logged with Congress data.
 
-## Plan: domination + science victory progress (blocked on logger data)
+## Plan: domination + science victory progress (implemented; A/B pending a real log)
+
+Status: iterations 1–4 implemented 2026-08-16 (commits `713557f`…`fea0005`),
+against the snapshot shape confirmed in `civ-narrative-logger` commit
+`cc08df4`. Confirmed the exact spaceship completion count against the mod's
+own XML (`Project_VictoryThresholds`/`MaxTeamInstances`, not just the
+`{apollo, booster, cockpit, stasis_chamber, engine}` field list): 6 physical
+parts (3 booster + 1 each of cockpit/stasis_chamber/engine), apollo being a
+prerequisite unlock rather than a counted part - this is what "5 of 6"
+below actually means. `capitals_timeline`/`spaceship_timeline` ended up as
+two separate classes rather than one combined one. Domination is checked
+against the whole original roster (`@game.players`), not just
+currently-living majors, since an eliminated rival's capital still counts
+once captured. Prompt v19 teaches the model to read `victory_progress.*`
+and to distinguish a part *built* (`unit_trained`) from one *assembled*
+(`victory_progress.spaceship`). Iteration 4's A/B against v18 is still
+pending an actual game logged with these snapshot fields.
+
+## Plan: domination + science victory progress (original plan text)
 
 Context: the logger's plan now adds two snapshot fields, both mirroring what
 LEKMOD's own `VictoryProgress.lua` reads: `capitals` (original owners of the
