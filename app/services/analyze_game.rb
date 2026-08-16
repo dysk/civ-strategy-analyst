@@ -1,5 +1,5 @@
 class AnalyzeGame
-  PROMPT_PATH = Rails.root.join("app/prompts/analyze_game_v20.md")
+  PROMPT_PATH = Rails.root.join("app/prompts/analyze_game_v21.md")
 
   LlmResponse = Struct.new(:content, :input_tokens, :output_tokens, :cost_usd, keyword_init: true)
 
