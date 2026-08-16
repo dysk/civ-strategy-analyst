@@ -250,6 +250,44 @@ class KeyMomentDetector
     end.sort_by { |moment| moment[:turn] }
   end
 
+  def congress_host_changes
+    of_type("congress_host_changed")
+      .map { |e| { type: :congress_host_change, turn: e.turn, from: e.payload["old_host"], to: e.payload["new_host"] } }
+      .sort_by { |moment| moment[:turn] }
+  end
+
+  def united_nations_formed
+    of_type("united_nations_formed")
+      .map { |e| { type: :united_nations_formed, turn: e.turn } }
+      .sort_by { |moment| moment[:turn] }
+  end
+
+  # Compares each snapshot's delegate votes against that same snapshot's
+  # votes_needed, not the latest known threshold - the threshold itself
+  # can move (more delegates enter as civs reach later eras).
+  def diplomatic_victory_imminent
+    of_type("congress_snapshot").sort_by(&:turn).each_with_object([]) do |e, moments|
+      votes_needed = e.payload["votes_needed_for_diplo_victory"]
+      next unless votes_needed
+
+      Array(e.payload["delegates"]).each do |delegate|
+        next if delegate["votes"].nil? || delegate["votes"] < votes_needed
+        next if moments.any? { |moment| moment[:civ] == delegate["civ"] }
+
+        moments << { type: :diplomatic_victory_imminent, turn: e.turn, civ: delegate["civ"],
+                      votes: delegate["votes"], votes_needed: votes_needed }
+      end
+    end.sort_by { |moment| moment[:turn] }
+  end
+
+  def resolutions_passed
+    CongressTimeline.new(@game).resolutions
+      .select { |resolution| resolution[:outcome] == :passed }
+      .map { |resolution| { type: :resolution_passed, turn: resolution[:outcome_turn],
+                             resolution: resolution[:resolution], proposer: resolution[:proposer] } }
+      .sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])

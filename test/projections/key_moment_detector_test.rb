@@ -617,7 +617,60 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal [], detector.cultural_victory_imminent
   end
 
+  test "congress_host_changes reports each host transition, sorted by turn" do
+    event(nil, "congress_host_changed", 90, old_host: nil, new_host: "Rome")
+    event(nil, "congress_host_changed", 150, old_host: "Rome", new_host: "Greece")
+
+    assert_equal(
+      [
+        { type: :congress_host_change, turn: 90, from: nil, to: "Rome" },
+        { type: :congress_host_change, turn: 150, from: "Rome", to: "Greece" }
+      ],
+      detector.congress_host_changes
+    )
+  end
+
+  test "united_nations_formed reports the turn the UN was formed" do
+    event(nil, "united_nations_formed", 220)
+
+    assert_equal [ { type: :united_nations_formed, turn: 220 } ], detector.united_nations_formed
+  end
+
+  test "diplomatic_victory_imminent reports the first turn a civ's delegate votes meet the threshold" do
+    congress_snapshot(50, host: "Rome",
+      delegates: [ { "civ" => "Rome", "votes" => 5 }, { "civ" => "Greece", "votes" => 10 } ], votes_needed: 12)
+    congress_snapshot(74, host: "Rome",
+      delegates: [ { "civ" => "Rome", "votes" => 5 }, { "civ" => "Greece", "votes" => 12 } ], votes_needed: 12)
+    # Stays past the threshold, but only the first crossing is reported.
+    congress_snapshot(98, host: "Rome",
+      delegates: [ { "civ" => "Rome", "votes" => 5 }, { "civ" => "Greece", "votes" => 13 } ], votes_needed: 12)
+
+    assert_equal(
+      [ { type: :diplomatic_victory_imminent, turn: 74, civ: "Greece", votes: 12, votes_needed: 12 } ],
+      detector.diplomatic_victory_imminent
+    )
+  end
+
+  test "resolutions_passed lists each passed resolution with its proposer, sorted by turn" do
+    event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
+    event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")
+    event(nil, "resolution_proposed", 20, resolution: "RESOLUTION_PLAYER_EMBARGO", proposer: "Greece", repeal: false)
+    event(nil, "resolution_failed", 25, resolution: "RESOLUTION_PLAYER_EMBARGO")
+
+    assert_equal(
+      [ { type: :resolution_passed, turn: 15, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome" } ],
+      detector.resolutions_passed
+    )
+  end
+
   private
+
+  def congress_snapshot(turn, host:, delegates:, votes_needed:)
+    @seq += 1
+    payload = { "event" => "congress_snapshot", "turn" => turn, "host" => host,
+                "delegates" => delegates, "votes_needed_for_diplo_victory" => votes_needed }
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn, event_type: "congress_snapshot", civ: nil, payload: payload)
+  end
 
   def detector
     @detector ||= KeyMomentDetector.new(@game)
