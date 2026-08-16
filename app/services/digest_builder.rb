@@ -33,6 +33,7 @@ class DigestBuilder
       key_moments: key_moments,
       cultural: cultural_by_civ,
       congress: congress,
+      victory_progress: victory_progress,
       lekmod: lekmod
     }
   end
@@ -178,7 +179,15 @@ class DigestBuilder
       snowballs_science: detector.snowballs("science"),
       snowballs_culture: detector.snowballs("culture"),
       nuclear_detonations: detector.nuclear_detonations,
-      city_state_ally_takeovers: detector.city_state_ally_takeovers
+      city_state_ally_takeovers: detector.city_state_ally_takeovers,
+      congress_host_changes: detector.congress_host_changes,
+      united_nations_formed: detector.united_nations_formed,
+      diplomatic_victory_imminent: detector.diplomatic_victory_imminent,
+      resolutions_passed: detector.resolutions_passed,
+      capital_control_changes: detector.capital_control_changes,
+      apollo_completions: detector.apollo_completions,
+      spaceship_part_assemblies: detector.spaceship_part_assemblies,
+      science_victory_imminent: detector.science_victory_imminent
     }
   end
 
@@ -205,13 +214,24 @@ class DigestBuilder
     {
       host_history: congress_timeline.host_over_time,
       votes_needed: congress_timeline.votes_needed,
-      delegates_by_civ: civs.each_with_object({}) { |civ, result| result[civ] = delegate_checkpoints(civ) },
+      delegates_by_civ: civs.each_with_object({}) { |civ, result| result[civ] = sample_checkpoints(congress_timeline.delegate_votes(civ).to_h) },
       resolutions: congress_timeline.resolutions
     }
   end
 
-  def delegate_checkpoints(civ)
-    turns = congress_timeline.delegate_votes(civ).to_h
+  def victory_progress
+    capitals = CapitalsTimeline.new(@game)
+    spaceship = SpaceshipTimeline.new(@game)
+
+    civs.each_with_object({}) do |civ, result|
+      result[civ] = {
+        capitals_held: sample_checkpoints(capitals.capitals_held(civ).to_h),
+        spaceship: sample_checkpoints(spaceship.series(civ).to_h { |entry| [ entry[:turn], entry[:spaceship] ] })
+      }
+    end
+  end
+
+  def sample_checkpoints(turns)
     max_turn = turns.keys.max
     return {} unless max_turn
 

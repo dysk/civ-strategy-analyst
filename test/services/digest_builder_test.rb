@@ -215,6 +215,14 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :city_state_ally_takeovers
     assert_includes digest[:key_moments].keys, :influence_level_reached
     assert_includes digest[:key_moments].keys, :cultural_victory_imminent
+    assert_includes digest[:key_moments].keys, :congress_host_changes
+    assert_includes digest[:key_moments].keys, :united_nations_formed
+    assert_includes digest[:key_moments].keys, :diplomatic_victory_imminent
+    assert_includes digest[:key_moments].keys, :resolutions_passed
+    assert_includes digest[:key_moments].keys, :capital_control_changes
+    assert_includes digest[:key_moments].keys, :apollo_completions
+    assert_includes digest[:key_moments].keys, :spaceship_part_assemblies
+    assert_includes digest[:key_moments].keys, :science_victory_imminent
   end
 
   test "includes a cultural-standing matrix per civ from the latest known influence data" do
@@ -267,6 +275,21 @@ class DigestBuilderTest < ActiveSupport::TestCase
       [ { resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false,
           proposed_turn: 10, outcome: :passed, outcome_turn: 15, repealed_turn: nil } ],
       digest[:congress][:resolutions]
+    )
+  end
+
+  test "samples each civ's capitals held and spaceship state at ~25-turn checkpoints" do
+    snapshot("Rome", 10, capitals: %w[Rome],
+      spaceship: { "apollo" => 0, "booster" => 0, "cockpit" => 0, "stasis_chamber" => 0, "engine" => 0 })
+    snapshot("Rome", 30, capitals: %w[Rome Greece],
+      spaceship: { "apollo" => 1, "booster" => 1, "cockpit" => 0, "stasis_chamber" => 0, "engine" => 0 })
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal({ 25 => 1, 30 => 2 }, digest[:victory_progress]["Rome"][:capitals_held])
+    assert_equal(
+      { "apollo" => 1, "booster" => 1, "cockpit" => 0, "stasis_chamber" => 0, "engine" => 0 },
+      digest[:victory_progress]["Rome"][:spaceship][30]
     )
   end
 
