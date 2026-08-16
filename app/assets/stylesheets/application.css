@@ -188,3 +188,9 @@ blockquote {
 .empty-state {
   color: var(--color-muted);
 }
+
+.geometry-note {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  max-width: 60ch;
+}

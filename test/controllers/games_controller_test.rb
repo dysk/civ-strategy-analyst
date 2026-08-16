@@ -81,6 +81,55 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/not.{0,20}analyzed/i, response.body)
   end
 
+  test "show displays each civilization's empire geometry" do
+    game = Game.create!(name: "Geometry Game", map_width: 46)
+    game.players.create!(civ: "Rome")
+    city(game, "Rome", 1, 10, 10)
+    city(game, "Rome", 5, 14, 10)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.geometry" do
+      assert_select "td", "Rome"
+      assert_select "td", "2"
+      assert_select "td", "4"
+      assert_select "td", "4.0"
+      assert_select "td", "1.0"
+    end
+  end
+
+  test "show says the map width was inferred rather than reported" do
+    game = Game.create!(name: "Inferred Width Game")
+    game.players.create!(civ: "Rome")
+    city(game, "Rome", 1, 45, 10)
+
+    get game_url(game)
+
+    assert_select ".geometry-note", /inferred/i
+  end
+
+  test "show marks a civilization whose city count the timeline cannot account for" do
+    game = Game.create!(name: "Razed City Game", map_width: 46)
+    game.players.create!(civ: "Rome")
+    city(game, "Rome", 1, 10, 10)
+    snapshot(game, "Rome", 20, cities: 0)
+
+    get game_url(game)
+
+    assert_select "table.geometry .badge", /turn 20/
+  end
+
+  test "show omits the geometry table for a game with no city coordinates" do
+    game = Game.create!(name: "Coordinateless Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.geometry", false
+  end
+
   test "show 404s for an unknown game id" do
     get game_url(id: 999_999)
 
@@ -97,6 +146,13 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def city(game, civ, turn, x, y)
+    game.game_events.create!(
+      seq: game.game_events.count + 1, session_index: 0, turn: turn, event_type: "city_founded", civ: civ,
+      payload: { "event" => "city_founded", "turn" => turn, "civ" => civ, "x" => x, "y" => y }
+    )
+  end
 
   def snapshot(game, civ, turn, metrics)
     game.game_events.create!(

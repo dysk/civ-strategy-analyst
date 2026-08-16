@@ -32,6 +32,50 @@
   </ol>
 <% end %>
 
+<h2>Empire Geometry</h2>
+<% if @geometry_rows.empty? %>
+  <p class="empty-state">No city coordinates in this game's events.</p>
+<% else %>
+  <table class="geometry">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Cities</th>
+        <th>Span</th>
+        <th>Spacing</th>
+        <th>Elongation</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @geometry_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:cities] %></td>
+          <td><%= row[:span] || "&mdash;".html_safe %></td>
+          <td><%= row[:mean_spacing] || "&mdash;".html_safe %></td>
+          <td><%= row[:elongation] || "&mdash;".html_safe %></td>
+          <td>
+            <% if row[:mismatch] %>
+              <span class="badge">approximate from turn <%= row[:mismatch][:turn] %></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="geometry-note">
+    Distances in hexes.
+    <% if @map_bounds.width %>
+      Measured on a map <%= @map_bounds.width %> tiles wide<%= ", inferred from the plots rather than reported by the log" if @map_bounds.estimated? %>.
+    <% else %>
+      The map width is unknown, so distances do not wrap around the map edge.
+    <% end %>
+    Spacing is the mean distance to the nearest own city: 7 leaves no tiles shared at full growth, around 4 means cities
+    permanently overlap. Elongation near 1.4 is a compact empire, 2 and above one strung out in a line.
+  </p>
+<% end %>
+
 <h2>Key Moments</h2>
 
 <% if [
