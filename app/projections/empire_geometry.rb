@@ -5,6 +5,10 @@ class EmpireGeometry
   OWNERSHIP_EVENTS = %w[city_founded city_captured].freeze
   REPLAYED_EVENTS = (OWNERSHIP_EVENTS + %w[snapshot]).freeze
 
+  def self.for(game)
+    new(game, grid: HexGrid.new(width: MapBounds.new(game).width))
+  end
+
   def initialize(game, grid:)
     @grid = grid
     @events = game.game_events.where(event_type: REPLAYED_EVENTS).order(:seq).to_a

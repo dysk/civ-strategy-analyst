@@ -64,16 +64,7 @@
       <% end %>
     </tbody>
   </table>
-  <p class="geometry-note">
-    Distances in hexes.
-    <% if @map_bounds.width %>
-      Measured on a map <%= @map_bounds.width %> tiles wide<%= ", inferred from the plots rather than reported by the log" if @map_bounds.estimated? %>.
-    <% else %>
-      The map width is unknown, so distances do not wrap around the map edge.
-    <% end %>
-    Spacing is the mean distance to the nearest own city: 7 leaves no tiles shared at full growth, around 4 means cities
-    permanently overlap. Elongation near 1.4 is a compact empire, 2 and above one strung out in a line.
-  </p>
+  <p><%= link_to "See how these shapes came about", game_geometry_path(@game) %></p>
 <% end %>
 
 <h2>Key Moments</h2>

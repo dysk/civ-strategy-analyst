@@ -102,7 +102,7 @@ class DigestBuilder
 
   def timelines_by_civ
     timeline = PlayerTimeline.new(@game)
-    geometry = EmpireGeometry.new(@game, grid: HexGrid.new(width: map_bounds.width))
+    geometry = EmpireGeometry.for(@game)
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = {

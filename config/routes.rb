@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       get :prompt, on: :member
     end
     resources :events, only: [ :index ], controller: "game_events"
+    resource :geometry, only: [ :show ], controller: "empire_geometries"
   end
 
   # Defines the root path route ("/")

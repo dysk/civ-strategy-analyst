@@ -99,16 +99,6 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "show says the map width was inferred rather than reported" do
-    game = Game.create!(name: "Inferred Width Game")
-    game.players.create!(civ: "Rome")
-    city(game, "Rome", 1, 45, 10)
-
-    get game_url(game)
-
-    assert_select ".geometry-note", /inferred/i
-  end
-
   test "show marks a civilization whose city count the timeline cannot account for" do
     game = Game.create!(name: "Razed City Game", map_width: 46)
     game.players.create!(civ: "Rome")
@@ -118,6 +108,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     get game_url(game)
 
     assert_select "table.geometry .badge", /turn 20/
+  end
+
+  test "show links to the history behind the geometry table" do
+    game = Game.create!(name: "Geometry History Link Game", map_width: 46)
+    game.players.create!(civ: "Rome")
+    city(game, "Rome", 1, 10, 10)
+
+    get game_url(game)
+
+    assert_select "a[href=?]", game_geometry_path(game)
   end
 
   test "show omits the geometry table for a game with no city coordinates" do

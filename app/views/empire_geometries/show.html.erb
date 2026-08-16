@@ -1,0 +1,45 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Empire Geometry</h1>
+<p class="subtitle">How each empire's shape changed as it gained and lost cities.</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No city coordinates in this game's events.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <table class="geometry">
+      <thead>
+        <tr>
+          <th>Turn</th>
+          <th>Cities</th>
+          <th>Span</th>
+          <th>Spacing</th>
+          <th>Elongation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% history[:series].each do |entry| %>
+          <tr>
+            <td><%= entry[:turn] %></td>
+            <td><%= entry[:cities] %></td>
+            <td><%= entry[:span] || "&mdash;".html_safe %></td>
+            <td><%= entry[:mean_spacing] || "&mdash;".html_safe %></td>
+            <td><%= entry[:elongation] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% if history[:mismatches].any? %>
+      <p class="mismatches">
+        The city count stopped adding up at
+        <%= history[:mismatches].map { |m| "turn #{m[:turn]} (game #{m[:reported]}, timeline #{m[:counted]})" }.to_sentence %>.
+        A city most likely left the map without leaving an event behind, so the shape from then on is approximate.
+      </p>
+    <% end %>
+  <% end %>
+
+  <%= render "shared/geometry_note", bounds: @map_bounds %>
+<% end %>
