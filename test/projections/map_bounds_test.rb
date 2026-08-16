@@ -32,6 +32,10 @@ class MapBoundsTest < ActiveSupport::TestCase
     assert_predicate MapBounds.new(@game), :estimated?
   end
 
+  test "an unknown width is not an estimate either" do
+    refute_predicate MapBounds.new(@game), :estimated?
+  end
+
   test "has no width when nothing in the log carries coordinates" do
     @game.game_events.create!(
       seq: 1, session_index: 0, turn: 1, event_type: "city_founded", payload: { "city" => "Roma" }

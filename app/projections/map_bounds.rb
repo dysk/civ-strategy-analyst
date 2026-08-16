@@ -11,7 +11,7 @@ class MapBounds
   end
 
   def estimated?
-    @game.map_width.nil?
+    @game.map_width.nil? && width.present?
   end
 
   private

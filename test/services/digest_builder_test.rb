@@ -18,7 +18,8 @@ class DigestBuilderTest < ActiveSupport::TestCase
 
     assert_equal(
       { name: "Digest Test Game", map_script: "TestMap", map_size: "SMALL",
-        game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT" },
+        game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT",
+        map_width: nil, map_width_estimated: false },
       digest[:game]
     )
 
@@ -113,6 +114,39 @@ class DigestBuilderTest < ActiveSupport::TestCase
       digest[:timelines]["Rome"][:cities]
     )
     assert_equal [], digest[:timelines]["Greece"][:cities]
+  end
+
+  test "flags a map width it had to infer from the plots" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 45, y: 10)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal({ map_width: 46, map_width_estimated: true }, digest[:game].slice(:map_width, :map_width_estimated))
+  end
+
+  test "includes per-civ empire geometry from EmpireGeometry" do
+    @game.update!(map_width: 46)
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Rome", "city_founded", 5, city: "Ostia", x: 14, y: 10)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      { turn: 5, cities: 2, span: 4, mean_spacing: 4.0, elongation: 1.0 },
+      digest[:timelines]["Rome"][:geometry].last
+    )
+  end
+
+  test "includes per-civ city count mismatches from EmpireGeometry" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    snapshot("Rome", 20, cities: 0)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      [ { turn: 20, counted: 1, reported: 0 } ],
+      digest[:timelines]["Rome"][:city_count_mismatches]
+    )
   end
 
   test "includes key moments from KeyMomentDetector, keyed by heuristic" do

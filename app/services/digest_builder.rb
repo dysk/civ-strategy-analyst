@@ -43,8 +43,13 @@ class DigestBuilder
   def game_settings
     {
       name: @game.name, map_script: @game.map_script, map_size: @game.map_size,
-      game_speed: @game.game_speed, max_turns: @game.max_turns, start_era: @game.start_era
+      game_speed: @game.game_speed, max_turns: @game.max_turns, start_era: @game.start_era,
+      map_width: map_bounds.width, map_width_estimated: map_bounds.estimated?
     }
+  end
+
+  def map_bounds
+    @map_bounds ||= MapBounds.new(@game)
   end
 
   def roster
@@ -97,6 +102,7 @@ class DigestBuilder
 
   def timelines_by_civ
     timeline = PlayerTimeline.new(@game)
+    geometry = EmpireGeometry.new(@game, grid: HexGrid.new(width: map_bounds.width))
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = {
@@ -109,7 +115,9 @@ class DigestBuilder
         eras: timeline.eras(civ),
         golden_ages: timeline.golden_ages(civ),
         wonders: timeline.wonders(civ),
-        city_states: timeline.city_states(civ)
+        city_states: timeline.city_states(civ),
+        geometry: geometry.series(civ),
+        city_count_mismatches: geometry.discrepancies(civ)
       }
     end
   end
