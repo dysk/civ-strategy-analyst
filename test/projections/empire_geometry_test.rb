@@ -74,6 +74,55 @@ class EmpireGeometryTest < ActiveSupport::TestCase
     assert_equal [], geometry.series("Rome")
   end
 
+  test "raises no discrepancy while our count matches the game's own tally" do
+    founded("Rome", 1, 10, 10)
+    founded("Rome", 5, 14, 10)
+    snapshot("Rome", 10, cities: 2)
+
+    assert_equal [], geometry.discrepancies("Rome")
+  end
+
+  test "reports the turn the game stopped counting a city we can still place" do
+    founded("Rome", 1, 10, 10)
+    founded("Rome", 5, 14, 10)
+    snapshot("Rome", 20, cities: 1)
+
+    assert_equal(
+      [ { turn: 20, counted: 2, reported: 1 } ],
+      geometry.discrepancies("Rome")
+    )
+  end
+
+  test "reports a standing discrepancy once, not on every later snapshot" do
+    founded("Rome", 1, 10, 10)
+    founded("Rome", 5, 14, 10)
+    snapshot("Rome", 20, cities: 1)
+    snapshot("Rome", 21, cities: 1)
+
+    assert_equal 1, geometry.discrepancies("Rome").size
+  end
+
+  test "reports again when the gap widens" do
+    founded("Rome", 1, 10, 10)
+    founded("Rome", 5, 14, 10)
+    snapshot("Rome", 20, cities: 1)
+    snapshot("Rome", 30, cities: 0)
+
+    assert_equal(
+      [ { turn: 20, counted: 2, reported: 1 }, { turn: 30, counted: 2, reported: 0 } ],
+      geometry.discrepancies("Rome")
+    )
+  end
+
+  test "reports a renewed discrepancy after the counts agreed again" do
+    founded("Rome", 1, 10, 10)
+    snapshot("Rome", 10, cities: 2)
+    snapshot("Rome", 15, cities: 1)
+    snapshot("Rome", 20, cities: 2)
+
+    assert_equal 2, geometry.discrepancies("Rome").size
+  end
+
   private
 
   def geometry
@@ -82,6 +131,10 @@ class EmpireGeometryTest < ActiveSupport::TestCase
 
   def founded(civ, turn, x, y)
     event(turn, "city_founded", civ: civ, payload: { "x" => x, "y" => y })
+  end
+
+  def snapshot(civ, turn, cities:)
+    event(turn, "snapshot", civ: civ, payload: { "cities" => cities })
   end
 
   def captured(turn, x, y, from:, to:)

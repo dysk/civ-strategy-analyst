@@ -3,37 +3,61 @@
 # since a plot survives every way a city can change hands.
 class EmpireGeometry
   OWNERSHIP_EVENTS = %w[city_founded city_captured].freeze
+  REPLAYED_EVENTS = (OWNERSHIP_EVENTS + %w[snapshot]).freeze
 
   def initialize(game, grid:)
     @grid = grid
-    @events = game.game_events.where(event_type: OWNERSHIP_EVENTS).order(:seq).to_a
+    @events = game.game_events.where(event_type: REPLAYED_EVENTS).order(:seq).to_a
   end
 
   def series(civ)
-    by_civ[civ] || []
+    replay
+    @series[civ] || []
+  end
+
+  # Turns where the game's own city count parted ways with the one we can
+  # place on the map - a city razed out of existence leaves no event behind.
+  def discrepancies(civ)
+    replay
+    @discrepancies[civ] || []
   end
 
   private
 
-  def by_civ
-    @by_civ ||= replay
+  def replay
+    @replay ||= begin
+      @owned = Hash.new { |plots, civ| plots[civ] = [] }
+      @series = Hash.new { |entries, civ| entries[civ] = [] }
+      @discrepancies = Hash.new { |entries, civ| entries[civ] = [] }
+      @gaps = Hash.new(0)
+
+      @events.each { |event| event.event_type == "snapshot" ? reconcile(event) : transfer(event) }
+      true
+    end
   end
 
-  def replay
-    owned = Hash.new { |plots, civ| plots[civ] = [] }
-    series = Hash.new { |entries, civ| entries[civ] = [] }
+  def transfer(event)
+    plot = plot_of(event)
+    return unless plot
 
-    @events.each do |event|
-      plot = plot_of(event)
-      next unless plot
-
-      transfers_of(event).each do |civ, change|
-        change == :gained ? owned[civ] << plot : owned[civ].delete(plot)
-        series[civ] << entry(event.turn, owned[civ])
-      end
+    transfers_of(event).each do |civ, change|
+      change == :gained ? @owned[civ] << plot : @owned[civ].delete(plot)
+      @series[civ] << entry(event.turn, @owned[civ])
     end
+  end
 
-    series
+  # Events are replayed in log order rather than by turn: a snapshot reports
+  # the state before that turn's own foundings and captures.
+  def reconcile(event)
+    reported = event.payload["cities"]
+    return unless event.civ && reported
+
+    counted = @owned[event.civ].size
+    gap = counted - reported
+    return if gap == @gaps[event.civ]
+
+    @gaps[event.civ] = gap
+    @discrepancies[event.civ] << { turn: event.turn, counted: counted, reported: reported } unless gap.zero?
   end
 
   # A capture moves one plot between two empires, so both sides' shape changes.

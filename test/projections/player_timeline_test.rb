@@ -17,10 +17,19 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal(
       [
         { turn: 1, city: "Roma", action: :founded },
-        { turn: 10, city: "Athens", action: :captured, from: "Greece" },
-        { turn: 15, city: "Roma", action: :lost, to: "Carthage" }
+        { turn: 10, city: "Athens", action: :captured, from: "Greece", conquest: nil },
+        { turn: 15, city: "Roma", action: :lost, to: "Carthage", conquest: nil }
       ],
       cities
+    )
+  end
+
+  test "cities records a city handed over without a fight as no conquest" do
+    event(nil, "city_captured", 10, city: "Athens", old_owner: "Greece", new_owner: "Rome", conquest: false)
+
+    assert_equal(
+      [ { turn: 10, city: "Athens", action: :captured, from: "Greece", conquest: false } ],
+      timeline.cities("Rome")
     )
   end
 

@@ -9,11 +9,13 @@ class PlayerTimeline
     end
 
     captured = of_type("city_captured").select { |e| e.payload["new_owner"] == civ }.map do |e|
-      { turn: e.turn, city: e.payload["city"], action: :captured, from: e.payload["old_owner"] }
+      { turn: e.turn, city: e.payload["city"], action: :captured,
+        from: e.payload["old_owner"], conquest: e.payload["conquest"] }
     end
 
     lost = of_type("city_captured").select { |e| e.payload["old_owner"] == civ }.map do |e|
-      { turn: e.turn, city: e.payload["city"], action: :lost, to: e.payload["new_owner"] }
+      { turn: e.turn, city: e.payload["city"], action: :lost,
+        to: e.payload["new_owner"], conquest: e.payload["conquest"] }
     end
 
     sort_events(founded + captured + lost)
