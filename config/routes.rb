@@ -16,6 +16,9 @@ Rails.application.routes.draw do
     resources :events, only: [ :index ], controller: "game_events"
     resource :geometry, only: [ :show ], controller: "empire_geometries"
     resource :army, only: [ :show ], controller: "army_compositions"
+    resource :cultural, only: [ :show ], controller: "cultural_standings"
+    resource :congress, only: [ :show ], controller: "congress_histories"
+    resource :victory_progress, only: [ :show ], controller: "victory_progress_histories"
   end
 
   # Defines the root path route ("/")

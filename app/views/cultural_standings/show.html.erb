@@ -1,0 +1,58 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Cultural Standing</h1>
+<p class="subtitle">Tourism output and influence over rivals as they developed.</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No tourism or influence data in this game's snapshots.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <% if history[:tourism_series].any? %>
+      <table class="tourism">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Tourism</th>
+            <th>Civs Influential On</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% history[:tourism_series].each do |entry| %>
+            <tr>
+              <td><%= entry[:turn] %></td>
+              <td><%= entry[:tourism] || "&mdash;".html_safe %></td>
+              <td><%= entry[:civs_influential_on] || "&mdash;".html_safe %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+
+    <% if history[:influence_rows].any? %>
+      <table class="influence">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Opponent</th>
+            <th>Points</th>
+            <th>Level</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% history[:influence_rows].each do |row| %>
+            <tr>
+              <td><%= row[:turn] %></td>
+              <td><%= row[:opponent] %></td>
+              <td><%= row[:points] || "&mdash;".html_safe %></td>
+              <td><%= row[:level] || "&mdash;".html_safe %></td>
+              <td><%= row[:trend] || "&mdash;".html_safe %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+<% end %>

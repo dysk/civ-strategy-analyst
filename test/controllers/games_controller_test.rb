@@ -243,6 +243,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show links to the history behind the cultural table" do
+    game = Game.create!(name: "Cultural History Link Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, tourism: 45)
+
+    get game_url(game)
+
+    assert_select "a[href=?]", game_cultural_path(game)
+  end
+
   test "show omits the cultural table for a game with no tourism data" do
     game = Game.create!(name: "No Culture Game")
     game.players.create!(civ: "Rome")
