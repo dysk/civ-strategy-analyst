@@ -98,6 +98,82 @@
   <p><%= link_to "See how these armies were built", game_army_path(@game) %></p>
 <% end %>
 
+<h2>Cultural Standing</h2>
+<% if @cultural_rows.empty? %>
+  <p class="empty-state">No tourism data in this game's snapshots.</p>
+<% else %>
+  <table class="cultural">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Tourism</th>
+        <th>Civs Influential On</th>
+        <th>Influential/Dominant On</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @cultural_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:tourism] || "&mdash;".html_safe %></td>
+          <td><%= row[:civs_influential_on] || "&mdash;".html_safe %></td>
+          <td><%= row[:influential_on].presence&.join(", ") || "&mdash;".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<h2>World Congress</h2>
+<% if @congress_summary.nil? %>
+  <p class="empty-state">No World Congress data in this game's events.</p>
+<% else %>
+  <p class="meta">
+    Host: <strong><%= @congress_summary[:host] || "none yet" %></strong>
+    &middot; Votes needed for diplomatic victory: <strong><%= @congress_summary[:votes_needed] || "unknown" %></strong>
+  </p>
+  <table class="congress">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Delegate Votes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @congress_summary[:rows].each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:votes] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<h2>Victory Progress</h2>
+<% if @victory_progress_rows.empty? %>
+  <p class="empty-state">No domination or space-race data in this game's snapshots.</p>
+<% else %>
+  <table class="victory-progress">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Capitals Held</th>
+        <th>Spaceship Parts</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @victory_progress_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:capitals_held] || "&mdash;".html_safe %></td>
+          <td><%= row[:parts_assembled] ? "#{row[:parts_assembled]} / 6" : "&mdash;".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
 <h2>Key Moments</h2>
 
 <% if @key_moment_groups.empty? %>

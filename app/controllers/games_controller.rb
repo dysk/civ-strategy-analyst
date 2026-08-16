@@ -13,6 +13,9 @@ class GamesController < ApplicationController
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
     @army_rows = army_rows
+    @cultural_rows = cultural_rows
+    @congress_summary = congress_summary
+    @victory_progress_rows = victory_progress_rows
     @latest_analysis = @game.analyses.order(created_at: :desc).first
   end
 
@@ -71,6 +74,51 @@ class GamesController < ApplicationController
 
     @game.players.order(:id).filter_map do |player|
       armies.latest(player.civ)&.merge(civ: player.civ)
+    end
+  end
+
+  def cultural_rows
+    metrics = MetricSeries.new(@game)
+    influence = InfluenceTimeline.new(@game)
+
+    @game.players.order(:id).filter_map do |player|
+      tourism = metrics.values("tourism", player.civ).last&.last
+      civs_influential_on = metrics.values("civs_influential_on", player.civ).last&.last
+      next if tourism.nil? && civs_influential_on.nil?
+
+      influential_on = influence.opponents(player.civ).select do |opponent|
+        level = influence.series(player.civ, opponent).last&.dig(:level)
+        KeyMomentDetector::INFLUENCE_TARGET_LEVELS.include?(level)
+      end
+
+      { civ: player.civ, tourism: tourism, civs_influential_on: civs_influential_on, influential_on: influential_on }
+    end
+  end
+
+  def congress_summary
+    timeline = CongressTimeline.new(@game)
+
+    rows = @game.players.order(:id).filter_map do |player|
+      votes = timeline.delegate_votes(player.civ).last&.last
+      next unless votes
+
+      { civ: player.civ, votes: votes }
+    end
+    return if rows.empty?
+
+    { host: timeline.host_over_time.last&.dig(:host), votes_needed: timeline.votes_needed, rows: rows }
+  end
+
+  def victory_progress_rows
+    capitals = CapitalsTimeline.new(@game)
+    spaceship = SpaceshipTimeline.new(@game)
+
+    @game.players.order(:id).filter_map do |player|
+      capitals_held = capitals.latest(player.civ)&.[](:capitals_held)
+      parts_assembled = spaceship.latest(player.civ)&.[](:parts_assembled)
+      next if capitals_held.nil? && parts_assembled.nil?
+
+      { civ: player.civ, capitals_held: capitals_held, parts_assembled: parts_assembled }
     end
   end
 

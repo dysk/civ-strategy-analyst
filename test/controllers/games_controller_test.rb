@@ -226,6 +226,84 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.army", false
   end
 
+  test "show displays each civilization's tourism and cultural standing" do
+    game = Game.create!(name: "Cultural Table Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 30, tourism: 120, civs_influential_on: 1,
+      influence: [ { "civ" => "Greece", "points" => 320, "level" => "INFLUENCE_LEVEL_INFLUENTIAL", "trend" => "INFLUENCE_TREND_RISING" } ])
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.cultural" do
+      assert_select "td", "Rome"
+      assert_select "td", "120"
+      assert_select "td", "1"
+      assert_select "td", "Greece"
+    end
+  end
+
+  test "show omits the cultural table for a game with no tourism data" do
+    game = Game.create!(name: "No Culture Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, score: 100)
+
+    get game_url(game)
+
+    assert_select "table.cultural", false
+  end
+
+  test "show displays World Congress host, votes needed and each civilization's delegate votes" do
+    game = Game.create!(name: "Congress Table Game")
+    game.players.create!(civ: "Rome")
+    congress_snapshot(game, 30, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 5 } ], votes_needed: 12)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_match "Rome", response.body
+    assert_select "table.congress" do
+      assert_select "td", "Rome"
+      assert_select "td", "5"
+    end
+    assert_match(/12/, response.body)
+  end
+
+  test "show omits the Congress table for a game with no Congress data" do
+    game = Game.create!(name: "No Congress Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    assert_select "table.congress", false
+  end
+
+  test "show displays each civilization's capitals held and spaceship assembly" do
+    game = Game.create!(name: "Victory Progress Table Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 100, capitals: %w[Rome Greece],
+      spaceship: { "apollo" => 1, "booster" => 2, "cockpit" => 1, "stasis_chamber" => 0, "engine" => 1 })
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.victory-progress" do
+      assert_select "td", "Rome"
+      assert_select "td", "2"
+      assert_select "td", "4 / 6"
+    end
+  end
+
+  test "show omits the victory progress table for a game with no capitals or spaceship data" do
+    game = Game.create!(name: "No Victory Progress Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, score: 100)
+
+    get game_url(game)
+
+    assert_select "table.victory-progress", false
+  end
+
   test "show marks a civilization whose city count the timeline cannot account for" do
     game = Game.create!(name: "Razed City Game", map_width: 46)
     game.players.create!(civ: "Rome")
@@ -293,6 +371,14 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     game.game_events.create!(
       seq: game.game_events.count + 1, session_index: 0, turn: turn, event_type: "city_founded", civ: civ,
       payload: { "event" => "city_founded", "turn" => turn, "civ" => civ, "x" => x, "y" => y }
+    )
+  end
+
+  def congress_snapshot(game, turn, host:, delegates:, votes_needed:)
+    game.game_events.create!(
+      seq: game.game_events.count + 1, session_index: 0, turn: turn, event_type: "congress_snapshot", civ: nil,
+      payload: { "event" => "congress_snapshot", "turn" => turn, "host" => host,
+                 "delegates" => delegates, "votes_needed_for_diplo_victory" => votes_needed }
     )
   end
 
