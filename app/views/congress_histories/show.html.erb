@@ -1,0 +1,79 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>World Congress</h1>
+<p class="subtitle">Host changes, delegate votes and resolutions over the course of the game.</p>
+
+<% if @sessions.empty? && @delegate_histories.empty? && @resolutions.empty? %>
+  <p class="empty-state">No World Congress data in this game's events.</p>
+<% else %>
+  <% if @sessions.any? %>
+    <h2>Sessions</h2>
+    <table class="congress-sessions">
+      <thead>
+        <tr>
+          <th>Turn</th>
+          <th>Host</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @sessions.each do |session| %>
+          <tr>
+            <td><%= session[:turn] %></td>
+            <td><%= session[:host] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% if @resolutions.any? %>
+    <h2>Resolutions</h2>
+    <table class="resolutions">
+      <thead>
+        <tr>
+          <th>Resolution</th>
+          <th>Proposer</th>
+          <th>Repeal?</th>
+          <th>Proposed</th>
+          <th>Outcome</th>
+          <th>Outcome Turn</th>
+          <th>Repealed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @resolutions.each do |resolution| %>
+          <tr>
+            <td><%= resolution[:resolution] %></td>
+            <td><%= resolution[:proposer] %></td>
+            <td><%= resolution[:repeal] ? "Yes" : "No" %></td>
+            <td><%= resolution[:proposed_turn] %></td>
+            <td><%= resolution[:outcome] || "pending" %></td>
+            <td><%= resolution[:outcome_turn] || "&mdash;".html_safe %></td>
+            <td><%= resolution[:repealed_turn] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% @delegate_histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <table class="delegates">
+      <thead>
+        <tr>
+          <th>Turn</th>
+          <th>Delegate Votes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% history[:series].each do |turn, votes| %>
+          <tr>
+            <td><%= turn %></td>
+            <td><%= votes %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>

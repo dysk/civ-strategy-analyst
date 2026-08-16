@@ -279,6 +279,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/12/, response.body)
   end
 
+  test "show links to the history behind the Congress table" do
+    game = Game.create!(name: "Congress History Link Game")
+    game.players.create!(civ: "Rome")
+    congress_snapshot(game, 30, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 5 } ], votes_needed: 12)
+
+    get game_url(game)
+
+    assert_select "a[href=?]", game_congress_path(game)
+  end
+
   test "show omits the Congress table for a game with no Congress data" do
     game = Game.create!(name: "No Congress Game")
     game.players.create!(civ: "Rome")
