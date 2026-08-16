@@ -67,6 +67,40 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "details h3", "Reformations"
   end
 
+  test "show gathers cultural key moments into one section" do
+    game = Game.create!(name: "Cultural Game")
+    snapshot(game, "Rome", 10, influence: [ { "civ" => "Greece", "points" => 50, "level" => "INFLUENCE_LEVEL_EXOTIC", "trend" => "INFLUENCE_TREND_RISING" } ])
+    snapshot(game, "Rome", 30, influence: [ { "civ" => "Greece", "points" => 320, "level" => "INFLUENCE_LEVEL_INFLUENTIAL", "trend" => "INFLUENCE_TREND_RISING" } ])
+
+    get game_url(game)
+
+    assert_select "details summary", "Cultural Standing (1)"
+    assert_match "Rome became Influential on Greece", response.body
+  end
+
+  test "show gathers Congress key moments into one section" do
+    game = Game.create!(name: "Congress Game")
+    event(game, nil, "congress_host_changed", 90, "old_host" => nil, "new_host" => "Rome")
+    event(game, nil, "united_nations_formed", 220, {})
+
+    get game_url(game)
+
+    assert_select "details summary", "World Congress (2)"
+    assert_match "World Congress host passed from no host to Rome", response.body
+    assert_match "The United Nations formed", response.body
+  end
+
+  test "show gathers victory-progress key moments into one section" do
+    game = Game.create!(name: "Victory Progress Game")
+    snapshot(game, "Rome", 100, spaceship: { "apollo" => 0, "booster" => 0, "cockpit" => 0, "stasis_chamber" => 0, "engine" => 0 })
+    snapshot(game, "Rome", 120, spaceship: { "apollo" => 1, "booster" => 0, "cockpit" => 0, "stasis_chamber" => 0, "engine" => 0 })
+
+    get game_url(game)
+
+    assert_select "details summary", "Victory Progress (1)"
+    assert_match "Rome completed the Apollo Program", response.body
+  end
+
   test "show gathers snowballs across every metric into one section" do
     game = Game.create!(name: "Snowball Game")
     (1..30).each do |turn|

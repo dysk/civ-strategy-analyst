@@ -41,7 +41,12 @@ class GamesController < ApplicationController
                        "Unhappiness Periods" => moments.unhappiness_periods } ],
       [ "Snowballs", snowballs_by_metric(moments) ],
       [ "Nuclear Detonations", { nil => moments.nuclear_detonations } ],
-      [ "City-State Ally Takeovers", { nil => moments.city_state_ally_takeovers } ]
+      [ "City-State Ally Takeovers", { nil => moments.city_state_ally_takeovers } ],
+      [ "Cultural Standing", { nil => merge_by_turn(moments.influence_level_reached, moments.cultural_victory_imminent) } ],
+      [ "World Congress", { nil => merge_by_turn(moments.congress_host_changes, moments.united_nations_formed,
+                                                  moments.diplomatic_victory_imminent, moments.resolutions_passed) } ],
+      [ "Victory Progress", { nil => merge_by_turn(moments.capital_control_changes, moments.apollo_completions,
+                                                    moments.spaceship_part_assemblies, moments.science_victory_imminent) } ]
     ].filter_map { |title, lists| key_moment_group(title, lists) }
   end
 
@@ -50,6 +55,10 @@ class GamesController < ApplicationController
     return if filled.empty?
 
     { title: title, count: filled.sum { |list| list[:moments].size }, lists: filled }
+  end
+
+  def merge_by_turn(*lists)
+    lists.flatten(1).sort_by { |moment| moment[:turn] }
   end
 
   # The heading names the metric, so the moments themselves need not.

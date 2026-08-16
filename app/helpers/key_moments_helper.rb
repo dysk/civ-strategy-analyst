@@ -2,6 +2,10 @@
 # in a single chronological list, so the phrasing lives here rather than in
 # a branch of the template.
 module KeyMomentsHelper
+  def self.humanize_influence_level(level)
+    level.to_s.sub("INFLUENCE_LEVEL_", "").capitalize
+  end
+
   DESCRIPTIONS = {
     war: ->(m) { "#{m[:attacker_civs].join(", ")} declared war on #{m[:defender_civs].join(", ")} " \
                  "(#{m[:turn_peace] ? "peace at turn #{m[:turn_peace]}" : "ongoing"})" },
@@ -23,12 +27,28 @@ module KeyMomentsHelper
     unhappiness_period: ->(m) { "#{m[:civ]} happiness stayed below zero" },
     snowball: ->(m) { "#{m[:civ]} pulled decisively ahead" },
     nuclear_detonation: ->(m) { "#{m[:civ]} detonated a nuclear weapon on #{m[:city]}" },
-    city_state_ally_takeover: ->(m) { "#{m[:to]} took #{m[:city_state]}'s alliance from #{m[:from]}" }
+    city_state_ally_takeover: ->(m) { "#{m[:to]} took #{m[:city_state]}'s alliance from #{m[:from]}" },
+    influence_level_reached: ->(m) { "#{m[:civ]} became #{KeyMomentsHelper.humanize_influence_level(m[:level])} on #{m[:opponent]}" },
+    cultural_victory_imminent: ->(m) {
+      "#{m[:civ]} is culturally influential on #{m[:civs_influential_on]} of #{m[:living_majors]} living majors"
+    },
+    congress_host_change: ->(m) { "World Congress host passed from #{m[:from] || "no host"} to #{m[:to]}" },
+    united_nations_formed: ->(_m) { "The United Nations formed" },
+    diplomatic_victory_imminent: ->(m) {
+      "#{m[:civ]} reached #{m[:votes]} delegate votes, meeting the #{m[:votes_needed]} needed for a diplomatic victory"
+    },
+    resolution_passed: ->(m) { "#{m[:resolution]} passed, proposed by #{m[:proposer]}" },
+    capital_gained: ->(m) { "#{m[:civ]} gained control of #{m[:original_owner]}'s original capital" },
+    capital_lost: ->(m) { "#{m[:civ]} lost control of #{m[:original_owner]}'s original capital" },
+    apollo_completed: ->(m) { "#{m[:civ]} completed the Apollo Program" },
+    spaceship_part_assembled: ->(m) { "#{m[:civ]} assembled a #{m[:part]} (#{m[:count]} total)" },
+    science_victory_imminent: ->(m) { "#{m[:civ]} assembled #{m[:parts_assembled]} of 6 spaceship parts" }
   }.freeze
 
   TRENDS = {
     army_power_surge: :up, army_power_collapse: :down,
-    happiness_surge: :up, happiness_collapse: :down
+    happiness_surge: :up, happiness_collapse: :down,
+    capital_gained: :up, capital_lost: :down
   }.freeze
 
   ARROWS = { up: "▲", down: "▼" }.freeze
