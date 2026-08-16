@@ -314,6 +314,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show links to the history behind the victory progress table" do
+    game = Game.create!(name: "Victory Progress History Link Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, capitals: %w[Rome])
+
+    get game_url(game)
+
+    assert_select "a[href=?]", game_victory_progress_path(game)
+  end
+
   test "show omits the victory progress table for a game with no capitals or spaceship data" do
     game = Game.create!(name: "No Victory Progress Game")
     game.players.create!(civ: "Rome")

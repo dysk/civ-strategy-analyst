@@ -1,0 +1,62 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Victory Progress</h1>
+<p class="subtitle">Capital control and spaceship assembly as they changed over the game.</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No domination or space-race data in this game's snapshots.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <% if history[:capitals_series].any? %>
+      <table class="capitals">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Capitals Held</th>
+            <th>Original Owners</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% history[:capitals_series].each do |entry| %>
+            <tr>
+              <td><%= entry[:turn] %></td>
+              <td><%= entry[:capitals_held] %></td>
+              <td><%= entry[:capitals].join(", ") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+
+    <% if history[:spaceship_series].any? %>
+      <table class="spaceship">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Apollo</th>
+            <th>Booster</th>
+            <th>Cockpit</th>
+            <th>Stasis Chamber</th>
+            <th>Engine</th>
+            <th>Parts Assembled</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% history[:spaceship_series].each do |entry| %>
+            <tr>
+              <td><%= entry[:turn] %></td>
+              <td><%= entry[:spaceship]["apollo"] %></td>
+              <td><%= entry[:spaceship]["booster"] %></td>
+              <td><%= entry[:spaceship]["cockpit"] %></td>
+              <td><%= entry[:spaceship]["stasis_chamber"] %></td>
+              <td><%= entry[:spaceship]["engine"] %></td>
+              <td><%= entry[:parts_assembled] %> / 6</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+<% end %>
