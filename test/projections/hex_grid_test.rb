@@ -30,4 +30,8 @@ class HexGridTest < ActiveSupport::TestCase
   test "goes the long way round on a map too wide to wrap between the plots" do
     assert_equal 40, HexGrid.new(width: 200).distance([ 39, 16 ], [ 1, 20 ])
   end
+
+  test "does not wrap at all when the map width is unknown" do
+    assert_equal 40, HexGrid.new(width: nil).distance([ 39, 16 ], [ 1, 20 ])
+  end
 end

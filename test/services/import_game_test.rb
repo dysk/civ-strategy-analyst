@@ -16,6 +16,25 @@ class ImportGameTest < ActiveSupport::TestCase
     assert_equal "ERA_ANCIENT", game.start_era
   end
 
+  test "records the map dimensions when the log reports them" do
+    game = ImportGame.call(SAMPLE_PATH, name: "Test Game").game
+
+    assert_equal 48, game.map_width
+    assert_equal 42, game.map_height
+  end
+
+  test "treats city capture as a known event type" do
+    io = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = Logger.new(io)
+
+    ImportGame.call(SAMPLE_PATH, name: "Test Game")
+
+    refute_match(/city_captured/, io.string)
+  ensure
+    Rails.logger = original_logger
+  end
+
   test "defaults the game name to the file basename when not given" do
     result = ImportGame.call(SAMPLE_PATH)
 
@@ -75,8 +94,8 @@ class ImportGameTest < ActiveSupport::TestCase
   test "reports how many events were imported and skipped" do
     result = ImportGame.call(SAMPLE_PATH, name: "Test Game")
 
-    # 6 lines in the fixture, 1 is malformed JSON and skipped entirely (not a dedup skip)
-    assert_equal 5, result.imported_count
+    # 7 lines in the fixture, 1 is malformed JSON and skipped entirely (not a dedup skip)
+    assert_equal 6, result.imported_count
     assert_equal 0, result.skipped_count
   end
 

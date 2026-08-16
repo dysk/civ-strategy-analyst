@@ -1,248 +1,248 @@
-# Civ Strategy Analyst — plan aplikacji
+# Civ Strategy Analyst — application plan
 
 ## Context
 
-Aplikacja analizuje rozgrywki Civilization 5 + LEKMOD na podstawie logów eventów
-(JSONL) produkowanych przez sąsiedni projekt `civ-narrative-logger`. Cel: ustalić,
-dlaczego strategia danego gracza wygrywała/przegrywała, oraz wskazać kluczowe momenty
-i decyzje. Dane wejściowe: plik JSONL (przykład: `filtered.jsonl`, 4580 eventów,
-36 typów), docelowo pliki do kilku MB.
+The application analyzes Civilization 5 + LEKMOD games based on event logs
+(JSONL) produced by the neighboring project `civ-narrative-logger`. Goal: determine
+why a given player's strategy won/lost, and identify key moments
+and decisions. Input data: a JSONL file (example: `filtered.jsonl`, 4580 events,
+36 types), eventually files up to a few MB.
 
-Decyzje użytkownika (potwierdzone):
-- **Baza wielu gier** w Postgres (z czasem analiza cross-game).
-- **Wynik gry**: podawany ręcznie przy analizie + fallback wnioskowania ze snapshotów
-  (w danych nie ma eventu zwycięstwa; gra może być w toku).
-- **Interfejs**: CLI jako główny + prosty szkielet UI w Rails (lista gier, widok raportu).
-- **LLM**: konfigurowalny od startu (RubyLLM), raporty **po angielsku**.
-- **Storage**: zwykła tabela `game_events` z jsonb (NIE Rails Event Store).
-- **Testy**: Minitest. TDD: najpierw czerwone testy → review użytkownika → implementacja.
+User decisions (confirmed):
+- **Multi-game database** in Postgres (eventually cross-game analysis).
+- **Game outcome**: entered manually at analysis time + fallback inference from snapshots
+  (there's no victory event in the data; the game may still be in progress).
+- **Interface**: CLI as the main one + a simple Rails UI skeleton (game list, report view).
+- **LLM**: configurable from the start (RubyLLM), reports **in English**.
+- **Storage**: a plain `game_events` table with jsonb (NOT Rails Event Store).
+- **Tests**: Minitest. TDD: failing tests first → user review → implementation.
 
-## Kluczowe fakty o danych (z eksploracji `filtered.jsonl` i docs loggera)
+## Key facts about the data (from exploring `filtered.jsonl` and the logger's docs)
 
-- Jedna linia = jeden event JSON; wspólne pola: `event`, `turn`; większość ma `civ`.
-- **Duplikaty po restarcie sesji**: `session_started` pojawia się przy każdym
-  podpięciu loggera (nowa gra, reload, restart pitbossa) — przykładowy plik ma sesje
-  od tury 0 i 149, przez co eventy z tur 149–150 są zdublowane. Dedup jest zadaniem
-  konsumenta (potwierdzone w `civ-narrative-logger/docs/design-decisions.md`).
-- **Eventy drużynowe**: `tech_researched`, `era_entered`, `war_declared`, `peace_made`,
-  `teams_met` mają `team`/`team_a`/`team_b` + tablice `*_civs` zamiast pojedynczego `civ`.
-- `snapshot` per cywilizacja per tura: `score`, `science`, `culture`, `gold`,
+- One line = one JSON event; common fields: `event`, `turn`; most have `civ`.
+- **Duplicates after session restart**: `session_started` appears every time
+  the logger attaches (new game, reload, pitboss restart) — the sample file has sessions
+  starting at turn 0 and 149, so events from turns 149–150 are duplicated. Dedup is the
+  consumer's responsibility (confirmed in `civ-narrative-logger/docs/design-decisions.md`).
+- **Team events**: `tech_researched`, `era_entered`, `war_declared`, `peace_made`,
+  `teams_met` have `team`/`team_a`/`team_b` + `*_civs` arrays instead of a single `civ`.
+- `snapshot` per civilization per turn: `score`, `science`, `culture`, `gold`,
   `gold_per_turn`, `faith`, `happiness`, `military_might`, `military_units`,
-  `population`, `cities`, `techs` — podstawa krzywych metryk.
-- `unit_lost` ma `cause` + `confidence`; `improvement_built` czasem bez nazwy;
-  niektóre nazwy to surowe klucze (`TXT_KEY_...`).
-- `session_started` niesie roster: `players[{civ, name, human, handicap}]` + ustawienia mapy.
+  `population`, `cities`, `techs` — the basis for metric curves.
+- `unit_lost` has `cause` + `confidence`; `improvement_built` is sometimes nameless;
+  some names are raw keys (`TXT_KEY_...`).
+- `session_started` carries the roster: `players[{civ, name, human, handicap}]` + map settings.
 
 ## Stack
 
-Rails (najnowszy) + Postgres + Minitest + gem `ruby_llm` (provider konfigurowalny przez
-ENV/parametr). Aplikacja w bieżącym katalogu `civ-strategy-analyst/` (git init, częste
-małe commity, bez wzmianek o Claude, bez push).
+Rails (latest) + Postgres + Minitest + the `ruby_llm` gem (provider configurable via
+ENV/parameter). Application lives in the current `civ-strategy-analyst/` directory (git init, frequent
+small commits, no mentions of Claude, no push).
 
-## Schemat bazy
+## Database schema
 
 - `games` — name, map_script, map_size, game_speed, max_turns, start_era,
   winner_civ (nullable), victory_type (nullable), completed (bool, default false)
 - `players` — game_id, civ, leader_name, human, handicap
-- `game_events` — game_id, seq (kolejność w pliku), session_index, turn, event_type,
-  civ (nullable — denormalizacja dla zapytań), payload (jsonb);
-  indeksy: (game_id, turn), (game_id, event_type), (game_id, civ)
-- `analyses` — game_id, model, report (markdown), digest (jsonb — pakiet wysłany do LLM),
+- `game_events` — game_id, seq (order within the file), session_index, turn, event_type,
+  civ (nullable — denormalized for queries), payload (jsonb);
+  indexes: (game_id, turn), (game_id, event_type), (game_id, civ)
+- `analyses` — game_id, model, report (markdown), digest (jsonb — the package sent to the LLM),
   created_at
 
-## Architektura (3 warstwy)
+## Architecture (3 layers)
 
 ### 1. Import (`ImportGame`)
-Streamingowy parser JSONL (linia po linii — pliki do kilku MB, bez ładowania całości).
-Tworzy `Game` + `players` z pierwszego `session_started`. Śledzi granice sesji
-(`session_index++` przy każdym `session_started`). **Dedup**: odrzuca event, jeśli
-identyczny (turn, event_type, payload) wystąpił w *innej* sesji (restart replayuje
-końcówkę); duplikaty wewnątrz jednej sesji są legalne i zostają.
+A streaming JSONL parser (line by line — files up to a few MB, without loading everything
+into memory). Creates `Game` + `players` from the first `session_started`. Tracks session
+boundaries (`session_index++` on every `session_started`). **Dedup**: discards an event if
+an identical one (turn, event_type, payload) occurred in a *different* session (a restart replays
+the tail end); duplicates within a single session are legitimate and are kept.
 
-### 2. Projekcje deterministyczne (czyste klasy Ruby, czytają eventy z bazy)
-- `MetricSeries` — krzywe per civ ze snapshotów: wartości, delty, ranking w czasie,
-  punkty przecięcia (zmiany lidera).
-- `PlayerTimeline` — per civ: miasta (założone/zdobyte/utracone), techi (rozwiązanie
-  team→civs), polityki/gałęzie, religia (pantheon→founded→enhanced), wojny (agresor/
-  obrońca, bilans strat i zdobyczy), wielcy ludzie, ery, golden age'y, city-states.
-- `KeyMomentDetector` — heurystyki kluczowych momentów: wypowiedzenia wojen i ich
-  bilans (zdobyte miasta, spike'i `unit_lost`), zmiany lidera score/science, kolejność
-  wejść w ery (przewaga technologiczna), założenie religii, załamania `military_might`
-  (spadek > próg), trwała dywergencja nachylenia score (moment "snowballu"),
-  nuklearne detonacje, przejęcia sojuszy city-states.
-- `OutcomeResolver` — winner/victory_type z parametrów użytkownika, inaczej lider
-  ostatnich snapshotów + oznaczenie "game in progress" (turn < max_turns, brak wyniku).
+### 2. Deterministic projections (pure Ruby classes, read events from the database)
+- `MetricSeries` — per-civ curves from snapshots: values, deltas, ranking over time,
+  crossover points (lead changes).
+- `PlayerTimeline` — per civ: cities (founded/captured/lost), techs (resolving
+  team→civs), policies/branches, religion (pantheon→founded→enhanced), wars (aggressor/
+  defender, loss/gain balance), great people, eras, golden ages, city-states.
+- `KeyMomentDetector` — key-moment heuristics: war declarations and their
+  balance (cities captured, `unit_lost` spikes), score/science lead changes, order of
+  era entries (tech lead), religion founding, `military_might` collapses
+  (drop above a threshold), sustained score-slope divergence ("snowball"
+  moment), nuclear detonations, city-state alliance takeovers.
+- `OutcomeResolver` — winner/victory_type from user parameters, otherwise the
+  leader of the latest snapshots + a "game in progress" flag (turn < max_turns, no result).
 
-### 3. Warstwa LLM (`AnalyzeGame`)
-Buduje **kompaktowy digest** (JSON, rzędu 10–20 kB — nie surowe 500 kB): roster,
-ustawienia, wynik/stan gry, per-civ podsumowania metryk w checkpointach (co ~25 tur),
-timeline'y, lista kluczowych momentów z heurystyk. Wysyła przez RubyLLM (model
-konfigurowalny, per-run override) z promptem "Civ 5 strategy analyst". Raport po
-angielsku, sekcje: final standings, per-player strategic verdict (why winning/losing),
-key moments, decisive decisions, counterfactuals. Zapis do `analyses` + plik
-`reports/<game>-<timestamp>.md`. Testy z klientem LLM za stubem (bez sieci).
+### 3. LLM layer (`AnalyzeGame`)
+Builds a **compact digest** (JSON, on the order of 10–20 kB — not the raw 500 kB): roster,
+settings, outcome/game state, per-civ metric summaries at checkpoints (every ~25 turns),
+timelines, list of key moments from the heuristics. Sends it via RubyLLM (model
+configurable, per-run override) with a "Civ 5 strategy analyst" prompt. Report in
+English, sections: final standings, per-player strategic verdict (why winning/losing),
+key moments, decisive decisions, counterfactuals. Saved to `analyses` + a file
+`reports/<game>-<timestamp>.md`. Tests with the LLM client stubbed (no network).
 
-### Interfejsy
+### Interfaces
 - CLI: `bin/civ import path.jsonl [--name ...]`,
   `bin/civ analyze GAME_ID [--winner Chile] [--victory-type domination] [--model ...]`,
-  `bin/civ list` (cienkie wrappery na serwisy).
-- UI szkielet: `GamesController#index` (lista gier + status analizy), `#show`
-  (standings, kluczowe momenty, raport markdown przez `redcarpet`/`commonmarker`).
-  Bez wykresów na razie.
+  `bin/civ list` (thin wrappers around the services).
+- UI skeleton: `GamesController#index` (game list + analysis status), `#show`
+  (standings, key moments, markdown report via `redcarpet`/`commonmarker`).
+  No charts for now.
 
-## Kolejność iteracji (każda: czerwone testy → review → implementacja → commit)
+## Iteration order (each: failing tests → review → implementation → commit)
 
-1. **Szkielet**: `rails new` (Postgres, Minitest), migracje `games`/`players`/
-   `game_events`/`analyses`, modele z walidacjami.
-2. **Import + dedup**: testy na parsowanie linii, roster z `session_started`,
-   granice sesji, dedup cross-session (fixture z fragmentem prawdziwego pliku),
-   odporność na nieznane typy eventów (loguj i kontynuuj).
-3. **MetricSeries** (snapshoty → krzywe, ranking, zmiany lidera).
-4. **PlayerTimeline** (w tym rozwiązanie eventów drużynowych team→civ).
-5. **KeyMomentDetector** (heurystyki po jednej — każda osobny mały cykl TDD).
-6. **OutcomeResolver** + **DigestBuilder** (digest jako czysta struktura — łatwe asercje).
-7. **AnalyzeGame + RubyLLM** (stub klienta; prompt jako wersjonowany szablon w repo).
+1. **Skeleton**: `rails new` (Postgres, Minitest), migrations for `games`/`players`/
+   `game_events`/`analyses`, models with validations.
+2. **Import + dedup**: tests for line parsing, roster from `session_started`,
+   session boundaries, cross-session dedup (fixture from a real file fragment),
+   resilience to unknown event types (log and continue).
+3. **MetricSeries** (snapshots → curves, ranking, lead changes).
+4. **PlayerTimeline** (including resolving team events team→civ).
+5. **KeyMomentDetector** (heuristics one at a time — each its own small TDD cycle).
+6. **OutcomeResolver** + **DigestBuilder** (digest as a pure structure — easy assertions).
+7. **AnalyzeGame + RubyLLM** (stubbed client; prompt as a versioned template in the repo).
 8. **CLI** (`bin/civ`).
-9. **UI szkielet** (2 widoki).
+9. **UI skeleton** (2 views).
 
-Import przykładowego `filtered.jsonl` jako smoke test od iteracji 2.
+Import of the sample `filtered.jsonl` as a smoke test starting from iteration 2.
 
-## Weryfikacja end-to-end
+## End-to-end verification
 
-- `bin/rails test` — zielone po każdej iteracji.
-- Po iteracji 2: `bin/civ import filtered.jsonl` → sprawdzić liczbę eventów po dedupie
-  (< 4580, dokładna liczba do ustalenia testem) i roster 4 graczy.
-- Po iteracji 7: `bin/civ analyze 1 --model <tani model>` na prawdziwym pliku →
-  raport w `reports/`, ocena jakości digested promptu ręcznie.
-- Po iteracji 9: `bin/rails server` → lista gier i raport w przeglądarce.
+- `bin/rails test` — green after every iteration.
+- After iteration 2: `bin/civ import filtered.jsonl` → check the event count after dedup
+  (< 4580, exact number to be pinned down by a test) and the 4-player roster.
+- After iteration 7: `bin/civ analyze 1 --model <cheap model>` on the real file →
+  report in `reports/`, manually assess the quality of the digested prompt.
+- After iteration 9: `bin/rails server` → game list and report in the browser.
 
-## Poza zakresem (świadomie, na później)
+## Out of scope (deliberately, for later)
 
-API przyjmujące eventy, wykresy w UI, analizy cross-game (schemat je umożliwia),
-automatyczny watcher plików, porównania wielu analiz LLM.
+An API for ingesting events, charts in the UI, cross-game analyses (the schema allows for it),
+an automatic file watcher, comparisons across multiple LLM analyses.
 
-## Status implementacji
+## Implementation status
 
-Wszystkie 9 iteracji zaimplementowane (TDD, czerwone testy → review → implementacja,
-commit per iteracja/heurystyka). 89 testów, zielone. Zobacz `README.md` po instrukcje
-uruchomienia.
+All 9 iterations implemented (TDD, failing tests → review → implementation,
+commit per iteration/heuristic). 89 tests, green. See `README.md` for run
+instructions.
 
-## Pomysły niezaimplementowane / na przyszłość
+## Unimplemented ideas / for the future
 
-- **Korelacja panteonów/wierzeń ze zwycięstwem (cross-game)** — pomysł zgłoszony przez
-  użytkownika przy okazji `KeyMomentDetector#religion_foundings`: śledzić, które
-  wierzenia (pantheon i religia założona) gracze wybierają w wielu grach, i ocenić,
-  które z nich częściej korelują ze zwycięstwem. Wymaga warstwy cross-game analysis
-  (patrz "Poza zakresem" wyżej) — dane per gra już są dostępne przez
-  `PlayerTimeline#religion` + `OutcomeResolver`, brakuje tylko agregacji między grami.
-  Zapisane też w pamięci Claude (`idea-belief-winrate-analysis`).
-- **Rozmiar digestu LLM** — `DigestBuilder` daje ~52 kB na `filtered.jsonl` zamiast
-  zakładanych 10–20 kB (dominują `timelines.city_states` i `timelines.techs/policies`).
-  Świadomie zostawione bez przycinania do czasu oceny jakości promptu na prawdziwym
-  LLM (iteracja 7) — jeśli rozmiar/koszt/jakość odpowiedzi faktycznie przeszkadza,
-  najpierw skrócić `city_states` do podsumowania (ostatni status sojuszu per city-state
-  zamiast pełnej listy zmian przyjaźni), potem ew. `techs`/`policies` do samych liczników.
-- **Inne metryki w `MetricSeries`/`KeyMomentDetector#snowballs`** — obie klasy są już
-  generyczne względem nazwy metryki (dowolny klucz z payloadu `snapshot`: `culture`,
+- **Correlating pantheons/beliefs with victory (cross-game)** — an idea raised by
+  the user while working on `KeyMomentDetector#religion_foundings`: track which
+  beliefs (pantheon and founded religion) players choose across many games, and assess
+  which of them correlate more often with victory. Requires a cross-game analysis
+  layer (see "Out of scope" above) — per-game data is already available via
+  `PlayerTimeline#religion` + `OutcomeResolver`, only cross-game aggregation is missing.
+  Also recorded in Claude's memory (`idea-belief-winrate-analysis`).
+- **LLM digest size** — `DigestBuilder` produces ~52 kB on `filtered.jsonl` instead of
+  the assumed 10–20 kB (dominated by `timelines.city_states` and `timelines.techs/policies`).
+  Deliberately left untrimmed until prompt quality is assessed against a real
+  LLM (iteration 7) — if the size/cost/quality actually becomes a problem,
+  first shorten `city_states` to a summary (last alliance status per city-state
+  instead of the full list of friendship changes), then possibly `techs`/`policies` down to counts only.
+- **Other metrics in `MetricSeries`/`KeyMomentDetector#snowballs`** — both classes are already
+  generic with respect to metric name (any key from the `snapshot` payload: `culture`,
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
-  więc dodanie nowej metryki do analizy nie wymaga zmian w kodzie — tylko wywołania
-  z inną nazwą stringa.
+  so adding a new metric to the analysis requires no code changes — just calling
+  with a different string name.
 
-## Plan: wstrzykiwanie danych LEKMOD do digestu (zrealizowany w całości)
+## Plan: injecting LEKMOD data into the digest (fully realized)
 
-Status: iteracje 1–4 zaimplementowane (commity `86c5b05`…`c04c3ae`: kolumny
-`lekmod_version`, `LekmodReference`, klucz `lekmod` w digeście, prompt v7),
-plan `ids.yml` poniżej domknięty (prompt v8), iteracja 5 (A/B) wykonana
-2026-08-16 na v8: koszt +50% (0,15 USD, akceptowalny), Counterfactuals i
-Conclusion dobre, ale 5 defektów w raporcie (sprzeczne twierdzenia o
-liderowaniu w techach między sekcjami, sklejenie obu mnożników w jeden,
-zbagatelizowane przeciągające się -6 happiness, bonus produkcji z
-Aristocracy opisany jak koszt, powtórzony fałszywy "tech lead").
-Naprawione w prompcie v9 (+ nowa heurystyka od użytkownika: przy ocenie
-zysków z wojny uwzględniać kill-triggered yields z polityk Honoru /
-tenetów Autokracji, nie samą wymianę jednostek).
+Status: iterations 1–4 implemented (commits `86c5b05`…`c04c3ae`: columns
+`lekmod_version`, `LekmodReference`, the `lekmod` key in the digest, prompt v7),
+the `ids.yml` plan below closed (prompt v8), iteration 5 (A/B) carried out
+2026-08-16 on v8: cost +50% ($0.15, acceptable), Counterfactuals and
+Conclusion good, but 5 defects in the report (contradictory claims about
+tech leadership between sections, both multipliers merged into one,
+downplayed sustained -6 happiness, Aristocracy's production bonus described
+as a cost, a repeated false "tech lead").
+Fixed in prompt v9 (+ a new heuristic from the user: when evaluating
+war gains, account for kill-triggered yields from Honor policies /
+Autocracy tenets, not just the unit trade).
 
-Kontekst: modele LLM znają reguły podstawowej gry (BNW), a nie LEKMOD — nie znają
-cywilizacji dodanych przez mod (Chile, Vietnam, Bolivia...) ani zmienionych efektów.
-Dane referencyjne per wersja moda leżą już znormalizowane w `db/lekmod/<wersja>/`
-(patrz `db/lekmod/README.md`; procedura dodania nowej wersji: `script/normalize_lekmod`).
-Kluczowa pułapka: logi gier identyfikują polityki/tenety/wierzenia wewnętrznymi
-vanillowymi ID, które LEKMOD zachowuje mimo zmiany wyświetlanej nazwy
+Context: LLM models know the base game rules (BNW), not LEKMOD — they don't know
+the civilizations added by the mod (Chile, Vietnam, Bolivia...) or the changed effects.
+Reference data per mod version already lives normalized in `db/lekmod/<version>/`
+(see `db/lekmod/README.md`; procedure for adding a new version: `script/normalize_lekmod`).
+Key pitfall: game logs identify policies/tenets/beliefs by internal
+vanilla IDs, which LEKMOD keeps despite changing the display name
 (`POLICY_MERCHANT_NAVY` → "Colonialism", `BELIEF_WALLS` → "Goddess of Protection") —
-pliki referencyjne mają te ID inline i matchować należy po ID, nie po nazwie.
+the reference files have these IDs inline and matching must be done by ID, not by name.
 
-Iteracje (każda: czerwone testy → review → implementacja → commit):
+Iterations (each: failing tests → review → implementation → commit):
 
-1. **`lekmod_version` na `games`** — migracja (string, nullable — stare importy bez
-   wersji), flaga `bin/civ import --lekmod-version 34.15`, przechowanie w `ImportGame`;
-   override `bin/civ analyze --lekmod-version` dla już zaimportowanych gier.
-   `session_started` dziś nie niesie wersji moda ("Lekmap v5.2" w `map_script` to
-   wersja mapy, nie moda) — patrz punkt "poza tym repo" niżej.
-2. **`LekmodReference`** — czysta klasa czytająca `db/lekmod/<wersja>/`:
-   - rozwiązywanie wersji: dokładna → najbliższa starsza (z notką o rozbieżności) →
-     brak (z notką, że szczegóły rulesetu niedostępne);
-   - ekstrakcja per encja: sekcja `## Civ (Leader)` z `civilizations.md` po nazwie civ
-     z rosteru; wpisy z `policies.md`/`ideologies.md`/`religion.md` po ID
-     (`POLICY_*`/`BELIEF_*`) występujących w timeline'ach gry; `general.md` w całości
-     lub sekcjami (decyzja przy implementacji — patrz uwaga o rozmiarze digestu wyżej).
-3. **Rozszerzenie `DigestBuilder`** — nowy klucz `lekmod` w digeście:
+1. **`lekmod_version` on `games`** — migration (string, nullable — old imports without
+   a version), `bin/civ import --lekmod-version 34.15` flag, stored in `ImportGame`;
+   `bin/civ analyze --lekmod-version` override for already-imported games.
+   `session_started` currently doesn't carry the mod version ("Lekmap v5.2" in `map_script` is
+   the map version, not the mod's) — see the "outside this repo" note below.
+2. **`LekmodReference`** — a pure class reading `db/lekmod/<version>/`:
+   - version resolution: exact → nearest older (with a note about the mismatch) →
+     none (with a note that ruleset details are unavailable);
+   - per-entity extraction: `## Civ (Leader)` section from `civilizations.md` by civ name
+     from the roster; entries from `policies.md`/`ideologies.md`/`religion.md` by ID
+     (`POLICY_*`/`BELIEF_*`) appearing in the game's timelines; `general.md` in full
+     or by section (decision at implementation time — see the digest-size note above).
+3. **Extending `DigestBuilder`** — a new `lekmod` key in the digest:
    `{version, resolution_note, civilizations, beliefs, policies, general_rules}`.
-   Wstrzykiwać tylko encje obecne w tej grze (roster/timeline), nie całe pliki.
-4. **Prompt v7** — notka: ruleset to LEKMOD; tam gdzie digest podaje opisy
-   uników/wierzeń/polityk, opierać się na nich, a nie na wiedzy o grze bazowej;
-   przy braku danych referencyjnych zaznaczać niepewność zamiast uzupełniać vanillą.
-5. **Weryfikacja end-to-end** — `bin/civ analyze` na chile-vs-vietnam z v7+digest
-   i porównanie A/B z raportami v5/v6 w `reports/` (ta sama gra, kolejne wersje promptu).
+   Only inject entities present in this game (roster/timeline), not entire files.
+4. **Prompt v7** — a note: the ruleset is LEKMOD; wherever the digest provides
+   descriptions of tenets/beliefs/policies, rely on them rather than knowledge of the base game;
+   when reference data is missing, flag uncertainty instead of filling in with vanilla.
+5. **End-to-end verification** — run `bin/civ analyze` on chile-vs-vietnam with v7+digest
+   and compare A/B against v5/v6 reports in `reports/` (same game, successive prompt versions).
 
-Poza tym repo: patch do `civ-narrative-logger`, żeby `session_started` emitował wersję
-aktywnego moda (Lua `Modding.GetActivatedMods()` daje ID + wersję) — wtedy flaga
-z iteracji 1 staje się fallbackiem dla starych logów.
+Outside this repo: a patch to `civ-narrative-logger` so that `session_started` emits the
+active mod's version (Lua `Modding.GetActivatedMods()` gives ID + version) — then the
+flag from iteration 1 becomes a fallback for old logs.
 
-## Plan: `ids.yml` — autorytatywne mapowanie ID→nazwa ze źródeł moda (zaplanowane)
+## Plan: `ids.yml` — authoritative ID→name mapping from mod sources (planned)
 
-Kontekst (z review promptu v7 na realnym digeście chile-vs-vietnam): 8 z 17 ID
-wierzeń tej gry nie znajduje wpisu w `lekmod.beliefs`, bo LEKMOD nadaje własnym
-wierzeniom ID z przekręconą pisownią (`BELIEF_ZAKATT`→"Zakat",
-`BELIEF_PEACE_GARDENZ`→"Peace Gardens", `BELIEF_DISCIPLEZ`→"Disciples"...) i
-derywacja nazwy z ID w `LekmodReference` nie trafia. Zamiast fuzzy matchingu
-(odrzucony: przy krótkich nazwach cichy błędny match podałby modelowi ZŁE reguły
-jako autorytet — gorzej niż brak wpisu) używamy źródeł moda jako ground truth:
-repo `/Users/dysk/projects/Lekmod` zawiera pełny łańcuch
-`<Type>BELIEF_ZAKATT` + `<ShortDescription>TXT_KEY_...` (tabele Beliefs/Policies)
-→ `<Replace Tag="TXT_KEY_..."><Text>Zakat` (tabele językowe). Zweryfikowane też
-dla vanillowego rename'u `TXT_KEY_POLICY_MERCHANT_NAVY`→"Colonialism", więc jeden
-mechanizm pokrywa i nowe ID moda, i rename'y. Uwaga: definicje są porozrzucane po
-plikach o mylących nazwach (wierzenia m.in. w `CIV5Units.xml`, teksty w
-`CIV5Units_Mongol.xml`) — parsować trzeba wszystkie XML-e, nie "właściwe" pliki.
+Context (from reviewing the v7 prompt on the real chile-vs-vietnam digest): 8 of 17
+belief IDs in that game have no entry in `lekmod.beliefs`, because LEKMOD assigns
+its own beliefs IDs with distorted spelling (`BELIEF_ZAKATT`→"Zakat",
+`BELIEF_PEACE_GARDENZ`→"Peace Gardens", `BELIEF_DISCIPLEZ`→"Disciples"...) and
+deriving the name from the ID in `LekmodReference` misses these. Instead of fuzzy matching
+(rejected: with short names a silent bad match would hand the model WRONG rules
+as authoritative — worse than no entry), we use the mod's sources as ground truth:
+the repo `/Users/dysk/projects/Lekmod` contains the full chain
+`<Type>BELIEF_ZAKATT` + `<ShortDescription>TXT_KEY_...` (Beliefs/Policies tables)
+→ `<Replace Tag="TXT_KEY_..."><Text>Zakat` (language tables). Also verified
+for the vanilla rename `TXT_KEY_POLICY_MERCHANT_NAVY`→"Colonialism", so a single
+mechanism covers both new mod IDs and renames. Note: definitions are scattered across
+files with misleading names (beliefs live partly in `CIV5Units.xml`, texts in
+`CIV5Units_Mongol.xml`) — all XMLs need to be parsed, not just the "proper" files.
 
-Iteracje (każda: czerwone testy → review → implementacja → commit):
+Iterations (each: failing tests → review → implementation → commit):
 
-1. **`script/extract_lekmod_ids`** — argument: ścieżka do checkoutu moda; parsuje
-   wszystkie XML-e, buduje `Type→TXT_KEY` (Beliefs: `ShortDescription`, Policies:
-   `Description`) i `TXT_KEY→Text` (obie formy: `<Row Tag=...>` i `<Replace
-   Tag=...>` — Replace wygrywa, bo nadpisuje wcześniejsze teksty), składa i
-   zapisuje `db/lekmod/<wersja>/ids.yml` (`POLICY_*/BELIEF_*` → nazwa
-   wyświetlana). Czerwone testy na minimalnych fixture'ach XML z oboma formami.
-   `ids.yml` commitowany do repo — generacja to krok dev-time przy dodawaniu
-   wersji, runtime nie dotyka repo moda.
-2. **Warstwa lookupu w `LekmodReference`** — priorytet: annotacja inline w md
-   (ręczny override) → `ids.yml` → dotychczasowa derywacja z ID. Do wyniku
-   dochodzi `unmatched_ids` — ID z gry bez znalezionego wpisu — żeby braki były
-   jawnym sygnałem w digeście i wychodziły przy weryfikacji, nie w raporcie.
-3. **Prompt v8** — trzy uzupełnienia z review v7: (a) ID wymienione w
-   `lekmod.unmatched_ids` (lub bez wpisu w `lekmod.*`) = efekt nieznany, zaznacz
-   niepewność zamiast zgadywać z brzmienia ID lub wiedzy vanilla; (b) w
-   Per-Player Strategic Verdict rozważ, jak uniki cywilizacji z
-   `lekmod.civilizations` wspierały/kłóciły się z obraną strategią, gdy timeline
-   to potwierdza; (c) "(unchanged)" w danych = efekt jak w BNW — tam wiedza o
-   grze bazowej jest właściwa.
-4. **Procedura w `db/lekmod/README.md`** — nowy krok przy dodawaniu wersji:
-   checkout tagu/commita moda odpowiadającego wersji → `script/extract_lekmod_ids`
-   → commit `ids.yml` obok plików md.
-5. **Dopiero potem iteracja 5 z planu wyżej** (A/B na chile-vs-vietnam) — z
-   kompletnym mapowaniem, promptem v8 i polem `unmatched_ids` (docelowo pustym
-   dla tej gry).
+1. **`script/extract_lekmod_ids`** — argument: path to the mod checkout; parses
+   all XML files, builds `Type→TXT_KEY` (Beliefs: `ShortDescription`, Policies:
+   `Description`) and `TXT_KEY→Text` (both forms: `<Row Tag=...>` and `<Replace
+   Tag=...>` — Replace wins, since it overwrites earlier texts), assembles and
+   writes `db/lekmod/<version>/ids.yml` (`POLICY_*/BELIEF_*` → display
+   name). Failing tests on minimal XML fixtures with both forms.
+   `ids.yml` is committed to the repo — generation is a dev-time step when adding
+   a version; runtime never touches the mod repo.
+2. **Lookup layer in `LekmodReference`** — priority: inline annotation in the md
+   (manual override) → `ids.yml` → the existing ID-based derivation. The result
+   also gets `unmatched_ids` — IDs from the game with no entry found — so gaps are
+   an explicit signal in the digest and surface during verification, not in the report.
+3. **Prompt v8** — three additions from the v7 review: (a) IDs listed in
+   `lekmod.unmatched_ids` (or with no entry in `lekmod.*`) = unknown effect, flag
+   uncertainty instead of guessing from the ID's wording or vanilla knowledge; (b) in
+   the Per-Player Strategic Verdict, consider how a civilization's `lekmod.civilizations`
+   uniques supported/conflicted with the chosen strategy, when the timeline
+   confirms it; (c) "(unchanged)" in the data = effect as in BNW — there, knowledge
+   of the base game is appropriate.
+4. **Procedure in `db/lekmod/README.md`** — a new step when adding a version:
+   check out the mod tag/commit matching the version → `script/extract_lekmod_ids`
+   → commit `ids.yml` alongside the md files.
+5. **Only then, iteration 5 from the plan above** (A/B on chile-vs-vietnam) — with
+   the complete mapping, prompt v8, and the `unmatched_ids` field (ideally empty
+   for this game).
 
-Odnotowane przy review v7, poza zakresem tego planu: `general_rules` idzie w
-całości (digest 58→95 kB) — pierwszy kandydat do cięcia, jeśli A/B pokaże
-problem jakości/kosztu.
+Noted during the v7 review, out of scope for this plan: `general_rules` goes in
+full (digest 58→95 kB) — the first candidate to trim if A/B shows a
+quality/cost problem.

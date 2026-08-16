@@ -15,7 +15,7 @@ class CivCliTest < ActiveSupport::TestCase
     assert_equal 0, status
     game = Game.find_by(name: "CLI Test Game")
     assert game.present?
-    assert_match(/Imported game ##{game.id} "CLI Test Game": 5 events \(0 deduped\)/, @out.string)
+    assert_match(/Imported game ##{game.id} "CLI Test Game": 6 events \(0 deduped\)/, @out.string)
     assert_match(/Rome, Greece/, @out.string)
   end
 

@@ -26,7 +26,11 @@ class HexGrid
     x - (y / 2)
   end
 
+  # Without a known width there is no seam to cross, so the only honest
+  # reading is the distance the long way round.
   def wrapped(dx)
+    return dx unless @width
+
     dx -= @width while dx > @width / 2
     dx += @width while dx < -@width / 2
     dx

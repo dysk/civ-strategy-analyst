@@ -8,7 +8,7 @@ class ImportGame
     city_converted tech_researched unit_killed unit_promoted
     city_state_friendship_changed unit_upgraded policy_adopted teams_met
     city_state_ally_changed city_state_alliance_changed great_person_expended
-    city_founded improvement_pillaged golden_age_started war_declared
+    city_founded city_captured improvement_pillaged golden_age_started war_declared
     peace_made natural_wonder_discovered era_entered policy_branch_unlocked
     policy_branch_adopted religion_founded pantheon_founded tech_from_ruins
     religion_enhanced trade_route_plundered reformation_added
@@ -102,6 +102,8 @@ class ImportGame
     game.update!(
       map_script: payload["map_script"],
       map_size: payload["map_size"],
+      map_width: payload["map_width"],
+      map_height: payload["map_height"],
       game_speed: payload["game_speed"],
       max_turns: payload["max_turns"],
       start_era: payload["start_era"]

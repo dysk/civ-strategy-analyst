@@ -1,6 +1,7 @@
-{"event":"session_started","game_speed":"GAMESPEED_QUICK","map_script":"TestMap","map_size":"WORLDSIZE_SMALL","max_turns":100,"players":[{"civ":"Rome","handicap":"HANDICAP_PRINCE","human":true,"name":"Augustus"},{"civ":"Greece","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Alexander"}],"start_era":"ERA_ANCIENT","turn":0}
+{"event":"session_started","game_speed":"GAMESPEED_QUICK","map_script":"TestMap","map_size":"WORLDSIZE_SMALL","map_width":48,"map_height":42,"max_turns":100,"players":[{"civ":"Rome","handicap":"HANDICAP_PRINCE","human":true,"name":"Augustus"},{"civ":"Greece","handicap":"HANDICAP_AI_DEFAULT","human":false,"name":"Alexander"}],"start_era":"ERA_ANCIENT","turn":0}
 {"event":"tech_researched","civ":"Rome","tech":"TECH_POTTERY","turn":1}
 {"event":"snapshot","civ":"Rome","score":50,"turn":1}
 {"event":"some_future_event_type","civ":"Greece","turn":2,"detail":"unknown"}
 this is not valid json
 {"event":"city_founded","civ":"Greece","city":"Athens","turn":3}
+{"event":"city_captured","city":"Athens","x":10,"y":10,"old_owner":"Greece","new_owner":"Rome","turn":9}

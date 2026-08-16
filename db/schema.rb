@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_203048) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_16_104900) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,8 +50,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_203048) do
     t.datetime "created_at", null: false
     t.string "game_speed"
     t.string "lekmod_version"
+    t.integer "map_height"
     t.string "map_script"
     t.string "map_size"
+    t.integer "map_width"
     t.integer "max_turns"
     t.string "name"
     t.string "start_era"
