@@ -235,6 +235,41 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({}, digest[:cultural]["Rome"])
   end
 
+  test "includes World Congress host history and the latest votes needed" do
+    congress_snapshot(10, host: "Rome", delegates: [], votes_needed: 12)
+    congress_snapshot(40, host: "Greece", delegates: [], votes_needed: 14)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      [ { turn: 10, host: "Rome" }, { turn: 40, host: "Greece" } ],
+      digest[:congress][:host_history]
+    )
+    assert_equal 14, digest[:congress][:votes_needed]
+  end
+
+  test "samples each civ's delegate votes at ~25-turn checkpoints" do
+    congress_snapshot(10, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 3 } ], votes_needed: 12)
+    congress_snapshot(30, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 5 } ], votes_needed: 12)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal({ 25 => 3, 30 => 5 }, digest[:congress][:delegates_by_civ]["Rome"])
+  end
+
+  test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do
+    event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
+    event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      [ { resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false,
+          proposed_turn: 10, outcome: :passed, outcome_turn: 15, repealed_turn: nil } ],
+      digest[:congress][:resolutions]
+    )
+  end
+
   test "includes lekmod reference data resolved from the given version, for roster civs only" do
     @game.players.create!(civ: "Chile", leader_name: "Test Leader", human: true, handicap: "PRINCE")
 
@@ -311,6 +346,13 @@ class DigestBuilderTest < ActiveSupport::TestCase
     @game.game_events.create!(
       seq: @seq, session_index: 0, turn: turn, event_type: "snapshot", civ: civ, payload: payload
     )
+  end
+
+  def congress_snapshot(turn, host:, delegates:, votes_needed:)
+    @seq += 1
+    payload = { "event" => "congress_snapshot", "turn" => turn, "host" => host,
+                "delegates" => delegates, "votes_needed_for_diplo_victory" => votes_needed }
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn, event_type: "congress_snapshot", civ: nil, payload: payload)
   end
 
   def event(civ, event_type, turn, extra = {})

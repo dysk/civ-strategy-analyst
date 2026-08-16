@@ -32,6 +32,7 @@ class DigestBuilder
       timelines: timelines_by_civ,
       key_moments: key_moments,
       cultural: cultural_by_civ,
+      congress: congress,
       lekmod: lekmod
     }
   end
@@ -79,10 +80,7 @@ class DigestBuilder
     max_turn = turns.keys.max
     return {} unless max_turn
 
-    checkpoints = (CHECKPOINT_INTERVAL..max_turn).step(CHECKPOINT_INTERVAL).to_a
-    checkpoints << max_turn unless checkpoints.last == max_turn
-
-    checkpoints.each_with_object({}) do |checkpoint, result|
+    checkpoint_turns(max_turn).each_with_object({}) do |checkpoint, result|
       nearest_turn = turns.keys.select { |t| t <= checkpoint }.max
       next unless nearest_turn
 
@@ -91,6 +89,12 @@ class DigestBuilder
         .merge(cost_multipliers(metrics["cities"]))
         .merge(army_quality(metrics))
     end
+  end
+
+  def checkpoint_turns(max_turn)
+    checkpoints = (CHECKPOINT_INTERVAL..max_turn).step(CHECKPOINT_INTERVAL).to_a
+    checkpoints << max_turn unless checkpoints.last == max_turn
+    checkpoints
   end
 
   def army_quality(metrics)
@@ -194,7 +198,31 @@ class DigestBuilder
   end
 
   def resolution_ids
-    CongressTimeline.new(@game).resolutions.map { |r| r[:resolution] }.uniq
+    congress_timeline.resolutions.map { |r| r[:resolution] }.uniq
+  end
+
+  def congress
+    {
+      host_history: congress_timeline.host_over_time,
+      votes_needed: congress_timeline.votes_needed,
+      delegates_by_civ: civs.each_with_object({}) { |civ, result| result[civ] = delegate_checkpoints(civ) },
+      resolutions: congress_timeline.resolutions
+    }
+  end
+
+  def delegate_checkpoints(civ)
+    turns = congress_timeline.delegate_votes(civ).to_h
+    max_turn = turns.keys.max
+    return {} unless max_turn
+
+    checkpoint_turns(max_turn).each_with_object({}) do |checkpoint, result|
+      nearest_turn = turns.keys.select { |t| t <= checkpoint }.max
+      result[checkpoint] = turns[nearest_turn] if nearest_turn
+    end
+  end
+
+  def congress_timeline
+    @congress_timeline ||= CongressTimeline.new(@game)
   end
 
   def belief_ids
