@@ -43,6 +43,22 @@ class SpaceshipTimelineTest < ActiveSupport::TestCase
     assert_nil SpaceshipTimeline.new(@game).latest("Greece")
   end
 
+  test "complete? is true once every part meets its required count" do
+    assert SpaceshipTimeline.complete?(
+      { "apollo" => 1, "booster" => 3, "cockpit" => 1, "stasis_chamber" => 1, "engine" => 1 }
+    )
+  end
+
+  test "complete? is false when any single part is short" do
+    refute SpaceshipTimeline.complete?(
+      { "apollo" => 1, "booster" => 2, "cockpit" => 1, "stasis_chamber" => 1, "engine" => 1 }
+    )
+  end
+
+  test "complete? is false for a nil spaceship" do
+    refute SpaceshipTimeline.complete?(nil)
+  end
+
   private
 
   def snapshot(civ, turn, metrics)

@@ -663,6 +663,52 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "capital_control_changes reports capitals gained and lost, sorted by turn" do
+    snapshot("Rome", 50, capitals: %w[Rome])
+    snapshot("Rome", 100, capitals: %w[Rome Athens])
+    snapshot("Rome", 150, capitals: %w[Athens])
+
+    assert_equal(
+      [
+        { type: :capital_gained, civ: "Rome", original_owner: "Athens", turn: 100 },
+        { type: :capital_lost, civ: "Rome", original_owner: "Rome", turn: 150 }
+      ],
+      detector.capital_control_changes
+    )
+  end
+
+  test "apollo_completions reports the first turn a civ's Apollo Program count goes positive" do
+    snapshot("Rome", 100, spaceship: { apollo: 0, booster: 0, cockpit: 0, stasis_chamber: 0, engine: 0 })
+    snapshot("Rome", 120, spaceship: { apollo: 1, booster: 0, cockpit: 0, stasis_chamber: 0, engine: 0 })
+
+    assert_equal [ { type: :apollo_completed, civ: "Rome", turn: 120 } ], detector.apollo_completions
+  end
+
+  test "spaceship_part_assemblies reports each increase in a part's count" do
+    snapshot("Rome", 100, spaceship: { apollo: 1, booster: 0, cockpit: 0, stasis_chamber: 0, engine: 0 })
+    snapshot("Rome", 120, spaceship: { apollo: 1, booster: 1, cockpit: 0, stasis_chamber: 0, engine: 0 })
+    snapshot("Rome", 140, spaceship: { apollo: 1, booster: 2, cockpit: 1, stasis_chamber: 0, engine: 0 })
+
+    assert_equal(
+      [
+        { type: :spaceship_part_assembled, civ: "Rome", turn: 120, part: "booster", count: 1 },
+        { type: :spaceship_part_assembled, civ: "Rome", turn: 140, part: "booster", count: 2 },
+        { type: :spaceship_part_assembled, civ: "Rome", turn: 140, part: "cockpit", count: 1 }
+      ],
+      detector.spaceship_part_assemblies
+    )
+  end
+
+  test "science_victory_imminent reports the first turn assembly reaches 5 of the 6 required parts" do
+    snapshot("Rome", 100, spaceship: { apollo: 1, booster: 2, cockpit: 1, stasis_chamber: 0, engine: 1 })
+    snapshot("Rome", 120, spaceship: { apollo: 1, booster: 3, cockpit: 1, stasis_chamber: 0, engine: 1 })
+
+    assert_equal(
+      [ { type: :science_victory_imminent, civ: "Rome", turn: 120, parts_assembled: 5 } ],
+      detector.science_victory_imminent
+    )
+  end
+
   private
 
   def congress_snapshot(turn, host:, delegates:, votes_needed:)

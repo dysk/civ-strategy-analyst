@@ -288,6 +288,56 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
+  def capital_control_changes
+    timeline = CapitalsTimeline.new(@game)
+
+    civs_with_snapshots.flat_map do |civ|
+      timeline.series(civ).each_cons(2).flat_map do |prev, curr|
+        gained = curr[:capitals] - prev[:capitals]
+        lost = prev[:capitals] - curr[:capitals]
+
+        gained.map { |owner| { type: :capital_gained, civ: civ, original_owner: owner, turn: curr[:turn] } } +
+          lost.map { |owner| { type: :capital_lost, civ: civ, original_owner: owner, turn: curr[:turn] } }
+      end
+    end.sort_by { |moment| moment[:turn] }
+  end
+
+  def apollo_completions
+    timeline = SpaceshipTimeline.new(@game)
+
+    civs_with_snapshots.filter_map do |civ|
+      first = timeline.series(civ).find { |entry| entry[:spaceship]["apollo"].to_i.positive? }
+      next unless first
+
+      { type: :apollo_completed, civ: civ, turn: first[:turn] }
+    end.sort_by { |moment| moment[:turn] }
+  end
+
+  def spaceship_part_assemblies
+    timeline = SpaceshipTimeline.new(@game)
+
+    civs_with_snapshots.flat_map do |civ|
+      timeline.series(civ).each_cons(2).flat_map do |prev, curr|
+        SpaceshipTimeline::PARTS.filter_map do |part|
+          next unless curr[:spaceship][part].to_i > prev[:spaceship][part].to_i
+
+          { type: :spaceship_part_assembled, civ: civ, turn: curr[:turn], part: part, count: curr[:spaceship][part] }
+        end
+      end
+    end.sort_by { |moment| moment[:turn] }
+  end
+
+  def science_victory_imminent
+    timeline = SpaceshipTimeline.new(@game)
+
+    civs_with_snapshots.filter_map do |civ|
+      entry = timeline.series(civ).find { |e| e[:parts_assembled] >= SpaceshipTimeline::TOTAL_PARTS_REQUIRED - 1 }
+      next unless entry
+
+      { type: :science_victory_imminent, civ: civ, turn: entry[:turn], parts_assembled: entry[:parts_assembled] }
+    end.sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])
