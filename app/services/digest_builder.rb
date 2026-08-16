@@ -85,8 +85,19 @@ class DigestBuilder
       next unless nearest_turn
 
       metrics = turns[nearest_turn].slice(*SNAPSHOT_METRICS)
-      result[checkpoint] = metrics.merge(cost_multipliers(metrics["cities"]))
+      result[checkpoint] = metrics
+        .merge(cost_multipliers(metrics["cities"]))
+        .merge(army_quality(metrics["military_might"], metrics["military_units"]))
     end
+  end
+
+  # Military might divided by unit count says what an army is made of:
+  # a large horde of obsolete units and a small modern one can carry the
+  # same total might.
+  def army_quality(might, units)
+    return {} unless might && units&.positive?
+
+    { "might_per_unit" => (might.to_f / units).round(1) }
   end
 
   def cost_multipliers(cities)

@@ -95,6 +95,24 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal 1.0, rome_checkpoint["policy_cost_multiplier"]
   end
 
+  test "adds the might each military unit averages per checkpoint" do
+    snapshot("Rome", 25, score: 80, military_might: 1000, military_units: 8)
+
+    assert_equal 125.0, DigestBuilder.new(@game).call[:metrics]["Rome"][25]["might_per_unit"]
+  end
+
+  test "omits might per unit for a civilization fielding no military units" do
+    snapshot("Rome", 25, score: 80, military_might: 0, military_units: 0)
+
+    refute DigestBuilder.new(@game).call[:metrics]["Rome"][25].key?("might_per_unit")
+  end
+
+  test "omits might per unit when a checkpoint is missing either half of the ratio" do
+    snapshot("Rome", 25, score: 80, military_might: 1000)
+
+    refute DigestBuilder.new(@game).call[:metrics]["Rome"][25].key?("might_per_unit")
+  end
+
   test "omits cost multipliers when a checkpoint has no city count" do
     snapshot("Rome", 25, score: 80)
 
