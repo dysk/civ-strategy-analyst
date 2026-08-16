@@ -78,7 +78,8 @@
         <th>Turn</th>
         <th>Units</th>
         <th>Might</th>
-        <th>Might per unit</th>
+        <th>Power</th>
+        <th>Power per unit</th>
       </tr>
     </thead>
     <tbody>
@@ -88,7 +89,8 @@
           <td><%= row[:turn] %></td>
           <td><%= row[:units] || "&mdash;".html_safe %></td>
           <td><%= row[:might] || "&mdash;".html_safe %></td>
-          <td><%= row[:might_per_unit] || "&mdash;".html_safe %></td>
+          <td><%= row[:army_power] || "&mdash;".html_safe %></td>
+          <td><%= row[:power_per_unit] || "&mdash;".html_safe %></td>
         </tr>
       <% end %>
     </tbody>

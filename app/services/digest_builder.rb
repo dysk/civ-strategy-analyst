@@ -87,14 +87,17 @@ class DigestBuilder
       metrics = turns[nearest_turn].slice(*SNAPSHOT_METRICS)
       result[checkpoint] = metrics
         .merge(cost_multipliers(metrics["cities"]))
-        .merge(army_quality(metrics["military_might"], metrics["military_units"]))
+        .merge(army_quality(metrics))
     end
   end
 
-  def army_quality(might, units)
-    ratio = ArmyComposition.might_per_unit(might, units)
+  def army_quality(metrics)
+    might, units, gold = metrics.values_at("military_might", "military_units", "gold")
 
-    ratio ? { "might_per_unit" => ratio } : {}
+    {
+      "army_power" => ArmyComposition.army_power(might, gold),
+      "power_per_unit" => ArmyComposition.power_per_unit(might, units, gold)
+    }.compact
   end
 
   def cost_multipliers(cities)

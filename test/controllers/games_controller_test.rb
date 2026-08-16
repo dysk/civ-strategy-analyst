@@ -158,23 +158,24 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
   test "show displays what each civilization's army is made of" do
     game = Game.create!(name: "Army Game")
     game.players.create!(civ: "Rome")
-    snapshot(game, "Rome", 20, military_might: 1000, military_units: 8)
+    snapshot(game, "Rome", 20, military_might: 1300, military_units: 10, gold: 900)
 
     get game_url(game)
 
     assert_response :success
     assert_select "table.army" do
       assert_select "td", "Rome"
-      assert_select "td", "8"
+      assert_select "td", "10"
+      assert_select "td", "1300"
       assert_select "td", "1000"
-      assert_select "td", "125.0"
+      assert_select "td", "100.0"
     end
   end
 
   test "show links to the history behind the army table" do
     game = Game.create!(name: "Army History Link Game")
     game.players.create!(civ: "Rome")
-    snapshot(game, "Rome", 20, military_might: 1000, military_units: 8)
+    snapshot(game, "Rome", 20, military_might: 1000, military_units: 8, gold: 0)
 
     get game_url(game)
 

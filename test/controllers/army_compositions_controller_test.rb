@@ -23,6 +23,15 @@ class ArmyCompositionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.army tbody tr:last-child td", "25"
   end
 
+  test "shows the army power left once the treasury is divided out" do
+    army("Rome", 10, might: 1300, units: 10, gold: 900)
+
+    get game_army_url(@game)
+
+    assert_select "table.army tbody td", "1000"
+    assert_select "table.army tbody td", "100.0"
+  end
+
   test "names the civilization each table belongs to" do
     @game.players.create!(civ: "Greece")
     army("Rome", 10, might: 100, units: 2)
@@ -63,10 +72,10 @@ class ArmyCompositionsControllerTest < ActionDispatch::IntegrationTest
 
   private
 
-  def army(civ, turn, might:, units:)
+  def army(civ, turn, might:, units:, gold: 0)
     @game.game_events.create!(
       seq: @game.game_events.count + 1, session_index: 0, turn: turn, event_type: "snapshot", civ: civ,
-      payload: { "event" => "snapshot", "turn" => turn, "civ" => civ,
+      payload: { "event" => "snapshot", "turn" => turn, "civ" => civ, "gold" => gold,
                  "military_might" => might, "military_units" => units }
     )
   end
