@@ -171,6 +171,17 @@ class DigestBuilderTest < ActiveSupport::TestCase
     )
   end
 
+  test "includes the distance between every pair of capitals" do
+    @game.update!(map_width: 46)
+    event("Rome", "city_founded", 0, city: "Roma", x: 10, y: 10)
+    event("Greece", "city_founded", 0, city: "Athens", x: 16, y: 10)
+
+    proximity = DigestBuilder.new(@game).call[:capital_proximity]
+
+    assert_equal "Roma", proximity[:capitals]["Rome"][:city]
+    assert_equal [ { civs: %w[Rome Greece], distance: 6 } ], proximity[:distances]
+  end
+
   test "includes key moments from KeyMomentDetector, keyed by heuristic" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
 

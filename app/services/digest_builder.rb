@@ -29,6 +29,7 @@ class DigestBuilder
       standings: standings,
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
+      capital_proximity: CapitalProximity.for(@game).call,
       key_moments: key_moments,
       lekmod: lekmod
     }
