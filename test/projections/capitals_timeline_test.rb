@@ -41,6 +41,17 @@ class CapitalsTimelineTest < ActiveSupport::TestCase
     assert_nil CapitalsTimeline.new(@game).latest("Greece")
   end
 
+  test "treats an empty-object capitals payload as no capitals held" do
+    # The Lua logger serializes an empty table as {} instead of [], so a
+    # civ that has lost its own capital reports "capitals":{} in the log.
+    snapshot("Rome", 100, capitals: {})
+
+    assert_equal(
+      [ { turn: 100, capitals: [], capitals_held: 0 } ],
+      CapitalsTimeline.new(@game).series("Rome")
+    )
+  end
+
   private
 
   def snapshot(civ, turn, metrics)

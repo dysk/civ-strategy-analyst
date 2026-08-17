@@ -29,6 +29,10 @@ class CapitalsTimeline
     capitals = snapshot.payload["capitals"]
     return unless capitals
 
+    # The Lua logger serializes an empty table as {} rather than [], so a
+    # civ holding no capitals reports "capitals":{} instead of "capitals":[].
+    capitals = [] if capitals.is_a?(Hash)
+
     { turn: snapshot.turn, capitals: capitals, capitals_held: capitals.size }
   end
 end
