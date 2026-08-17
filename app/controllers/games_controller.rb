@@ -2,6 +2,7 @@ class GamesController < ApplicationController
   SNOWBALL_METRICS = %w[score science population culture].freeze
   CAPITAL_LAYOUT_HEIGHT = 300
   CAPITAL_LAYOUT_PADDING = 20
+  CAPITAL_LAYOUT_CHARACTER_WIDTH = 7 # approx px per character at the label's 12px font size
 
   def index
     @games = Game.order(:id)
@@ -100,19 +101,22 @@ class GamesController < ApplicationController
 
   # Every capital scaled onto the canvas with one shared scale factor so
   # relative distance is preserved, and whichever axis spans less than the
-  # canvas allows is centered rather than stretched to fit.
+  # canvas allows is centered rather than stretched to fit. Labels are
+  # centered on their point (text-anchor: middle), so the horizontal padding
+  # has to fit half the widest label or it clips against the canvas edge.
   def capital_positions
     capitals = CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width)).capitals.values
     return [] if capitals.empty?
 
     xs = capitals.map { |capital| capital[:x] }
     ys = capitals.map { |capital| capital[:y] }
-    drawable_width = @capital_layout_width - 2 * CAPITAL_LAYOUT_PADDING
+    padding_x = capitals.map { |capital| capital_label_half_width(capital[:civ]) }.max
+    drawable_width = @capital_layout_width - 2 * padding_x
     drawable_height = CAPITAL_LAYOUT_HEIGHT - 2 * CAPITAL_LAYOUT_PADDING
     x_span = [ xs.max - xs.min, 1 ].max
     y_span = [ ys.max - ys.min, 1 ].max
     scale = [ drawable_width / x_span.to_f, drawable_height / y_span.to_f ].min
-    x_offset = CAPITAL_LAYOUT_PADDING + (drawable_width - x_span * scale) / 2
+    x_offset = padding_x + (drawable_width - x_span * scale) / 2
     y_offset = CAPITAL_LAYOUT_PADDING + (drawable_height - y_span * scale) / 2
 
     capitals.map do |capital|
@@ -122,6 +126,10 @@ class GamesController < ApplicationController
         cy: (CAPITAL_LAYOUT_HEIGHT - y_offset - (capital[:y] - ys.min) * scale).round(2)
       }
     end
+  end
+
+  def capital_label_half_width(civ)
+    CAPITAL_LAYOUT_PADDING + civ.length * CAPITAL_LAYOUT_CHARACTER_WIDTH / 2.0
   end
 
   def cultural_rows
