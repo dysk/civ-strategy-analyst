@@ -1,6 +1,6 @@
 class GamesController < ApplicationController
   SNOWBALL_METRICS = %w[score science population culture].freeze
-  CAPITAL_LAYOUT_SIZE = 300
+  CAPITAL_LAYOUT_HEIGHT = 300
   CAPITAL_LAYOUT_PADDING = 20
 
   def index
@@ -15,6 +15,7 @@ class GamesController < ApplicationController
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
     @capital_distances = capital_distances
+    @capital_layout_width = capital_layout_width
     @capital_positions = capital_positions
     @army_rows = army_rows
     @cultural_rows = cultural_rows
@@ -88,26 +89,37 @@ class GamesController < ApplicationController
       .distances.sort_by { |pair| pair[:distance] }
   end
 
-  # Every capital scaled onto a fixed square canvas: both axes share one
-  # scale factor so relative distance is preserved, and whichever axis
-  # spans less than the other is centered rather than stretched to fit.
+  # Canvas height is fixed; width follows the map's own aspect ratio so a
+  # wide map isn't squeezed into a square. Maps are rarely square.
+  def capital_layout_width
+    width, height = @map_bounds.width, @map_bounds.height
+    return CAPITAL_LAYOUT_HEIGHT unless width && height
+
+    (CAPITAL_LAYOUT_HEIGHT * width / height.to_f).round
+  end
+
+  # Every capital scaled onto the canvas with one shared scale factor so
+  # relative distance is preserved, and whichever axis spans less than the
+  # canvas allows is centered rather than stretched to fit.
   def capital_positions
     capitals = CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width)).capitals.values
     return [] if capitals.empty?
 
     xs = capitals.map { |capital| capital[:x] }
     ys = capitals.map { |capital| capital[:y] }
-    drawable = CAPITAL_LAYOUT_SIZE - 2 * CAPITAL_LAYOUT_PADDING
-    span = [ xs.max - xs.min, ys.max - ys.min, 1 ].max
-    scale = drawable / span.to_f
-    x_offset = CAPITAL_LAYOUT_PADDING + (span - (xs.max - xs.min)) * scale / 2
-    y_offset = CAPITAL_LAYOUT_PADDING + (span - (ys.max - ys.min)) * scale / 2
+    drawable_width = @capital_layout_width - 2 * CAPITAL_LAYOUT_PADDING
+    drawable_height = CAPITAL_LAYOUT_HEIGHT - 2 * CAPITAL_LAYOUT_PADDING
+    x_span = [ xs.max - xs.min, 1 ].max
+    y_span = [ ys.max - ys.min, 1 ].max
+    scale = [ drawable_width / x_span.to_f, drawable_height / y_span.to_f ].min
+    x_offset = CAPITAL_LAYOUT_PADDING + (drawable_width - x_span * scale) / 2
+    y_offset = CAPITAL_LAYOUT_PADDING + (drawable_height - y_span * scale) / 2
 
     capitals.map do |capital|
       {
         civ: capital[:civ],
         cx: (x_offset + (capital[:x] - xs.min) * scale).round(2),
-        cy: (CAPITAL_LAYOUT_SIZE - y_offset - (capital[:y] - ys.min) * scale).round(2)
+        cy: (CAPITAL_LAYOUT_HEIGHT - y_offset - (capital[:y] - ys.min) * scale).round(2)
       }
     end
   end

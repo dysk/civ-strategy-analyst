@@ -10,6 +10,10 @@ class MapBounds
     @game.map_width || easternmost_plot&.succ
   end
 
+  def height
+    @game.map_height || northernmost_plot&.succ
+  end
+
   def estimated?
     @game.map_width.nil? && width.present?
   end
@@ -18,5 +22,9 @@ class MapBounds
 
   def easternmost_plot
     @game.game_events.filter_map { |event| event.payload["x"] }.max
+  end
+
+  def northernmost_plot
+    @game.game_events.filter_map { |event| event.payload["y"] }.max
   end
 end

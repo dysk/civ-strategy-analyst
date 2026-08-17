@@ -223,6 +223,34 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show widens the capital layout canvas to match a non-square map's aspect ratio" do
+    game = Game.create!(name: "Wide Map Game", map_width: 92, map_height: 46)
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "svg.capital-layout" do |svgs|
+      assert_equal "0 0 600 300", svgs.first["viewbox"]
+    end
+  end
+
+  test "show keeps a square capital layout canvas when the map's dimensions match" do
+    game = Game.create!(name: "Square Map Game", map_width: 46, map_height: 46)
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "svg.capital-layout" do |svgs|
+      assert_equal "0 0 300 300", svgs.first["viewbox"]
+    end
+  end
+
   test "show omits the capital layout diagram for a game with no city coordinates" do
     game = Game.create!(name: "Coordinateless Layout Game")
     game.players.create!(civ: "Rome")
