@@ -14,6 +14,10 @@ gem "ruby_llm"
 # Render markdown analysis reports in the UI
 gem "redcarpet"
 
+# Load .env into ENV so CLI commands (bin/civ) pick up local/production
+# secrets without an interactive shell export
+gem "dotenv-rails"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
