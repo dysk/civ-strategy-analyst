@@ -49,10 +49,26 @@ class OutcomeResolver
     return nil if roster.size < 2
 
     timeline = CapitalsTimeline.new(@game)
-    roster.find do |civ|
-      capitals = timeline.latest(civ)&.[](:capitals)
-      capitals && (roster - capitals).empty?
-    end
+    roster.find { |civ| (roster - capitals_held(civ, timeline)).empty? }
+  end
+
+  # A game can end on the very capture that completes a domination victory,
+  # before another snapshot is logged to report it, so on top of the last
+  # known snapshot we credit any capital captured since. The captured
+  # capital's old_owner stands in for its original civ, which holds as long
+  # as that capital hadn't already changed hands earlier in the same gap.
+  def capitals_held(civ, timeline)
+    latest_snapshot = @game.game_events.where(event_type: "snapshot", civ: civ).order(:seq).last
+    capitals = latest_snapshot&.payload&.[]("capitals")
+    known = capitals.is_a?(Hash) ? [] : Array(capitals)
+    since_seq = latest_snapshot&.seq || -1
+
+    gained = @game.game_events.where(event_type: "city_captured").where("seq > ?", since_seq)
+      .select { |e| e.payload["capital"] && e.payload["new_owner"] == civ }
+      .map { |e| e.payload["old_owner"] }
+      .compact
+
+    known | gained
   end
 
   def science_victor

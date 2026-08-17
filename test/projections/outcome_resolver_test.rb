@@ -133,6 +133,21 @@ class OutcomeResolverTest < ActiveSupport::TestCase
     )
   end
 
+  test "infers domination victory from a capture that completes it with no snapshot logged afterward" do
+    player("Rome")
+    player("Greece")
+    snapshot("Rome", 100, score: 100, capitals: %w[Rome])
+    snapshot("Greece", 100, score: 500, capitals: %w[Greece])
+    city_captured(101, city: "Athens", old_owner: "Greece", new_owner: "Rome")
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: "domination", in_progress: false, source: :inferred },
+      outcome
+    )
+  end
+
   test "does not infer domination while any roster civ's original capital is still unaccounted for" do
     player("Rome")
     player("Greece")
@@ -222,6 +237,13 @@ class OutcomeResolverTest < ActiveSupport::TestCase
     payload = { "event" => "congress_snapshot", "turn" => turn,
                 "delegates" => delegates, "votes_needed_for_diplo_victory" => votes_needed }
     @game.game_events.create!(seq: @seq, session_index: 0, turn: turn, event_type: "congress_snapshot", civ: nil, payload: payload)
+  end
+
+  def city_captured(turn, city:, old_owner:, new_owner:, capital: true)
+    @seq += 1
+    payload = { "event" => "city_captured", "turn" => turn, "city" => city,
+                "old_owner" => old_owner, "new_owner" => new_owner, "capital" => capital }
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn, event_type: "city_captured", civ: nil, payload: payload)
   end
 
   def snapshot(civ, turn, **metrics)
