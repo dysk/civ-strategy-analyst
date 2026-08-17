@@ -1,0 +1,2 @@
+{"event":"session_started","game_speed":"GAMESPEED_QUICK","map_script":"TestMap","map_size":"WORLDSIZE_SMALL","max_turns":100,"players":[{"civ":"Rome","handicap":"HANDICAP_PRINCE","human":true,"name":"Augustus"}],"start_era":"ERA_ANCIENT","turn":0}
+{"event":"nuclear_detonation","civ":"Rome","city":"Athens","turn":50}
