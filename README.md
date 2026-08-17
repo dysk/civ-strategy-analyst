@@ -60,13 +60,17 @@ Streams the file line by line, builds the game + player roster from the first
 pitboss restart (see `plan.md` for the exact dedup rule). Prints the imported/
 deduped event counts and the roster.
 
-Don't have a `civ-narrative-logger` log of your own yet? `examples/` has a
-real (in-progress, single human player) game log to import and poke around
-with:
+Don't have a `civ-narrative-logger` log of your own yet? `examples/` has real
+single-human-player game logs to import and poke around with. Best starting
+point is `babylon-domination.jsonl` — a finished domination game, richer in
+events than the other example:
 
 ```sh
-bin/civ import examples/chile-vs-vietnam.jsonl
+bin/civ import examples/babylon-domination.jsonl
 ```
+
+`chile-vs-vietnam.jsonl` is also there, though it's an in-progress game with
+fewer events.
 
 **Analyze a game:**
 
@@ -110,7 +114,9 @@ its standings, all detected key moments, and the latest analysis report
   the DB: `MetricSeries`, `PlayerTimeline`, `KeyMomentDetector`,
   `OutcomeResolver`
 - `app/prompts/` — the LLM prompt template (`analyze_game.md`); history lives in git log
-- `examples/` — a sample `civ-narrative-logger` JSONL log (in-progress, one
-  human player) to import if you don't have a game of your own yet
+- `examples/` — sample `civ-narrative-logger` JSONL logs (single human
+  player) to import if you don't have a game of your own yet: a finished
+  domination game (`babylon-domination.jsonl`) and an in-progress game
+  (`chile-vs-vietnam.jsonl`)
 - `app/controllers` / `app/views/games/` — the UI skeleton
 - `bin/civ` — the CLI entry point
