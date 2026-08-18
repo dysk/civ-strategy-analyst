@@ -324,6 +324,24 @@ army: units built, bought, upgraded, lost or destroyed. Their `from` and
 so do not present the two as the same quantity or wonder why they
 disagree.
 
+The `snowballs_score`, `snowballs_population`, `snowballs_science`,
+`snowballs_culture`, `snowballs_production`, `snowballs_faith`,
+`snowballs_gold_per_turn`, and `snowballs_food` key moments each flag a
+stretch where one civilization held the fastest rate of gain in that
+metric, continuously, for at least 15 turns. The rate is a rolling slope
+over each civilization's last 10 checkpoints, compared across every
+civilization at every shared turn; `civ` is whoever's pace led
+throughout the stretch from `turn` to `turn_end` (`duration_turns` is
+`turn_end` minus `turn`). A snowball is about *pace*, not standing - a
+civilization that trails in a metric can still be snowballing it if it
+is closing the gap, or extending a lead, faster than anyone else, so
+never read a snowball as proof that the civilization already led that
+metric at the time. Each metric is tracked independently: a
+`snowballs_production` stretch says nothing about that civilization's
+`score` or `culture` trajectory over the same turns, and one
+civilization can snowball on one metric while another simultaneously
+snowballs a different one.
+
 Negative `happiness` is a serious drag, not a cosmetic debuff: while it
 lasts, it effectively stalls population growth across the empire, pushes
 golden ages further away (a negative balance drains the golden-age
