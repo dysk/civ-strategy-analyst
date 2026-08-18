@@ -1,5 +1,5 @@
 class GamesController < ApplicationController
-  SNOWBALL_METRICS = %w[score science population culture].freeze
+  SNOWBALL_METRICS = %w[score science population culture production faith gold_per_turn food].freeze
   CAPITAL_LAYOUT_HEIGHT = 300
   CAPITAL_LAYOUT_PADDING = 20
   CAPITAL_LAYOUT_CHARACTER_WIDTH = 7 # approx px per character at the label's 12px font size
@@ -72,7 +72,7 @@ class GamesController < ApplicationController
 
   # The heading names the metric, so the moments themselves need not.
   def snowballs_by_metric(moments)
-    SNOWBALL_METRICS.index_with { |metric| moments.snowballs(metric) }.transform_keys(&:capitalize)
+    SNOWBALL_METRICS.index_with { |metric| moments.snowballs(metric) }.transform_keys(&:titleize)
   end
 
   def army_rows

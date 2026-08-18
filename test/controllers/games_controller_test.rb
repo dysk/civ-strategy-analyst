@@ -115,6 +115,18 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "details h3", "Science"
   end
 
+  test "show titleizes underscored snowball metric names" do
+    game = Game.create!(name: "Snowball Game")
+    (1..30).each do |turn|
+      snapshot(game, "Rome", turn, gold_per_turn: turn * 10)
+      snapshot(game, "Greece", turn, gold_per_turn: turn * 2)
+    end
+
+    get game_url(game)
+
+    assert_select "details h3", "Gold Per Turn"
+  end
+
   test "show displays key moments detected from the game's events" do
     game = Game.create!(name: "War Game")
     game.game_events.create!(
