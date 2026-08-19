@@ -37,7 +37,10 @@ module KeyMomentsHelper
     diplomatic_victory_imminent: ->(m) {
       "#{m[:civ]} reached #{m[:votes]} delegate votes, meeting the #{m[:votes_needed]} needed for a diplomatic victory"
     },
-    resolution_passed: ->(m) { "#{m[:resolution]} passed, proposed by #{m[:proposer]}" },
+    resolution_passed: ->(m) {
+      subject = m[:repeal] ? "The repeal of #{m[:resolution]}" : m[:resolution]
+      "#{subject} passed, proposed by #{m[:proposer]}"
+    },
     capital_gained: ->(m) { "#{m[:civ]} gained control of #{m[:original_owner]}'s original capital" },
     capital_lost: ->(m) { "#{m[:civ]} lost control of #{m[:original_owner]}'s original capital" },
     apollo_completed: ->(m) { "#{m[:civ]} completed the Apollo Program" },

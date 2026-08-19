@@ -31,18 +31,21 @@ class CongressTimeline
 
   private
 
+  # A repeal ends the enactment that was in force, so `repealed_turn`
+  # belongs to the proposal that enacted the resolution - never to a repeal
+  # proposal, which has nothing of its own left to repeal.
   def resolutions_for(name, proposals)
     outcomes = combined_outcomes(name)
     repeals = of_type("resolution_repealed").select { |e| e.payload["resolution"] == name }
-    passed_seen = 0
+    enactments_seen = 0
 
     proposals.each_with_index.map do |proposal, index|
       outcome_event, outcome_type = outcomes[index]
       repeal_event = nil
 
-      if outcome_type == :passed
-        repeal_event = repeals[passed_seen]
-        passed_seen += 1
+      if outcome_type == :passed && !proposal.payload["repeal"]
+        repeal_event = repeals[enactments_seen]
+        enactments_seen += 1
       end
 
       { resolution: name, proposer: proposal.payload["proposer"], repeal: proposal.payload["repeal"],

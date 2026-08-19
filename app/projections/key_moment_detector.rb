@@ -284,7 +284,8 @@ class KeyMomentDetector
     CongressTimeline.new(@game).resolutions
       .select { |resolution| resolution[:outcome] == :passed }
       .map { |resolution| { type: :resolution_passed, turn: resolution[:outcome_turn],
-                             resolution: resolution[:resolution], proposer: resolution[:proposer] } }
+                             resolution: resolution[:resolution], proposer: resolution[:proposer],
+                             repeal: resolution[:repeal] } }
       .sort_by { |moment| moment[:turn] }
   end
 

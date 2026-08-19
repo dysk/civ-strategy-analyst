@@ -658,8 +658,22 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     event(nil, "resolution_failed", 25, resolution: "RESOLUTION_PLAYER_EMBARGO")
 
     assert_equal(
-      [ { type: :resolution_passed, turn: 15, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome" } ],
+      [ { type: :resolution_passed, turn: 15, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome",
+          repeal: false } ],
       detector.resolutions_passed
+    )
+  end
+
+  test "resolutions_passed marks a passed repeal proposal as a repeal" do
+    event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_CULTURAL_HERITAGE_SITES", proposer: "Rome", repeal: false)
+    event(nil, "resolution_passed", 15, resolution: "RESOLUTION_CULTURAL_HERITAGE_SITES")
+    event(nil, "resolution_proposed", 20, resolution: "RESOLUTION_CULTURAL_HERITAGE_SITES", proposer: "Greece", repeal: true)
+    event(nil, "resolution_passed", 25, resolution: "RESOLUTION_CULTURAL_HERITAGE_SITES")
+    event(nil, "resolution_repealed", 25, resolution: "RESOLUTION_CULTURAL_HERITAGE_SITES")
+
+    assert_equal(
+      [ false, true ],
+      detector.resolutions_passed.map { |moment| moment[:repeal] }
     )
   end
 

@@ -63,13 +63,40 @@ class CongressTimelineTest < ActiveSupport::TestCase
   end
 
   test "resolutions attaches a later repeal to the passed resolution it repeals" do
-    resolution_event("resolution_proposed", 10, resolution: "World's Fair", proposer: "Rome", repeal: false)
-    resolution_event("resolution_passed", 15, resolution: "World's Fair")
-    resolution_event("resolution_repealed", 60, resolution: "World's Fair")
+    resolution_event("resolution_proposed", 10, resolution: "Cultural Heritage Sites", proposer: "Rome", repeal: false)
+    resolution_event("resolution_passed", 15, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_repealed", 60, resolution: "Cultural Heritage Sites")
 
     outcome = CongressTimeline.new(@game).resolutions.first
     assert_equal :passed, outcome[:outcome]
     assert_equal 60, outcome[:repealed_turn]
+  end
+
+  test "resolutions leaves a passed repeal proposal without a repealed turn of its own" do
+    resolution_event("resolution_proposed", 10, resolution: "Cultural Heritage Sites", proposer: "Rome", repeal: false)
+    resolution_event("resolution_passed", 15, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_proposed", 20, resolution: "Cultural Heritage Sites", proposer: "Greece", repeal: true)
+    resolution_event("resolution_passed", 25, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_repealed", 25, resolution: "Cultural Heritage Sites")
+
+    outcomes = CongressTimeline.new(@game).resolutions.sort_by { |o| o[:proposed_turn] }
+
+    assert_equal [ 25, nil ], outcomes.map { |o| o[:repealed_turn] }
+  end
+
+  test "resolutions attaches a repeal to the enactment it ended, not to the next passed proposal" do
+    resolution_event("resolution_proposed", 10, resolution: "Cultural Heritage Sites", proposer: "Rome", repeal: false)
+    resolution_event("resolution_passed", 15, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_proposed", 20, resolution: "Cultural Heritage Sites", proposer: "Greece", repeal: true)
+    resolution_event("resolution_passed", 25, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_repealed", 25, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_proposed", 30, resolution: "Cultural Heritage Sites", proposer: "Rome", repeal: false)
+    resolution_event("resolution_passed", 35, resolution: "Cultural Heritage Sites")
+    resolution_event("resolution_repealed", 45, resolution: "Cultural Heritage Sites")
+
+    outcomes = CongressTimeline.new(@game).resolutions.sort_by { |o| o[:proposed_turn] }
+
+    assert_equal [ 25, nil, 45 ], outcomes.map { |o| o[:repealed_turn] }
   end
 
   test "resolutions pairs repeat proposals of the same resolution name in turn order" do
