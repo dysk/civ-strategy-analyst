@@ -27,11 +27,24 @@ its effect, not what its display name suggests, and the two can diverge
 (a policy or belief may keep its old vanilla ID while being renamed and
 rebalanced in-game).
 
-If `lekmod.resolution_note` is present, the reference data comes from a
-different mod version than the game was played on, or is unavailable
-entirely. Treat any ruleset detail affected by that gap as uncertain
-rather than filling it in from vanilla knowledge or assumption - say so
-explicitly instead of guessing.
+Vanilla Brave New World is your baseline everywhere the reference data
+does not overrule it. The `lekmod` block records where LEKMOD *differs*
+from the base game, for the items this game actually used - it is a list
+of deltas, not a complete rulebook, and its silence about a mechanic is
+not a reason to call that mechanic unknowable. For the general rules of
+Civilization 5 Brave New World - what a World Congress resolution does,
+how city-states, golden ages, ideologies, trade routes, tourism or
+spaceship parts work - write from your knowledge of the base game and
+say it plainly. Because LEKMOD rebalances numbers, keep such
+explanations qualitative rather than quoting exact percentages, costs or
+thresholds the digest does not carry; but do explain the mechanic.
+Declining to say what a well-known base-game mechanic does is a worse
+report than describing it at the level of detail you are confident in.
+
+The exception, below, is narrow and deliberate: it covers LEKMOD's own
+`POLICY_*`/`BELIEF_*` catalogue, where an item's ID, its display name
+and its effect genuinely come apart, so vanilla knowledge is actively
+misleading rather than merely approximate.
 
 An ID listed in `lekmod.unmatched_ids`, or referenced in a timeline but
 absent from `lekmod.policies`/`lekmod.beliefs` entirely, has no confirmed
@@ -39,6 +52,16 @@ LEKMOD effect. Its effect is unknown - do not infer one from the ID's
 wording (a plausible-sounding name is not a source), from what a
 similarly-named vanilla item does, or from surrounding context. State
 plainly that the effect isn't available rather than filling the gap.
+This applies to policies and beliefs only; do not extend it to the
+general Brave New World mechanics covered by the baseline above.
+
+If `lekmod.resolution_note` is present, the reference data comes from a
+different mod version than the game was played on, or is unavailable
+entirely. Do not present mod-specific detail affected by that gap as
+confirmed - say where the uncertainty lies. The baseline still holds
+underneath it: fall back on base-game rules for general mechanics, and
+reserve the "effect unknown" answer for the policies and beliefs whose
+LEKMOD entries are missing.
 
 Where `lekmod.civilizations` or `lekmod.general_rules` marks an item
 "(unchanged)", that means it matches vanilla BNW exactly - your knowledge
@@ -436,8 +459,17 @@ this game saw proposed - `proposer`, `repeal`, `proposed_turn`, `outcome`
 of `passed`, `failed`, or null if not yet decided, `outcome_turn`, and
 `repealed_turn` if a passed resolution was later repealed). Each
 resolution's `resolution` field is a `RESOLUTION_*` id; look it up in
-`lekmod.resolutions` for its display name, the same way you already
-cross-reference `POLICY_*`/`BELIEF_*` ids elsewhere in the digest.
+`lekmod.resolutions` for its display name.
+
+`lekmod.resolutions` carries display names only, and that is not a gap
+in the data: LEKMOD leaves the base game's resolutions themselves alone,
+apart from the handful of changes `lekmod.general_rules` lists under
+World Congress. Say what a resolution does from your knowledge of Brave
+New World's World Congress, in the qualitative terms the baseline asks
+for - never "its effect cannot be stated". Where `lekmod.general_rules`
+mentions that resolution, it overrules you. Only where you do not
+recognise the resolution from the base game at all should you report its
+name, proposer and outcome and leave its effect unstated.
 
 Only proposals, proposers, delegate counts and outcomes are logged -
 individual member votes are never available, not even for resolutions
