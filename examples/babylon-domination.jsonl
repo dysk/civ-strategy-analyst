@@ -4276,7 +4276,7 @@
 {"city":"Vienna","civ":"Austria","event":"unit_created","turn":161,"unit":"UNIT_CARAVAN","x":14,"y":21}
 {"city":"Vienna","civ":"Austria","event":"unit_lost","turn":161,"unit":"UNIT_CARAVAN","x":14,"y":21,"cause":"used_up","confidence":"confirmed"}
 {"event":"resolution_failed","resolution":"RESOLUTION_WORLD_IDEOLOGY","turn":162}
-{"event":"resolution_passed","resolution":"RESOLUTION_CULTURAL_HERITAGE_SITES","turn":162}
+{"event":"resolution_failed","resolution":"RESOLUTION_CULTURAL_HERITAGE_SITES","turn":162}
 {"delegates":[{"civ":"Babylon","core_votes":2,"votes":6},{"civ":"Philippines","core_votes":2,"votes":3},{"civ":"Arabia","core_votes":2,"votes":5},{"civ":"Austria","core_votes":2,"votes":3}],"event":"congress_snapshot","host":"Babylon","turn":162,"votes_needed_for_diplo_victory":28}
 {"city":"Mecca","civ":"Babylon","event":"plot_acquired","turn":162,"x":30,"y":22}
 {"bought_with":"gold","city":"Mecca","civ":"Babylon","event":"plot_bought","turn":162,"x":31,"y":19}
@@ -4919,7 +4919,7 @@
 {"city":"Dur-Kurigalzu","civ":"Babylon","event":"city_converted","religion":"TXT_KEY_RELIGION_CATHOLICISM","turn":176,"x":28,"y":14}
 {"city":"Damascus","civ":"Arabia","event":"city_converted","religion":"TXT_KEY_RELIGION_ISLAM","turn":176,"x":42,"y":22}
 {"event":"resolution_failed","resolution":"RESOLUTION_BAN_LUXURY_HAPPINESS","turn":177}
-{"event":"resolution_failed","resolution":"RESOLUTION_CULTURAL_HERITAGE_SITES","turn":177}
+{"event":"resolution_passed","resolution":"RESOLUTION_CULTURAL_HERITAGE_SITES","turn":177}
 {"event":"resolution_repealed","resolution":"RESOLUTION_CULTURAL_HERITAGE_SITES","turn":177}
 {"delegates":[{"civ":"Babylon","core_votes":3,"votes":7},{"civ":"Philippines","core_votes":3,"votes":4},{"civ":"Arabia","core_votes":3,"votes":6},{"civ":"Austria","core_votes":3,"votes":4}],"event":"congress_snapshot","host":"Babylon","turn":177,"votes_needed_for_diplo_victory":26}
 {"change":1,"civs":["Arabia"],"event":"tech_researched","team":2,"tech":"TECH_INDUSTRIALIZATION","turn":177}
