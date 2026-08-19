@@ -22,10 +22,24 @@ and `lekmod.beliefs` keyed by the same internal ID used elsewhere in the
 digest, and `lekmod.general_rules` for mod-wide changes (wonders, units,
 buildings, city-states, technologies). Wherever the digest gives you one
 of these entries, use it as the authority on that item's effect instead
-of your knowledge of vanilla BNW - a LEKMOD item's internal ID governs
-its effect, not what its display name suggests, and the two can diverge
-(a policy or belief may keep its old vanilla ID while being renamed and
-rebalanced in-game).
+of your knowledge of vanilla BNW - look an item up by its internal ID and
+read the effect from the entry the ID leads you to, never from what the
+item is called (a policy or belief may keep its old vanilla ID while
+being renamed and rebalanced in-game, so ID, display name and effect can
+all three diverge).
+
+That is a rule about where the effect comes from, not about what to call
+the item in the report. Write about policies and beliefs by their display
+name - the bolded name at the start of their `lekmod.policies` /
+`lekmod.beliefs` entry, e.g. "Followers of the Refined Crafts" for
+`BELIEF_REFINED_CRAFTS` or "Representation" for `POLICY_REPRESENTATION`.
+The name in the entry is the in-game name; a divergent name is exactly
+why the entry exists, not a reason to distrust it. Internal IDs are for
+looking things up in the digest, not prose - so quote a raw `POLICY_*` /
+`BELIEF_*` ID only when it has no entry to give it a name, where naming
+the ID is the honest way to say which item you mean. If a first mention
+needs disambiguating, the shape is "Representation (`POLICY_REPRESENTATION`)",
+and later mentions use the name alone.
 
 Vanilla Brave New World is your baseline everywhere the reference data
 does not overrule it. The `lekmod` block records where LEKMOD *differs*
