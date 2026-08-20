@@ -2317,7 +2317,7 @@
 {"city":"Dur-Kurigalzu","civ":"Babylon","event":"unit_created","turn":116,"unit":"UNIT_CARAVAN","x":28,"y":14}
 {"city":"Dur-Kurigalzu","civ":"Babylon","event":"unit_lost","turn":116,"unit":"UNIT_CARAVAN","x":28,"y":14,"cause":"used_up","confidence":"confirmed"}
 {"civ":"Babylon","event":"improvement_built","improvement":"IMPROVEMENT_FARM","turn":116,"x":21,"y":8}
-{"event":"resolution_failed","resolution":"RESOLUTION_WORLD_FAIR","turn":117}
+{"event":"resolution_passed","resolution":"RESOLUTION_WORLD_FAIR","turn":117}
 {"event":"resolution_failed","resolution":"RESOLUTION_BAN_LUXURY_HAPPINESS","turn":117}
 {"delegates":[{"civ":"Babylon","core_votes":1,"votes":2},{"civ":"Philippines","core_votes":1,"votes":1},{"civ":"Arabia","core_votes":1,"votes":1},{"civ":"Austria","core_votes":1,"votes":1}],"event":"congress_snapshot","host":"Babylon","turn":117,"votes_needed_for_diplo_victory":28}
 {"city":"Vienna","civ":"Austria","event":"unit_created","turn":117,"unit":"UNIT_ARTIST","x":14,"y":21}
