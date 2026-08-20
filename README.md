@@ -2,7 +2,8 @@
 
 Analyzes Civilization 5 + LEKMOD game logs (JSONL events from the sibling
 `civ-narrative-logger` project) to explain why a strategy won or lost, and to
-surface the key turning points of a game. See `plan.md` for the full design.
+surface the key turning points of a game. See `docs/plan.md` for the full
+design.
 
 ## Requirements
 
@@ -42,7 +43,8 @@ bin/rails test
 ```
 
 TDD workflow for this project: red tests first, reviewed, then the smallest
-implementation that turns them green. See `plan.md` for the iteration history.
+implementation that turns them green. See `docs/plan.md` for the iteration
+history.
 
 ## CLI (`bin/civ`)
 
@@ -57,8 +59,8 @@ bin/civ import path/to/events.jsonl [--name "My Game"]
 
 Streams the file line by line, builds the game + player roster from the first
 `session_started` event, and deduplicates events that got replayed by a
-pitboss restart (see `plan.md` for the exact dedup rule). Prints the imported/
-deduped event counts and the roster.
+pitboss restart (see `docs/plan.md` for the exact dedup rule). Prints the
+imported/deduped event counts and the roster.
 
 Don't have a `civ-narrative-logger` log of your own yet? `examples/` has real
 single-human-player game logs to import and poke around with. Best starting
