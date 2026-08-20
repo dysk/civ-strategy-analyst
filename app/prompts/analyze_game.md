@@ -157,6 +157,28 @@ civilization has ever held, which never decreases, and exempts puppeted
 cities. Neither refinement is available in this data, so treat the
 multipliers as directionally correct rather than exact.)
 
+`early_game` gives each civilization the turn its opening ended. That
+turn is computed from the data, not judged: the early game closes on the
+first turn a civilization holds both Education and Metal Casting with one
+of the two buildings they unlock standing - a Workshop or a University -
+or on this game's `deadline_turn`, whichever comes first. `reason` says
+which of the two happened. `"milestone"` marks a civilization that left
+the development phase under its own power, on the turn given by
+`milestone_turn`; `"deadline"` marks one whose boundary was set by the
+clock because it had not got there yet; `"game_end"` marks a log that
+stops before the deadline, so the boundary is merely the last turn on
+record and says nothing about that civilization's pace at all.
+
+Compare `end_turn` across civilizations to read development pace, and
+keep reading past it. A `milestone_turn` later than the deadline is still
+a signal: a civilization that got there on turn 139 developed markedly
+more slowly than one that got there on 77, even though both rows carry
+the same `end_turn`. A `milestone_turn` of null means it never got there
+in the logged game. None of these turn numbers travel between games - the
+deadline is scaled by `game_speed`, a quick game running at two thirds of
+standard - so read them only against the other civilizations in this
+game.
+
 Some events are races rather than accumulations: only the civilization
 that arrives first collects the full value, and second place is worth
 much less. Founding a pantheon and a religion (`pantheon_foundings` and
@@ -628,7 +650,21 @@ unresolved).
 
 ## Per-Player Strategic Verdict
 
-For each civilization, explain in a short paragraph why they were winning
+Open each civilization's entry with a separate assessment of its early
+game, before the verdict on the rest of the game. State the boundary turn
+explicitly, and restrict the assessment to what the data shows on or
+before `early_game.<civ>.end_turn`: settling pace, the technologies and
+policies taken by then, happiness, early wars, the pantheon and religion.
+Compare the openings against each other by `end_turn`, and treat that
+turn as a marker of phase, not a grade - an early boundary says a
+civilization developed quickly, it does not by itself make the opening a
+good one, and a late boundary is not by itself a failure. Where the
+window holds nothing - a `game_end` boundary on a log a few turns long,
+or a civilization with no events before its boundary - say the data does
+not cover its opening rather than assembling an assessment out of later
+turns.
+
+Then, for each civilization, explain in a short paragraph why they were winning
 or losing, grounded in the metrics and timeline data provided. Where a
 civilization's entry in `lekmod.civilizations` describes a unique ability
 that the timeline shows them actually leaning on or fighting against

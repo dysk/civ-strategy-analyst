@@ -414,3 +414,48 @@ Iterations (each: failing tests → review → implementation → commit):
    civ at checkpoints, spaceship state per civ, Apollo timing order; prompt
    addition: distinguish parts built (`unit_trained`) from parts assembled
    (`spaceship`) — a built part in transit is a target, not progress.
+
+## Plan: per-player early game boundary (implemented; A/B pending a real log)
+
+Status: steps 1–5 implemented 2026-08-20 (commits `776bb03`…), planned in
+detail in `docs/early-game-boundary.md`. Each civilization gets the turn its
+opening ended: the first turn it holds both `TECH_EDUCATION` and
+`TECH_METAL_CASTING` with one of the two buildings they unlock standing
+(`BUILDING_WORKSHOP` for A, `BUILDING_UNIVERSITY` for B — the pairing is
+crossed deliberately, since each building already requires the other
+technology), or the deadline of turn 150 standard / 100 quick, whichever comes
+first. When the log stops before the deadline and no milestone fired, the
+boundary is the game's last turn (`reason: :game_end`) — we never report a
+boundary past the end of the data.
+
+`GameSpeed` (`app/models/game_speed.rb`) now owns the standard→speed turn
+conversion and `KeyMomentDetector`'s grace period reads through it;
+`PlayerTimeline#buildings` was extracted from `wonders` so ordinary buildings
+are readable at all. `EarlyGame#series` feeds both the digest (`early_game`,
+plus `game.early_game_deadline_turn`) and the game page's "Early Game" table.
+
+Verified against the imported games, no re-import needed:
+
+| Game | Civ | milestone | early game ends |
+|---|---|---|---|
+| #21 | Babylon (human) | 77 | 77 (milestone) |
+| #21 | Arabia / Philippines / Austria | 111 / 139 / 146 | 100 (deadline) |
+| #15 | Chile / Vietnam / Iroquois | 101 / 104 / 122 | 100 (deadline) |
+| #15 | Bolivia | — | 100 (deadline) |
+| #20 | all six (log ends turn 20) | — | 20 (`:game_end`) |
+
+Game #20 is the regression a naive `min(milestone, deadline)` would fail.
+
+**The threshold is not calibrated.** All three games pit one human against
+`HANDICAP_AI_DEFAULT` bots, so the spread between 77 and 111/139/146 measures
+the human-versus-bot gap, not the pace of real multiplayer. Treat 150/100 as a
+first hypothesis to revise against the first human-multiplayer log.
+
+Prompt v20 teaches the model to read `early_game.*` and to judge each
+civilization's opening separately: a paragraph in "How to weigh the signals"
+on what the boundary means and that its turns are speed-scaled (the prompt's
+first mention of `game_speed` at all), and a requirement in "Per-Player
+Strategic Verdict" that each verdict open with an early game assessment
+restricted to `turn <= early_game.<civ>.end_turn`. A/B against v19 is pending
+a fresh `bin/civ analyze` run — `analyses.digest` is a frozen snapshot, so old
+analyses do not gain `early_game` retroactively.
