@@ -112,6 +112,22 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     )
   end
 
+  test "buildings lists every building a civ finished, in turn order, wonders included" do
+    event("Rome", "building_constructed", 33, building: "BUILDING_PYRAMID", city: "Roma", wonder: "world")
+    event("Rome", "building_constructed", 12, building: "BUILDING_GRANARY", city: "Roma")
+    event("Rome", "building_constructed", 25, building: "BUILDING_WORKSHOP", city: "Ostia")
+    event("Greece", "building_constructed", 20, building: "BUILDING_UNIVERSITY", city: "Athens")
+
+    assert_equal(
+      [
+        { turn: 12, building: "BUILDING_GRANARY", city: "Roma", class: nil },
+        { turn: 25, building: "BUILDING_WORKSHOP", city: "Ostia", class: nil },
+        { turn: 33, building: "BUILDING_PYRAMID", city: "Roma", class: :world }
+      ],
+      timeline.buildings("Rome")
+    )
+  end
+
   test "city_states tracks friendship, alliance and ally changes involving a civ" do
     event("Rome", "city_state_friendship_changed", 12, city_state: "Cahokia", friends: true, old_friendship: 20, new_friendship: 35)
     event("Rome", "city_state_alliance_changed", 20, city_state: "Cahokia", allied: true, old_friendship: 60, new_friendship: 94)

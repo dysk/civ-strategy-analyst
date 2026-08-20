@@ -88,13 +88,17 @@ class PlayerTimeline
     end
   end
 
-  def wonders(civ)
-    of_type("building_constructed")
-      .select { |e| e.civ == civ && e.payload["wonder"].in?(%w[world national]) }
-      .map do |e|
+  def buildings(civ)
+    sort_events(
+      of_type("building_constructed").select { |e| e.civ == civ }.map do |e|
         { turn: e.turn, building: e.payload["building"], city: e.payload["city"],
-          class: e.payload["wonder"].to_sym }
+          class: e.payload["wonder"]&.to_sym }
       end
+    )
+  end
+
+  def wonders(civ)
+    buildings(civ).select { |building| building[:class].in?(%i[world national]) }
   end
 
   def city_states(civ)
