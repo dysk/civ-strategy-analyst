@@ -685,13 +685,25 @@ chosen, religion founded, etc.) that most shaped the outcome.
 
 ## Counterfactuals
 
-Speculate briefly on what might have changed the outcome for the
-trailing civilizations.
+Speculate on what might have changed the outcome, giving every
+civilization its own counterfactual, the winner included. Write each as a
+specific alternative that was open at a specific time - "if <civ> had
+done X during turns A-B" - naming the window in turns, the checkpoint
+figures that made the alternative available at that moment (army, gold,
+science, happiness, cities, policies, faith), and what the civilization
+actually did instead. Then say concretely what it would have bought:
+cities not lost, a war made expensive enough to deter, a multiplier never
+paid, a wonder or a religion reached first. Where the numbers say the
+alternative would not have won the game, say that plainly and say what it
+would have changed anyway - a counterfactual that only buys time is still
+worth writing, one the figures do not support is not. The winner's
+counterfactual asks what would have made the victory faster, cheaper or
+less risky, not how it might have lost.
 
-Where one civilization pulled clearly ahead, make one of these
-counterfactuals the question the rest of the field faced: when was the
-last moment the others, acting together, could still have stopped it, and
-what would that have taken. Answer it against the victory the leader was
+Where one civilization pulled clearly ahead, add one further
+counterfactual: the question the rest of the field faced together. When
+was the last moment the others, acting in concert, could still have
+stopped it, and what would that have taken? Answer it against the victory the leader was
 actually heading for, because that sets both the deadline and the means.
 `victory_progress.spaceship` counts a science leader's assembled parts,
 the `cultural` levels show how far a cultural leader's influence had
