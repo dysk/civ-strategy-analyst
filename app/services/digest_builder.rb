@@ -28,6 +28,7 @@ class DigestBuilder
       roster: roster,
       outcome: outcome,
       standings: standings,
+      early_game: early_game.series,
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
       capital_proximity: CapitalProximity.for(@game).call,
@@ -49,8 +50,13 @@ class DigestBuilder
     {
       name: @game.name, map_script: @game.map_script, map_size: @game.map_size,
       game_speed: @game.game_speed, max_turns: @game.max_turns, start_era: @game.start_era,
-      map_width: map_bounds.width, map_width_estimated: map_bounds.estimated?
+      map_width: map_bounds.width, map_width_estimated: map_bounds.estimated?,
+      early_game_deadline_turn: early_game.deadline_turn
     }
+  end
+
+  def early_game
+    @early_game ||= EarlyGame.new(@game)
   end
 
   def map_bounds

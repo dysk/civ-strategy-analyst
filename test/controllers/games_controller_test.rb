@@ -273,6 +273,26 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "svg.capital-layout", false
   end
 
+  test "show displays where each civilization's early game ends" do
+    game = Game.create!(name: "Early Game Game", game_speed: "GAMESPEED_QUICK")
+    game.players.create!(civ: "Rome")
+    game.players.create!(civ: "Greece")
+    event(game, nil, "tech_researched", 40, "team" => 1, "civs" => [ "Rome" ], "tech" => "TECH_EDUCATION")
+    event(game, "Rome", "building_constructed", 60, "building" => "BUILDING_WORKSHOP", "city" => "Roma")
+    snapshot(game, "Greece", 110, score: 10)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_equal(
+      [
+        [ "Rome", "60", "milestone", "EDUCATION + WORKSHOP", "40", "60" ],
+        [ "Greece", "100", "deadline", "—", "—", "—" ]
+      ],
+      css_select("table.early-game tbody tr").map { |row| row.css("td").map(&:text) }
+    )
+  end
+
   test "show displays each civilization's empire geometry" do
     game = Game.create!(name: "Geometry Game", map_width: 46)
     game.players.create!(civ: "Rome")

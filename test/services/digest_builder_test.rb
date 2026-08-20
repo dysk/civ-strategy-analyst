@@ -19,7 +19,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal(
       { name: "Digest Test Game", map_script: "TestMap", map_size: "SMALL",
         game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT",
-        map_width: nil, map_width_estimated: false },
+        map_width: nil, map_width_estimated: false, early_game_deadline_turn: 100 },
       digest[:game]
     )
 
@@ -41,6 +41,19 @@ class DigestBuilderTest < ActiveSupport::TestCase
       { winner_civ: "Rome", victory_type: "domination", in_progress: false, source: :declared },
       digest[:outcome]
     )
+  end
+
+  test "includes an early game boundary per civ" do
+    event(nil, "tech_researched", 10, team: 1, civs: %w[Rome], tech: "TECH_METAL_CASTING")
+    event("Rome", "building_constructed", 20, building: "BUILDING_UNIVERSITY", city: "Roma")
+    snapshot("Greece", 40, score: 10)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal %w[Rome Greece], digest[:early_game].keys
+    assert_equal 20, digest[:early_game]["Rome"][:end_turn]
+    assert_equal :milestone, digest[:early_game]["Rome"][:reason]
+    assert_equal :game_end, digest[:early_game]["Greece"][:reason]
   end
 
   test "includes a pre-sorted final standings ranking by score" do

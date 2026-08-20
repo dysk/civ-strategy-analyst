@@ -102,6 +102,37 @@
   <p><%= link_to "See how these shapes came about", game_geometry_path(@game) %></p>
 <% end %>
 
+<h2>Early Game</h2>
+<% if @early_game_rows.empty? %>
+  <p class="empty-state">No players in this game.</p>
+<% else %>
+  <p class="note">Deadline: turn <%= @early_game_deadline_turn %> (<%= @game.game_speed %>).</p>
+  <table class="early-game">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Ends Turn</th>
+        <th>Why</th>
+        <th>Milestone</th>
+        <th>Tech</th>
+        <th>Building</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @early_game_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:end_turn] %></td>
+          <td><%= row[:reason] %></td>
+          <td><%= early_game_milestone(row) || "&mdash;".html_safe %></td>
+          <td><%= row[:tech_turn] || "&mdash;".html_safe %></td>
+          <td><%= row[:building_turn] || "&mdash;".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
 <h2>Military</h2>
 <% if @army_rows.empty? %>
   <p class="empty-state">No military data in this game's snapshots.</p>

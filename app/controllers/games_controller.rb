@@ -12,6 +12,8 @@ class GamesController < ApplicationController
     @game = Game.find(params[:id])
     @outcome = OutcomeResolver.new(@game, winner_civ: @game.winner_civ, victory_type: @game.victory_type).call
     @standings = MetricSeries.new(@game).final_ranking("score")
+    @early_game_rows = early_game.series.values
+    @early_game_deadline_turn = early_game.deadline_turn
     @key_moment_groups = key_moment_groups
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
@@ -26,6 +28,10 @@ class GamesController < ApplicationController
   end
 
   private
+
+  def early_game
+    @early_game ||= EarlyGame.new(@game)
+  end
 
   # Kinds of moment that tell one story share a section, each keeping its own
   # list inside it. Empty sections and empty lists are left out.
