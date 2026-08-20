@@ -688,6 +688,74 @@ chosen, religion founded, etc.) that most shaped the outcome.
 Speculate briefly on what might have changed the outcome for the
 trailing civilizations.
 
+Where one civilization pulled clearly ahead, make one of these
+counterfactuals the question the rest of the field faced: when was the
+last moment the others, acting together, could still have stopped it, and
+what would that have taken. Answer it against the victory the leader was
+actually heading for, because that sets both the deadline and the means.
+`victory_progress.spaceship` counts a science leader's assembled parts,
+the `cultural` levels show how far a cultural leader's influence had
+spread, `congress.delegates_by_civ` against `congress.votes_needed`
+measures a diplomatic one, and `victory_progress.capitals_held` a
+conquering one. Read the deadline off whichever of these was moving.
+
+Stopping a leader does not necessarily mean eliminating them. A war on
+its border pulls production out of wonders, spaceship parts and buildings
+and into units, costs happiness, and can take a city the lead was built
+on - the science of a specialist city, the wonders and Great Works
+generating tourism - without anyone marching on the capital. A diplomatic
+lead rests on city-state allies, and allies change hands:
+`city_state_ally_takeovers` shows it happening, and every ally taken or
+besieged is votes removed from the count. A cultural lead can be answered
+by accumulating a lot of culture, adopting a different ideology and
+pushing tourism back, and by denying the wonders that carry it. But
+elimination remains the only certain answer: a civilization removed from
+the game wins none of these races, and every other measure only slows it
+down. Losing the capital amounts to much the same thing - it is where
+usually most of the wonders, the best buildings and the best terrain are
+- and a human who loses it commonly leaves the game and is replaced by a
+bot, which is the end of that civilization as a contender even where it
+survives on the map. No event records a player leaving, so weigh this as
+what the loss means, not as something to narrate. Where the means was
+military, say who could have reached the leader
+(`capital_proximity.distances`), who was already fighting it (`wars`),
+and whether the field's combined `army_power` and `gold` were still a
+match for its own at that point. Reach is not limited to its immediate
+neighbours: armies cross friendly territory, and civilizations
+cooperating against a common threat let each other through. Distance also
+matters less as the game goes on, since roads, railways and faster units
+put a capital that was unreachable in the ancient era within a few turns'
+march later - so treat a large hex distance as a real cost early and a
+diminishing one late, not as a wall.
+
+Where a civilization was eliminated or lost its capital, say why it
+became the target - especially where the timeline shows several rivals at
+war with it at once. A coordinated attack has reasons the data can show:
+it was the civilization the others could reach, or the one whose lead
+they had to break, or simply the weakest army in a neighbourhood. That
+lead need not be in score: a civilization can be attacked for running
+away with technology, army power, faith, tourism, delegates or city-state
+allies while its score says little, and the measure the attackers were
+answering is usually the one the timelines show climbing before the wars
+were declared - name it rather than defaulting to score. Two things make
+a capital worth taking on its own account. It counts toward domination,
+so an attacker pursuing that victory wanted it whatever the victim was
+doing. And a capital is usually the strongest city on the best land,
+holding most of the wonders its owner ever built, so taking one transfers
+a real share of that civilization's output rather than merely denying it.
+Then judge whether the attack was worth it for the attackers: say what it
+bought them and what it cost - turns of production, an army away from
+home, a rival left free to develop elsewhere.
+
+Then say plainly what closed the window: the turn the leader entered an
+era the others had not reached, a run of `army_power_surge` entries, a
+tourism or vote lead grown past reach, a capital nobody could threaten.
+If it was never open - the leader was ahead from the first checkpoints,
+or nobody was ever in a position to act - say that instead of inventing a
+moment. The digest carries no diplomacy, so treat a coalition as a
+possibility the numbers describe, never as an agreement you can say the
+players would or would not have reached.
+
 ## Conclusion
 
 Summarize in one paragraph the strategic story of the game and, for an
