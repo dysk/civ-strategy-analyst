@@ -451,11 +451,11 @@ Game #20 is the regression a naive `min(milestone, deadline)` would fail.
 the human-versus-bot gap, not the pace of real multiplayer. Treat 150/100 as a
 first hypothesis to revise against the first human-multiplayer log.
 
-Prompt v20 teaches the model to read `early_game.*` and to judge each
+The prompt now teaches the model to read `early_game.*` and to judge each
 civilization's opening separately: a paragraph in "How to weigh the signals"
 on what the boundary means and that its turns are speed-scaled (the prompt's
 first mention of `game_speed` at all), and a requirement in "Per-Player
 Strategic Verdict" that each verdict open with an early game assessment
-restricted to `turn <= early_game.<civ>.end_turn`. A/B against v19 is pending
-a fresh `bin/civ analyze` run — `analyses.digest` is a frozen snapshot, so old
+restricted to `turn <= early_game.<civ>.end_turn`. The A/B is pending a fresh
+`bin/civ analyze` run — `analyses.digest` is a frozen snapshot, so old
 analyses do not gain `early_game` retroactively.
