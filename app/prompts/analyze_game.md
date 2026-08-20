@@ -469,11 +469,23 @@ The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a
 diplomatic victory), `delegates_by_civ` (each civilization's delegate
 vote count at ~25-turn checkpoints), and `resolutions` (every resolution
-this game saw proposed - `proposer`, `repeal`, `proposed_turn`, `outcome`
-of `passed`, `failed`, or null if not yet decided, `outcome_turn`, and
-`repealed_turn` if a passed resolution was later repealed). Each
-resolution's `resolution` field is a `RESOLUTION_*` id; look it up in
-`lekmod.resolutions` for its display name.
+this game saw proposed - `proposer`, `repeal`, `proposed_turn`, `outcome`,
+`outcome_turn`, and `repealed_turn` if a passed resolution was later
+repealed). Each resolution's `resolution` field is a `RESOLUTION_*` id;
+look it up in `lekmod.resolutions` for its display name.
+
+`outcome` is `passed`, `failed`, `undetermined`, or null. The last two
+are different claims. Null means the vote had not been held by the end of
+the log. `undetermined` means it was held and concluded, but the game
+leaves no readable trace of which way it went: a resolution whose effects
+are all one-time - a host change or a diplomatic victory vote - vanishes
+without changing any state the log can see. Treat an `undetermined`
+resolution as a vote that happened with an unknown result. Never call it
+failed, never call it pending, and do not lean on it as evidence for a
+civilization's Congress standing. Where the rest of the log settles it -
+a `congress.host_history` change on the same turn, a game that continued
+past a diplomatic victory vote - you may say so, citing that evidence
+rather than the outcome field.
 
 `lekmod.resolutions` carries display names only, and that is not a gap
 in the data: LEKMOD leaves the base game's resolutions themselves alone,

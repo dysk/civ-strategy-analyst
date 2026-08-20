@@ -5,6 +5,16 @@
 # the same FIFO convention KeyMomentDetector#war_declarations already
 # uses to pair war_declared with peace_made by team.
 class CongressTimeline
+  # `undetermined` is a concluded vote whose result the logger could not
+  # read - a resolution with only one-time effects leaves no trace in the
+  # game state to read it from. It is not the same as a nil outcome, which
+  # is a vote still to come.
+  OUTCOMES = {
+    "resolution_passed" => :passed,
+    "resolution_failed" => :failed,
+    "resolution_undetermined" => :undetermined
+  }.freeze
+
   def initialize(game)
     @events = game.game_events.order(:seq).to_a
   end
@@ -55,9 +65,9 @@ class CongressTimeline
   end
 
   def combined_outcomes(name)
-    passed = of_type("resolution_passed").select { |e| e.payload["resolution"] == name }.map { |e| [ e, :passed ] }
-    failed = of_type("resolution_failed").select { |e| e.payload["resolution"] == name }.map { |e| [ e, :failed ] }
-    (passed + failed).sort_by { |e, _type| e.turn }
+    OUTCOMES.flat_map { |event_type, outcome|
+      of_type(event_type).select { |e| e.payload["resolution"] == name }.map { |e| [ e, outcome ] }
+    }.sort_by { |e, _outcome| e.turn }
   end
 
   def delegate_pair(snapshot, civ)

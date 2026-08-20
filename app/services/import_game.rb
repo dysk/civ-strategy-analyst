@@ -13,7 +13,8 @@ class ImportGame
     policy_branch_adopted religion_founded pantheon_founded tech_from_ruins
     religion_enhanced trade_route_plundered reformation_added
     congress_snapshot congress_founded congress_host_changed resolution_proposed
-    resolution_passed resolution_failed resolution_repealed united_nations_formed
+    resolution_passed resolution_failed resolution_undetermined
+    resolution_repealed united_nations_formed
     nuclear_detonation
   ].freeze
 

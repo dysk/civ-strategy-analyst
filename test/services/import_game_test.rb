@@ -47,6 +47,18 @@ class ImportGameTest < ActiveSupport::TestCase
     Rails.logger = original_logger
   end
 
+  test "treats an undetermined resolution outcome as a known event type" do
+    io = StringIO.new
+    original_logger = Rails.logger
+    Rails.logger = Logger.new(io)
+
+    ImportGame.call(Rails.root.join("test/fixtures/files/resolution_undetermined.jsonl"), name: "Test Game")
+
+    refute_match(/unknown event type 'resolution_undetermined'/, io.string)
+  ensure
+    Rails.logger = original_logger
+  end
+
   test "defaults the game name to the file basename when not given" do
     result = ImportGame.call(SAMPLE_PATH)
 

@@ -41,6 +41,18 @@ class CongressHistoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.resolutions tbody td", "passed"
   end
 
+  # "pending" is what an undecided vote looks like; a vote that concluded
+  # with an outcome we could not read has to look different.
+  test "distinguishes an unreadable outcome from a vote still in progress" do
+    event("resolution_proposed", 10, "resolution" => "RESOLUTION_CHANGE_LEAGUE_HOST", "proposer" => "Rome", "repeal" => false)
+    event("resolution_undetermined", 15, "resolution" => "RESOLUTION_CHANGE_LEAGUE_HOST")
+
+    get game_congress_url(@game)
+
+    assert_response :success
+    assert_select "table.resolutions tbody td", "undetermined"
+  end
+
   test "reports no data for a game with no Congress activity" do
     get game_congress_url(@game)
 

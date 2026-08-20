@@ -62,6 +62,29 @@ class CongressTimelineTest < ActiveSupport::TestCase
     assert_nil outcome[:repealed_turn]
   end
 
+  # The logger cannot read the outcome of a resolution whose effects are all
+  # one-time and that starts no league project, so it says so rather than
+  # guessing (civ-narrative-logger, resolution_undetermined).
+  test "resolutions pairs a proposal with an undetermined outcome" do
+    resolution_event("resolution_proposed", 10, resolution: "Change League Host", proposer: "Greece", repeal: false)
+    resolution_event("resolution_undetermined", 15, resolution: "Change League Host")
+
+    outcome = CongressTimeline.new(@game).resolutions.first
+    assert_equal :undetermined, outcome[:outcome]
+    assert_equal 15, outcome[:outcome_turn]
+  end
+
+  test "resolutions takes an undetermined outcome in turn order like any other" do
+    resolution_event("resolution_proposed", 10, resolution: "World's Fair", proposer: "Rome", repeal: false)
+    resolution_event("resolution_undetermined", 15, resolution: "World's Fair")
+    resolution_event("resolution_proposed", 50, resolution: "World's Fair", proposer: "Greece", repeal: false)
+    resolution_event("resolution_passed", 55, resolution: "World's Fair")
+
+    outcomes = CongressTimeline.new(@game).resolutions.sort_by { |o| o[:proposed_turn] }
+
+    assert_equal %i[undetermined passed], outcomes.map { |o| o[:outcome] }
+  end
+
   test "resolutions attaches a later repeal to the passed resolution it repeals" do
     resolution_event("resolution_proposed", 10, resolution: "Cultural Heritage Sites", proposer: "Rome", repeal: false)
     resolution_event("resolution_passed", 15, resolution: "Cultural Heritage Sites")
