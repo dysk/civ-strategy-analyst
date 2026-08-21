@@ -703,8 +703,9 @@ less risky, not how it might have lost.
 Where one civilization pulled clearly ahead, add one further
 counterfactual: the question the rest of the field faced together. When
 was the last moment the others, acting in concert, could still have
-stopped it, and what would that have taken? Answer it against the victory the leader was
-actually heading for, because that sets both the deadline and the means.
+stopped it, and what would that have taken? Answer it against the victory
+the leader was actually heading for, since that sets both the deadline
+and the means.
 `victory_progress.spaceship` counts a science leader's assembled parts,
 the `cultural` levels show how far a cultural leader's influence had
 spread, `congress.delegates_by_civ` against `congress.votes_needed`
@@ -713,9 +714,32 @@ conquering one. Read the deadline off whichever of these was moving.
 
 Stopping a leader does not necessarily mean eliminating them. A war on
 its border pulls production out of wonders, spaceship parts and buildings
-and into units, costs happiness, and can take a city the lead was built
-on - the science of a specialist city, the wonders and Great Works
-generating tourism - without anyone marching on the capital. A diplomatic
+and into units, and it costs happiness. The cost is not confined to
+whatever the leader needed for its victory - it slows the whole empire
+down. A threatened civilization puts barracks and walls where a
+university or a workshop would have gone, researches military
+technologies ahead of the ones that would have raised its science or its
+culture, takes policies for their combat bonuses rather than their
+growth, and spends a Great Engineer on a defensive wonder it would never
+otherwise have built. None of that development comes back, and the
+timelines show it happening: the order technologies were taken in, which
+policies were bought, what was built and when.
+
+A war can also take a city outright. The city carrying a civilization's
+lead - the specialist city doing its science, the one holding the wonders
+and Great Works that generate its tourism - is rarely anything other than
+the capital, but any city lost is a share of the empire's potential gone
+with it: its population, its buildings, the tiles it worked. Population
+is the best measure of that potential the data offers, and it comes as an
+empire-wide figure at each checkpoint rather than per city, so read a
+capture's cost from where the owner's `population` line bends around that
+turn. A captured city keeps only about half its population and loses
+roughly a third of its buildings in the sacking, so weigh the loss by the
+city as it stood before the capture, not by what the captor gained - much
+of the difference is destroyed rather than transferred. Retaking it does
+not restore it either: a recaptured city comes back smaller and with
+buildings missing again, so a city that changed hands twice is worth less
+to its original owner than it was on the turn the war began. A diplomatic
 lead rests on city-state allies, and allies change hands:
 `city_state_ally_takeovers` shows it happening, and every ally taken or
 besieged is votes removed from the count. A cultural lead can be answered
@@ -740,11 +764,11 @@ put a capital that was unreachable in the ancient era within a few turns'
 march later - so treat a large hex distance as a real cost early and a
 diminishing one late, not as a wall.
 
-Where a civilization was eliminated or lost its capital, say why it
-became the target - especially where the timeline shows several rivals at
-war with it at once. A coordinated attack has reasons the data can show:
-it was the civilization the others could reach, or the one whose lead
-they had to break, or simply the weakest army in a neighbourhood. That
+Where a civilization was eliminated, lost its capital, or was attacked by
+several rivals at once and survived, say why it became the target. A
+coordinated attack has reasons the data can show: it was the civilization
+the others could reach, or the one whose lead they had to break, or
+simply the weakest army in a neighbourhood. That
 lead need not be in score: a civilization can be attacked for running
 away with technology, army power, faith, tourism, delegates or city-state
 allies while its score says little, and the measure the attackers were
@@ -755,9 +779,19 @@ so an attacker pursuing that victory wanted it whatever the victim was
 doing. And a capital is usually the strongest city on the best land,
 holding most of the wonders its owner ever built, so taking one transfers
 a real share of that civilization's output rather than merely denying it.
+An attempt that failed deserves the same analysis as one that succeeded:
+say what stopped it - a defence that held, an attacker whose army or gold
+ran out, a peace signed before the walls fell - and do not treat the
+survival as proof the attack was misjudged.
+
 Then judge whether the attack was worth it for the attackers: say what it
 bought them and what it cost - turns of production, an army away from
-home, a rival left free to develop elsewhere.
+home, a rival left free to develop elsewhere. This applies to a failed
+attempt as much as a successful one, and to both sides of it: the
+attackers spent those turns and those units for nothing, and the defender
+spent its own on walls and soldiers instead of on growth, so a war that
+took no city still leaves everyone who fought it behind whoever stayed
+out.
 
 Then say plainly what closed the window: the turn the leader entered an
 era the others had not reached, a run of `army_power_surge` entries, a
