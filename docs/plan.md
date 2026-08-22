@@ -544,3 +544,18 @@ Per-Player verdict now covers whether a civilization secured its corridors, and
 Counterfactuals read the gap between a `buffer_city_lost` and a capital falling
 as the warning the defender actually had. The A/B is pending a fresh
 `bin/civ analyze` run — `analyses.digest` is a frozen snapshot.
+
+## Plan: import at the logger's new volume (planned)
+
+`civ-narrative-logger` is adding stock fields to `snapshot` and a
+per-city, per-turn `city_snapshot` record before the first human
+multiplayer game. That takes a full game from ~6k rows and ~1 MB to
+~40k rows and ~20 MB. The format does not change and Postgres does not
+care; `ImportGame` does, in three places: cross-session dedup retains
+every parsed payload in a Set and deep-hashes each line against it, the
+import runs one `create!` per line, and `KNOWN_EVENT_TYPES` has drifted
+so far that eight already-emitted types are missing from it — which
+would turn into ~29k warning lines the moment city snapshots arrive.
+
+Detailed plan, with the numbers behind it and the evidence in the
+logger's DLL research: `docs/import-volume.md`.
