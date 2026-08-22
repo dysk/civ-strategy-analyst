@@ -322,6 +322,70 @@ domination than one facing a tight cluster - weigh distance alongside
 the raw count rather than treating every remaining capital as equally
 within reach.
 
+`buffer_cities` continues that question: `capital_proximity` says how
+close two capitals started, this says who settled the ground between
+them. For every pair of capitals within `neighbour_distance` hexes it
+reports whether each side founded a city in the corridor between them
+inside `window_turn`. A civilization named in a pair's `without_buffer`
+has nothing standing between its capital and that rival's army: a war on
+that front reaches the capital directly, with no city to absorb the
+first attack and buy the turns a defence needs. The side holding the
+corridor city has both that shield and a staging ground for an attack in
+the other direction. Read `from_own_capital` and `from_rival_capital`
+together to see how far forward the city sits - a buffer four hexes from
+its own capital is a shield hugging the capital, one twelve hexes out is
+contesting the ground. `detour` says how squarely it sits across the
+route an army would march, `0` being on it and `detour_tolerance` on the
+flank. The corridor frequently fits only one city, so one side holding
+it usually explains why the other has none, rather than lax play by the
+side that missed out. When `applicable` is false the map was never
+examined - this is measured on Pangaea alone - and that must never be
+reported as an absence of buffers or as a civilization having failed to
+build one.
+
+The race matters as much as the outcome. `settled_first` names the side
+that got its corridor city down earlier, and it is `null` when only one
+side settled there at all: in that case the fact is `without_buffer`,
+not a won race, and a late filler city must not be dressed up as
+winning the ground. The first mover normally had the better choice of
+site, since the second settler takes what is left or is pushed out of
+the corridor entirely - though the data carries no terrain, so this is a
+tendency, never a confirmed prize. `order` says how early in its own
+expansion the civilization spent that settler: `order: 2` means the
+corridor went before everything else it built. `capital_population` says
+how big the capital stood on that turn, so a corridor city founded at
+population 4 cost growth in a way one founded at population 18 did not,
+and a settler stalls the capital that builds it - a capital allowed to
+grow first produces the same settler sooner and keeps the population.
+Before reading an early corridor city as a sacrifice, check
+`timelines.<civ>.policies` for `POLICY_COLLECTIVE_RULE`: it hands over a
+free settler and speeds up the ones after it, so an early buffer adopted
+under it was bought at a discount. Moving first *may* indicate fear of
+that neighbour or an intended attack on it. Neither may be inferred from
+the timing alone - say so only where the wars, army power or policies in
+the data carry it.
+
+`reach_before` is how far from its own capital that civilization had
+already settled before it founded the corridor city. Where
+`reach_before >= from_own_capital`, the site was within reach earlier
+and the civilization chose to settle elsewhere first: a fact about its
+priorities, with no cause attached. Where **both** sides of one pair are
+late in that sense and neither declared war on the other inside the
+window, an understanding between the two players is one possible reading
+among several, and it must be named as unverifiable if it is named at
+all. Agreements between neighbours are made in conversation outside the
+game and leave no trace in the log - the only diplomatic events recorded
+are `war_declared` and `peace_made`. The same trace is equally produced
+by poor land in the corridor, which the data can never rule out because
+it carries no terrain, by a luxury pulling expansion the other way, or
+by a commitment against a third neighbour. Never state an agreement as a
+finding, and never infer one from a single side being late. `priority`
+lists, for a civilization with several close neighbours, the order in
+which it closed its corridors. That is a fact about sequence only. It
+does not name an intended target: a civilization can close the gap
+against the neighbour it never fights first and attack a different one
+years later.
+
 `military_might` is the game's own figure, and it does not measure the
 army alone. The game sums the power of every unit, counts naval units at
 half, and then multiplies the total by the owner's treasury - roughly
@@ -664,6 +728,14 @@ or a civilization with no events before its boundary - say the data does
 not cover its opening rather than assembling an assessment out of later
 turns.
 
+Where `buffer_cities` is applicable and the civilization has a neighbour
+within `neighbour_distance` hexes, that assessment should also say
+whether it secured the corridor against that neighbour and whether it
+got there first. This is a fact about where the opening left it on the
+map, not about how fast it developed: a civilization can reach its
+boundary early and still have conceded the ground between itself and the
+rival who later marches over it.
+
 Then, for each civilization, explain in a short paragraph why they were winning
 or losing, grounded in the metrics and timeline data provided. Where a
 civilization's entry in `lekmod.civilizations` describes a unique ability
@@ -763,6 +835,17 @@ matters less as the game goes on, since roads, railways and faster units
 put a capital that was unreachable in the ancient era within a few turns'
 march later - so treat a large hex distance as a real cost early and a
 diminishing one late, not as a wall.
+
+A `buffer_city_lost` moment in `key_moments` marks the turn a corridor
+city changed hands, and it means one of two things: an attack stronger
+than the defender expected, or an outer defence that had begun to fail.
+Either way the ground between the two capitals had opened. Count the
+turns between that moment and the defender's capital falling: that
+interval is the warning the defender actually had, and it is the window
+in which a counterfactual for that civilization has to fit. Note that
+`captured_by` and `against` are frequently different civilizations - the
+city can fall to a third party while remaining the buffer against the
+rival it was settled to hold off.
 
 Where a civilization was eliminated, lost its capital, or was attacked by
 several rivals at once and survived, say why it became the target. A
