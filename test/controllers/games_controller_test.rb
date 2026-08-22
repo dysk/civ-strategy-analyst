@@ -293,6 +293,57 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
+  test "show displays both sides of a corridor, the side without a buffer included" do
+    game = pangaea_game("Buffer Game")
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 27, 20)
+    named_city(game, "Rome", "Ostia", 30, 18, 20)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.buffer-cities tbody tr", 2
+    assert_select "table.buffer-cities tbody tr:first-child td", "Ostia"
+    assert_select "table.buffer-cities tbody tr:last-child td", "Greece"
+  end
+
+  test "show badges the civilization that settled its corridor first" do
+    game = pangaea_game("Buffer Race Game")
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 27, 20)
+    named_city(game, "Rome", "Ostia", 20, 14, 20)
+    named_city(game, "Greece", "Sparta", 30, 22, 20)
+
+    get game_url(game)
+
+    assert_select "table.buffer-cities tbody tr:first-child .badge", "first"
+  end
+
+  test "show explains that buffer cities are measured on Pangaea alone" do
+    game = Game.create!(name: "Continents Game", map_script: "Continents")
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 27, 20)
+
+    get game_url(game)
+
+    assert_select "table.buffer-cities", false
+    assert_select "p.empty-state", /only computed for Pangaea/
+  end
+
+  test "show names the order a civilization closed its corridors" do
+    game = pangaea_game("Buffer Priority Game", civs: %w[Rome Greece Egypt])
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 27, 20)
+    named_city(game, "Egypt", "Thebes", 0, 15, 13)
+    named_city(game, "Rome", "Neapolis", 20, 14, 17)
+    named_city(game, "Rome", "Ostia", 30, 18, 20)
+
+    get game_url(game)
+
+    assert_select "p", /Rome secured its corridors in this order: Egypt, Greece/
+  end
+
   test "show displays each civilization's empire geometry" do
     game = Game.create!(name: "Geometry Game", map_width: 46)
     game.players.create!(civ: "Rome")
@@ -517,6 +568,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
       seq: game.game_events.count + 1, session_index: 0, turn: turn, event_type: event_type, civ: civ,
       payload: extra.merge("event" => event_type, "turn" => turn)
     )
+  end
+
+  def pangaea_game(name, civs: %w[Rome Greece])
+    game = Game.create!(name: name, map_script: "Pangaea")
+    civs.each { |civ| game.players.create!(civ: civ) }
+    game
+  end
+
+  def named_city(game, civ, city, turn, x, y)
+    event(game, civ, "city_founded", turn, "civ" => civ, "city" => city, "x" => x, "y" => y)
   end
 
   def city(game, civ, turn, x, y)

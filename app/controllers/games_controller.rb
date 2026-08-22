@@ -18,6 +18,7 @@ class GamesController < ApplicationController
     @map_bounds = MapBounds.new(@game)
     @geometry_rows = geometry_rows
     @capital_distances = capital_distances
+    @buffer_cities = BufferCities.for(@game).call
     @capital_layout_width = capital_layout_width
     @capital_positions = capital_positions
     @army_rows = army_rows
@@ -40,6 +41,7 @@ class GamesController < ApplicationController
 
     [
       [ "Wars", { nil => moments.wars } ],
+      [ "Buffer Cities Lost", { nil => moments.buffer_city_losses } ],
       [ "Leader Changes", { nil => moments.leader_changes } ],
       [ "Era Leads", { nil => moments.era_leads } ],
       [ "Religion", { "Pantheon Foundings" => moments.pantheon_foundings,

@@ -723,7 +723,51 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "buffer_city_losses names the captor and the rival the city stood against" do
+    pangaea_with_a_roman_buffer
+    event(nil, "city_captured", 80, city: "Ostia", old_owner: "Rome", new_owner: "Greece", x: 18, y: 20)
+
+    assert_equal(
+      [ { type: :buffer_city_lost, turn: 80, civ: "Rome", captured_by: "Greece", against: "Greece", city: "Ostia" } ],
+      detector.buffer_city_losses
+    )
+  end
+
+  test "buffer_city_losses keeps naming the pair rival when a third civ takes the city" do
+    pangaea_with_a_roman_buffer
+    event(nil, "city_captured", 80, city: "Ostia", old_owner: "Rome", new_owner: "Egypt", x: 18, y: 20)
+
+    loss = detector.buffer_city_losses.sole
+
+    assert_equal "Egypt", loss[:captured_by]
+    assert_equal "Greece", loss[:against]
+  end
+
+  test "buffer_city_losses ignores a capture on a plot that buffered nobody" do
+    pangaea_with_a_roman_buffer
+    event("Rome", "city_founded", 40, city: "Neapolis", x: 10, y: 30)
+    event(nil, "city_captured", 80, city: "Neapolis", old_owner: "Rome", new_owner: "Greece", x: 10, y: 30)
+
+    assert_empty detector.buffer_city_losses
+  end
+
+  test "buffer_city_losses reports nothing on a map that is not Pangaea" do
+    pangaea_with_a_roman_buffer
+    @game.update!(map_script: "Continents")
+    event(nil, "city_captured", 80, city: "Ostia", old_owner: "Rome", new_owner: "Greece", x: 18, y: 20)
+
+    assert_empty detector.buffer_city_losses
+  end
+
   private
+
+  # Rome and Greece 17 hexes apart with Ostia standing in the corridor.
+  def pangaea_with_a_roman_buffer
+    @game.update!(map_script: "Pangaea")
+    event("Rome", "city_founded", 0, city: "Roma", x: 10, y: 20)
+    event("Greece", "city_founded", 0, city: "Athenai", x: 27, y: 20)
+    event("Rome", "city_founded", 30, city: "Ostia", x: 18, y: 20)
+  end
 
   def congress_snapshot(turn, host:, delegates:, votes_needed:)
     @seq += 1

@@ -15,6 +15,16 @@ class KeyMomentsHelperTest < ActionView::TestCase
     assert_equal "Turn 57: Chile declared war on Vietnam (ongoing)", key_moment_sentence(moment)
   end
 
+  test "narrates a lost buffer city by its captor and the rival it stood against" do
+    moment = { type: :buffer_city_lost, turn: 152, civ: "Arabia", captured_by: "Babylon",
+               against: "Philippines", city: "Medina" }
+
+    assert_equal(
+      "Turn 152: Arabia lost Medina to Babylon, the city between its capital and Philippines's",
+      key_moment_sentence(moment)
+    )
+  end
+
   test "leaves the snowballed metric to the heading above the list" do
     moment = { type: :snowball, civ: "Chile", turn: 50, turn_end: 70, duration_turns: 20 }
 
