@@ -459,3 +459,88 @@ Strategic Verdict" that each verdict open with an early game assessment
 restricted to `turn <= early_game.<civ>.end_turn`. The A/B is pending a fresh
 `bin/civ analyze` run — `analyses.digest` is a frozen snapshot, so old
 analyses do not gain `early_game` retroactively.
+
+## Plan: buffer cities on Pangaea (implemented; A/B pending a real log)
+
+Status: steps 1–4 implemented 2026-08-22, planned in detail in
+`docs/buffer-city.md`. For every pair of capitals close enough to threaten each
+other, the analysis now says who settled the ground between them. `BufferCities`
+(`app/projections/buffer_cities.rb`) is the new projection; it feeds the digest
+(`buffer_cities`, next to `capital_proximity`), the game page's "Buffer Cities"
+table, and one key moment, `KeyMomentDetector#buffer_city_losses`.
+
+The rule:
+
+- **neighbours** — a pair of capitals at hex distance **≤ 17**
+- **corridor** — a city whose *detour* (`d(A,C) + d(C,B) − d(A,B)`) is **≤ 6**
+  and which lies strictly between the two capitals (`d(A,C) < d(A,B)` and
+  `d(C,B) < d(A,B)`) — the betweenness test is what separates a buffer from a
+  back city, which scores the same detour
+- **window** — founded on or before the game-wide `EarlyGame#deadline_turn`,
+  capped at the last logged turn. One clock for both sides: a per-civ boundary
+  would give the faster developer the shorter window to claim contested ground
+- **map** — Pangaea only, decided by `map_script`, on an **unwrapped** grid
+  (`HexGrid.new(width: nil)`) — the map's ocean edges are not a route anyone can
+  march, so this is the one place in the codebase that turns wrapping off
+- **buffer** — of the corridor cities a civilization owns, the one closest to
+  the rival capital
+
+Foundings only, cities matched by plot rather than name (game #21 holds two
+distinct cities called "Cavite El Viejo"). `applicable: false` with
+`reason: :map_not_pangaea` says the map was never examined, which is a different
+fact from an empty `pairs` list.
+
+Verified against the imported games, no re-import needed:
+
+| Game | Pair | d | first | buffers (`detour`, own/rival) |
+|---|---|---|---|---|
+| #21 | Arabia – Babylon | 13 | — | Arabia **none**; Babylon Dur-Kurigalzu t92 #3 pop 18 (0, 7/6) |
+| #21 | Austria – Babylon | 13 | — | Austria **none**; Babylon Akkad t50 #2 pop 7 (5, 8/10) |
+| #21 | Philippines – Arabia | 16 | Philippines | Cavite El Viejo t23 #2 pop 4 (3, 4/15); Damascus t65 #3 pop 12 (3, 12/7) |
+| #15 | Bolivia – Iroquois | 13 | Bolivia | La Paz t25 #2 pop 4 (0, 6/7); Buffalo Creek t57 #5 pop 8 (2, 5/10) |
+| #15 | Vietnam – Chile | 14 | Vietnam | Hai Phòng t31 #3 pop 4 (0, 5/9); Concepción t34 #2 pop 6 (4, 8/10) |
+| #15 | Vietnam – Iroquois | 16 | Iroquois | Thành Pho Hue t75 #4 pop 8 (1, 4/13); Grand River t43 #3 pop 6 (0, 4/12) |
+| #20 | six pairs (log ends turn 20) | 13–17 | — | none on either side; `window_turn` 20 |
+
+**The absence predicts the conquest.** The two civilizations with no buffer
+against Babylon are exactly the two whose capitals it took — Mecca on turn 144,
+Vienna on turn 192. Game #20 is the regression an uncapped window would fail.
+
+The race fields separate cases the turn alone confuses. The Philippines' turn-23
+corridor city came five turns after `POLICY_COLLECTIVE_RULE`, so it is fast *and*
+cheap; Vietnam's Hai Phòng (t31, city #3, capital pop 4) had Collective Rule 39
+turns away and was genuinely paid for; Babylon's Dur-Kurigalzu (t92, capital pop
+18) is a late filler into uncontested ground. `reach_before` — the furthest that
+civilization had already settled before founding the corridor city — is what
+makes "it could have gone earlier" measurable without terrain.
+
+`buffer_city_losses` fires at any point in the game, not only the early one:
+that is the premise, a debt incurred in the opening and called in later. It
+names `captured_by` and `against` separately because they are frequently
+different civilizations. On #21 it reports one loss, Cavite El Viejo falling to
+Arabia on turn 87. Medina (t152) is **not** one: it is a corridor city for
+Arabia against the Philippines, but Damascus sits further forward, and the rule
+takes only the forward-most city as the buffer.
+
+**Neither threshold is calibrated.** All three games are `WORLDSIZE_TINY` with
+one human against `HANDICAP_AI_DEFAULT` bots, and every pair lands at 13–17, so
+the 17 has never had to decide a close case; it is an absolute hex count that
+does not scale with map size. The 6 is likewise a first hypothesis — and note
+that detour on this grid runs one per hex of deviation, not two as
+`docs/buffer-city.md` claims in prose, so a tolerance of 6 admits a corridor six
+hexes wide either side of the marching line. Revisit both against the first
+larger map and the first human-multiplayer log.
+
+The prompt now teaches three things in "How to weigh the signals": what a
+missing buffer means for a war on that front and how `from_own_capital`,
+`from_rival_capital` and `detour` place the city; the race — `settled_first`,
+`order`, `capital_population`, and the instruction to check
+`POLICY_COLLECTIVE_RULE` before reading an early corridor city as a sacrifice;
+and restraint — that `reach_before >= from_own_capital` is a fact about
+priorities only, that an agreement between neighbours is unverifiable from a log
+carrying no diplomacy beyond `war_declared` and `peace_made` and no terrain at
+all, and that `priority` names a sequence and never an intended target. The
+Per-Player verdict now covers whether a civilization secured its corridors, and
+Counterfactuals read the gap between a `buffer_city_lost` and a capital falling
+as the warning the defender actually had. The A/B is pending a fresh
+`bin/civ analyze` run — `analyses.digest` is a frozen snapshot.
