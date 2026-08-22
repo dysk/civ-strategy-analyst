@@ -32,6 +32,7 @@ class DigestBuilder
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
       capital_proximity: CapitalProximity.for(@game).call,
+      buffer_cities: BufferCities.for(@game).call,
       key_moments: key_moments,
       cultural: cultural_by_civ,
       congress: congress,
@@ -165,6 +166,7 @@ class DigestBuilder
 
     {
       wars: detector.wars,
+      buffer_city_losses: detector.buffer_city_losses,
       influence_level_reached: detector.influence_level_reached,
       cultural_victory_imminent: detector.cultural_victory_imminent,
       leader_changes: detector.leader_changes,

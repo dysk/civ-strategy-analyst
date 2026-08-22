@@ -210,6 +210,25 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal [ { civs: %w[Rome Greece], distance: 6 } ], proximity[:distances]
   end
 
+  test "includes who holds the ground between neighbouring capitals" do
+    @game.update!(map_script: "Pangaea")
+    event("Rome", "city_founded", 0, city: "Roma", x: 10, y: 20)
+    event("Greece", "city_founded", 0, city: "Athenai", x: 27, y: 20)
+    event("Rome", "city_founded", 30, city: "Ostia", x: 18, y: 20)
+
+    buffer_cities = DigestBuilder.new(@game).call[:buffer_cities]
+
+    assert_equal true, buffer_cities[:applicable]
+    assert_equal "Ostia", buffer_cities[:pairs].sole[:buffers]["Rome"][:city]
+  end
+
+  test "says a map was never examined rather than leaving buffer cities out" do
+    assert_equal(
+      { applicable: false, reason: :map_not_pangaea },
+      DigestBuilder.new(@game).call[:buffer_cities]
+    )
+  end
+
   test "includes key moments from KeyMomentDetector, keyed by heuristic" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
 
@@ -217,6 +236,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
 
     assert_equal 1, digest[:key_moments][:wars].size
     assert_equal 10, digest[:key_moments][:wars].first[:turn]
+    assert_includes digest[:key_moments].keys, :buffer_city_losses
     assert_includes digest[:key_moments].keys, :leader_changes
     assert_includes digest[:key_moments].keys, :era_leads
     assert_includes digest[:key_moments].keys, :religion_foundings

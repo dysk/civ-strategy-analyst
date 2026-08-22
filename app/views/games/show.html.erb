@@ -67,6 +67,64 @@
   <% end %>
 <% end %>
 
+<h2>Buffer Cities</h2>
+<% if !@buffer_cities[:applicable] %>
+  <p class="empty-state">Buffer cities are only computed for Pangaea maps.</p>
+<% elsif @buffer_cities[:pairs].empty? %>
+  <p class="empty-state">No two capitals started within <%= @buffer_cities[:neighbour_distance] %> hexes.</p>
+<% else %>
+  <p class="note">
+    Founded by turn <%= @buffer_cities[:window_turn] %>; neighbours within
+    <%= @buffer_cities[:neighbour_distance] %> hexes, corridor detour up to
+    <%= @buffer_cities[:detour_tolerance] %>.
+  </p>
+  <table class="buffer-cities">
+    <thead>
+      <tr>
+        <th>Pair</th>
+        <th>Apart</th>
+        <th>Civ</th>
+        <th>Buffer</th>
+        <th>Founded</th>
+        <th>City #</th>
+        <th>Capital pop</th>
+        <th>Reach before</th>
+        <th>Detour</th>
+        <th>From own</th>
+        <th>From rival</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @buffer_cities[:pairs].each do |pair| %>
+        <% pair[:civs].each do |civ| %>
+          <% buffer = pair[:buffers][civ] %>
+          <tr>
+            <td><%= pair[:civs].first %> &ndash; <%= pair[:civs].last %></td>
+            <td><%= pair[:distance] %></td>
+            <td><%= civ %></td>
+            <td><%= buffer&.dig(:city) || "&mdash;".html_safe %></td>
+            <td>
+              <%= buffer&.dig(:turn) || "&mdash;".html_safe %>
+              <% if pair[:settled_first] == civ %>
+                <span class="badge">first</span>
+              <% end %>
+            </td>
+            <td><%= buffer&.dig(:order) || "&mdash;".html_safe %></td>
+            <td><%= buffer&.dig(:capital_population) || "&mdash;".html_safe %></td>
+            <td><%= buffer&.dig(:reach_before) || "&mdash;".html_safe %></td>
+            <td><%= buffer&.dig(:detour) || "&mdash;".html_safe %></td>
+            <td><%= buffer&.dig(:from_own_capital) || "&mdash;".html_safe %></td>
+            <td><%= buffer&.dig(:from_rival_capital) || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+  <% @buffer_cities[:priority].each do |civ, rivals| %>
+    <p><%= civ %> secured its corridors in this order: <%= rivals.join(", ") %>.</p>
+  <% end %>
+<% end %>
+
 <h2>Empire Geometry</h2>
 <% if @geometry_rows.empty? %>
   <p class="empty-state">No city coordinates in this game's events.</p>
