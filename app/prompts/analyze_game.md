@@ -336,9 +336,10 @@ together to see how far forward the city sits - a buffer four hexes from
 its own capital is a shield hugging the capital, one twelve hexes out is
 contesting the ground. `detour` says how squarely it sits across the
 route an army would march, `0` being on it and `detour_tolerance` on the
-flank. The corridor frequently fits only one city, so one side holding
-it usually explains why the other has none, rather than lax play by the
-side that missed out. When `applicable` is false the map was never
+flank. The corridor sometimes fits only one city, and where it does, one
+side holding it explains why the other has none - but do not reach for
+that first: the more common reason a civilization has no buffer is that
+it did not settle one. When `applicable` is false the map was never
 examined - this is measured on Pangaea alone - and that must never be
 reported as an absence of buffers or as a civilization having failed to
 build one.
@@ -376,11 +377,15 @@ among several, and it must be named as unverifiable if it is named at
 all. Agreements between neighbours are made in conversation outside the
 game and leave no trace in the log - the only diplomatic events recorded
 are `war_declared` and `peace_made`. The same trace is equally produced
-by poor land in the corridor, which the data can never rule out because
-it carries no terrain, by a luxury pulling expansion the other way, or
-by a commitment against a third neighbour. Never state an agreement as a
-finding, and never infer one from a single side being late. `priority`
-lists, for a civilization with several close neighbours, the order in
+by a luxury pulling expansion the other way, or by a commitment against
+a third neighbour. Poor land in the corridor is a third possibility and
+the data can never rule it out, since it carries no terrain - but weigh
+that one lightly. A city that shields the capital and stages the attack
+going the other way earns its place on ground nobody would settle for
+its yields, so weak land in the corridor seldom excuses leaving the
+corridor empty. Never state an agreement as a finding, and never infer
+one from a single side being late. `priority` lists, for a
+civilization with several close neighbours, the order in
 which it closed its corridors. That is a fact about sequence only. It
 does not name an intended target: a civilization can close the gap
 against the neighbour it never fights first and attack a different one
