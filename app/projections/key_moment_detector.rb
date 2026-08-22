@@ -338,6 +338,23 @@ class KeyMomentDetector
     end.sort_by { |moment| moment[:turn] }
   end
 
+  # The debt a missing buffer represents is incurred in the opening and
+  # called in later, so this fires at any point in the game. `captured_by`
+  # and `against` are separate: the civilization that takes the corridor
+  # city is frequently not the one it was a buffer against.
+  def buffer_city_losses
+    buffers = BufferCities.for(@game).by_plot
+
+    of_type("city_captured").flat_map { |event|
+      buffers.fetch(plot_of(event), [])
+        .select { |buffer| buffer[:civ] == event.payload["old_owner"] }
+        .map do |buffer|
+          { type: :buffer_city_lost, turn: event.turn, civ: buffer[:civ],
+            captured_by: event.payload["new_owner"], against: buffer[:rival], city: buffer[:city] }
+        end
+    }.sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       attacker_civs = Array(war_declared.payload["attacker_civs"])
@@ -394,6 +411,11 @@ class KeyMomentDetector
 
   def in_window?(turn, turn_declared, turn_peace)
     turn >= turn_declared && (turn_peace.nil? || turn <= turn_peace)
+  end
+
+  def plot_of(event)
+    x, y = event.payload.values_at("x", "y")
+    [ x, y ] if x && y
   end
 
   def of_type(event_type)

@@ -9,6 +9,8 @@ module KeyMomentsHelper
   DESCRIPTIONS = {
     war: ->(m) { "#{m[:attacker_civs].join(", ")} declared war on #{m[:defender_civs].join(", ")} " \
                  "(#{m[:turn_peace] ? "peace at turn #{m[:turn_peace]}" : "ongoing"})" },
+    buffer_city_lost: ->(m) { "#{m[:civ]} lost #{m[:city]} to #{m[:captured_by]}, " \
+                             "the city between its capital and #{m[:against]}'s" },
     leader_change: ->(m) { "#{m[:metric]} lead passed from #{m[:from]} to #{m[:to]}" },
     era_lead: ->(m) { "#{m[:civs].join(", ")} reached #{m[:era]} first" },
     pantheon_founded: ->(m) { "#{m[:civ]} founded a pantheon with #{m[:belief]}" },
@@ -51,7 +53,8 @@ module KeyMomentsHelper
   TRENDS = {
     army_power_surge: :up, army_power_collapse: :down,
     happiness_surge: :up, happiness_collapse: :down,
-    capital_gained: :up, capital_lost: :down
+    capital_gained: :up, capital_lost: :down,
+    buffer_city_lost: :down
   }.freeze
 
   ARROWS = { up: "▲", down: "▼" }.freeze
