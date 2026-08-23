@@ -19,6 +19,20 @@ class CivCliTest < ActiveSupport::TestCase
     assert_match(/Rome, Greece/, @out.string)
   end
 
+  # A logger that threw during the game is worth seeing at the prompt; a
+  # clean import should not have to mention it.
+  test "import reports logger failures when the log contains any" do
+    cli.run([ "import", Rails.root.join("test/fixtures/files/logger_failure.jsonl").to_s, "--name", "Broken Logger" ])
+
+    assert_match(/1 logger error/, @out.string)
+  end
+
+  test "import stays quiet about logger failures when there were none" do
+    cli.run([ "import", SAMPLE_PATH.to_s, "--name", "CLI Test Game" ])
+
+    refute_match(/logger error/, @out.string)
+  end
+
   test "import accepts --lekmod-version and stores it on the game" do
     status = cli.run(
       [ "import", SAMPLE_PATH.to_s, "--name", "Modded Game", "--lekmod-version", "34.15" ]

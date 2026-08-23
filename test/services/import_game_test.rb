@@ -101,6 +101,16 @@ class ImportGameTest < ActiveSupport::TestCase
     assert_equal 0, result.skipped_count
   end
 
+  # logger_error is the logger reporting its own failure, and it carries no
+  # turn, so it does not even fit the table.
+  test "keeps logger failures out of the game's events and counts them" do
+    result = ImportGame.call(Rails.root.join("test/fixtures/files/logger_failure.jsonl"), name: "Broken Logger")
+
+    refute result.game.game_events.exists?(event_type: "logger_error")
+    assert result.game.game_events.exists?(event_type: "city_founded")
+    assert_equal 1, result.logger_error_count
+  end
+
   test "stores the given lekmod_version on the game" do
     result = ImportGame.call(SAMPLE_PATH, name: "Test Game", lekmod_version: "34.15")
 

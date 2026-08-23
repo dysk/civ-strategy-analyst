@@ -31,7 +31,7 @@ class ImportGame
     mp_vote mp_proposal_result united_nations_formed
   ].freeze
 
-  Result = Struct.new(:game, :imported_count, :skipped_count, keyword_init: true)
+  Result = Struct.new(:game, :imported_count, :skipped_count, :logger_error_count, keyword_init: true)
 
   def self.call(path, name: nil, lekmod_version: nil)
     new(path, name: name, lekmod_version: lekmod_version).call
@@ -50,6 +50,7 @@ class ImportGame
     @seq = 0
     @imported_count = 0
     @skipped_count = 0
+    @logger_error_count = 0
     @signatures_from_earlier_sessions = Set.new
     @signatures_in_current_session = Set.new
 
@@ -57,7 +58,12 @@ class ImportGame
       import_line(game, line, line_number)
     end
 
-    Result.new(game: game, imported_count: @imported_count, skipped_count: @skipped_count)
+    Result.new(
+      game: game,
+      imported_count: @imported_count,
+      skipped_count: @skipped_count,
+      logger_error_count: @logger_error_count
+    )
   end
 
   private
@@ -74,6 +80,7 @@ class ImportGame
     end
 
     handle_session_boundary(game, payload) if event_type == "session_started"
+    return if logger_failure?(event_type)
 
     return if duplicate_of_earlier_session?(payload)
 
@@ -81,6 +88,16 @@ class ImportGame
     persist_event(game, payload, event_type)
   rescue JSON::ParserError => e
     Rails.logger.warn("ImportGame: skipping malformed line #{line_number}: #{e.message}")
+  end
+
+  # A logger_error is the logger reporting that one of its own extractors
+  # threw. It is not a fact about the game, and it carries no turn, so the
+  # table has no room for it either. The count is what matters.
+  def logger_failure?(event_type)
+    return false unless event_type == "logger_error"
+
+    @logger_error_count += 1
+    true
   end
 
   def handle_session_boundary(game, payload)

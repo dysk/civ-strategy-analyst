@@ -37,7 +37,16 @@ class CivCli
     @out.puts "Imported game ##{result.game.id} \"#{result.game.name}\": " \
               "#{result.imported_count} events (#{result.skipped_count} deduped)"
     @out.puts "Roster: #{result.game.players.pluck(:civ).join(", ")}"
+    report_logger_errors(result.logger_error_count)
     0
+  end
+
+  # The logger records its own failures; an import that swallowed some
+  # should say so, because the game log is then missing events.
+  def report_logger_errors(count)
+    return if count.zero?
+
+    @out.puts "#{count} logger error#{"s" if count != 1} in the log, not imported"
   end
 
   def analyze(args)
