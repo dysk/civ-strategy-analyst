@@ -61,6 +61,34 @@ class EarlyGameTest < ActiveSupport::TestCase
     assert_equal({ tech: "TECH_METAL_CASTING", building: "BUILDING_UNIVERSITY" }, early_game.for_civ("Rome")[:milestone])
   end
 
+  test "for_civ accepts the Longhouse as the Workshop it replaces" do
+    tech("Iroquois", 60, "TECH_EDUCATION")
+    building("Iroquois", 80, "BUILDING_LONGHOUSE")
+
+    assert_equal 80, early_game.for_civ("Iroquois")[:building_turn]
+  end
+
+  test "for_civ accepts the Coralshop as the Workshop it replaces" do
+    tech("Kilwa", 60, "TECH_EDUCATION")
+    building("Kilwa", 80, "BUILDING_CORALSHOP")
+
+    assert_equal 80, early_game.for_civ("Kilwa")[:building_turn]
+  end
+
+  test "for_civ accepts the Wat as the University it replaces" do
+    tech("Siam", 50, "TECH_METAL_CASTING")
+    building("Siam", 90, "BUILDING_WAT")
+
+    assert_equal 90, early_game.for_civ("Siam")[:building_turn]
+  end
+
+  test "for_civ accepts the Ayyubids University as the University it replaces" do
+    tech("Ayyubids", 50, "TECH_METAL_CASTING")
+    building("Ayyubids", 90, "BUILDING_AYYUBIDS_UNIVERSITY")
+
+    assert_equal 90, early_game.for_civ("Ayyubids")[:building_turn]
+  end
+
   test "for_civ prefers the granting wonder over a University built later" do
     tech("Rome", 50, "TECH_METAL_CASTING")
     building("Rome", 74, "BUILDING_ANGKOR_WAT")

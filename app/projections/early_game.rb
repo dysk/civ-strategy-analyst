@@ -13,6 +13,14 @@ class EarlyGame
   # reaches the log and the wonder is the only evidence it is standing.
   GRANTED_BY = { "BUILDING_UNIVERSITY" => %w[BUILDING_ANGKOR_WAT] }.freeze
 
+  # The unique buildings civs get in place of a milestone building. The log
+  # names the building type, so a civ that never builds the base type still
+  # holds its building class.
+  REPLACED_BY = {
+    "BUILDING_WORKSHOP"   => %w[BUILDING_LONGHOUSE BUILDING_CORALSHOP],
+    "BUILDING_UNIVERSITY" => %w[BUILDING_WAT BUILDING_AYYUBIDS_UNIVERSITY]
+  }.freeze
+
   def initialize(game)
     @game = game
     @timeline = PlayerTimeline.new(game)
@@ -66,7 +74,7 @@ class EarlyGame
   end
 
   def evidence_of(building)
-    [ building, *GRANTED_BY[building] ]
+    [ building, *REPLACED_BY[building], *GRANTED_BY[building] ]
   end
 
   def first_turn(entries, key, names)
