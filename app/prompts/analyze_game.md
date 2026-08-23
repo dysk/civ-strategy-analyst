@@ -664,46 +664,28 @@ resolve any apparent contradiction before writing the sentence that uses
 it. If two digest fields genuinely disagree, note the discrepancy once,
 plainly, and move on.
 
-What you produce is a finished report, not a record of how you arrived at
-it. A false claim must not appear in it even when a correction follows
-immediately: no reversals mid-sentence or in the following clause
-("... wait -", "actually", "rechecking", "on closer inspection", "correction:"),
-no parenthetical second thoughts, no sentence left standing that a later
-one contradicts. When you notice while writing that a claim is wrong,
-delete the claim and write the true one in its place; the reader should
-never learn that you first thought otherwise.
-
-Any superlative or leadership claim ("leads all civs in tech", "the
-highest military might", "first to the Renaissance") must be checked
-against every civilization's value at that checkpoint before you assert
-it. Decide each such leader once, before writing, and keep the whole
-report consistent with that decision - a claim made about one
-civilization in one section must not contradict what another section
-says about a rival. If leadership changed over time, say at which turn,
-rather than attributing the lead to both sides.
-
-A comparison phrased as a maximum - "the highest tech count", "more than
-any other civilization", "leads all civs in production" - is a claim
-about every civilization in `standings` at that checkpoint, not about the
-one you happen to be writing up or about its nearest rival. Read that
-metric across all of them before you write it. If you only compared two,
-write the pairwise comparison instead ("more techs than Vietnam at turn
-150"); it says less and stays true. Rewording does not make two conflicting
-claims compatible: "the highest raw tech count" and "more techs than any
-other civilization" are the same claim, and at one checkpoint only one
-civilization can hold it (name them all if they tie). Qualifiers such as
-"raw", "effective" or "multiplier-adjusted" separate two such claims only
-when you state each basis explicitly and each is true on its own basis.
-
-Make every such claim carry the number it beats. Write "42 techs, ahead
-of Vietnam's 38, the most of any civilization" or "38 techs, behind
+A superlative or leadership claim - "leads all civs in tech", "the
+highest military might", "first to the Renaissance" - is a claim about
+every civilization in `standings` at that checkpoint, not about the one
+you happen to be writing up or about its nearest rival. Check it against
+all of their values, and make it carry the number it beats: "42 techs,
+ahead of Vietnam's 38, the most of any civilization" or "38 techs, behind
 Chile's 42" - never a bare "the highest tech count". If you cannot name
 that second number, you have not made the comparison and must not claim
-the lead. Read every civilization's value for that metric first and pick
-the maximum, then write the sentence: the sentence reports a comparison
-you have already finished, it is not where you carry it out. A sentence
-that starts as a claim of leadership and ends up disproving it should
-never have been started.
+the lead; write the pairwise comparison instead ("more techs than Vietnam
+at turn 150"), which says less and stays true. Where several
+civilizations tie, name them all.
+
+Decide each such leader once and keep the whole report consistent with
+that decision - a claim made about one civilization in one section must
+not contradict what another section says about a rival. Rewording does
+not make two conflicting claims compatible: "the highest raw tech count"
+and "more techs than any other civilization" are the same claim, and at
+one checkpoint only one civilization can hold it. Qualifiers such as
+"raw", "effective" or "multiplier-adjusted" separate two such claims only
+when you state each basis explicitly and each is true on its own basis.
+If leadership changed over time, say at which turn, rather than
+attributing the lead to both sides.
 
 ## Report format
 
