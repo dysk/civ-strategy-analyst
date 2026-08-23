@@ -52,6 +52,31 @@ class EarlyGameTest < ActiveSupport::TestCase
     )
   end
 
+  test "for_civ accepts Angkor Wat for the University it grants free" do
+    tech("Rome", 50, "TECH_METAL_CASTING")
+    building("Rome", 74, "BUILDING_ANGKOR_WAT")
+
+    assert_equal 74, early_game.for_civ("Rome")[:end_turn]
+    assert_equal 74, early_game.for_civ("Rome")[:building_turn]
+    assert_equal({ tech: "TECH_METAL_CASTING", building: "BUILDING_UNIVERSITY" }, early_game.for_civ("Rome")[:milestone])
+  end
+
+  test "for_civ prefers the granting wonder over a University built later" do
+    tech("Rome", 50, "TECH_METAL_CASTING")
+    building("Rome", 74, "BUILDING_ANGKOR_WAT")
+    building("Rome", 77, "BUILDING_UNIVERSITY")
+
+    assert_equal 74, early_game.for_civ("Rome")[:building_turn]
+  end
+
+  test "for_civ keeps a University built before the wonder that would grant one" do
+    tech("Rome", 50, "TECH_METAL_CASTING")
+    building("Rome", 60, "BUILDING_UNIVERSITY")
+    building("Rome", 74, "BUILDING_ANGKOR_WAT")
+
+    assert_equal 60, early_game.for_civ("Rome")[:building_turn]
+  end
+
   test "for_civ takes the earlier of the two milestones" do
     tech("Rome", 60, "TECH_EDUCATION")
     building("Rome", 100, "BUILDING_WORKSHOP")

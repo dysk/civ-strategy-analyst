@@ -8,6 +8,11 @@ class EarlyGame
     { tech: "TECH_METAL_CASTING", building: "BUILDING_UNIVERSITY" }
   ].freeze
 
+  # A wonder that hands its city the milestone building for free. The DLL
+  # grants those without firing CityConstructed, so the building never
+  # reaches the log and the wonder is the only evidence it is standing.
+  GRANTED_BY = { "BUILDING_UNIVERSITY" => %w[BUILDING_ANGKOR_WAT] }.freeze
+
   def initialize(game)
     @game = game
     @timeline = PlayerTimeline.new(game)
@@ -52,15 +57,19 @@ class EarlyGame
   end
 
   def reach(civ, milestone)
-    tech_turn = first_turn(@timeline.techs(civ), :tech, milestone[:tech])
-    building_turn = first_turn(@timeline.buildings(civ), :building, milestone[:building])
+    tech_turn = first_turn(@timeline.techs(civ), :tech, [ milestone[:tech] ])
+    building_turn = first_turn(@timeline.buildings(civ), :building, evidence_of(milestone[:building]))
     return if tech_turn.nil? || building_turn.nil?
 
     { milestone: milestone, turn: [ tech_turn, building_turn ].max,
       tech_turn: tech_turn, building_turn: building_turn }
   end
 
-  def first_turn(entries, key, name)
-    entries.find { |entry| entry[key] == name }&.fetch(:turn)
+  def evidence_of(building)
+    [ building, *GRANTED_BY[building] ]
+  end
+
+  def first_turn(entries, key, names)
+    entries.find { |entry| names.include?(entry[key]) }&.fetch(:turn)
   end
 end
