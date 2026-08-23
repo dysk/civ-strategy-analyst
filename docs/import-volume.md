@@ -63,38 +63,33 @@ with validations and callbacks. Batch into `insert_all` in chunks of
 the database, and `created_at`/`updated_at` have to be set explicitly
 because `insert_all` skips timestamps.
 
-### 3. `KNOWN_EVENT_TYPES` has been stale for a while
+### 3. `KNOWN_EVENT_TYPES` was stale for a while — done
 
-Unknown types are only warned about and still imported
-(`app/services/import_game.rb:59-61`), so nothing breaks — but the
-warning is per line, and `city_snapshot` alone would write ~29k of them
-into the import log.
+Unknown types were only warned about and still imported
+(`app/services/import_game.rb`), so nothing broke — but the warning is per
+line, and `city_snapshot` alone would have written ~29k of them into the
+import log.
 
-The list is missing more than the new work. Comparing it against every
-`event` the logger emits today:
+The list was missing 23 names, only three of which came from the recent
+work (`city_snapshot`, `player_eliminated`, `building_sold`); the rest —
+`city_destroyed`, `diplo_event`, `globe_circumnavigated`, `mp_vote`,
+`mp_proposal_result`, `paradrop`, `project_completed`, `unit_rebased`, the
+five diplomacy pairs, `game_ended`, `logger_error` — had accumulated over
+several rounds, because nothing checked.
 
-```
-building_sold        city_destroyed       defensive_pact_ended
-defensive_pact_signed diplo_event         embassy_ended
-embassy_established  friendship_declared  friendship_ended
-game_ended           globe_circumnavigated logger_error
-mp_proposal_result   mp_vote              open_borders_granted
-open_borders_revoked paradrop             project_completed
-trade_agreement_ended trade_agreement_signed unit_rebased
-```
+All 70 names the logger emits are now listed, and
+`test/fixtures/files/logger_event_types.jsonl` carries one line per name so
+the check has something to fail against. That is still two hand-maintained
+lists, but a forgotten name now fails a test in a second instead of
+surfacing as noise during a real import. Generating both from the logger
+would need a shared artefact between the repositories, which is worth
+doing only if the fixture turns out to drift anyway.
 
-Eight of those (`city_destroyed`, `diplo_event`,
-`globe_circumnavigated`, `mp_vote`, `mp_proposal_result`, `paradrop`,
-`project_completed`, `unit_rebased`) predate this round entirely, which
-says the list is not maintained by anything and drifts silently. Either
-add the names and accept it will drift again, or generate the check from
-the logger's own event list and stop hand-maintaining it.
-
-`logger_error` deserves a decision rather than a listing: it is the
-logger reporting that an extractor threw, and importing it as an
-ordinary game event puts a failure record in the same table as facts
-about the game. Skipping it during import and surfacing the count in the
-import result would be more honest.
+`logger_error` is listed but still open as a question: it is the logger
+reporting that an extractor threw, and importing it as an ordinary game
+event puts a failure record in the same table as facts about the game.
+Skipping it during import and surfacing the count in `Result` would be
+more honest.
 
 ## Verification
 

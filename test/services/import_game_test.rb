@@ -23,38 +23,16 @@ class ImportGameTest < ActiveSupport::TestCase
     assert_equal 42, game.map_height
   end
 
-  test "treats city capture as a known event type" do
+  # One line per event the logger emits today. When the logger grows a new
+  # record, this fixture and KNOWN_EVENT_TYPES are what has to grow with it.
+  test "recognises every event type the logger emits" do
     io = StringIO.new
     original_logger = Rails.logger
     Rails.logger = Logger.new(io)
 
-    ImportGame.call(SAMPLE_PATH, name: "Test Game")
+    ImportGame.call(Rails.root.join("test/fixtures/files/logger_event_types.jsonl"), name: "Test Game")
 
-    refute_match(/city_captured/, io.string)
-  ensure
-    Rails.logger = original_logger
-  end
-
-  test "treats nuclear detonation as a known event type" do
-    io = StringIO.new
-    original_logger = Rails.logger
-    Rails.logger = Logger.new(io)
-
-    ImportGame.call(Rails.root.join("test/fixtures/files/nuclear_detonation.jsonl"), name: "Test Game")
-
-    refute_match(/unknown event type 'nuclear_detonation'/, io.string)
-  ensure
-    Rails.logger = original_logger
-  end
-
-  test "treats an undetermined resolution outcome as a known event type" do
-    io = StringIO.new
-    original_logger = Rails.logger
-    Rails.logger = Logger.new(io)
-
-    ImportGame.call(Rails.root.join("test/fixtures/files/resolution_undetermined.jsonl"), name: "Test Game")
-
-    refute_match(/unknown event type 'resolution_undetermined'/, io.string)
+    refute_match(/unknown event type/, io.string)
   ensure
     Rails.logger = original_logger
   end

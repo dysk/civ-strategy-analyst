@@ -2,20 +2,33 @@ require "json"
 require "set"
 
 class ImportGame
+  # Every event the logger emits. test/fixtures/files/logger_event_types.jsonl
+  # carries one line per name, so a type added there and forgotten here fails a
+  # test instead of drowning the import log in warnings.
   KNOWN_EVENT_TYPES = %w[
-    session_started snapshot unit_created unit_lost plot_acquired plot_bought
-    improvement_built building_constructed population_changed unit_trained
-    city_converted tech_researched unit_killed unit_promoted
-    city_state_friendship_changed unit_upgraded policy_adopted teams_met
-    city_state_ally_changed city_state_alliance_changed great_person_expended
-    city_founded city_captured improvement_pillaged golden_age_started war_declared
-    peace_made natural_wonder_discovered era_entered policy_branch_unlocked
-    policy_branch_adopted religion_founded pantheon_founded tech_from_ruins
-    religion_enhanced trade_route_plundered reformation_added
-    congress_snapshot congress_founded congress_host_changed resolution_proposed
-    resolution_passed resolution_failed resolution_undetermined
-    resolution_repealed united_nations_formed
-    nuclear_detonation
+    session_started snapshot city_snapshot logger_error
+    unit_created unit_trained unit_lost unit_killed unit_promoted unit_upgraded
+    unit_rebased paradrop
+    city_founded city_captured city_destroyed city_converted population_changed
+    building_constructed building_sold project_completed
+    plot_acquired plot_bought improvement_built improvement_pillaged
+    tech_researched tech_from_ruins era_entered golden_age_started
+    policy_adopted policy_branch_unlocked policy_branch_adopted
+    great_person_expended natural_wonder_discovered globe_circumnavigated
+    pantheon_founded religion_founded religion_enhanced reformation_added
+    trade_route_plundered nuclear_detonation
+    teams_met war_declared peace_made diplo_event player_eliminated game_ended
+    friendship_declared friendship_ended
+    defensive_pact_signed defensive_pact_ended
+    trade_agreement_signed trade_agreement_ended
+    open_borders_granted open_borders_revoked
+    embassy_established embassy_ended
+    city_state_friendship_changed city_state_ally_changed
+    city_state_alliance_changed
+    congress_snapshot congress_founded congress_host_changed
+    resolution_proposed resolution_passed resolution_failed
+    resolution_undetermined resolution_repealed
+    mp_vote mp_proposal_result united_nations_formed
   ].freeze
 
   Result = Struct.new(:game, :imported_count, :skipped_count, keyword_init: true)
