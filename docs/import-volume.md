@@ -34,34 +34,42 @@ volume. The import path itself is the part that does not scale.
 
 ## What breaks, in order of how much it hurts
 
-### 1. Cross-session dedup holds every payload in memory
+### 1. Cross-session dedup held every payload in memory — done
 
-`duplicate_of_earlier_session?` (`app/services/import_game.rb:84-90`)
-asks a `Set` of **whole parsed payload hashes** whether it has seen this
-record before, and `@signatures_from_earlier_sessions` accumulates every
-payload from every session that came before (`:74`). Each line therefore
-deep-hashes a Hash against a set whose entries are themselves Hashes.
+`duplicate_of_earlier_session?` asked a `Set` of **whole parsed payload
+hashes** whether it had seen a record before, and
+`@signatures_from_earlier_sessions` accumulated every payload from every
+session that came before. Each line deep-hashed a Hash against a set whose
+entries were themselves Hashes: at 40k records that is hundreds of
+megabytes of retained Ruby objects.
 
-At 6k small records this is invisible. At 40k records where the largest
-are city snapshots, it is hundreds of megabytes of retained Ruby objects
-and a hash of the full payload per line.
+Dedup now compares a SHA-256 digest per record, which is a short string
+instead of a live object graph.
 
-The fix keeps the semantics exactly: dedup on a digest of the raw line
-(`Digest::SHA256.hexdigest(line)`) rather than the parsed object. Two
-identical lines have identical digests, which is the same question being
-asked now, at a fraction of the memory and with string hashing instead
-of deep hashing. The logger emits object keys in sorted order precisely
-so its output is byte-stable, so equal records really do produce equal
-lines.
+Writing the change turned up a second, worse problem. Every record now
+carries `t_log`, the engine's own clock, and that clock restarts with the
+process. A replayed record therefore has a different `t_log` and the same
+facts, so payload equality had **stopped matching anything at all** — the
+cross-session dedup was silently doing nothing for any log produced by the
+current parser. The digest is taken over the payload without `t_log`,
+which is the question the code meant to ask all along.
 
-### 2. One INSERT per line
+Digesting the raw line, as this document first proposed, would have
+preserved that bug.
 
-`persist_event` calls `game.game_events.create!` per record
-(`app/services/import_game.rb:92-101`) — 40k individual INSERTs, each
-with validations and callbacks. Batch into `insert_all` in chunks of
-~1000. `seq` is assigned in Ruby already, so ordering does not depend on
-the database, and `created_at`/`updated_at` have to be set explicitly
-because `insert_all` skips timestamps.
+### 2. One INSERT per line — done
+
+`persist_event` called `game.game_events.create!` per record. Rows are now
+buffered and written with `insert_all` in batches of 1000, with
+`created_at`/`updated_at` set explicitly because `insert_all` skips
+timestamps. `seq` was already assigned in Ruby, so ordering never depended
+on the database.
+
+The cost was not only the round trips. `GameEvent` validates `seq` unique
+per game, so every `create!` issued a SELECT against a table with no index
+on `(game_id, seq)` — a scan whose cost grew with the rows already
+imported, which is why the old path degrades superlinearly rather than
+merely slowly.
 
 ### 3. `KNOWN_EVENT_TYPES` was stale for a while — done
 
@@ -85,22 +93,42 @@ surfacing as noise during a real import. Generating both from the logger
 would need a shared artefact between the repositories, which is worth
 doing only if the fixture turns out to drift anyway.
 
-`logger_error` is listed but still open as a question: it is the logger
-reporting that an extractor threw, and importing it as an ordinary game
-event puts a failure record in the same table as facts about the game.
-Skipping it during import and surfacing the count in `Result` would be
-more honest.
+`logger_error` is listed as known but is not stored; see below.
 
-## Verification
+## Measured
 
-`test/services/import_game_test.rb` covers the current behaviour; the
-dedup change has to keep its cross-session cases green, since that is
-the whole point of preserving the semantics.
+A synthetic log at the shape a real game will produce: 8 civs, 300 turns,
+12 cities each, one `snapshot` and twelve `city_snapshot` records per civ
+per turn, plus a reload replaying the last ten turns — 37,202 lines,
+7.6 MB. Same machine, same database, same file, `RAILS_ENV=test`.
 
-What the existing tests cannot show is the scaling, so the change wants
-one measured import of a real log: rows imported, wall-clock time and
-peak RSS before and after. Without that number this document is an
-argument, not evidence.
+| lines  | before   | after  |
+| ------ | -------- | ------ |
+| 4,000  | 4.64 s, +52 MB  | 0.19 s, +5 MB  |
+| 12,000 | 23.47 s, +149 MB | 0.61 s, +12 MB |
+| 37,202 | killed after 9 min | 2.12 s |
+
+Three times the lines cost the old path five times the time; the new one
+stays linear. The full file was never imported by the old code at all,
+which is the practical form of the problem: a full multiplayer game would
+not have imported.
+
+The 37,202-line run deduplicated 1,200 replayed records. The old code
+would have deduplicated none of them, `t_log` being part of what it
+compared.
+
+`test/services/import_game_test.rb` keeps the cross-session cases green
+and adds one for the clock, one for a log that contains a logger failure,
+and one import larger than a single batch.
+
+## Still open
+
+`logger_error` is no longer imported: it is the logger reporting that one
+of its extractors threw, it carries no `turn`, and the column is `NOT
+NULL`, so `create!` used to raise `RecordInvalid` and abort the whole
+import on the first such line. The count is reported in `Result` and
+printed by `civ import`. What remains open is whether those failures
+deserve a home of their own rather than a number.
 
 ## Not in scope
 

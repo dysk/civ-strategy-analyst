@@ -101,6 +101,16 @@ class ImportGameTest < ActiveSupport::TestCase
     assert_equal 0, result.skipped_count
   end
 
+  # Every record now carries t_log, the engine's own clock, which restarts
+  # with the process. A replayed event is the same fact at a different
+  # second, so the clock cannot take part in deciding what is a duplicate.
+  test "deduplicates a replayed event whose only difference is the log clock" do
+    result = ImportGame.call(Rails.root.join("test/fixtures/files/reloaded_with_clock.jsonl"), name: "Reloaded")
+
+    assert_equal 1, result.skipped_count
+    assert_equal 1, result.game.game_events.where(event_type: "city_founded").count
+  end
+
   # logger_error is the logger reporting its own failure, and it carries no
   # turn, so it does not even fit the table.
   test "keeps logger failures out of the game's events and counts them" do
@@ -109,6 +119,22 @@ class ImportGameTest < ActiveSupport::TestCase
     refute result.game.game_events.exists?(event_type: "logger_error")
     assert result.game.game_events.exists?(event_type: "city_founded")
     assert_equal 1, result.logger_error_count
+  end
+
+  test "numbers events contiguously across insert batches" do
+    path = Tempfile.new([ "long_game", ".jsonl" ])
+    path.puts(File.readlines(SAMPLE_PATH).first)
+    2500.times { |i| path.puts({ event: "unit_created", turn: i, civ: "Rome", unit: "UNIT_WARRIOR", n: i }.to_json) }
+    path.close
+
+    result = ImportGame.call(path.path, name: "Long Game")
+    events = result.game.game_events.order(:seq)
+
+    assert_equal 2501, result.imported_count
+    assert_equal (1..2501).to_a, events.pluck(:seq)
+    assert_equal (0...2500).to_a, events.where(event_type: "unit_created").pluck(:turn)
+  ensure
+    path&.unlink
   end
 
   test "stores the given lekmod_version on the game" do

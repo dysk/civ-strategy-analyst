@@ -545,7 +545,7 @@ Counterfactuals read the gap between a `buffer_city_lost` and a capital falling
 as the warning the defender actually had. The A/B is pending a fresh
 `bin/civ analyze` run — `analyses.digest` is a frozen snapshot.
 
-## Plan: import at the logger's new volume (planned)
+## Plan: import at the logger's new volume (implemented)
 
 `civ-narrative-logger` is adding stock fields to `snapshot` and a
 per-city, per-turn `city_snapshot` record before the first human
@@ -557,5 +557,7 @@ import runs one `create!` per line, and `KNOWN_EVENT_TYPES` has drifted
 so far that eight already-emitted types are missing from it — which
 would turn into ~29k warning lines the moment city snapshots arrive.
 
-Detailed plan, with the numbers behind it and the evidence in the
-logger's DLL research: `docs/import-volume.md`.
+All three are done, and the file now carries what the change actually
+cost and what it turned up on the way — including a dedup that had
+stopped working the moment the logger started stamping records with the
+engine clock: `docs/import-volume.md`.

@@ -1,3 +1,4 @@
+require "digest"
 require "json"
 require "set"
 
@@ -33,6 +34,10 @@ class ImportGame
 
   Result = Struct.new(:game, :imported_count, :skipped_count, :logger_error_count, keyword_init: true)
 
+  # Rows are written in batches rather than one at a time: a full game is
+  # tens of thousands of records, most of them city snapshots.
+  BATCH_SIZE = 1000
+
   def self.call(path, name: nil, lekmod_version: nil)
     new(path, name: name, lekmod_version: lekmod_version).call
   end
@@ -51,12 +56,14 @@ class ImportGame
     @imported_count = 0
     @skipped_count = 0
     @logger_error_count = 0
+    @rows = []
     @signatures_from_earlier_sessions = Set.new
     @signatures_in_current_session = Set.new
 
     File.foreach(@path).with_index(1) do |line, line_number|
       import_line(game, line, line_number)
     end
+    flush_rows
 
     Result.new(
       game: game,
@@ -82,10 +89,11 @@ class ImportGame
     handle_session_boundary(game, payload) if event_type == "session_started"
     return if logger_failure?(event_type)
 
-    return if duplicate_of_earlier_session?(payload)
+    signature = signature_of(payload)
+    return if duplicate_of_earlier_session?(signature)
 
-    @signatures_in_current_session << payload
-    persist_event(game, payload, event_type)
+    @signatures_in_current_session << signature
+    buffer_event(game, payload, event_type)
   rescue JSON::ParserError => e
     Rails.logger.warn("ImportGame: skipping malformed line #{line_number}: #{e.message}")
   end
@@ -111,25 +119,47 @@ class ImportGame
     create_players(game, payload["players"])
   end
 
-  def duplicate_of_earlier_session?(payload)
+  # A reload replays turns, so the same fact is written again. What decides
+  # sameness is the record without t_log: that field is the engine's clock,
+  # which restarts with the process and differs on every replay. Digesting
+  # the rest keeps a short string per record instead of a whole payload,
+  # and the logger writes its keys sorted, so equal records serialise to
+  # equal strings.
+  def signature_of(payload)
+    Digest::SHA256.hexdigest(payload.except("t_log").to_json)
+  end
+
+  def duplicate_of_earlier_session?(signature)
     return false unless @session_index.positive?
 
-    @signatures_from_earlier_sessions.include?(payload).tap do |duplicate|
+    @signatures_from_earlier_sessions.include?(signature).tap do |duplicate|
       @skipped_count += 1 if duplicate
     end
   end
 
-  def persist_event(game, payload, event_type)
+  def buffer_event(game, payload, event_type)
     @seq += 1
-    game.game_events.create!(
+    now = Time.current
+    @rows << {
+      game_id: game.id,
       seq: @seq,
       session_index: @session_index,
       turn: payload["turn"],
       event_type: event_type,
       civ: payload["civ"],
-      payload: payload
-    )
+      payload: payload,
+      created_at: now,
+      updated_at: now
+    }
     @imported_count += 1
+    flush_rows if @rows.size >= BATCH_SIZE
+  end
+
+  def flush_rows
+    return if @rows.empty?
+
+    GameEvent.insert_all(@rows)
+    @rows = []
   end
 
   def apply_game_settings(game, payload)
