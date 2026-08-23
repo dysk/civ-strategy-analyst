@@ -29,8 +29,25 @@ The LLM provider/model is configurable via environment variables, read in
 
 - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` — provider credentials (set whichever
   you plan to use)
-- `CIV_ANALYST_MODEL` — default model id (falls back to `gpt-4o-mini`); can
+- `CIV_ANALYST_MODEL` — default model id (falls back to `claude-opus-5`); can
   also be overridden per run with `bin/civ analyze --model ...`
+
+The model list lives in `config/models.json` rather than in the gem, whose
+own copy ages with the gem — ids released after it was published are
+unknown, and an unknown id loses both the run and the price it would have
+been recorded at. Refresh it when a new model appears:
+
+```sh
+bin/rails runner 'RubyLLM.models.refresh!; RubyLLM.models.save_to_json(Rails.root.join("config/models.json"))'
+```
+
+The file is committed, so its diff shows when prices moved. `bin/rails test`
+checks that the default model resolves and carries pricing, which is what
+makes `analyses.cost_usd` trustworthy.
+
+An analysis of a full game runs around 55k input tokens today, so it costs
+roughly $0.39 on `claude-opus-5` and $0.15 on `claude-sonnet-5` — cheap
+enough that the model is chosen on the quality of the report, not the bill.
 
 Without an API key, everything except actually calling an LLM works fine
 (import, the projections, the CLI, the UI) — `AnalyzeGame`'s test suite stubs
