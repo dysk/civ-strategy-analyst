@@ -11,7 +11,7 @@ class EmpireGeometry
 
   def initialize(game, grid:)
     @grid = grid
-    @events = game.game_events.where(event_type: REPLAYED_EVENTS).order(:seq).to_a
+    @events = REPLAYED_EVENTS.flat_map { |type| game.event_log.of_type(type) }.sort_by(&:seq)
   end
 
   def series(civ)

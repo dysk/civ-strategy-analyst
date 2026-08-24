@@ -58,13 +58,13 @@ class OutcomeResolver
   # capital's old_owner stands in for its original civ, which holds as long
   # as that capital hadn't already changed hands earlier in the same gap.
   def capitals_held(civ, timeline)
-    latest_snapshot = @game.game_events.where(event_type: "snapshot", civ: civ).order(:seq).last
+    latest_snapshot = @game.event_log.by("snapshot", :civ).fetch(civ, []).last
     capitals = latest_snapshot&.payload&.[]("capitals")
     known = capitals.is_a?(Hash) ? [] : Array(capitals)
     since_seq = latest_snapshot&.seq || -1
 
-    gained = @game.game_events.where(event_type: "city_captured").where("seq > ?", since_seq)
-      .select { |e| e.payload["capital"] && e.payload["new_owner"] == civ }
+    gained = @game.event_log.of_type("city_captured")
+      .select { |e| e.seq > since_seq && e.payload["capital"] && e.payload["new_owner"] == civ }
       .map { |e| e.payload["old_owner"] }
       .compact
 
@@ -80,7 +80,7 @@ class OutcomeResolver
   # that same snapshot's threshold, not a later one - the threshold
   # itself moves as delegates enter with later eras.
   def diplomatic_victor
-    last_snapshot = @game.game_events.where(event_type: "congress_snapshot").order(:turn).last
+    last_snapshot = @game.event_log.of_type("congress_snapshot").max_by { |e| [ e.turn, e.seq ] }
     return nil unless last_snapshot
 
     votes_needed = last_snapshot.payload["votes_needed_for_diplo_victory"]
@@ -97,7 +97,7 @@ class OutcomeResolver
   # snapshot round is the only signal that it's gone. Fewer than two
   # living majors means the game already ended by domination, not culture.
   def cultural_victor_at(turn)
-    events = @game.game_events.where(event_type: "snapshot", turn: turn).where.not(civ: nil).to_a
+    events = @game.event_log.of_type("snapshot").select { |e| e.turn == turn && e.civ }
     living_majors = events.map(&:civ).uniq.size
     return nil if living_majors < 2
 

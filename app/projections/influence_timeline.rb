@@ -3,7 +3,7 @@
 # its sources, so the projection only needs the payload's influence list.
 class InfluenceTimeline
   def initialize(game)
-    @snapshots = game.game_events.where(event_type: "snapshot").where.not(civ: nil).order(:seq).to_a
+    @snapshots_by_civ = game.event_log.by("snapshot", :civ)
   end
 
   def opponents(civ)
@@ -34,9 +34,7 @@ class InfluenceTimeline
 
   private
 
-  def snapshots_for(civ)
-    @snapshots.select { |e| e.civ == civ }
-  end
+  def snapshots_for(civ) = @snapshots_by_civ.fetch(civ, [])
 
   def entry(snapshot, opponent)
     influence = Array(snapshot.payload["influence"]).find { |i| i["civ"] == opponent }

@@ -17,7 +17,7 @@ class CapitalProximity
 
   def initialize(game, grid:)
     @grid = grid
-    @foundings = game.game_events.where(event_type: "city_founded").order(:seq).to_a
+    @foundings = game.event_log.of_type("city_founded")
   end
 
   def call

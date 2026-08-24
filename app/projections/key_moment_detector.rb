@@ -26,7 +26,7 @@ class KeyMomentDetector
 
   def initialize(game)
     @game = game
-    @events = game.game_events.order(:seq).to_a
+    @log = game.event_log
   end
 
   def leader_changes
@@ -418,9 +418,7 @@ class KeyMomentDetector
     [ x, y ] if x && y
   end
 
-  def of_type(event_type)
-    @events.select { |e| e.event_type == event_type }
-  end
+  def of_type(event_type) = @log.of_type(event_type)
 
   def civs_with_snapshots
     of_type("snapshot").map(&:civ).uniq

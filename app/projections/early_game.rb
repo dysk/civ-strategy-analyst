@@ -24,7 +24,7 @@ class EarlyGame
   def initialize(game)
     @game = game
     @timeline = PlayerTimeline.new(game)
-    @last_turn = game.game_events.maximum(:turn)
+    @last_turn = game.event_log.all.map(&:turn).max
   end
 
   def deadline_turn

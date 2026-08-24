@@ -1,6 +1,6 @@
 class PlayerTimeline
   def initialize(game)
-    @events = game.game_events.order(:seq).to_a
+    @log = game.event_log
   end
 
   def cities(civ)
@@ -131,9 +131,7 @@ class PlayerTimeline
 
   private
 
-  def of_type(event_type)
-    @events.select { |e| e.event_type == event_type }
-  end
+  def of_type(event_type) = @log.of_type(event_type)
 
   def sort_events(events)
     events.sort_by { |e| e[:turn] }

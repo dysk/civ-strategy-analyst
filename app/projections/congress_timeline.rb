@@ -16,7 +16,7 @@ class CongressTimeline
   }.freeze
 
   def initialize(game)
-    @events = game.game_events.order(:seq).to_a
+    @log = game.event_log
   end
 
   # A turn can be snapshotted more than once - a resumed session repeats
@@ -81,7 +81,5 @@ class CongressTimeline
     of_type("congress_snapshot")
   end
 
-  def of_type(event_type)
-    @events.select { |e| e.event_type == event_type }
-  end
+  def of_type(event_type) = @log.of_type(event_type)
 end
