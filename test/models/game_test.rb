@@ -35,6 +35,20 @@ class GameTest < ActiveSupport::TestCase
     end
   end
 
+  test "event_log covers the game's events" do
+    game = games(:one)
+
+    assert_equal game.game_events.map(&:id).sort, game.event_log.all.map(&:id).sort
+  end
+
+  # Every projection reading one game reads one log, so the events are
+  # loaded and indexed once no matter how many of them ask.
+  test "event_log loads once per game" do
+    game = games(:one)
+
+    assert_same game.event_log, game.event_log
+  end
+
   test "has many analyses destroyed with the game" do
     game = games(:one)
     assert_includes game.analyses, analyses(:one)
