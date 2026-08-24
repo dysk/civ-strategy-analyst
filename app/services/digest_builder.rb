@@ -44,7 +44,7 @@ class DigestBuilder
   private
 
   def standings
-    MetricSeries.new(@game).final_ranking("score")
+    MetricSeries.for(@game).final_ranking("score")
   end
 
   def game_settings
@@ -56,13 +56,9 @@ class DigestBuilder
     }
   end
 
-  def early_game
-    @early_game ||= EarlyGame.new(@game)
-  end
+  def early_game = EarlyGame.for(@game)
 
-  def map_bounds
-    @map_bounds ||= MapBounds.new(@game)
-  end
+  def map_bounds = MapBounds.for(@game)
 
   def roster
     @game.players.order(:id).map do |player|
@@ -127,7 +123,7 @@ class DigestBuilder
   end
 
   def timelines_by_civ
-    timeline = PlayerTimeline.new(@game)
+    timeline = PlayerTimeline.for(@game)
     geometry = EmpireGeometry.for(@game)
 
     civs.each_with_object({}) do |civ, result|
@@ -149,7 +145,7 @@ class DigestBuilder
   end
 
   def cultural_by_civ
-    timeline = InfluenceTimeline.new(@game)
+    timeline = InfluenceTimeline.for(@game)
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = timeline.opponents(civ).each_with_object({}) do |opponent, matrix|
@@ -233,8 +229,8 @@ class DigestBuilder
   end
 
   def victory_progress
-    capitals = CapitalsTimeline.new(@game)
-    spaceship = SpaceshipTimeline.new(@game)
+    capitals = CapitalsTimeline.for(@game)
+    spaceship = SpaceshipTimeline.for(@game)
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = {
@@ -254,9 +250,7 @@ class DigestBuilder
     end
   end
 
-  def congress_timeline
-    @congress_timeline ||= CongressTimeline.new(@game)
-  end
+  def congress_timeline = CongressTimeline.for(@game)
 
   def belief_ids
     log = @game.event_log

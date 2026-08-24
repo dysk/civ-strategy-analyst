@@ -7,6 +7,8 @@
 # sitting on gold reads as fielding better units than it does. Dividing
 # the multiplier back out leaves the units alone.
 class ArmyComposition
+  extend Projection
+
   GOLD_MULTIPLIER_CAP = 2.0
 
   def self.gold_multiplier(gold)

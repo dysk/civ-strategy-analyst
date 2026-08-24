@@ -1,4 +1,6 @@
 class PlayerTimeline
+  extend Projection
+
   def initialize(game)
     @log = game.event_log
   end

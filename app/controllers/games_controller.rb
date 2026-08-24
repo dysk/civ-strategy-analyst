@@ -11,11 +11,11 @@ class GamesController < ApplicationController
   def show
     @game = Game.find(params[:id])
     @outcome = OutcomeResolver.new(@game, winner_civ: @game.winner_civ, victory_type: @game.victory_type).call
-    @standings = MetricSeries.new(@game).final_ranking("score")
+    @standings = MetricSeries.for(@game).final_ranking("score")
     @early_game_rows = early_game.series.values
     @early_game_deadline_turn = early_game.deadline_turn
     @key_moment_groups = key_moment_groups
-    @map_bounds = MapBounds.new(@game)
+    @map_bounds = MapBounds.for(@game)
     @geometry_rows = geometry_rows
     @capital_distances = capital_distances
     @buffer_cities = BufferCities.for(@game).call
@@ -30,9 +30,7 @@ class GamesController < ApplicationController
 
   private
 
-  def early_game
-    @early_game ||= EarlyGame.new(@game)
-  end
+  def early_game = EarlyGame.for(@game)
 
   # Kinds of moment that tell one story share a section, each keeping its own
   # list inside it. Empty sections and empty lists are left out.
@@ -84,7 +82,7 @@ class GamesController < ApplicationController
   end
 
   def army_rows
-    armies = ArmyComposition.new(@game)
+    armies = ArmyComposition.for(@game)
 
     @game.players.order(:id).filter_map do |player|
       armies.latest(player.civ)&.merge(civ: player.civ)
@@ -141,8 +139,8 @@ class GamesController < ApplicationController
   end
 
   def cultural_rows
-    metrics = MetricSeries.new(@game)
-    influence = InfluenceTimeline.new(@game)
+    metrics = MetricSeries.for(@game)
+    influence = InfluenceTimeline.for(@game)
 
     @game.players.order(:id).filter_map do |player|
       tourism = metrics.values("tourism", player.civ).last&.last
@@ -159,7 +157,7 @@ class GamesController < ApplicationController
   end
 
   def congress_summary
-    timeline = CongressTimeline.new(@game)
+    timeline = CongressTimeline.for(@game)
 
     rows = @game.players.order(:id).filter_map do |player|
       votes = timeline.delegate_votes(player.civ).last&.last
@@ -173,8 +171,8 @@ class GamesController < ApplicationController
   end
 
   def victory_progress_rows
-    capitals = CapitalsTimeline.new(@game)
-    spaceship = SpaceshipTimeline.new(@game)
+    capitals = CapitalsTimeline.for(@game)
+    spaceship = SpaceshipTimeline.for(@game)
 
     @game.players.order(:id).filter_map do |player|
       capitals_held = capitals.latest(player.civ)&.[](:capitals_held)

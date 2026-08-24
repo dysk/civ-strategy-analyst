@@ -1,6 +1,8 @@
 # Which original major capitals a civ currently holds. Own capital is
 # included by default, so a fresh empire already reports one.
 class CapitalsTimeline
+  extend Projection
+
   def initialize(game)
     @snapshots_by_civ = game.event_log.by("snapshot", :civ)
   end

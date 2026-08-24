@@ -5,6 +5,8 @@
 # mod's Project_VictoryThresholds/MaxTeamInstances); apollo is a
 # prerequisite unlock, not a counted part, and is excluded from the total.
 class SpaceshipTimeline
+  extend Projection
+
   PARTS_REQUIRED = { "booster" => 3, "cockpit" => 1, "stasis_chamber" => 1, "engine" => 1 }.freeze
   PARTS = PARTS_REQUIRED.keys.freeze
   TOTAL_PARTS_REQUIRED = PARTS_REQUIRED.values.sum

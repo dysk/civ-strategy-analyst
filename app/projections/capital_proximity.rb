@@ -12,7 +12,7 @@
 # later expanded.
 class CapitalProximity
   def self.for(game)
-    new(game, grid: HexGrid.new(width: MapBounds.new(game).width))
+    game.projection(self) { new(game, grid: HexGrid.new(width: MapBounds.for(game).width)) }
   end
 
   def initialize(game, grid:)

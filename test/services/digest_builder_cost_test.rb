@@ -1,20 +1,30 @@
 require "test_helper"
 
-# How much of the event log one digest build pulls out of Postgres.
+# How much work one digest build repeats.
 #
-# Every projection loads what it needs in its own constructor, so a row is
-# materialized once per projection that wants it. That cost is events times
-# projections, and both factors are growing: more players and longer games
-# raise the first, per-city snapshots and the projections built on them raise
-# the second. Bounding the ratio here keeps the two from multiplying.
-class DigestBuilderEventLoadingTest < ActiveSupport::TestCase
+# A projection reads the log and indexes it when it is built, so the same
+# work is paid for once per read and once per build. Both counts are growing:
+# more players and longer games mean more events, per-city snapshots and the
+# projections built on them mean more readers. Bounding the repetition here
+# keeps the two from multiplying.
+class DigestBuilderCostTest < ActiveSupport::TestCase
   CIVS = %w[Rome Greece Egypt].freeze
   TURNS = (1..20).freeze
   MAX_EVENT_LOG_PASSES = 2
+  PROJECTIONS = [
+    MetricSeries, PlayerTimeline, SpaceshipTimeline, MapBounds, EarlyGame,
+    CapitalsTimeline, CapitalProximity, BufferCities, InfluenceTimeline,
+    CongressTimeline, EmpireGeometry, ArmyComposition
+  ].freeze
+
+  # Capital distances are measured twice on purpose: once on the wrapped map,
+  # and once flat for the corridor between two capitals, which no army can
+  # reach around the seam. Two maps, two projections.
+  BUILDS_ALLOWED = Hash.new(1).merge(CapitalProximity => 2).freeze
 
   setup do
     @game = Game.create!(
-      name: "Event Loading Test Game", map_script: "TestMap", map_size: "SMALL",
+      name: "Cost Test Game", map_script: "Pangaea", map_size: "SMALL",
       game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT"
     )
     @seq = 0
@@ -30,7 +40,33 @@ class DigestBuilderEventLoadingTest < ActiveSupport::TestCase
       "materialized #{rows} rows from a #{@game.game_events.count}-event game (budget #{budget})"
   end
 
+  test "builds each projection once over a full digest build" do
+    rebuilt = count_constructions { DigestBuilder.new(@game).call }
+      .select { |klass, count| count > BUILDS_ALLOWED[klass] }
+
+    assert_empty rebuilt.map { |klass, count| "#{klass} #{count}x" }
+  end
+
   private
+
+  # A projection indexes the whole log when it is built, so counting
+  # constructions counts the indexing a digest repeats.
+  def count_constructions
+    counts = Hash.new(0)
+
+    PROJECTIONS.each do |klass|
+      build = klass.method(:new)
+      klass.define_singleton_method(:new) do |*args, **kwargs|
+        counts[klass] += 1
+        build.call(*args, **kwargs)
+      end
+    end
+
+    yield
+    counts
+  ensure
+    PROJECTIONS.each { |klass| klass.singleton_class.remove_method(:new) }
+  end
 
   # Uncached so the count reflects the rows actually materialized into
   # GameEvent objects. The query cache spares the round trip but still

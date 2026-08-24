@@ -5,6 +5,8 @@
 # the same FIFO convention KeyMomentDetector#war_declarations already
 # uses to pair war_declared with peace_made by team.
 class CongressTimeline
+  extend Projection
+
   # `undetermined` is a concluded vote whose result the logger could not
   # read - a resolution with only one-time effects leaves no trace in the
   # game state to read it from. It is not the same as a nil outcome, which

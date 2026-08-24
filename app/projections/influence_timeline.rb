@@ -2,6 +2,8 @@
 # somewhat differently than BNW, but we log the resulting influence, not
 # its sources, so the projection only needs the payload's influence list.
 class InfluenceTimeline
+  extend Projection
+
   def initialize(game)
     @snapshots_by_civ = game.event_log.by("snapshot", :civ)
   end

@@ -6,7 +6,7 @@ class EmpireGeometry
   REPLAYED_EVENTS = (OWNERSHIP_EVENTS + %w[snapshot]).freeze
 
   def self.for(game)
-    new(game, grid: HexGrid.new(width: MapBounds.new(game).width))
+    game.projection(self) { new(game, grid: HexGrid.new(width: MapBounds.for(game).width)) }
   end
 
   def initialize(game, grid:)

@@ -30,7 +30,7 @@ class KeyMomentDetector
   end
 
   def leader_changes
-    metric_series = MetricSeries.new(@game)
+    metric_series = MetricSeries.for(@game)
 
     LEADER_CHANGE_METRICS.flat_map do |metric|
       metric_series.leader_changes(metric).map do |change|
@@ -129,7 +129,7 @@ class KeyMomentDetector
   # which the treasury inflates - a civilization banking gold would
   # otherwise show a build-up it never built.
   def army_power_swings
-    armies = ArmyComposition.new(@game)
+    armies = ArmyComposition.for(@game)
 
     civs_with_snapshots.flat_map do |civ|
       candidates = army_power_values(armies, civ).each_cons(2).filter_map do |(prev_turn, prev), (turn, value)|
@@ -150,7 +150,7 @@ class KeyMomentDetector
   end
 
   def happiness_swings
-    metric_series = MetricSeries.new(@game)
+    metric_series = MetricSeries.for(@game)
 
     civs_with_snapshots.flat_map do |civ|
       candidates = metric_series.values("happiness", civ).each_cons(2).filter_map do |(prev_turn, prev), (turn, value)|
@@ -171,7 +171,7 @@ class KeyMomentDetector
   end
 
   def unhappiness_periods
-    metric_series = MetricSeries.new(@game)
+    metric_series = MetricSeries.for(@game)
 
     civs_with_snapshots.flat_map do |civ|
       metric_series.values("happiness", civ)
@@ -183,7 +183,7 @@ class KeyMomentDetector
   end
 
   def snowballs(metric)
-    metric_series = MetricSeries.new(@game)
+    metric_series = MetricSeries.for(@game)
     rolling = civs_with_snapshots.each_with_object({}) do |civ, h|
       h[civ] = rolling_slope(metric_series.values(metric, civ))
     end
@@ -219,7 +219,7 @@ class KeyMomentDetector
   end
 
   def influence_level_reached
-    timeline = InfluenceTimeline.new(@game)
+    timeline = InfluenceTimeline.for(@game)
 
     civs_with_snapshots.flat_map do |civ|
       timeline.opponents(civ).flat_map do |opponent|
@@ -280,7 +280,7 @@ class KeyMomentDetector
   end
 
   def resolutions_passed
-    CongressTimeline.new(@game).resolutions
+    CongressTimeline.for(@game).resolutions
       .select { |resolution| resolution[:outcome] == :passed }
       .map { |resolution| { type: :resolution_passed, turn: resolution[:outcome_turn],
                              resolution: resolution[:resolution], proposer: resolution[:proposer],
@@ -289,7 +289,7 @@ class KeyMomentDetector
   end
 
   def capital_control_changes
-    timeline = CapitalsTimeline.new(@game)
+    timeline = CapitalsTimeline.for(@game)
 
     civs_with_snapshots.flat_map do |civ|
       timeline.series(civ).each_cons(2).flat_map do |prev, curr|
@@ -303,7 +303,7 @@ class KeyMomentDetector
   end
 
   def apollo_completions
-    timeline = SpaceshipTimeline.new(@game)
+    timeline = SpaceshipTimeline.for(@game)
 
     civs_with_snapshots.filter_map do |civ|
       first = timeline.series(civ).find { |entry| entry[:spaceship]["apollo"].to_i.positive? }
@@ -314,7 +314,7 @@ class KeyMomentDetector
   end
 
   def spaceship_part_assemblies
-    timeline = SpaceshipTimeline.new(@game)
+    timeline = SpaceshipTimeline.for(@game)
 
     civs_with_snapshots.flat_map do |civ|
       timeline.series(civ).each_cons(2).flat_map do |prev, curr|
@@ -328,7 +328,7 @@ class KeyMomentDetector
   end
 
   def science_victory_imminent
-    timeline = SpaceshipTimeline.new(@game)
+    timeline = SpaceshipTimeline.for(@game)
 
     civs_with_snapshots.filter_map do |civ|
       entry = timeline.series(civ).find { |e| e[:parts_assembled] >= SpaceshipTimeline::TOTAL_PARTS_REQUIRED - 1 }

@@ -2,6 +2,8 @@
 # report it; for older ones the easternmost plot anyone ever touched is the
 # best available lower bound.
 class MapBounds
+  extend Projection
+
   def initialize(game)
     @game = game
   end

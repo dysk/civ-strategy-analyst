@@ -18,7 +18,7 @@ class OutcomeResolver
   end
 
   def inferred_result
-    ranking = MetricSeries.new(@game).ranking("score")
+    ranking = MetricSeries.for(@game).ranking("score")
     last_turn = ranking.keys.max
 
     return { winner_civ: nil, victory_type: nil, in_progress: true, source: :inferred } if last_turn.nil?
@@ -48,7 +48,7 @@ class OutcomeResolver
     roster = @game.players.pluck(:civ)
     return nil if roster.size < 2
 
-    timeline = CapitalsTimeline.new(@game)
+    timeline = CapitalsTimeline.for(@game)
     roster.find { |civ| (roster - capitals_held(civ, timeline)).empty? }
   end
 
@@ -72,7 +72,7 @@ class OutcomeResolver
   end
 
   def science_victor
-    timeline = SpaceshipTimeline.new(@game)
+    timeline = SpaceshipTimeline.for(@game)
     @game.players.pluck(:civ).find { |civ| SpaceshipTimeline.complete?(timeline.latest(civ)&.[](:spaceship)) }
   end
 

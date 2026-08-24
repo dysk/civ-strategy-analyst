@@ -1,4 +1,6 @@
 class MetricSeries
+  extend Projection
+
   def initialize(game)
     @by_civ_turn = Hash.new { |h, civ| h[civ] = {} }
 

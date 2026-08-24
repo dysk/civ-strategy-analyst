@@ -7,8 +7,8 @@ class CulturalStandingsController < ApplicationController
   private
 
   def histories
-    metrics = MetricSeries.new(@game)
-    influence = InfluenceTimeline.new(@game)
+    metrics = MetricSeries.for(@game)
+    influence = InfluenceTimeline.for(@game)
 
     @game.players.order(:id).filter_map do |player|
       tourism_series = tourism_series(metrics, player.civ)
