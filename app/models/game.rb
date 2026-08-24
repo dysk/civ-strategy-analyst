@@ -11,4 +11,11 @@ class Game < ApplicationRecord
   def event_log
     @event_log ||= EventLog.for(self)
   end
+
+  # The projections built from this game, held under whatever key their
+  # builder names - see Projection. Same lifetime rule as the log they read.
+  def projection(key)
+    @projections ||= {}
+    @projections[key] ||= yield
+  end
 end
