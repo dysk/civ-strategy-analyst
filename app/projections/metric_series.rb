@@ -1,9 +1,13 @@
 class MetricSeries
+  extend Projection
+
   def initialize(game)
     @by_civ_turn = Hash.new { |h, civ| h[civ] = {} }
 
-    game.game_events.where(event_type: "snapshot").where.not(civ: nil).order(:seq).each do |event|
-      @by_civ_turn[event.civ][event.turn] = event
+    game.event_log.by("snapshot", :civ).each do |civ, events|
+      next unless civ
+
+      events.each { |event| @by_civ_turn[civ][event.turn] = event }
     end
   end
 

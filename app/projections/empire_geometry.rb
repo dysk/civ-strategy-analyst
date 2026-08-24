@@ -6,12 +6,12 @@ class EmpireGeometry
   REPLAYED_EVENTS = (OWNERSHIP_EVENTS + %w[snapshot]).freeze
 
   def self.for(game)
-    new(game, grid: HexGrid.new(width: MapBounds.new(game).width))
+    game.projection(self) { new(game, grid: HexGrid.new(width: MapBounds.for(game).width)) }
   end
 
   def initialize(game, grid:)
     @grid = grid
-    @events = game.game_events.where(event_type: REPLAYED_EVENTS).order(:seq).to_a
+    @events = REPLAYED_EVENTS.flat_map { |type| game.event_log.of_type(type) }.sort_by(&:seq)
   end
 
   def series(civ)

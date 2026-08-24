@@ -7,6 +7,8 @@
 # sitting on gold reads as fielding better units than it does. Dividing
 # the multiplier back out leaves the units alone.
 class ArmyComposition
+  extend Projection
+
   GOLD_MULTIPLIER_CAP = 2.0
 
   def self.gold_multiplier(gold)
@@ -27,7 +29,7 @@ class ArmyComposition
   end
 
   def initialize(game)
-    @snapshots = game.game_events.where(event_type: "snapshot").where.not(civ: nil).order(:seq).to_a
+    @snapshots_by_civ = game.event_log.by("snapshot", :civ)
   end
 
   def latest(civ)
@@ -37,10 +39,12 @@ class ArmyComposition
   # A turn can be snapshotted more than once - a resumed session repeats
   # it - and the later snapshot is the state the turn ended in.
   def series(civ)
-    @snapshots.select { |e| e.civ == civ }.filter_map { |e| entry(e) }.index_by { |entry| entry[:turn] }.values
+    snapshots_for(civ).filter_map { |e| entry(e) }.index_by { |entry| entry[:turn] }.values
   end
 
   private
+
+  def snapshots_for(civ) = @snapshots_by_civ.fetch(civ, [])
 
   def entry(snapshot)
     might, units, gold = snapshot.payload.values_at("military_might", "military_units", "gold")

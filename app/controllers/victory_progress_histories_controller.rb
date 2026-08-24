@@ -7,8 +7,8 @@ class VictoryProgressHistoriesController < ApplicationController
   private
 
   def histories
-    capitals = CapitalsTimeline.new(@game)
-    spaceship = SpaceshipTimeline.new(@game)
+    capitals = CapitalsTimeline.for(@game)
+    spaceship = SpaceshipTimeline.for(@game)
 
     @game.players.order(:id).filter_map do |player|
       capitals_series = capitals.series(player.civ)

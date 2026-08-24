@@ -44,7 +44,7 @@ class DigestBuilder
   private
 
   def standings
-    MetricSeries.new(@game).final_ranking("score")
+    MetricSeries.for(@game).final_ranking("score")
   end
 
   def game_settings
@@ -56,13 +56,9 @@ class DigestBuilder
     }
   end
 
-  def early_game
-    @early_game ||= EarlyGame.new(@game)
-  end
+  def early_game = EarlyGame.for(@game)
 
-  def map_bounds
-    @map_bounds ||= MapBounds.new(@game)
-  end
+  def map_bounds = MapBounds.for(@game)
 
   def roster
     @game.players.order(:id).map do |player|
@@ -81,8 +77,8 @@ class DigestBuilder
   end
 
   def snapshots_by_civ_turn
-    @game.game_events.where(event_type: "snapshot").where.not(civ: nil).order(:seq)
-      .each_with_object(Hash.new { |h, k| h[k] = {} }) { |e, h| h[e.civ][e.turn] = e.payload }
+    @game.event_log.by("snapshot", :civ).except(nil)
+      .transform_values { |events| events.to_h { |e| [ e.turn, e.payload ] } }
   end
 
   def checkpoints_for(turns)
@@ -127,7 +123,7 @@ class DigestBuilder
   end
 
   def timelines_by_civ
-    timeline = PlayerTimeline.new(@game)
+    timeline = PlayerTimeline.for(@game)
     geometry = EmpireGeometry.for(@game)
 
     civs.each_with_object({}) do |civ, result|
@@ -149,7 +145,7 @@ class DigestBuilder
   end
 
   def cultural_by_civ
-    timeline = InfluenceTimeline.new(@game)
+    timeline = InfluenceTimeline.for(@game)
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = timeline.opponents(civ).each_with_object({}) do |opponent, matrix|
@@ -216,7 +212,7 @@ class DigestBuilder
   end
 
   def policy_ids
-    @game.game_events.where(event_type: "policy_adopted").filter_map { |e| e.payload["policy"] }.uniq
+    @game.event_log.of_type("policy_adopted").filter_map { |e| e.payload["policy"] }.uniq
   end
 
   def resolution_ids
@@ -233,8 +229,8 @@ class DigestBuilder
   end
 
   def victory_progress
-    capitals = CapitalsTimeline.new(@game)
-    spaceship = SpaceshipTimeline.new(@game)
+    capitals = CapitalsTimeline.for(@game)
+    spaceship = SpaceshipTimeline.for(@game)
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = {
@@ -254,15 +250,14 @@ class DigestBuilder
     end
   end
 
-  def congress_timeline
-    @congress_timeline ||= CongressTimeline.new(@game)
-  end
+  def congress_timeline = CongressTimeline.for(@game)
 
   def belief_ids
-    singular = @game.game_events.where(event_type: %w[pantheon_founded reformation_added])
-      .filter_map { |e| e.payload["belief"] }
-    plural = @game.game_events.where(event_type: %w[religion_founded religion_enhanced])
-      .flat_map { |e| Array(e.payload["beliefs"]) }
+    log = @game.event_log
+    singular = %w[pantheon_founded reformation_added]
+      .flat_map { |type| log.of_type(type) }.filter_map { |e| e.payload["belief"] }
+    plural = %w[religion_founded religion_enhanced]
+      .flat_map { |type| log.of_type(type) }.flat_map { |e| Array(e.payload["beliefs"]) }
 
     (singular + plural).uniq
   end

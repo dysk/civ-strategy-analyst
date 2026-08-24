@@ -2,6 +2,8 @@
 # Education and Metal Casting with one of the two buildings they unlock
 # standing, or the deadline, whichever comes first.
 class EarlyGame
+  extend Projection
+
   DEADLINE_STANDARD_TURNS = 150
   MILESTONES = [
     { tech: "TECH_EDUCATION",     building: "BUILDING_WORKSHOP" },
@@ -23,8 +25,8 @@ class EarlyGame
 
   def initialize(game)
     @game = game
-    @timeline = PlayerTimeline.new(game)
-    @last_turn = game.game_events.maximum(:turn)
+    @timeline = PlayerTimeline.for(game)
+    @last_turn = game.event_log.all.map(&:turn).max
   end
 
   def deadline_turn

@@ -1,7 +1,7 @@
 class EmpireGeometriesController < ApplicationController
   def show
     @game = Game.find(params[:game_id])
-    @map_bounds = MapBounds.new(@game)
+    @map_bounds = MapBounds.for(@game)
     @histories = histories
   end
 

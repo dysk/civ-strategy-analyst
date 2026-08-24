@@ -12,7 +12,7 @@ class ArmyCompositionsController < ApplicationController
   private
 
   def histories
-    armies = ArmyComposition.new(@game)
+    armies = ArmyComposition.for(@game)
 
     @game.players.order(:id).filter_map do |player|
       series = sampled(armies.series(player.civ))

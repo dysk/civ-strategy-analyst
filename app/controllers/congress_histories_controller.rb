@@ -1,7 +1,7 @@
 class CongressHistoriesController < ApplicationController
   def show
     @game = Game.find(params[:game_id])
-    @timeline = CongressTimeline.new(@game)
+    @timeline = CongressTimeline.for(@game)
     @sessions = @timeline.host_over_time
     @delegate_histories = delegate_histories
     @resolutions = @timeline.resolutions.sort_by { |r| r[:proposed_turn] }

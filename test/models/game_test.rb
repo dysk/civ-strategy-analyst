@@ -35,6 +35,42 @@ class GameTest < ActiveSupport::TestCase
     end
   end
 
+  test "event_log covers the game's events" do
+    game = games(:one)
+
+    assert_equal game.game_events.map(&:id).sort, game.event_log.all.map(&:id).sort
+  end
+
+  # Every projection reading one game reads one log, so the events are
+  # loaded and indexed once no matter how many of them ask.
+  test "event_log loads once per game" do
+    game = games(:one)
+
+    assert_same game.event_log, game.event_log
+  end
+
+  test "projection holds what was built for it" do
+    game = games(:one)
+
+    assert_equal :held, game.projection(:reader) { :held }
+  end
+
+  # Building a projection indexes the whole log, so the digest asking for
+  # the same one thirteen times must not index it thirteen times.
+  test "projection builds once per key" do
+    game = games(:one)
+    game.projection(:reader) { :first }
+
+    assert_equal :first, game.projection(:reader) { :second }
+  end
+
+  test "projection keeps its keys apart" do
+    game = games(:one)
+    game.projection(:reader) { :first }
+
+    assert_equal :second, game.projection(:other_reader) { :second }
+  end
+
   test "has many analyses destroyed with the game" do
     game = games(:one)
     assert_includes game.analyses, analyses(:one)

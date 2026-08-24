@@ -2,6 +2,8 @@
 # report it; for older ones the easternmost plot anyone ever touched is the
 # best available lower bound.
 class MapBounds
+  extend Projection
+
   def initialize(game)
     @game = game
   end
@@ -21,10 +23,10 @@ class MapBounds
   private
 
   def easternmost_plot
-    @game.game_events.filter_map { |event| event.payload["x"] }.max
+    @game.event_log.all.filter_map { |event| event.payload["x"] }.max
   end
 
   def northernmost_plot
-    @game.game_events.filter_map { |event| event.payload["y"] }.max
+    @game.event_log.all.filter_map { |event| event.payload["y"] }.max
   end
 end

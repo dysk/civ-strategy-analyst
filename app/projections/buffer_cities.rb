@@ -18,7 +18,7 @@ class BufferCities
 
   # Pangaea puts every player on one landmass with ocean at the map's edges,
   # so the seam HexGrid wraps across is not a route anyone can march.
-  def self.for(game) = new(game, grid: HexGrid.new(width: nil))
+  def self.for(game) = game.projection(self) { new(game, grid: HexGrid.new(width: nil)) }
 
   def initialize(game, grid:)
     @game = game
@@ -174,7 +174,7 @@ class BufferCities
 
   # Never past the end of the data.
   def window_turn
-    @window_turn ||= [ EarlyGame.new(@game).deadline_turn, @game.game_events.maximum(:turn) ].compact.min
+    @window_turn ||= [ EarlyGame.for(@game).deadline_turn, last_logged_turn ].compact.min
   end
 
   def pangaea?
@@ -202,9 +202,9 @@ class BufferCities
     @populations ||= events("population_changed")
   end
 
-  def events(event_type)
-    @game.game_events.where(event_type: event_type).order(:seq).to_a
-  end
+  def events(event_type) = @game.event_log.of_type(event_type)
+
+  def last_logged_turn = @game.event_log.all.map(&:turn).max
 
   def plot_of(event)
     x, y = event.payload.values_at("x", "y")

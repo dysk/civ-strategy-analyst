@@ -5,6 +5,8 @@
 # the same FIFO convention KeyMomentDetector#war_declarations already
 # uses to pair war_declared with peace_made by team.
 class CongressTimeline
+  extend Projection
+
   # `undetermined` is a concluded vote whose result the logger could not
   # read - a resolution with only one-time effects leaves no trace in the
   # game state to read it from. It is not the same as a nil outcome, which
@@ -16,7 +18,7 @@ class CongressTimeline
   }.freeze
 
   def initialize(game)
-    @events = game.game_events.order(:seq).to_a
+    @log = game.event_log
   end
 
   # A turn can be snapshotted more than once - a resumed session repeats
@@ -81,7 +83,5 @@ class CongressTimeline
     of_type("congress_snapshot")
   end
 
-  def of_type(event_type)
-    @events.select { |e| e.event_type == event_type }
-  end
+  def of_type(event_type) = @log.of_type(event_type)
 end
