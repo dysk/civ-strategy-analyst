@@ -1,12 +1,10 @@
 class AnalyzeGame
   PROMPT_PATH = Rails.root.join("app/prompts/analyze_game.md")
 
-  LlmResponse = Struct.new(:content, :input_tokens, :output_tokens, :cost_usd, keyword_init: true)
-
   attr_reader :lekmod_version
 
   def initialize(game, winner_civ: nil, victory_type: nil, model: nil, lekmod_version: nil,
-                 llm_client: RubyLlmClient.new, reports_dir: Rails.root.join("reports"),
+                 llm_client: LlmClient.new, reports_dir: Rails.root.join("reports"),
                  lekmod_root: Rails.root.join("db/lekmod"))
     @game = game
     @winner_civ = winner_civ
@@ -46,21 +44,5 @@ class AnalyzeGame
     timestamp = Time.current.strftime("%Y%m%d%H%M%S")
     path = File.join(@reports_dir, "#{@game.name.parameterize}-#{timestamp}.md")
     File.write(path, analysis.report)
-  end
-
-  # Thin adapter over RubyLLM so AnalyzeGame depends on a small, injectable
-  # interface instead of RubyLLM::Chat's full API.
-  class RubyLlmClient
-    def call(model:, system_prompt:, input:)
-      message = RubyLLM.chat(model: model).with_instructions(system_prompt).ask(input)
-      cost = message.cost(model: model)
-
-      LlmResponse.new(
-        content: message.content,
-        input_tokens: message.tokens&.input,
-        output_tokens: message.tokens&.output,
-        cost_usd: cost&.total
-      )
-    end
   end
 end

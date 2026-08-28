@@ -147,7 +147,7 @@ class AnalyzeGameTest < ActiveSupport::TestCase
     attr_reader :received
 
     def initialize(content:, input_tokens: nil, output_tokens: nil, cost_usd: nil)
-      @response = AnalyzeGame::LlmResponse.new(
+      @response = LlmClient::Response.new(
         content: content, input_tokens: input_tokens, output_tokens: output_tokens, cost_usd: cost_usd
       )
     end

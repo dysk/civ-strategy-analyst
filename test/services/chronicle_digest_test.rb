@@ -1,0 +1,50 @@
+require "test_helper"
+
+class ChronicleDigestTest < ActiveSupport::TestCase
+  setup do
+    @game = Game.create!(name: "Chronicle Digest Game", game_speed: "GAMESPEED_QUICK")
+    @seq = 0
+    event("Rome", "snapshot", 10, score: 100, population: 12, cities: 1)
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event(nil, "city_captured", 42, city: "Athens", old_owner: "Greece", new_owner: "Rome")
+    event(nil, "city_captured", 150, city: "Ostia", old_owner: "Rome", new_owner: "Greece")
+  end
+
+  test "carries everything the analysis digest carries" do
+    assert_empty DigestBuilder.new(@game).call.keys - digest.keys
+  end
+
+  test "dates every turn of the game in years" do
+    assert_equal "3940 BC", digest[:calendar][1]
+    assert_equal "1600 AD", digest[:calendar][150]
+  end
+
+  test "dates each chronicle entry from its first year to its last" do
+    entry = digest[:chronicle][:entries].find { |e| e[:turn] == 40 }
+
+    assert_equal [ "1600 BC", "1480 BC" ], [ entry[:from_year], entry[:to_year] ]
+  end
+
+  test "counts the souls behind each checkpoint's population" do
+    assert_equal 1_051_000, digest[:metrics]["Rome"][10]["souls"]
+  end
+
+  test "dates the quiet spans the chronicle jumps over" do
+    span = digest[:chronicle][:quiet_spans].sole
+
+    assert_equal [ "1480 BC", "1600 AD" ], [ span[:from_year], span[:to_year] ]
+  end
+
+  private
+
+  def digest = ChronicleDigest.new(@game).call
+
+  def event(civ, event_type, turn, **extra)
+    @seq += 1
+    payload = extra.stringify_keys.merge("event" => event_type, "turn" => turn)
+    payload["civ"] = civ if civ
+    @game.game_events.create!(
+      seq: @seq, session_index: 0, turn: turn, event_type: event_type, civ: civ, payload: payload
+    )
+  end
+end

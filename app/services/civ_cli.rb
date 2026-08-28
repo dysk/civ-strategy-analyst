@@ -13,9 +13,10 @@ class CivCli
     case command
     when "import" then import(rest)
     when "analyze" then analyze(rest)
+    when "chronicle" then chronicle(rest)
     when "list" then list(rest)
     else
-      @err.puts "Unknown command: #{command.inspect}. Usage: civ import|analyze|list"
+      @err.puts "Unknown command: #{command.inspect}. Usage: civ import|analyze|chronicle|list"
       1
     end
   end
@@ -61,19 +62,40 @@ class CivCli
       o.on("--reports-dir DIR") { |v| options[:reports_dir] = v }
     end
 
-    game_id = parser.parse!(args).first
-    return usage_error(parser) if game_id.nil?
-
-    game = Game.find_by(id: game_id)
-    if game.nil?
-      @err.puts "Game ##{game_id} not found."
-      return 1
-    end
+    game = find_game(parser, args) or return 1
 
     options[:llm_client] = @llm_client if @llm_client
     analysis = AnalyzeGame.new(game, **options).call
     @out.puts "Analysis ##{analysis.id} saved for game ##{game.id} (model: #{analysis.model})#{usage_summary(analysis)}"
     0
+  end
+
+  def chronicle(args)
+    options = {}
+    parser = OptionParser.new do |o|
+      o.banner = "Usage: civ chronicle GAME_ID [--lang #{ChronicleGame::LANGUAGES.keys.join("|")}] " \
+                 "[--model MODEL] [--lekmod-version VERSION] [--reports-dir DIR]"
+      o.on("--lang LANG", "Language to write the chronicle in (default: en)") { |v| options[:lang] = v }
+      o.on("--model MODEL") { |v| options[:model] = v }
+      o.on("--lekmod-version VERSION", "Override the game's stored LEKMOD version") { |v| options[:lekmod_version] = v }
+      o.on("--reports-dir DIR") { |v| options[:reports_dir] = v }
+    end
+
+    game = find_game(parser, args) or return 1
+
+    options[:llm_client] = @llm_client if @llm_client
+    @out.puts "Chronicle saved to #{ChronicleGame.new(game, **options).call}"
+    0
+  end
+
+  # Both reporting commands take a game id and fail the same two ways.
+  def find_game(parser, args)
+    game_id = parser.parse!(args).first
+    return usage_error(parser) && nil if game_id.nil?
+
+    game = Game.find_by(id: game_id)
+    @err.puts "Game ##{game_id} not found." if game.nil?
+    game
   end
 
   def usage_summary(analysis)

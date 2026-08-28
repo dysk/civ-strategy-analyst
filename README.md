@@ -108,6 +108,31 @@ inferred from the last score snapshot and flagged as "in progress" if the
 game hasn't reached its recorded `max_turns` yet — there's no explicit
 victory event in the log to confirm a result either way.
 
+**Write a chronicle of a game:**
+
+```sh
+bin/civ chronicle GAME_ID [--lang en|pl] [--model claude-opus-5]
+```
+
+Retells the game as a historical chronicle rather than an analysis. It sends
+the analysis digest plus two things only the chronicle needs — a `calendar`
+mapping every turn to its in-game year (`db/civ5_turn_years.csv`, read through
+the game's speed) and a `chronicle` spine of the moments worth an entry — to
+the prompt in `app/prompts/chronicle_game.md`.
+
+The spine is what sets the pacing: almost every turn of a game carries
+something, so entries are anchored on moments heavy enough to be remembered
+(wars, cities taken, capitals changing hands, religions founded, an era
+reached first), lighter moments only join an entry that already exists, and
+stretches with nothing heavy become `quiet_spans` the chronicle jumps over in
+a sentence. Each entry also carries the era the most advanced civilization had
+reached by then, and the prompt shifts the chronicler's voice era by era —
+stone-cut annals early, a newsreel by the modern age.
+
+The chronicle is a piece of writing, not a record of the game, so it is
+written to `reports/chronicle-<game>-<timestamp>.md` and nothing is saved to
+the database.
+
 **List imported games:**
 
 ```sh
@@ -128,11 +153,13 @@ its standings, all detected key moments, and the latest analysis report
 
 ## Project structure
 
-- `app/services/` — `ImportGame`, `DigestBuilder`, `AnalyzeGame`, `CivCli`
+- `app/services/` — `ImportGame`, `DigestBuilder`, `AnalyzeGame`, `ChronicleDigest`,
+  `ChronicleGame`, `TurnCalendar`, `LlmClient`, `CivCli`
 - `app/projections/` — pure, deterministic Ruby classes that read events from
   the DB: `MetricSeries`, `PlayerTimeline`, `KeyMomentDetector`,
   `OutcomeResolver`
-- `app/prompts/` — the LLM prompt template (`analyze_game.md`); history lives in git log
+- `app/prompts/` — the LLM prompt templates (`analyze_game.md`,
+  `chronicle_game.md`); history lives in git log
 - `examples/` — sample `civ-narrative-logger` JSONL logs (single human
   player) to import if you don't have a game of your own yet: a finished
   domination game (`babylon-domination.jsonl`) and an in-progress game
