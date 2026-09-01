@@ -116,6 +116,21 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_equal [ :golden_age ], spine.background.map { |moment| moment[:type] }
   end
 
+  test "a captured city's census dropout the following turn is not narrated a second time" do
+    event(nil, "city_captured", 40, city: "Corinth", old_owner: "Greece", new_owner: "Rome")
+    event("Greece", "city_destroyed", 41, city: "Corinth")
+
+    moments = spine.entries.flat_map { |entry| entry[:moments] }
+
+    assert_equal [ :city_captured ], moments.map { |moment| moment[:type] }
+  end
+
+  test "a city destroyed with no matching capture is still a razing" do
+    event("Rome", "city_destroyed", 40, city: "Corinth")
+
+    assert_equal [ :city_destroyed ], spine.entries.sole[:moments].map { |moment| moment[:type] }
+  end
+
   test "quiet spans cover the stretches between distant entries" do
     event(nil, "war_declared", 20, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event(nil, "peace_made", 22, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])

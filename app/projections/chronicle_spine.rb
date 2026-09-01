@@ -145,11 +145,25 @@ class ChronicleSpine
         from: e.payload["old_owner"], to: e.payload["new_owner"] }
     end
 
-    destroyed = of_type("city_destroyed").map do |e|
+    destroyed = razings.map do |e|
       { type: :city_destroyed, turn: e.turn, city: e.payload["city"], civ: e.civ }
     end
 
     founded + captured + destroyed
+  end
+
+  # city_destroyed is polled once per turn per player (razing fires no DLL
+  # hook to push it), so it can't tell a razing from a city that simply
+  # changed hands - both make the previous owner's city vanish from its
+  # census, and a capture shows up in that owner's census as late as the
+  # turn after the capture itself. A capture already narrates that turn, so
+  # only destructions with no matching capture are real razings.
+  def razings
+    captured = of_type("city_captured").map { |e| [ e.payload["city"], e.turn ] }
+
+    of_type("city_destroyed").reject do |e|
+      captured.any? { |city, turn| city == e.payload["city"] && (e.turn - turn).between?(0, 1) }
+    end
   end
 
   # A national wonder is a building every empire raises for itself; only the
