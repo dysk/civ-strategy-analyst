@@ -691,6 +691,26 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "capital_control_changes dates a capture from the capture itself, not the snapshot that catches up to it" do
+    snapshot("Rome", 99, capitals: %w[Rome])
+    event(nil, "city_captured", 100, city: "Athens", old_owner: "Greece", new_owner: "Rome", capital: true)
+    snapshot("Rome", 101, capitals: %w[Rome Athens])
+
+    gained = detector.capital_control_changes.find { |moment| moment[:type] == :capital_gained }
+
+    assert_equal 100, gained[:turn]
+  end
+
+  test "capital_control_changes still finds the capture when it shares a turn with the stale snapshot" do
+    snapshot("Rome", 100, capitals: %w[Rome])
+    event(nil, "city_captured", 100, city: "Athens", old_owner: "Greece", new_owner: "Rome", capital: true)
+    snapshot("Rome", 101, capitals: %w[Rome Athens])
+
+    gained = detector.capital_control_changes.find { |moment| moment[:type] == :capital_gained }
+
+    assert_equal 100, gained[:turn]
+  end
+
   test "apollo_completions reports the first turn a civ's Apollo Program count goes positive" do
     snapshot("Rome", 100, spaceship: { apollo: 0, booster: 0, cockpit: 0, stasis_chamber: 0, engine: 0 })
     snapshot("Rome", 120, spaceship: { apollo: 1, booster: 0, cockpit: 0, stasis_chamber: 0, engine: 0 })

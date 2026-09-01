@@ -288,16 +288,24 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
+  # A civ's snapshot only shows a capital change once its own turn is
+  # processed, which can be a turn behind the city_captured event that
+  # actually caused it - so the turn comes from that event when one is
+  # found in the gap, and only falls back to the snapshot's own turn
+  # otherwise (a capital lost some other way, e.g. razing).
   def capital_control_changes
     timeline = CapitalsTimeline.for(@game)
+    captures = of_type("city_captured").select { |e| e.payload["capital"] }
 
     civs_with_snapshots.flat_map do |civ|
       timeline.series(civ).each_cons(2).flat_map do |prev, curr|
         gained = curr[:capitals] - prev[:capitals]
         lost = prev[:capitals] - curr[:capitals]
 
-        gained.map { |owner| { type: :capital_gained, civ: civ, original_owner: owner, turn: curr[:turn] } } +
-          lost.map { |owner| { type: :capital_lost, civ: civ, original_owner: owner, turn: curr[:turn] } }
+        gained.map { |owner| { type: :capital_gained, civ: civ, original_owner: owner,
+                                turn: capture_turn(captures, "new_owner", civ, prev[:turn], curr[:turn]) } } +
+          lost.map { |owner| { type: :capital_lost, civ: civ, original_owner: owner,
+                                turn: capture_turn(captures, "old_owner", civ, prev[:turn], curr[:turn]) } }
       end
     end.sort_by { |moment| moment[:turn] }
   end
@@ -411,6 +419,10 @@ class KeyMomentDetector
 
   def in_window?(turn, turn_declared, turn_peace)
     turn >= turn_declared && (turn_peace.nil? || turn <= turn_peace)
+  end
+
+  def capture_turn(captures, side, civ, prev_turn, curr_turn)
+    captures.find { |e| e.turn.between?(prev_turn, curr_turn) && e.payload[side] == civ }&.turn || curr_turn
   end
 
   def plot_of(event)
