@@ -118,6 +118,36 @@ class CivCliTest < ActiveSupport::TestCase
     assert_match(/Game #999999 not found/, @err.string)
   end
 
+  test "chronicle writes a chronicle file for the game and prints where it landed" do
+    game = Game.create!(name: "Chronicle CLI Game", game_speed: "GAMESPEED_QUICK")
+    game.game_events.create!(
+      seq: 1, session_index: 0, turn: 1, event_type: "city_founded", civ: "Rome",
+      payload: { "event" => "city_founded", "turn" => 1, "civ" => "Rome", "city" => "Rome" }
+    )
+    stub = StubLlmClient.new(content: "In the first years of the world...")
+
+    Dir.mktmpdir do |reports_dir|
+      status = cli(llm_client: stub).run([ "chronicle", game.id.to_s, "--reports-dir", reports_dir ])
+
+      assert_equal 0, status
+      assert_match(/Chronicle saved to #{Regexp.escape(reports_dir)}/, @out.string)
+    end
+  end
+
+  test "chronicle without a game id prints usage to stderr and fails" do
+    status = cli.run([ "chronicle" ])
+
+    assert_equal 1, status
+    assert_match(/Usage: civ chronicle/, @err.string)
+  end
+
+  test "chronicle with an unknown game id reports not found" do
+    status = cli.run([ "chronicle", "999999" ])
+
+    assert_equal 1, status
+    assert_match(/Game #999999 not found/, @err.string)
+  end
+
   test "list prints a message when there are no games" do
     Game.destroy_all
 
@@ -149,13 +179,13 @@ class CivCliTest < ActiveSupport::TestCase
     attr_reader :received
 
     def initialize(content:, input_tokens: nil, output_tokens: nil, cost_usd: nil)
-      @response = AnalyzeGame::LlmResponse.new(
+      @response = LlmClient::Response.new(
         content: content, input_tokens: input_tokens, output_tokens: output_tokens, cost_usd: cost_usd
       )
     end
 
     def call(model:, system_prompt:, input:)
-      @received = { model_input_winner: JSON.parse(input)["outcome"]["winner_civ"] }
+      @received = { model_input_winner: JSON.parse(input).dig("outcome", "winner_civ") }
       @response
     end
   end
