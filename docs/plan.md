@@ -179,8 +179,10 @@ Iterations (each: failing tests → review → implementation → commit):
    `session_started` currently doesn't carry the mod version ("Lekmap v5.2" in `map_script` is
    the map version, not the mod's) — see the "outside this repo" note below.
 2. **`LekmodReference`** — a pure class reading `db/lekmod/<version>/`:
-   - version resolution: exact → nearest older (with a note about the mismatch) →
-     none (with a note that ruleset details are unavailable);
+   - version resolution: exact → nearest snapshot from the same major line, either side,
+     ties to the older (minor versions are hotfixes) → nearest older line (with a note that
+     newer civs and mechanics are missing) → none (with a note that ruleset details
+     are unavailable);
    - per-entity extraction: `## Civ (Leader)` section from `civilizations.md` by civ name
      from the roster; entries from `policies.md`/`ideologies.md`/`religion.md` by ID
      (`POLICY_*`/`BELIEF_*`) appearing in the game's timelines; `general.md` in full

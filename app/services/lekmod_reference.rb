@@ -38,17 +38,56 @@ class LekmodReference
     return [ nil, "No LEKMOD version specified for this game; ruleset details omitted." ] if @requested_version.nil?
     return [ @requested_version, nil ] if available_versions.include?(@requested_version)
 
-    older = available_versions
-      .select { |v| Gem::Version.new(v) < Gem::Version.new(@requested_version) }
-      .max_by { |v| Gem::Version.new(v) }
-
-    if older
-      [ older, "Requested LEKMOD #{@requested_version}; no exact snapshot available, using nearest " \
-               "older version #{older} instead. Ruleset details may have drifted since." ]
+    if (sibling = nearest_in_line)
+      [ sibling, "Requested LEKMOD #{@requested_version}; no exact snapshot available, using #{sibling} " \
+                 "from the same #{major(@requested_version)}.x line instead. Minor versions carry hotfixes " \
+                 "and small tweaks, not new civilizations or mechanics." ]
+    elsif (older = nearest_older)
+      [ older, "Requested LEKMOD #{@requested_version}; no snapshot from the #{major(@requested_version)}.x " \
+               "line available, using older version #{older} instead. Civilizations and mechanics added " \
+               "since then are missing from the ruleset below." ]
     else
       [ nil, "No LEKMOD reference data available for version #{@requested_version} or earlier; " \
              "ruleset details omitted." ]
     end
+  end
+
+  # Within a major line the snapshots differ only by hotfixes, so the
+  # closest one wins whichever side of the game it falls on; only a tie
+  # goes to the older, which at least cannot describe what did not exist yet.
+  def nearest_in_line
+    available_versions
+      .select { |v| major(v) == major(@requested_version) }
+      .min_by { |v| [ distance_from_requested(v), newer_than_requested?(v) ? 1 : 0 ] }
+  end
+
+  def nearest_older
+    available_versions
+      .select { |v| Gem::Version.new(v) < Gem::Version.new(@requested_version) }
+      .max_by { |v| Gem::Version.new(v) }
+  end
+
+  def distance_from_requested(version)
+    width = [ segments(version).size, segments(@requested_version).size ].max
+
+    padded(version, width).zip(padded(@requested_version, width)).map { |a, b| (a - b).abs }
+  end
+
+  def newer_than_requested?(version)
+    Gem::Version.new(version) > Gem::Version.new(@requested_version)
+  end
+
+  def major(version)
+    segments(version).first
+  end
+
+  def segments(version)
+    Gem::Version.new(version).segments
+  end
+
+  def padded(version, width)
+    parts = segments(version)
+    parts + [ 0 ] * (width - parts.size)
   end
 
   def available_versions

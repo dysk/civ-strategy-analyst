@@ -43,6 +43,20 @@ there whenever no inline backtick annotation and no ID-derivation
 matches, before giving up on it. Manual inline annotation still wins
 when both exist - `ids.yml` is a fallback, not an override.
 
+## Version resolution
+
+`LekmodReference` resolves a game's version against the snapshots present
+here: exact match first, otherwise the nearest snapshot from the same
+major line — newer included, ties going to the older — and only when that
+line has no snapshot at all does it drop to the nearest older line. A game
+played on 35.2 therefore reads 35.3's rules rather than 34.15's: within a
+line the versions are hotfixes and small tweaks, between lines whole
+civilizations and mechanics appear. Every inexact match carries a
+`resolution_note` into the digest saying which of the two gaps it is.
+
+That is why a hotfix rarely needs its own snapshot — one per major line,
+kept current, serves every game played on it.
+
 ## Adding a new version
 
 Only add a snapshot when a game imported on that version needs analyzing.

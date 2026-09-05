@@ -19,6 +19,36 @@ class LekmodReferenceTest < ActiveSupport::TestCase
     assert_match(/v1\.5 text for Chile/, result[:civilizations]["Chile"])
   end
 
+  test "prefers a newer snapshot from the same major line over an older line" do
+    result = reference(version: "2.0", civs: [ "Chile" ]).call
+
+    assert_equal "2.1", result[:version]
+    assert_match(/2\.0/, result[:resolution_note])
+    assert_match(/2\.1/, result[:resolution_note])
+    assert_match(/v2\.1 text for Chile/, result[:civilizations]["Chile"])
+  end
+
+  test "picks the nearest snapshot in the line even when the nearest one is newer" do
+    result = reference(version: "1.4", civs: [ "Chile" ]).call
+
+    assert_equal "1.5", result[:version]
+    assert_match(/v1\.5 text for Chile/, result[:civilizations]["Chile"])
+  end
+
+  test "picks the nearest snapshot in the line even when a newer one is available" do
+    result = reference(version: "1.2", civs: [ "Chile" ]).call
+
+    assert_equal "1.0", result[:version]
+    assert_match(/v1\.0 text for Chile/, result[:civilizations]["Chile"])
+  end
+
+  test "breaks a tie within the line in favour of the older snapshot" do
+    result = reference(version: "2.2", civs: [ "Chile" ]).call
+
+    assert_equal "2.1", result[:version]
+    assert_match(/v2\.1 text for Chile/, result[:civilizations]["Chile"])
+  end
+
   test "returns no reference data when the requested version predates every snapshot" do
     result = reference(version: "0.5", civs: [ "Chile" ]).call
 
