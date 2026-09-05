@@ -311,7 +311,25 @@ while two close capitals that never fought is itself worth noting. As
 with `geometry`, this carries no terrain - a short hex distance can still
 be a mountain range or a sea apart - and when `map_width_estimated` is
 true a pair sitting near opposite edges of the map may be closer than
-the figure shows, the same seam caveat that applies to `span`.
+the figure shows, the same seam caveat that applies to `span` - though not
+on a Pangaea, where the seam is ocean and no distance is measured across it.
+
+Each pair also carries a `bearing`: which way the second civilization in
+`civs` lies from the first, as a compass point - `N`, `NE`, `E`, `SE`, `S`,
+`SW`, `W`, `NW`. A pair reading `SW` says the second started south-west of
+the first, and the first north-east of the second. Take directions from
+it and from the `latitude` and `longitude` bands on each capital, never from
+the `x` and `y` on a capital or a buffer city. Those coordinates are what
+the distances were measured from, and reading a direction off them by hand
+gets it wrong three ways over: `y` counts north from the map's southern
+edge, not down a screen; the map wraps around on itself unless it is a
+Pangaea, whose seam is ocean; and the rows sit on hexes. `latitude` places a
+capital between the poles, `far south` through `equatorial` to `far north`.
+`longitude` does the same between the map's eastern and western edges, but
+only for a map that has them - on a wrapping map it is `null`, because no
+part of such a map is its west. Either band is `null` when the log never
+reported that dimension of the map, and a `null` band is not an invitation
+to estimate one from the plots.
 
 It also bears on domination progress: `victory_progress.capitals_held`
 says how many original capitals a civilization controls, but not which
@@ -331,8 +349,10 @@ has nothing standing between its capital and that rival's army: a war on
 that front reaches the capital directly, with no city to absorb the
 first attack and buy the turns a defence needs. The side holding the
 corridor city has both that shield and a staging ground for an attack in
-the other direction. Read `from_own_capital` and `from_rival_capital`
-together to see how far forward the city sits - a buffer four hexes from
+the other direction. Each buffer's `bearing` says which way it lies from the
+capital it shields, on the same compass as `capital_proximity`. Read
+`from_own_capital` and `from_rival_capital` together to see how far forward
+the city sits - a buffer four hexes from
 its own capital is a shield hugging the capital, one twelve hexes out is
 contesting the ground. `detour` says how squarely it sits across the
 route an army would march, `0` being on it and `detour_tolerance` on the

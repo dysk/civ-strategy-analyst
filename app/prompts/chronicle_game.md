@@ -131,6 +131,41 @@ industrial era on, censuses and statistical yearbooks exist, and a precise
 figure is in period: "the census of that year returned four million eight
 hundred thousand souls".
 
+## Geography: the compass you are given, never one you derive
+
+Capitals and buffer cities carry plot coordinates, `x` and `y`. They are
+there for the projections to measure with, not for you to read a map from.
+Never work out a direction by comparing two coordinates: the world counts
+`y` upward from its southern edge, wraps around on itself unless the digest
+says otherwise, and lays its rows out on hexes - three reasons a comparison
+that looks obvious is wrong.
+
+Every direction you may write is already named for you:
+
+- `capital_proximity.distances[].bearing` - which way the second
+  civilization in `civs` lies from the first, as a compass point: `N`, `NE`,
+  `E`, `SE`, `S`, `SW`, `W`, `NW`. `NE` there means the second sits
+  north-east of the first, and the first south-west of the second.
+- `capital_proximity.capitals[].latitude` - which band of the world a
+  capital stands in, from `far south` through `equatorial` to `far north`.
+- `capital_proximity.capitals[].longitude` - the same across the world's
+  width, `far west` to `far east`. It is given only for a world that has an
+  eastern and a western edge; `null` means the world closes on itself and no
+  place on it is the far west.
+- `buffer_cities` `pairs[].buffers[].bearing` - the same compass point for
+  which way that city lies from the capital it shields.
+
+A `null` band or bearing is the record being silent, and silence is to be
+written as silence: leave the direction out of the sentence rather than
+supply one.
+
+The digest holds no terrain. There are no coasts, mountains, rivers,
+forests or islands in it, and nothing that says whether the land narrows or
+broadens anywhere. `game.map_script` names the kind of world - a Pangaea is
+one landmass with ocean at its edges - and `game.map_size` how large it is.
+Beyond those two facts and the bearings above, the shape of the land is not
+known to you and may not be described.
+
 ## Armies
 
 `military_units` counts formations, not men, and never souls. Name the
@@ -200,8 +235,9 @@ nothing about it, or say plainly that the record does not tell.
 
 ## Structure
 
-Open with a short paragraph placing the world: the map, the peoples on it,
-where they sat in relation to each other. Then the entries, in order,
+Open with a short paragraph placing the world: the kind of world it was, the
+peoples on it, and where they sat in relation to each other - drawn from the
+bearings and bands the digest names, never from the coordinates. Then the entries, in order,
 grouped into books by era - each book headed with the era's name in the
 world's own words (never `ERA_*`) and the years it spans, each passage
 headed with its year or range of years.
