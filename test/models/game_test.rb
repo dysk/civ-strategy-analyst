@@ -12,6 +12,20 @@ class GameTest < ActiveSupport::TestCase
     assert_includes game.errors[:name], "can't be blank"
   end
 
+  test "knows a Pangaea map by the script that drew it" do
+    game = Game.new(name: "Test Game", map_script: 'Assets\\Maps\\Lekmap v5.2\\LekmapPangaeaFractalv5.2.lua')
+
+    assert_predicate game, :pangaea?
+  end
+
+  test "any other map script is not Pangaea" do
+    refute_predicate Game.new(name: "Test Game", map_script: "Continents"), :pangaea?
+  end
+
+  test "a game with no map script recorded is not Pangaea" do
+    refute_predicate Game.new(name: "Test Game"), :pangaea?
+  end
+
   test "defaults completed to false" do
     game = Game.create!(name: "New Game")
     assert_equal false, game.completed

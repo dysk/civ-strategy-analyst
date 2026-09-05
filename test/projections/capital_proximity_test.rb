@@ -67,6 +67,14 @@ class CapitalProximityTest < ActiveSupport::TestCase
     assert_equal 4, CapitalProximity.for(@game).distances.first[:distance]
   end
 
+  test "on Pangaea nothing marches across the seam, so distance goes the long way" do
+    @game.update!(map_script: 'Assets\\Maps\\Lekmap v5.2\\LekmapPangaeaFractalv5.2.lua')
+    founded("Rome", "Roma", 0, 44, 10)
+    founded("Greece", "Athens", 0, 2, 10)
+
+    assert_equal [ { civs: %w[Rome Greece], distance: 42 } ], CapitalProximity.for(@game).distances
+  end
+
   private
 
   def proximity

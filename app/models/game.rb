@@ -5,6 +5,15 @@ class Game < ApplicationRecord
 
   validates :name, presence: true
 
+  PANGAEA = /pangaea/i
+
+  # Pangaea puts every player on one landmass with ocean at the map's edges,
+  # so the seam the coordinates wrap across is neither a route an army can
+  # march nor a place a border can reach: the world has a real east and west.
+  def pangaea?
+    map_script.to_s.match?(PANGAEA)
+  end
+
   # Loaded once and held, so the projections built from this game all read
   # the same pass. A game instance that goes on to log more events - only
   # the importer does - must not be one that has already been projected.

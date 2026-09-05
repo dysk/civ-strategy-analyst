@@ -92,8 +92,7 @@ class GamesController < ApplicationController
   # Closest neighbours first: who had to worry about whom is the reason to
   # look at this table at all.
   def capital_distances
-    CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width))
-      .distances.sort_by { |pair| pair[:distance] }
+    CapitalProximity.for(@game).distances.sort_by { |pair| pair[:distance] }
   end
 
   # Canvas height is fixed; width follows the map's own aspect ratio so a
@@ -111,7 +110,7 @@ class GamesController < ApplicationController
   # centered on their point (text-anchor: middle), so the horizontal padding
   # has to fit half the widest label or it clips against the canvas edge.
   def capital_positions
-    capitals = CapitalProximity.new(@game, grid: HexGrid.new(width: @map_bounds.width)).capitals.values
+    capitals = CapitalProximity.for(@game).capitals.values
     return [] if capitals.empty?
 
     xs = capitals.map { |capital| capital[:x] }

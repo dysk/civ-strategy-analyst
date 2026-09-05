@@ -11,8 +11,14 @@
 # hold for the whole game and cannot be skewed by how much either side
 # later expanded.
 class CapitalProximity
+  # On Pangaea the seam the coordinates wrap across is ocean, so no distance
+  # may be measured the short way round it.
   def self.for(game)
-    game.projection(self) { new(game, grid: HexGrid.new(width: MapBounds.for(game).width)) }
+    game.projection(self) { new(game, grid: grid_for(game)) }
+  end
+
+  def self.grid_for(game)
+    HexGrid.new(width: (MapBounds.for(game).width unless game.pangaea?))
   end
 
   def initialize(game, grid:)

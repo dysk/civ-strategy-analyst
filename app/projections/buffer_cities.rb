@@ -14,10 +14,9 @@ class BufferCities
   NEIGHBOUR_DISTANCE = 17
   DETOUR_TOLERANCE = 6
   MIN_NEIGHBOURS_FOR_PRIORITY = 2
-  PANGAEA = /pangaea/i
 
-  # Pangaea puts every player on one landmass with ocean at the map's edges,
-  # so the seam HexGrid wraps across is not a route anyone can march.
+  # The seam HexGrid wraps across is ocean on Pangaea, not a route anyone
+  # can march - see Game#pangaea?.
   def self.for(game) = game.projection(self) { new(game, grid: HexGrid.new(width: nil)) }
 
   def initialize(game, grid:)
@@ -177,9 +176,7 @@ class BufferCities
     @window_turn ||= [ EarlyGame.for(@game).deadline_turn, last_logged_turn ].compact.min
   end
 
-  def pangaea?
-    @game.map_script.to_s.match?(PANGAEA)
-  end
+  def pangaea? = @game.pangaea?
 
   def proximity
     @proximity ||= CapitalProximity.new(@game, grid: @grid)
