@@ -46,11 +46,18 @@ class BufferCitiesTest < ActiveSupport::TestCase
     founded("Rome", "Ostia", 30, 18, 20)
 
     assert_equal(
-      { city: "Ostia", turn: 30, x: 18, y: 20, detour: 0,
+      { city: "Ostia", turn: 30, x: 18, y: 20, detour: 0, bearing: "E",
         from_own_capital: 8, from_rival_capital: 9,
         order: 2, capital_population: nil, reach_before: 0 },
       pair[:buffers]["Rome"]
     )
+  end
+
+  test "call says which way the buffer lies from the capital it shields" do
+    capitals
+    founded("Rome", "Ostia", 30, 14, 26)
+
+    assert_equal "NE", pair[:buffers]["Rome"][:bearing]
   end
 
   test "call counts a city at the edge of the detour tolerance as a buffer" do

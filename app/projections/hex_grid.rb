@@ -2,6 +2,10 @@
 # maps wrap in X. This reimplements the game's own plotDistance so city
 # distances match what a player sees on the map.
 class HexGrid
+  # An eight-wind compass drops the shorter axis once the longer one is
+  # more than 22.5 degrees away from it.
+  DIAGONAL_RATIO = Math.tan(Math::PI / 8)
+
   def initialize(width:)
     @width = width
   end
@@ -17,7 +21,30 @@ class HexGrid
     end
   end
 
+  # Which way `to` lies from `from`, as a compass point - "N", "SW" and so
+  # on - in the game's own frame: y counts north from the south edge and x
+  # counts east. Rows and columns are close enough to the same size that a
+  # reading needs no correction for the stagger.
+  def bearing(from, to)
+    dx = wrapped(to.first - from.first)
+    dy = to.last - from.last
+
+    [ pole(dy, dx), side(dx, dy) ].compact.join.presence
+  end
+
   private
+
+  def pole(dy, dx)
+    return if dy.zero? || dy.abs < DIAGONAL_RATIO * dx.abs
+
+    dy.positive? ? "N" : "S"
+  end
+
+  def side(dx, dy)
+    return if dx.zero? || dx.abs < DIAGONAL_RATIO * dy.abs
+
+    dx.positive? ? "E" : "W"
+  end
 
   # Each row sits half a hex right of the one below it; undoing that stagger
   # turns the offset coordinates into axial ones the arithmetic above expects.

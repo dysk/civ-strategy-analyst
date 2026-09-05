@@ -2,7 +2,7 @@ require "test_helper"
 
 class CapitalProximityTest < ActiveSupport::TestCase
   setup do
-    @game = Game.create!(name: "Capital Proximity Test Game", map_width: 46)
+    @game = Game.create!(name: "Capital Proximity Test Game", map_width: 46, map_height: 20)
     @seq = 0
   end
 
@@ -11,7 +11,7 @@ class CapitalProximityTest < ActiveSupport::TestCase
     founded("Rome", "Ostia", 30, 14, 10)
 
     assert_equal(
-      { civ: "Rome", city: "Roma", turn: 0, x: 10, y: 10 },
+      { civ: "Rome", city: "Roma", turn: 0, x: 10, y: 10, latitude: "equatorial", longitude: nil },
       proximity.capitals["Rome"]
     )
   end
@@ -31,9 +31,9 @@ class CapitalProximityTest < ActiveSupport::TestCase
 
     assert_equal(
       [
-        { civs: %w[Rome Greece], distance: 6 },
-        { civs: %w[Rome Carthage], distance: 6 },
-        { civs: %w[Greece Carthage], distance: 9 }
+        { civs: %w[Rome Greece], distance: 6, bearing: "E" },
+        { civs: %w[Rome Carthage], distance: 6, bearing: "N" },
+        { civs: %w[Greece Carthage], distance: 9, bearing: "NW" }
       ],
       proximity.distances
     )
@@ -43,7 +43,7 @@ class CapitalProximityTest < ActiveSupport::TestCase
     founded("Rome", "Roma", 0, 44, 10)
     founded("Greece", "Athens", 0, 2, 10)
 
-    assert_equal [ { civs: %w[Rome Greece], distance: 4 } ], proximity.distances
+    assert_equal [ { civs: %w[Rome Greece], distance: 4, bearing: "E" } ], proximity.distances
   end
 
   test "ignores cities founded without coordinates" do
@@ -67,18 +67,62 @@ class CapitalProximityTest < ActiveSupport::TestCase
     assert_equal 4, CapitalProximity.for(@game).distances.first[:distance]
   end
 
-  test "on Pangaea nothing marches across the seam, so distance goes the long way" do
-    @game.update!(map_script: 'Assets\\Maps\\Lekmap v5.2\\LekmapPangaeaFractalv5.2.lua')
+  test "names the latitude band each capital sits in, counting y up from the south" do
+    founded("Egypt", "Thebes", 0, 10, 1)
+    founded("Rome", "Roma", 0, 10, 6)
+    founded("Greece", "Athens", 0, 10, 15)
+    founded("Norway", "Nidaros", 0, 10, 19)
+
+    assert_equal [ "far south", "southern", "northern", "far north" ],
+      proximity.capitals.values.map { |capital| capital[:latitude] }
+  end
+
+  test "leaves latitude unsaid when the log never reported the map height" do
+    @game.update!(map_height: nil)
+    founded("Rome", "Roma", 0, 10, 10)
+
+    assert_nil proximity.capitals["Rome"][:latitude]
+  end
+
+  test "a wrapping map has no fixed east or west, so a capital gets no longitude" do
+    founded("Rome", "Roma", 0, 2, 10)
+
+    assert_nil proximity.capitals["Rome"][:longitude]
+  end
+
+  test "on Pangaea the seam is ocean, so the world has edges to place a capital between" do
+    pangaea
+    founded("Rome", "Roma", 0, 2, 10)
+    founded("Greece", "Athens", 0, 23, 10)
+    founded("Carthage", "Carthago", 0, 44, 10)
+
+    assert_equal [ "far west", "central", "far east" ],
+      CapitalProximity.for(@game).capitals.values.map { |capital| capital[:longitude] }
+  end
+
+  test "on Pangaea nothing marches across the seam, so distance and bearing go the long way" do
+    pangaea
     founded("Rome", "Roma", 0, 44, 10)
     founded("Greece", "Athens", 0, 2, 10)
 
-    assert_equal [ { civs: %w[Rome Greece], distance: 42 } ], CapitalProximity.for(@game).distances
+    assert_equal [ { civs: %w[Rome Greece], distance: 42, bearing: "W" } ],
+      CapitalProximity.for(@game).distances
+  end
+
+  test "builds its own bounds from the game's map" do
+    founded("Rome", "Roma", 0, 10, 6)
+
+    assert_equal "southern", CapitalProximity.for(@game).capitals["Rome"][:latitude]
   end
 
   private
 
   def proximity
-    CapitalProximity.new(@game, grid: HexGrid.new(width: 46))
+    CapitalProximity.new(@game, grid: HexGrid.new(width: 46), bounds: MapBounds.new(@game))
+  end
+
+  def pangaea
+    @game.update!(map_script: 'Assets\\Maps\\Lekmap v5.2\\LekmapPangaeaFractalv5.2.lua')
   end
 
   def founded(civ, city, turn, x, y)

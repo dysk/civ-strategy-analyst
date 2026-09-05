@@ -51,7 +51,8 @@ class DigestBuilder
     {
       name: @game.name, map_script: @game.map_script, map_size: @game.map_size,
       game_speed: @game.game_speed, max_turns: @game.max_turns, start_era: @game.start_era,
-      map_width: map_bounds.width, map_width_estimated: map_bounds.estimated?,
+      map_width: map_bounds.width, map_height: map_bounds.height,
+      map_width_estimated: map_bounds.estimated?,
       early_game_deadline_turn: early_game.deadline_turn
     }
   end

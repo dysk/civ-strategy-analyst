@@ -100,7 +100,8 @@ class BufferCities
 
     {
       city: event.payload["city"], turn: event.turn, x: plot.first, y: plot.last, detour: detour,
-      from_own_capital: from_own, from_rival_capital: from_rival, order: order[[ event.civ, plot ]],
+      bearing: @grid.bearing(own, plot), from_own_capital: from_own,
+      from_rival_capital: from_rival, order: order[[ event.civ, plot ]],
       capital_population: capital_population(event.civ, event.turn),
       reach_before: reach_before(event.civ, event.turn)
     }
@@ -179,7 +180,7 @@ class BufferCities
   def pangaea? = @game.pangaea?
 
   def proximity
-    @proximity ||= CapitalProximity.new(@game, grid: @grid)
+    @proximity ||= CapitalProximity.new(@game, grid: @grid, bounds: MapBounds.for(@game))
   end
 
   def capital(civ)

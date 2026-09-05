@@ -19,7 +19,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal(
       { name: "Digest Test Game", map_script: "TestMap", map_size: "SMALL",
         game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT",
-        map_width: nil, map_width_estimated: false, early_game_deadline_turn: 100 },
+        map_width: nil, map_height: nil, map_width_estimated: false, early_game_deadline_turn: 100 },
       digest[:game]
     )
 
@@ -174,6 +174,12 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ map_width: 46, map_width_estimated: true }, digest[:game].slice(:map_width, :map_width_estimated))
   end
 
+  test "reports the map height, so a capital's latitude can be placed" do
+    @game.update!(map_height: 36)
+
+    assert_equal 36, DigestBuilder.new(@game).call[:game][:map_height]
+  end
+
   test "includes per-civ empire geometry from EmpireGeometry" do
     @game.update!(map_width: 46)
     event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
@@ -199,7 +205,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     )
   end
 
-  test "includes the distance between every pair of capitals" do
+  test "includes the distance and bearing between every pair of capitals" do
     @game.update!(map_width: 46)
     event("Rome", "city_founded", 0, city: "Roma", x: 10, y: 10)
     event("Greece", "city_founded", 0, city: "Athens", x: 16, y: 10)
@@ -207,7 +213,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     proximity = DigestBuilder.new(@game).call[:capital_proximity]
 
     assert_equal "Roma", proximity[:capitals]["Rome"][:city]
-    assert_equal [ { civs: %w[Rome Greece], distance: 6 } ], proximity[:distances]
+    assert_equal [ { civs: %w[Rome Greece], distance: 6, bearing: "E" } ], proximity[:distances]
   end
 
   test "includes who holds the ground between neighbouring capitals" do

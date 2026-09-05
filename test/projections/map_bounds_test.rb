@@ -66,6 +66,29 @@ class MapBoundsTest < ActiveSupport::TestCase
     assert_nil MapBounds.new(@game).height
   end
 
+  test "names the latitude band a plot sits in, counting y up from the south" do
+    @game.update!(map_height: 20)
+    bounds = MapBounds.new(@game)
+
+    assert_equal [ "far south", "southern", "equatorial", "northern", "far north" ],
+      [ 1, 6, 10, 15, 19 ].map { |y| bounds.latitude(y) }
+  end
+
+  test "names the longitude band a plot sits in, counting x up from the west" do
+    @game.update!(map_width: 20)
+    bounds = MapBounds.new(@game)
+
+    assert_equal [ "far west", "western", "central", "eastern", "far east" ],
+      [ 1, 6, 10, 15, 19 ].map { |x| bounds.longitude(x) }
+  end
+
+  test "names no band from a dimension the log never reported" do
+    plot_at(45, y: 30)
+
+    assert_nil MapBounds.new(@game).latitude(30)
+    assert_nil MapBounds.new(@game).longitude(45)
+  end
+
   private
 
   def plot_at(x, y: 10)

@@ -11,18 +11,20 @@
 # hold for the whole game and cannot be skewed by how much either side
 # later expanded.
 class CapitalProximity
-  # On Pangaea the seam the coordinates wrap across is ocean, so no distance
-  # may be measured the short way round it.
+  # On Pangaea the seam the coordinates wrap across is ocean, so neither a
+  # distance nor a bearing may take the short way round it.
   def self.for(game)
-    game.projection(self) { new(game, grid: grid_for(game)) }
+    game.projection(self) { new(game, grid: grid_for(game), bounds: MapBounds.for(game)) }
   end
 
   def self.grid_for(game)
     HexGrid.new(width: (MapBounds.for(game).width unless game.pangaea?))
   end
 
-  def initialize(game, grid:)
+  def initialize(game, grid:, bounds:)
+    @game = game
     @grid = grid
+    @bounds = bounds
     @foundings = game.event_log.of_type("city_founded")
   end
 
@@ -39,9 +41,14 @@ class CapitalProximity
       .transform_values(&:first)
   end
 
+  # `bearing` reads from the first civilization towards the second.
   def distances
     capitals.values.combination(2).map do |from, to|
-      { civs: [ from[:civ], to[:civ] ], distance: @grid.distance(plot(from), plot(to)) }
+      {
+        civs: [ from[:civ], to[:civ] ],
+        distance: @grid.distance(plot(from), plot(to)),
+        bearing: @grid.bearing(plot(from), plot(to))
+      }
     end
   end
 
@@ -51,7 +58,16 @@ class CapitalProximity
     x, y = event.payload.values_at("x", "y")
     return unless x && y && event.civ
 
-    { civ: event.civ, city: event.payload["city"], turn: event.turn, x: x, y: y }
+    {
+      civ: event.civ, city: event.payload["city"], turn: event.turn, x: x, y: y,
+      latitude: @bounds.latitude(y), longitude: longitude(x)
+    }
+  end
+
+  # A map that wraps has no fixed east or west - only Pangaea's ocean edges
+  # make a longitude something a reader can point at.
+  def longitude(x)
+    @bounds.longitude(x) if @game.pangaea?
   end
 
   def plot(city)
