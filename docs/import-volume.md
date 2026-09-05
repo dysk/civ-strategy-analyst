@@ -93,6 +93,29 @@ surfacing as noise during a real import. Generating both from the logger
 would need a shared artefact between the repositories, which is worth
 doing only if the fixture turns out to drift anyway.
 
+### It drifted, so the artefact exists now
+
+Twice. `building_granted` and `free_buildings_ready` went missing over the
+free-buildings work, then eleven more over city-states, trade routes and
+spies — thirteen names, ~1,750 warning lines on the next real import.
+
+The logger now generates `dist/event-types.json` from the records its own
+suite watches it write, and that file is the authority: 83 names as of the
+espionage work. `KNOWN_EVENT_TYPES` is a copy of it, held in place by two
+tests — `knows exactly the event types the logger publishes` compares the
+copy with the generated file, and `the event type fixture carries one line
+per known type` compares it with the fixture. The first skips when the
+logger is not checked out beside this repository, which is the one gap: a
+build without the sibling repo keeps the fixture check and loses the
+comparison.
+
+Note the list could not simply be grepped out of the logger's source. An
+event name reaches a record as a literal field, as one side of a
+conditional, as a value in a transition table, or as an argument to a
+helper, and nothing in the text tells `friendship_declared` apart from
+`gold` sitting beside it — which is why the generator watches records at
+run time instead.
+
 `logger_error` is listed as known but is not stored; see below.
 
 ## Measured

@@ -3,6 +3,8 @@ require "test_helper"
 class ImportGameTest < ActiveSupport::TestCase
   SAMPLE_PATH = Rails.root.join("test/fixtures/files/sample_game.jsonl")
   DEDUP_FRAGMENT_PATH = Rails.root.join("test/fixtures/files/dedup_fragment.jsonl")
+  EVENT_TYPES_FIXTURE_PATH = Rails.root.join("test/fixtures/files/logger_event_types.jsonl")
+  LOGGER_EVENT_TYPES_PATH = Rails.root.join("../civ-narrative-logger/dist/event-types.json")
 
   test "creates a game with settings from the first session_started" do
     result = ImportGame.call(SAMPLE_PATH, name: "Test Game")
@@ -23,6 +25,26 @@ class ImportGameTest < ActiveSupport::TestCase
     assert_equal 42, game.map_height
   end
 
+  # The logger generates dist/event-types.json from the records its own suite
+  # watches it write, so that file is the authority on what arrives here.
+  # KNOWN_EVENT_TYPES is a copy of it and this is what catches the copy going
+  # stale - twice now it has, silently, one warning per imported line.
+  test "knows exactly the event types the logger publishes" do
+    unless File.exist?(LOGGER_EVENT_TYPES_PATH)
+      skip "civ-narrative-logger is not checked out beside this repository"
+    end
+
+    published = JSON.parse(File.read(LOGGER_EVENT_TYPES_PATH))
+
+    assert_equal published.sort, ImportGame::KNOWN_EVENT_TYPES.sort
+  end
+
+  test "the event type fixture carries one line per known type" do
+    events = File.readlines(EVENT_TYPES_FIXTURE_PATH).map { JSON.parse(_1)["event"] }
+
+    assert_equal ImportGame::KNOWN_EVENT_TYPES.sort, events.sort
+  end
+
   # One line per event the logger emits today. When the logger grows a new
   # record, this fixture and KNOWN_EVENT_TYPES are what has to grow with it.
   test "recognises every event type the logger emits" do
@@ -30,7 +52,7 @@ class ImportGameTest < ActiveSupport::TestCase
     original_logger = Rails.logger
     Rails.logger = Logger.new(io)
 
-    ImportGame.call(Rails.root.join("test/fixtures/files/logger_event_types.jsonl"), name: "Test Game")
+    ImportGame.call(EVENT_TYPES_FIXTURE_PATH, name: "Test Game")
 
     refute_match(/unknown event type/, io.string)
   ensure

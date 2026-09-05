@@ -1,5 +1,6 @@
 {"event":"session_started","game_speed":"GAMESPEED_QUICK","map_script":"TestMap","map_size":"WORLDSIZE_SMALL","max_turns":100,"players":[{"civ":"Rome","handicap":"HANDICAP_PRINCE","human":true,"name":"Augustus"}],"start_era":"ERA_ANCIENT","turn":0}
 {"event":"building_constructed","turn":1}
+{"event":"building_granted","turn":1}
 {"event":"building_sold","turn":1}
 {"event":"city_captured","turn":1}
 {"event":"city_converted","turn":1}
@@ -9,6 +10,9 @@
 {"event":"city_state_alliance_changed","turn":1}
 {"event":"city_state_ally_changed","turn":1}
 {"event":"city_state_friendship_changed","turn":1}
+{"event":"city_state_protected","turn":1}
+{"event":"city_state_protection_ended","turn":1}
+{"event":"city_state_snapshot","turn":1}
 {"event":"congress_founded","turn":1}
 {"event":"congress_host_changed","turn":1}
 {"event":"congress_snapshot","turn":1}
@@ -18,6 +22,7 @@
 {"event":"embassy_ended","turn":1}
 {"event":"embassy_established","turn":1}
 {"event":"era_entered","turn":1}
+{"event":"free_buildings_ready","turn":1}
 {"event":"friendship_declared","turn":1}
 {"event":"friendship_ended","turn":1}
 {"event":"game_ended","turn":1}
@@ -53,11 +58,19 @@
 {"event":"resolution_repealed","turn":1}
 {"event":"resolution_undetermined","turn":1}
 {"event":"snapshot","turn":1}
+{"event":"spy_created","turn":1}
+{"event":"spy_killed","turn":1}
+{"event":"spy_mission_completed","turn":1}
+{"event":"spy_moved","turn":1}
+{"event":"spy_promoted","turn":1}
+{"event":"spy_revived","turn":1}
 {"event":"teams_met","turn":1}
 {"event":"tech_from_ruins","turn":1}
 {"event":"tech_researched","turn":1}
 {"event":"trade_agreement_ended","turn":1}
 {"event":"trade_agreement_signed","turn":1}
+{"event":"trade_route_ended","turn":1}
+{"event":"trade_route_established","turn":1}
 {"event":"trade_route_plundered","turn":1}
 {"event":"unit_created","turn":1}
 {"event":"unit_killed","turn":1}
