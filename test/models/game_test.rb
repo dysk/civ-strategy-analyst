@@ -26,6 +26,20 @@ class GameTest < ActiveSupport::TestCase
     refute_predicate Game.new(name: "Test Game"), :pangaea?
   end
 
+  test "names the city-states the logger listed when the session started" do
+    game = Game.create!(name: "City-State Game")
+    session_started(game, city_states: %w[Zurich Harappa])
+
+    assert_equal %w[Harappa Zurich], game.city_state_civs.to_a.sort
+  end
+
+  test "a log from before the logger named the city-states has none" do
+    game = Game.create!(name: "Nameless City-State Game")
+    session_started(game, city_states: nil)
+
+    assert_empty game.city_state_civs
+  end
+
   test "defaults completed to false" do
     game = Game.create!(name: "New Game")
     assert_equal false, game.completed
@@ -92,5 +106,16 @@ class GameTest < ActiveSupport::TestCase
     assert_difference("Analysis.count", -1) do
       game.destroy
     end
+  end
+
+  private
+
+  def session_started(game, city_states:)
+    payload = { "event" => "session_started", "turn" => 0 }
+    payload["city_states"] = city_states.map { |civ| { "civ" => civ } } if city_states
+
+    game.game_events.create!(
+      seq: 1, session_index: 0, turn: 0, event_type: "session_started", payload: payload
+    )
   end
 end

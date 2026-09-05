@@ -41,6 +41,14 @@ class BufferCitiesTest < ActiveSupport::TestCase
     assert_empty buffer_cities.call[:pairs]
   end
 
+  test "call does not pair a player with a city-state" do
+    city_states("Zurich")
+    capitals
+    founded("Zurich", "Zurich", 0, 18, 20)
+
+    assert_equal [ %w[Rome Greece] ], buffer_cities.call[:pairs].map { |entry| entry[:civs] }
+  end
+
   test "call counts a city on the line between two capitals as a buffer" do
     capitals
     founded("Rome", "Ostia", 30, 18, 20)
@@ -265,6 +273,10 @@ class BufferCitiesTest < ActiveSupport::TestCase
   def capitals
     founded("Rome", "Roma", 0, *ROME_CAPITAL)
     founded("Greece", "Athenai", 0, *GREECE_CAPITAL)
+  end
+
+  def city_states(*civs)
+    event(nil, "session_started", 0, city_states: civs.map { |civ| { "civ" => civ } })
   end
 
   def founded(civ, city, turn, x, y)

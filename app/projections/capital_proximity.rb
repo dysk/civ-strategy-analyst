@@ -32,13 +32,14 @@ class CapitalProximity
     { capitals: capitals, distances: distances }
   end
 
-  # A civilization's capital is the first city it founded. Cities captured
-  # later are somebody else's capital and do not replace it.
+  # A city-state settles like anyone else, but it plays no part in the game
+  # these distances describe, so it is held apart rather than measured.
   def capitals
-    @capitals ||= @foundings
-      .filter_map { |event| entry(event) }
-      .group_by { |city| city[:civ] }
-      .transform_values(&:first)
+    @capitals ||= first_cities.except(*@game.city_state_civs)
+  end
+
+  def city_state_capitals
+    @city_state_capitals ||= first_cities.slice(*@game.city_state_civs)
   end
 
   # `bearing` reads from the first civilization towards the second.
@@ -53,6 +54,15 @@ class CapitalProximity
   end
 
   private
+
+  # A civilization's capital is the first city it founded. Cities captured
+  # later are somebody else's capital and do not replace it.
+  def first_cities
+    @first_cities ||= @foundings
+      .filter_map { |event| entry(event) }
+      .group_by { |city| city[:civ] }
+      .transform_values(&:first)
+  end
 
   def entry(event)
     x, y = event.payload.values_at("x", "y")

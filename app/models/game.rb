@@ -14,6 +14,16 @@ class Game < ApplicationRecord
     map_script.to_s.match?(PANGAEA)
   end
 
+  # The minor civilizations, named by the logger when the session started.
+  # A log from before the logger named them lists none, and those games
+  # never logged a city-state's cities either.
+  def city_state_civs
+    @city_state_civs ||= event_log.of_type("session_started")
+      .flat_map { |event| Array(event.payload["city_states"]) }
+      .filter_map { |city_state| city_state["civ"] }
+      .to_set
+  end
+
   # Loaded once and held, so the projections built from this game all read
   # the same pass. A game instance that goes on to log more events - only
   # the importer does - must not be one that has already been projected.

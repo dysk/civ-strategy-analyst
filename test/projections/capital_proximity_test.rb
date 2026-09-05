@@ -109,6 +109,24 @@ class CapitalProximityTest < ActiveSupport::TestCase
       CapitalProximity.for(@game).distances
   end
 
+  test "a city-state's capital is kept apart from the players'" do
+    city_states("Zurich")
+    founded("Rome", "Roma", 0, 10, 10)
+    founded("Zurich", "Zurich", 0, 16, 10)
+
+    assert_equal %w[Rome], proximity.capitals.keys
+    assert_equal %w[Zurich], proximity.city_state_capitals.keys
+  end
+
+  test "distances measure the players' capitals, never a city-state's" do
+    city_states("Zurich")
+    founded("Rome", "Roma", 0, 10, 10)
+    founded("Greece", "Athens", 0, 16, 10)
+    founded("Zurich", "Zurich", 0, 13, 10)
+
+    assert_equal [ %w[Rome Greece] ], proximity.distances.map { |pair| pair[:civs] }
+  end
+
   test "builds its own bounds from the game's map" do
     founded("Rome", "Roma", 0, 10, 6)
 
@@ -119,6 +137,14 @@ class CapitalProximityTest < ActiveSupport::TestCase
 
   def proximity
     CapitalProximity.new(@game, grid: HexGrid.new(width: 46), bounds: MapBounds.new(@game))
+  end
+
+  def city_states(*civs)
+    @game.game_events.create!(
+      seq: 1000, session_index: 0, turn: 0, event_type: "session_started",
+      payload: { "event" => "session_started", "turn" => 0,
+                 "city_states" => civs.map { |civ| { "civ" => civ } } }
+    )
   end
 
   def pangaea
