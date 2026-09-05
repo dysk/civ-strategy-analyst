@@ -196,21 +196,33 @@ blockquote {
 .capital-layout {
   display: block;
   width: 100%;
-  max-width: 300px;
+  max-width: 600px;
   height: auto;
   margin-bottom: 1rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
 }
 
-.capital-layout circle {
+.capital-layout text {
+  text-anchor: middle;
+}
+
+.capital--major circle {
   fill: var(--color-accent);
 }
 
-.capital-layout text {
+.capital--major text {
   fill: var(--color-fg);
-  font-size: 12px;
-  text-anchor: middle;
+  font-size: 14px;
+}
+
+.capital--minor circle {
+  fill: var(--color-muted);
+}
+
+.capital--minor text {
+  fill: var(--color-muted);
+  font-size: 11px;
 }
 
 .trend {

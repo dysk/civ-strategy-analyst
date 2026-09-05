@@ -1,8 +1,8 @@
 class GamesController < ApplicationController
   SNOWBALL_METRICS = %w[score science population culture production faith gold_per_turn food].freeze
-  CAPITAL_LAYOUT_HEIGHT = 300
-  CAPITAL_LAYOUT_PADDING = 20
-  CAPITAL_LAYOUT_CHARACTER_WIDTH = 7 # approx px per character at the label's 12px font size
+  CAPITAL_LAYOUT_HEIGHT = 600
+  CAPITAL_LAYOUT_PADDING = 24
+  CAPITAL_LAYOUT_CHARACTER_WIDTH = 8 # approx px per character at the major label's 14px font size
 
   def index
     @games = Game.order(:id)
@@ -19,6 +19,7 @@ class GamesController < ApplicationController
     @geometry_rows = geometry_rows
     @capital_distances = capital_distances
     @buffer_cities = BufferCities.for(@game).call
+    @capital_layout_height = CAPITAL_LAYOUT_HEIGHT
     @capital_layout_width = capital_layout_width
     @capital_positions = capital_positions
     @army_rows = army_rows
@@ -110,7 +111,7 @@ class GamesController < ApplicationController
   # centered on their point (text-anchor: middle), so the horizontal padding
   # has to fit half the widest label or it clips against the canvas edge.
   def capital_positions
-    capitals = CapitalProximity.for(@game).capitals.values
+    capitals = layout_capitals
     return [] if capitals.empty?
 
     xs = capitals.map { |capital| capital[:x] }
@@ -126,11 +127,20 @@ class GamesController < ApplicationController
 
     capitals.map do |capital|
       {
-        civ: capital[:civ],
+        civ: capital[:civ], major: capital[:major],
         cx: (x_offset + (capital[:x] - xs.min) * scale).round(2),
         cy: (CAPITAL_LAYOUT_HEIGHT - y_offset - (capital[:y] - ys.min) * scale).round(2)
       }
     end
+  end
+
+  # The city-states are drawn too: they are the ground a player's expansion
+  # had to go round. `major` is what tells the two apart on the canvas.
+  def layout_capitals
+    proximity = CapitalProximity.for(@game)
+
+    proximity.capitals.values.map { |capital| capital.merge(major: true) } +
+      proximity.city_state_capitals.values.map { |capital| capital.merge(major: false) }
   end
 
   def capital_label_half_width(civ)

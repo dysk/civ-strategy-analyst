@@ -235,6 +235,23 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show marks a city-state's capital apart from the players' in the layout diagram" do
+    game = Game.create!(name: "City-State Layout Game", map_width: 46)
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city_states(game, "Zurich")
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+    city(game, "Zurich", 0, 20, 20)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "svg.capital-layout .capital--major text" do |labels|
+      assert_equal %w[Rome Greece], labels.map(&:text)
+    end
+    assert_select "svg.capital-layout .capital--minor text", "Zurich"
+  end
+
   test "show widens the capital layout canvas to match a non-square map's aspect ratio" do
     game = Game.create!(name: "Wide Map Game", map_width: 92, map_height: 46)
     %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
@@ -245,7 +262,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "svg.capital-layout" do |svgs|
-      assert_equal "0 0 600 300", svgs.first["viewbox"]
+      assert_equal "0 0 1200 600", svgs.first["viewbox"]
     end
   end
 
@@ -259,7 +276,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "svg.capital-layout" do |svgs|
-      assert_equal "0 0 300 300", svgs.first["viewbox"]
+      assert_equal "0 0 600 600", svgs.first["viewbox"]
     end
   end
 
@@ -574,6 +591,10 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     game = Game.create!(name: name, map_script: "Pangaea")
     civs.each { |civ| game.players.create!(civ: civ) }
     game
+  end
+
+  def city_states(game, *civs)
+    event(game, nil, "session_started", 0, "city_states" => civs.map { |civ| { "civ" => civ } })
   end
 
   def named_city(game, civ, city, turn, x, y)
