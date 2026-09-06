@@ -7,8 +7,7 @@ module KeyMomentsHelper
   end
 
   DESCRIPTIONS = {
-    war: ->(m) { "#{m[:attacker_civs].join(", ")} declared war on #{m[:defender_civs].join(", ")} " \
-                 "(#{m[:turn_peace] ? "peace at turn #{m[:turn_peace]}" : "ongoing"})" },
+    war: ->(m) { KeyMomentsHelper.war_sentence(m) },
     buffer_city_lost: ->(m) { "#{m[:civ]} lost #{m[:city]} to #{m[:captured_by]}, " \
                              "the city between its capital and #{m[:against]}'s" },
     leader_change: ->(m) { "#{m[:metric]} lead passed from #{m[:from]} to #{m[:to]}" },
@@ -67,6 +66,45 @@ module KeyMomentsHelper
 
     tag.span(ARROWS[direction], class: "trend trend--#{direction}", aria: { hidden: true })
   end
+
+  # A war's declaration says who and when; what it cost says which kind of
+  # war it was, and that is what tells a raid for a worker from a
+  # conquest. Both sides are named whenever either bled - a war one side
+  # came through untouched reads as an even fight without the other figure.
+  def self.war_sentence(moment)
+    [ declaration(moment), opening(moment), *tolls(moment) ].compact.join
+  end
+
+  def self.declaration(moment)
+    "#{moment[:attacker_civs].join(", ")} declared war on #{moment[:defender_civs].join(", ")} " \
+      "(#{moment[:turn_peace] ? "peace at turn #{moment[:turn_peace]}" : "ongoing"})"
+  end
+
+  def self.opening(moment)
+    blood = moment[:first_blood]
+    return unless blood
+
+    ", opening on #{possessive(blood[:civ])} #{unit_name(blood[:unit])} " \
+      "#{blood[:fate] == :captured ? "taken" : "killed"}"
+  end
+
+  def self.possessive(civ) = civ.end_with?("s") ? "#{civ}'" : "#{civ}'s"
+
+  def self.tolls(moment)
+    toll = moment[:toll] || {}
+
+    [ counted("dead", toll, :losses, every_side: true), counted("taken", toll, :captured) ]
+  end
+
+  def self.counted(label, toll, field, every_side: false)
+    return if toll.values.sum { |side| side[field] }.zero?
+
+    sides = toll.select { |_civ, side| every_side || side[field].positive? }
+
+    "; #{label}: #{sides.map { |civ, side| "#{civ} #{side[field]}" }.join(", ")}"
+  end
+
+  def self.unit_name(unit) = unit.delete_prefix("UNIT_").downcase.titleize
 
   def key_moment_sentence(moment)
     "#{key_moment_turns(moment)}: #{DESCRIPTIONS.fetch(moment[:type]).call(moment)}"

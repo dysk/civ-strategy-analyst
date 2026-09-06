@@ -2,17 +2,43 @@ require "test_helper"
 
 class KeyMomentsHelperTest < ActionView::TestCase
   test "narrates a war that ended in peace" do
-    moment = { type: :war, turn: 57, turn_peace: 70,
-               attacker_civs: %w[Chile], defender_civs: %w[Vietnam] }
-
-    assert_equal "Turn 57: Chile declared war on Vietnam (peace at turn 70)", key_moment_sentence(moment)
+    assert_equal "Turn 57: Chile declared war on Vietnam (peace at turn 70)",
+                 key_moment_sentence(war(turn_peace: 70))
   end
 
   test "narrates a war still being fought" do
-    moment = { type: :war, turn: 57, turn_peace: nil,
-               attacker_civs: %w[Chile], defender_civs: %w[Vietnam] }
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing)", key_moment_sentence(war)
+  end
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing)", key_moment_sentence(moment)
+  test "narrates what a war opened with" do
+    moment = war(first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_SCOUT", by: "Chile",
+                                fate: :killed, kind: :scout })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing), opening on Vietnam's Scout killed",
+                 key_moment_sentence(moment)
+  end
+
+  test "leaves a name that already ends in s the bare apostrophe" do
+    moment = war(first_blood: { turn: 58, civ: "Philippines", unit: "UNIT_LANCER", by: "Chile",
+                                fate: :killed, kind: :soldier })
+
+    assert_includes key_moment_sentence(moment), "Philippines' Lancer killed"
+  end
+
+  # Both sides are named whenever either bled, since a war one side came
+  # through untouched reads as an even fight without the other figure.
+  test "counts each side's dead" do
+    moment = war(toll: { "Chile" => toll(losses: 2), "Vietnam" => toll(losses: 11) })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); dead: Chile 2, Vietnam 11",
+                 key_moment_sentence(moment)
+  end
+
+  test "counts the civilians a war took where it killed nobody" do
+    moment = war(toll: { "Chile" => toll, "Vietnam" => toll(captured: 1) })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); taken: Vietnam 1",
+                 key_moment_sentence(moment)
   end
 
   test "narrates a lost buffer city by its captor and the rival it stood against" do
@@ -156,5 +182,17 @@ class KeyMomentsHelperTest < ActionView::TestCase
     moment = { type: :science_victory_imminent, turn: 195, civ: "Chile", parts_assembled: 5 }
 
     assert_equal "Turn 195: Chile assembled 5 of 6 spaceship parts", key_moment_sentence(moment)
+  end
+
+  private
+
+  def war(turn_peace: nil, first_blood: nil, toll: {})
+    { type: :war, turn: 57, turn_peace: turn_peace, attacker_civs: %w[Chile],
+      defender_civs: %w[Vietnam], first_blood: first_blood, toll: toll }
+  end
+
+  def toll(losses: 0, captured: 0)
+    { losses: losses, loss_types: {}, kills: 0, kill_types: {},
+      captured: captured, captured_types: {}, seized: 0, seized_types: {} }
   end
 end
