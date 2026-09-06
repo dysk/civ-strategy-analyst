@@ -71,8 +71,38 @@ module KeyMomentsHelper
   # war it was, and that is what tells a raid for a worker from a
   # conquest. Both sides are named whenever either bled - a war one side
   # came through untouched reads as an even fight without the other figure.
+  # A roster runs to a dozen types with a tail of one unit each. Its head
+  # is what tells one army from another; the rest is inventory.
+  ARMY_TYPES_NAMED = 3
+
   def self.war_sentence(moment)
-    [ declaration(moment), opening(moment), *tolls(moment) ].compact.join
+    [ declaration(moment), opening(moment), *tolls(moment), *armies(moment) ].compact.join
+  end
+
+  def self.armies(moment)
+    forces = moment[:forces] || {}
+
+    [ sides_named(forces, "fielded", :opening) { |units| leading(units) },
+      sides_named(forces, "new", :debuts) { |debuts| arrivals(debuts) } ]
+  end
+
+  def self.sides_named(forces, label, field)
+    named = forces.transform_values { |side| yield(side[field]) }.reject { |_civ, text| text.blank? }
+    return if named.empty?
+
+    "; #{label}: " + named.map { |civ, text| "#{civ} #{text}" }.join("; ")
+  end
+
+  # A roster counts workers and caravans, which is right for a ledger and
+  # wrong for a sentence about a war.
+  def self.leading(units)
+    units.reject { |unit, _count| WarCasualties.kind_of(unit) == :civilian }
+         .first(ARMY_TYPES_NAMED).map { |unit, count| "#{unit_name(unit)} #{count}" }.join(", ")
+  end
+
+  def self.arrivals(debuts)
+    debuts.first(ARMY_TYPES_NAMED)
+          .map { |debut| "#{unit_name(debut[:unit])} (turn #{debut[:turn]})" }.join(", ")
   end
 
   def self.declaration(moment)
