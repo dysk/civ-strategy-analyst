@@ -28,6 +28,16 @@ item is called (a policy or belief may keep its old vanilla ID while
 being renamed and rebalanced in-game, so ID, display name and effect can
 all three diverge).
 
+Units follow the same split, and the digest gives you the bridge. Every
+unit reaches you as its internal ID - `UNIT_WWI_TANK` - while
+`lekmod.general_rules` discusses units by the name the game shows. The
+`unit_names` field maps every unit ID this game logged to that name, so
+look one up there before reasoning about it: `UNIT_WWI_TANK` is a
+Landship, `UNIT_PROPHET` a Great Prophet, `UNIT_FRENCH_FOREIGNLEGION` a
+Foreign Legion. Do not read a name out of the ID - LEKMOD renames units
+and the ID keeps the old word, so an ID read as English can name a unit
+that does not exist.
+
 That is a rule about where the effect comes from, not about what to call
 the item in the report. Write about policies and beliefs by their display
 name - the bolded name at the start of their `lekmod.policies` /

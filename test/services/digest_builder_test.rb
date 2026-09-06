@@ -415,7 +415,34 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_nil digest[:lekmod][:general_rules]
   end
 
+
+  # The digest speaks in the game's ids, which say "UNIT_WWI_TANK" for a
+  # thing every rulebook calls a Landship. The glossary is the bridge, and
+  # it carries only what this game actually fielded.
+  test "names every unit type the log mentions" do
+    event("Rome", "unit_created", 10, unit: "UNIT_WWI_TANK", x: 1, y: 1)
+
+    assert_equal({ "UNIT_WWI_TANK" => "Landship" }, lekmod_digest[:unit_names])
+  end
+
+  test "names both ends of an upgrade" do
+    event("Rome", "unit_upgraded", 12, from: "UNIT_GATLINGGUN", to: "UNIT_WWI_TANK")
+
+    assert_equal({ "UNIT_GATLINGGUN" => "Gatling Gun", "UNIT_WWI_TANK" => "Landship" },
+                 lekmod_digest[:unit_names])
+  end
+
+  test "names nothing for a game that logged no units" do
+    snapshot("Rome", 10, score: 100)
+
+    assert_empty lekmod_digest[:unit_names]
+  end
+
   private
+
+  def lekmod_digest
+    DigestBuilder.new(@game, lekmod_version: "1.5", lekmod_root: LEKMOD_FIXTURES_ROOT).call
+  end
 
   def snapshot(civ, turn, **metrics)
     @seq += 1

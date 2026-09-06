@@ -34,6 +34,7 @@ class DigestBuilder
       capital_proximity: CapitalProximity.for(@game).call,
       buffer_cities: BufferCities.for(@game).call,
       key_moments: key_moments,
+      unit_names: unit_names,
       cultural: cultural_by_civ,
       congress: congress,
       victory_progress: victory_progress,
@@ -156,6 +157,19 @@ class DigestBuilder
         matrix[opponent] = latest.slice(:points, :level, :trend)
       end
     end
+  end
+
+  # The digest speaks in ids, and the rules the LLM reads beside it speak
+  # in names. This is the bridge, and it carries only the units this game
+  # actually fielded.
+  def unit_names
+    UnitNames.for(@lekmod_version, root: @lekmod_root).glossary(logged_units)
+  end
+
+  def logged_units
+    @game.game_events
+         .pluck(Arel.sql("payload->>'unit'"), Arel.sql("payload->>'from'"), Arel.sql("payload->>'to'"))
+         .flatten.compact.grep(/\AUNIT_/)
   end
 
   def key_moments

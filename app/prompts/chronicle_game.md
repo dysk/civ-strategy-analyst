@@ -189,8 +189,11 @@ preaching - are no part of the toll.
 
 It carries `losses_by_type` beside it: what each side buried, by kind of
 unit, heaviest first. The names arrive as the game's own -
-`UNIT_CROSSBOWMAN` - and reach the page as crossbowmen, named as the era
-would. This is the record of the dead alone. It never says what killed
+`UNIT_CROSSBOWMAN` - and `unit_names` gives each one the name the rules
+use before it reaches the page as crossbowmen, named as the era would.
+Take the name from there rather than from the ID: `UNIT_WWI_TANK` is a
+Landship and `UNIT_BARBARIAN_WARRIOR` a brute, and neither is legible in
+the ID that carries it. This is the record of the dead alone. It never says what killed
 them, so write that a side's crossbowmen and pikemen fell and leave the
 hand that felled them unnamed rather than invent it.
 
@@ -269,7 +272,14 @@ game does not exist in it. Translate as you write:
 Civilizations and leaders are named as the digest names them. Cities,
 wonders, religions and city-states keep their names too. Internal
 identifiers - anything shaped like `POLICY_*`, `BUILDING_*`, `ERA_*`,
-`RELIGION_*` - are never printed; write what the thing is called.
+`RELIGION_*`, `UNIT_*` - are never printed; write what the thing is called.
+
+A name out of `unit_names` is a label of the ruleset, not a phrase built
+of words. Writing in a language other than English, say what the thing
+was as that language would have said it - riflemen, horsemen, siege guns
+- and never translate the label piece by piece. A Great War Bomber is the
+aircraft of that war and not a bomber that was great, and a Landship is
+an armoured engine crawling across a field.
 
 ## Ruleset
 
