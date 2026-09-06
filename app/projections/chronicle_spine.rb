@@ -126,11 +126,27 @@ class ChronicleSpine
   # The chronicle is told the shape of a war's losses, never their size,
   # so the detector's raw toll is spent here and does not travel on.
   def wars
-    @detector.wars.map do |war|
-      toll = war[:toll]
+    @detector.wars.map { |war| chronicled(war) }
+  end
 
-      war.except(:toll).merge(casualties: bleeding(toll), losses_by_type: buried(toll),
-                              taken_by_type: taken(toll))
+  def chronicled(war)
+    toll = war[:toll]
+    told = war.except(:toll, :forces)
+              .merge(casualties: bleeding(toll), losses_by_type: buried(toll),
+                     taken_by_type: taken(toll))
+
+    war[:forces] ? told.merge(armies: armies(war[:forces])) : told
+  end
+
+  # What stood on the field and what new thing reached it, and how much of
+  # an army was built against how much was re-armed under fire - the
+  # difference between a war paid for with production and one paid for
+  # with gold. Never the production ledger itself: a table of types by
+  # count invites reciting where the entry wants writing.
+  def armies(forces)
+    forces.transform_values do |side|
+      { opening: side[:opening], closing: side[:closing], debuts: side[:debuts],
+        built: side[:raised].values.sum, re_armed: side[:upgraded].values.sum }
     end
   end
 

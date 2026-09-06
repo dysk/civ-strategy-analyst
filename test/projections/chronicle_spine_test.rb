@@ -223,6 +223,37 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_empty spine.quiet_spans
   end
 
+  test "a war names what each side had standing when it opened" do
+    event("Rome", "unit_created", 5, unit: "UNIT_ARCHER")
+    declare_war
+    killed("Rome", "Greece", "UNIT_SPEARMAN", 12)
+
+    assert_equal({ "UNIT_ARCHER" => 1 }, war_moment[:armies]["Rome"][:opening])
+  end
+
+  # Per-type production is ledger material. The chronicle is told how much
+  # of an army was built against how much was re-armed under fire - the
+  # difference between a war paid for with production and one paid for
+  # with gold - and left to write rather than to recite.
+  test "a war counts what each side built and re-armed without listing it" do
+    declare_war
+    killed("Rome", "Greece", "UNIT_SPEARMAN", 12)
+    event("Rome", "unit_created", 13, unit: "UNIT_ARCHER")
+    event("Rome", "unit_created", 14, unit: "UNIT_SPEARMAN")
+    event("Rome", "unit_upgraded", 14, from: "UNIT_ARCHER", to: "UNIT_SPEARMAN")
+    event("Rome", "unit_lost", 14, unit: "UNIT_ARCHER")
+
+    assert_equal 1, war_moment[:armies]["Rome"][:built]
+    assert_equal 1, war_moment[:armies]["Rome"][:re_armed]
+  end
+
+  test "a war carries no order of battle beyond the part the chronicle is given" do
+    declare_war
+    killed("Rome", "Greece", "UNIT_SPEARMAN", 12)
+
+    assert_nil war_moment[:forces]
+  end
+
   private
 
   def spine = ChronicleSpine.for(@game)
