@@ -222,6 +222,33 @@ the chronicle the way a treaty does, as a line about who declared against
 whom, or as nothing at all if the years around it are fuller. Never write
 marching, sieges or dead where the scale says none of it happened.
 
+A war that cost something also carries `armies`: for each side, what it
+had standing when the war opened and what it was left with (`opening`,
+`closing`), the weapons that first reached it while the war ran (`debuts`,
+each with its turn and whether it was `built` or `upgraded`), and how many
+units the side built against how many it re-armed (`built`, `re_armed`).
+These are rosters and count labourers among the soldiers, so name what
+fought and leave the workers and the caravans out of the line of battle
+unless they are the point of the sentence.
+
+This is what lets you write the war and not only its result. Bombers
+standing against lancers is an age of the world in a single line, and it
+is in the record rather than added to it. The same rule holds as for the
+dead, though: the roster says what stood there, never what struck what.
+Write that one side's bombers were in the sky and the other's riflemen
+died, and leave the reader to join them.
+
+`debuts` is how a long war turns. A weapon that appears in its ninth year
+changes what the war is, and the turn it arrived is a date you may write.
+A side with no debuts fought to the end with what it began with, and that
+is worth saying of it.
+
+`built` against `re_armed` is how a war was paid for. An army mostly
+re-armed bought its modernity, old regiments handed new weapons where they
+stood; one mostly built raised fresh companies instead. Write the first as
+a treasury emptied and the second as a country under arms - the difference
+is a character, not a statistic.
+
 ## Vocabulary: no game words
 
 The chronicle is written from inside the world, so the vocabulary of the

@@ -894,6 +894,39 @@ military outcome with it. Where a civilization declared several of these
 and fought none of them, that pattern is itself the finding: it was
 spending diplomacy, not soldiers.
 
+A war that cost something also carries `forces`: for each side, what it
+had standing when the declaration came (`opening`), what it was left with
+at the peace or at the end of the log (`closing`), what it built while the
+war ran (`raised`), what it re-armed by upgrading units already in the
+field (`upgraded`), the civilians it raised alongside them
+(`raised_civilian`), the turn each type new to it first reached the army
+(`debuts`, each marked `built` or `upgraded`), and the army at its largest
+and smallest during the war (`peak`, `nadir`). A bloodless war carries no
+`forces` at all.
+
+`opening` and `closing` are rosters, so they count labourers and trade
+units among the soldiers - a side with eight workers standing when a war
+opened had eight workers to lose. Read them as inventories, not as
+strength.
+
+`forces` answers what `toll` cannot: what a war was fought with, and not
+only what it cost. The two `opening` rosters held against each other size
+the mismatch before a shot - bombers and paratroopers against riflemen and
+lancers is a war already decided. `debuts` is the shape of a long one,
+where the two ends say little on their own: a side that fielded ten new
+types across eighty turns finished a different war than it started, and a
+side whose `debuts` are empty fought the whole of it with what it walked
+in with. `raised` against `upgraded` says how it was paid for - an army
+that mostly re-armed spent gold on units it already had, which its
+treasury and its trade routes should corroborate, while one that mostly
+built spent production, which should show in what its cities were not
+building instead.
+
+`peak` and `nadir` are reported only where the middle of a war held
+something its ends did not: a side built up and then broken, or broken and
+then rebuilt. Their absence means it ran one way throughout, and says so
+as clearly as their presence says the opposite.
+
 Where a civilization was eliminated, lost its capital, or was attacked by
 several rivals at once and survived, say why it became the target. A
 coordinated attack has reasons the data can show: it was the civilization
