@@ -45,4 +45,24 @@ class LekmodIdsExtractorTest < ActiveSupport::TestCase
 
     assert_equal "Nested Belief", ids["BELIEF_TEST_NESTED"]
   end
+
+  test "resolves a unit name from the Units table via its text key" do
+    names = LekmodIdsExtractor.new(SOURCE_DIR).unit_names
+
+    assert_equal "Test Gatling Gun", names["UNIT_TEST_ONE"]
+  end
+
+  # LEKMOD's own units skip the text tables and write their English name
+  # straight into Description, where vanilla units carry a TXT_KEY.
+  test "takes a unit description that is already English as the name" do
+    names = LekmodIdsExtractor.new(SOURCE_DIR).unit_names
+
+    assert_equal "Test Anti-Tank Rifle", names["UNIT_TEST_LITERAL"]
+  end
+
+  test "leaves entities out of the unit names" do
+    names = LekmodIdsExtractor.new(SOURCE_DIR).unit_names
+
+    refute names.key?("POLICY_TEST_ONE")
+  end
 end

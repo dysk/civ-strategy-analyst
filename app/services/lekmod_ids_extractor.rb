@@ -12,17 +12,24 @@ class LekmodIdsExtractor
     @source_dir = source_dir
   end
 
-  def call
-    keys_by_type = type_to_txt_key
-    texts = txt_key_to_text
+  def call = resolve(type_to_txt_key)
 
-    keys_by_type.each_with_object({}) do |(type, txt_key), result|
-      text = texts[txt_key]
-      result[type] = text if text
+  def unit_names = resolve(unit_to_description)
+
+  private
+
+  def resolve(descriptions)
+    descriptions.each_with_object({}) do |(type, description), result|
+      name = texts[description] || literal(description)
+      result[type] = name if name
     end
   end
 
-  private
+  # LEKMOD's own units skip the text tables and write their English name
+  # straight into Description, where a vanilla unit carries a TXT_KEY.
+  def literal(description)
+    description unless description.start_with?("TXT_KEY")
+  end
 
   def documents
     @documents ||= Dir.glob(File.join(@source_dir, "**", "*.{xml,XML}")).map do |path|
@@ -44,6 +51,12 @@ class LekmodIdsExtractor
       txt_key = row.at_css(name_field)&.text
       result[type] = txt_key if type && txt_key
     end
+  end
+
+  def texts = @texts ||= txt_key_to_text
+
+  def unit_to_description
+    documents.each_with_object({}) { |doc, result| extract_type_mapping(doc, "Units", "Description", result) }
   end
 
   def txt_key_to_text

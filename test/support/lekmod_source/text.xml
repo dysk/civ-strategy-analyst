@@ -12,5 +12,8 @@
 		<Row Tag="TXT_KEY_RESOLUTION_TEST_ONE">
 			<Text>Test Resolution</Text>
 		</Row>
+		<Row Tag="TXT_KEY_UNIT_TEST_ONE">
+			<Text>Test Gatling Gun</Text>
+		</Row>
 	</Language_en_US>
 </GameData>

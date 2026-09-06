@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/units.yml: a unit ID -> display name mapping
+# extracted from a checkout of the mod's XML source. The game logs units by
+# ID, and an ID is not a name - UNIT_WWI_TANK is a Landship (see
+# db/lekmod/README.md and LekmodIdsExtractor).
+#
+# Usage:
+#   script/extract_lekmod_unit_names SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_unit_names /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/units.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+abort "Usage: script/extract_lekmod_unit_names SOURCE_DIR TARGET_YML" unless source_dir && target
+
+names = LekmodIdsExtractor.new(source_dir).unit_names
+abort "No units resolved from #{source_dir} - check the path points at LEKMOD/Override." if names.empty?
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, names.sort.to_h.to_yaml)
+
+puts "Wrote #{target} - #{names.size} units resolved."

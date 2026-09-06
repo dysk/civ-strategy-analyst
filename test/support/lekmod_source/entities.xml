@@ -30,4 +30,16 @@
 			<Description>TXT_KEY_RESOLUTION_TEST_ONE</Description>
 		</Row>
 	</Resolutions>
+	<Units>
+		<Row>
+			<ID>1</ID>
+			<Type>UNIT_TEST_ONE</Type>
+			<Description>TXT_KEY_UNIT_TEST_ONE</Description>
+		</Row>
+		<Row>
+			<ID>2</ID>
+			<Type>UNIT_TEST_LITERAL</Type>
+			<Description>Test Anti-Tank Rifle</Description>
+		</Row>
+	</Units>
 </GameData>
