@@ -6,6 +6,8 @@ class ChronicleDigestTest < ActiveSupport::TestCase
     @seq = 0
     event("Rome", "snapshot", 10, score: 100, population: 12, cities: 1)
     event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event(nil, "unit_killed", 41, killer: "Rome", victim: "Greece", unit: "UNIT_ARCHER")
+    event("Greece", "unit_lost", 41, unit: "UNIT_ARCHER")
     event(nil, "city_captured", 42, city: "Athens", old_owner: "Greece", new_owner: "Rome")
     event(nil, "city_captured", 150, city: "Ostia", old_owner: "Rome", new_owner: "Greece")
   end

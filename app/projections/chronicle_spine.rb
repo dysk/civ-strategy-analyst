@@ -19,12 +19,17 @@ class ChronicleSpine
   WEIGHTS = {
     nuclear_detonation: 8, capital_gained: 6, capital_lost: 6,
     cultural_victory_imminent: 6, science_victory_imminent: 6, diplomatic_victory_imminent: 6,
-    war: 5, city_captured: 4, city_destroyed: 4, ideology_adopted: 4,
+    city_captured: 4, city_destroyed: 4, ideology_adopted: 4,
     united_nations_formed: 4, apollo_completed: 4, era_lead: 3, leader_change: 3,
     religion_founded: 3, world_wonder: 3, city_founded: 2, religion_enhanced: 2,
     reformation_added: 2, congress_host_change: 2, spaceship_part_assembled: 2,
     pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1
   }.freeze
+
+  # A war is worth what it cost. A declaration nobody acted on is an act of
+  # diplomacy that the chronicle need not stop for, and a raid for a worker
+  # earns a sentence where a war of conquest earns an entry.
+  WAR_WEIGHTS = { war: 5, raid: 2, bloodless: 1 }.freeze
 
   FIRST_OF_ITS_KIND_BONUS = 1
 
@@ -98,7 +103,13 @@ class ChronicleSpine
   end
 
   def weight_of(moment)
-    WEIGHTS.fetch(moment[:type], 1) + (moment[:order] == 1 ? FIRST_OF_ITS_KIND_BONUS : 0)
+    base_weight(moment) + (moment[:order] == 1 ? FIRST_OF_ITS_KIND_BONUS : 0)
+  end
+
+  def base_weight(moment)
+    return WAR_WEIGHTS.fetch(moment[:scale]) if moment[:type] == :war
+
+    WEIGHTS.fetch(moment[:type], 1)
   end
 
   def detected_moments
@@ -112,24 +123,33 @@ class ChronicleSpine
       detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies
   end
 
-  # How heavily each side bled, as a multiple of the lightest losses in the
-  # war. A chronicle counts casualties against each other, never in units.
+  # The chronicle is told the shape of a war's losses, never their size,
+  # so the detector's raw toll is spent here and does not travel on.
   def wars
-    @detector.wars.map { |war| war.merge(casualties: casualties_in(war)) }
+    @detector.wars.map do |war|
+      toll = war[:toll]
+
+      war.except(:toll).merge(casualties: bleeding(toll), losses_by_type: buried(toll),
+                              taken_by_type: taken(toll))
+    end
   end
 
-  def casualties_in(war)
-    losses = (war[:attacker_civs] + war[:defender_civs]).index_with { |civ| units_lost(civ, war) }
+  # How heavily each side bled, as a multiple of the lightest losses in the
+  # war. A chronicle counts casualties against each other, never in units.
+  def bleeding(toll)
+    losses = toll.transform_values { |side| side[:losses] }
     lightest = losses.values.reject(&:zero?).min
 
     lightest ? losses.transform_values { |lost| (lost / lightest.to_f).round(1) } : {}
   end
 
-  def units_lost(civ, war)
-    of_type("unit_lost").count do |e|
-      e.civ == civ && e.turn >= war[:turn] && (war[:turn_peace].nil? || e.turn <= war[:turn_peace])
-    end
-  end
+  # The ratio says how heavily a side bled; only the types say what the war
+  # was fought with, and how far apart the two arsenals stood.
+  def buried(toll) = toll.transform_values { |side| side[:loss_types] }
+
+  # A civilian led away is a discrete act, not a body count, so the count
+  # of these does reach the page.
+  def taken(toll) = toll.transform_values { |side| side[:captured_types] }
 
   def logged_moments
     cities + wonders + discoveries

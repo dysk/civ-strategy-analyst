@@ -8,6 +8,7 @@ class ChronicleSpineTest < ActiveSupport::TestCase
 
   test "a war anchors an entry of its own" do
     event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 41)
     event(nil, "peace_made", 50, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
 
     assert_equal [ 40 ], spine.entries.map { |entry| entry[:turn] }
@@ -23,20 +24,90 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   end
 
   test "a war records how much more heavily one side bled than the other" do
-    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
-    5.times { |i| event("Greece", "unit_lost", 11 + i) }
-    event("Rome", "unit_lost", 12)
-    event(nil, "peace_made", 20, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
+    declare_war
+    5.times { |i| killed("Rome", "Greece", "UNIT_ARCHER", 11 + i) }
+    killed("Greece", "Rome", "UNIT_WARRIOR", 12)
 
-    war = spine.entries.flat_map { |entry| entry[:moments] }.find { |moment| moment[:type] == :war }
+    assert_equal({ "Greece" => 5.0, "Rome" => 1.0 }, war_moment[:casualties])
+  end
 
-    assert_equal({ "Greece" => 5.0, "Rome" => 1.0 }, war[:casualties])
+  # unit_lost is "left the map", not "died": a caravan founding a trade
+  # route raises it, and a trading empire would read as the bloodiest.
+  test "a unit that left the map without dying in combat is no part of the toll" do
+    declare_war
+    5.times { |i| event("Greece", "unit_lost", 11 + i, unit: "UNIT_CARAVAN") }
+
+    assert_empty war_moment[:casualties]
+  end
+
+  test "a side that came through the war untouched is recorded as having lost nothing" do
+    declare_war
+    killed("Rome", "Greece", "UNIT_ARCHER", 11)
+
+    assert_equal 0.0, war_moment[:casualties]["Rome"]
+  end
+
+  # The chronicle is told the shape of the losses, never their size: the
+  # raw toll the detector counts stays out of the moment it is built from.
+  test "a war keeps its counts out of the chronicle" do
+    declare_war
+    killed("Rome", "Greece", "UNIT_ARCHER", 11)
+
+    assert_not war_moment.key?(:toll)
+  end
+
+  # A civilian led away is a discrete act, not a body count, so the
+  # chronicle is trusted with how many.
+  test "a war names the civilians led away" do
+    declare_war
+    event("Greece", "unit_lost", 11, unit: "UNIT_WORKER", killed_by: "Rome")
+
+    assert_equal({ "UNIT_WORKER" => 1 }, war_moment[:taken_by_type]["Greece"])
+  end
+
+  test "a war carries what it opened with" do
+    declare_war
+    event("Greece", "unit_lost", 11, unit: "UNIT_WORKER", killed_by: "Rome")
+
+    assert_equal :civilian, war_moment[:first_blood][:kind]
+  end
+
+  # A declaration nobody acted on and a raid for a worker are not the
+  # moment a war of conquest is, and the chronicle should not spend an
+  # entry on them as though they were.
+  test "a raid weighs less than a war" do
+    declare_war
+    killed("Rome", "Greece", "UNIT_ARCHER", 11)
+    event(nil, "war_declared", 60, attacker_team: 3, attacker_civs: %w[Rome], defender_team: 4, defender_civs: %w[Egypt])
+    event("Egypt", "unit_lost", 61, unit: "UNIT_WORKER", killed_by: "Rome")
+
+    assert_operator war_weight_at(10), :>, war_weight_at(60)
+  end
+
+  test "a declaration nobody acted on weighs less than a raid" do
+    event(nil, "war_declared", 60, attacker_team: 3, attacker_civs: %w[Rome], defender_team: 4, defender_civs: %w[Egypt])
+    event("Egypt", "unit_lost", 61, unit: "UNIT_WORKER", killed_by: "Rome")
+    event(nil, "war_declared", 100, attacker_team: 5, attacker_civs: %w[Rome], defender_team: 6, defender_civs: %w[Persia])
+
+    assert_operator war_weight_at(60), :>, war_weight_at(100)
+  end
+
+  # The ratio says how heavily a side bled; only the types say what the
+  # war was fought with, and how far apart the two arsenals stood.
+  test "a war names what each side buried" do
+    declare_war
+    killed("Rome", "Greece", "UNIT_ARCHER", 11)
+    killed("Rome", "Greece", "UNIT_ARCHER", 12)
+    killed("Rome", "Greece", "UNIT_SPEARMAN", 13)
+
+    assert_equal({ "UNIT_ARCHER" => 2, "UNIT_SPEARMAN" => 1 }, war_moment[:losses_by_type]["Greece"])
   end
 
   test "an entry carries the most advanced era reached by its turn" do
     event(nil, "era_entered", 30, era: "ERA_CLASSICAL", civs: %w[Rome])
     event(nil, "era_entered", 60, era: "ERA_MEDIEVAL", civs: %w[Greece])
     event(nil, "war_declared", 70, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 71)
 
     assert_equal "ERA_MEDIEVAL", spine.entries.find { |entry| entry[:turn] == 70 }[:era]
   end
@@ -91,6 +162,7 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   test "a heavy moment earns an entry however crowded the years around it" do
     crowd_the_game
     event(nil, "war_declared", 601, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 602)
 
     assert_includes spine.entries.flat_map { |entry| entry[:moments] }.map { |moment| moment[:type] }, :war
   end
@@ -104,6 +176,7 @@ class ChronicleSpineTest < ActiveSupport::TestCase
 
   test "light moments join the entry they happened around" do
     event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 40)
     event("Rome", "golden_age_started", 43)
 
     assert_equal [ :war, :golden_age ], spine.entries.sole[:moments].map { |moment| moment[:type] }
@@ -133,14 +206,17 @@ class ChronicleSpineTest < ActiveSupport::TestCase
 
   test "quiet spans cover the stretches between distant entries" do
     event(nil, "war_declared", 20, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 20)
     event(nil, "peace_made", 22, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
     event(nil, "war_declared", 150, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 150)
 
     assert_equal [ { from_turn: 20, to_turn: 150 } ], spine.quiet_spans
   end
 
   test "neighbouring entries leave no quiet span between them" do
     event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_ARCHER", 40)
     event(nil, "city_captured", 46, city: "Athens", old_owner: "Greece", new_owner: "Rome")
 
     assert_equal 2, spine.entries.size
@@ -150,6 +226,24 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   private
 
   def spine = ChronicleSpine.for(@game)
+
+  def war_moment = war_moments.first
+
+  def war_moments
+    (spine.entries.flat_map { |entry| entry[:moments] } + spine.background).select { |m| m[:type] == :war }
+  end
+
+  def war_weight_at(turn) = war_moments.find { |moment| moment[:turn] == turn }[:weight]
+
+  def declare_war
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event(nil, "peace_made", 20, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
+  end
+
+  def killed(killer, victim, unit, turn)
+    event(nil, "unit_killed", turn, killer: killer, victim: victim, unit: unit)
+    event(victim, "unit_lost", turn, unit: unit)
+  end
 
   def crowd_the_game
     300.times { |i| event(nil, "city_captured", i * 2 + 1, city: "City #{i}", old_owner: "Greece", new_owner: "Rome") }
