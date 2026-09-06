@@ -183,6 +183,44 @@ A war carries `casualties`: each side's losses as a multiple of the lightest
 losses in that war, so 5.0 against 1.0 means one side lost five times what
 the other did, and 0.0 means a side lost nothing at all. Write the ratio and
 never the count - "for every company Rome buried, Greece buried five".
+Only units that died fighting are counted there; the ones a war spends
+without a battle - a caravan sent out, a settler founding, a missionary
+preaching - are no part of the toll.
+
+It carries `losses_by_type` beside it: what each side buried, by kind of
+unit, heaviest first. The names arrive as the game's own -
+`UNIT_CROSSBOWMAN` - and reach the page as crossbowmen, named as the era
+would. This is the record of the dead alone. It never says what killed
+them, so write that a side's crossbowmen and pikemen fell and leave the
+hand that felled them unnamed rather than invent it.
+
+What the two lists hold against each other is worth more than either: an
+age can stand between the arsenals, and riflemen and gatling guns dying to
+a side that buried nothing say so without a number stating it.
+
+`taken_by_type` counts what each side lost alive rather than dead: a
+worker led off a field, a missionary taken on the road, a settler carried
+away - and a settler taken comes back as its taker's worker, though the
+record rightly names what its owner lost. These are single acts rather
+than a body count, so here you may write how many.
+
+`first_blood` names the first thing the war cost, and `kind` tells a
+`civilian` from a `soldier` from a `scout`. A war that opened on a stolen
+worker and cost nothing more is a raid, and gets a raid's few lines
+rather than a war's. A war that opened on a prophet or a missionary taken
+may have been fought over it - write the sequence and let the reader draw
+the motive, unless the war went on taking such units, which says it
+plainly enough. A war that opened on a scout opened on nothing: a
+wanderer met a border and did not come back.
+
+`scale` says which of the three a war was, and how much of the page it has
+earned. A `war` is a war and may have its entry. A `raid` gets a sentence:
+a season's quarrel, a stolen team of labourers, a holy man taken on the
+road - written and left behind, not built into a campaign it never was. A
+`bloodless` war was fought by heralds and not by soldiers, and belongs in
+the chronicle the way a treaty does, as a line about who declared against
+whom, or as nothing at all if the years around it are fuller. Never write
+marching, sieges or dead where the scale says none of it happened.
 
 ## Vocabulary: no game words
 

@@ -854,6 +854,46 @@ in which a counterfactual for that civilization has to fit. Note that
 city can fall to a third party while remaining the buffer against the
 rival it was settled to hold off.
 
+A war in `key_moments` carries `toll`: for each side, the units that died
+fighting (`losses`, `loss_types`), the ones it destroyed (`kills`,
+`kill_types`), and the civilians it lost alive or took alive (`captured`,
+`seized`, and their types). Only combat deaths and captures are counted -
+a caravan sent out on a trade route, a settler founding a city and a
+spent missionary leave the map without being casualties of anything, and
+none of them appear here. The types name what fell, never what killed it:
+the log holds no record of which unit struck which, so a side is
+described by what it destroyed and not by what it destroyed it with. Read
+the two sides' `loss_types` against each other - an age standing between
+the arsenals, riflemen and gatling guns dying to a side that buried
+nothing, explains an outcome more precisely than any army-power figure,
+while a war both sides fought with the same units was decided by numbers
+or position instead.
+
+The same war carries `first_blood`: the first thing it cost, naming `civ`
+(who lost it), `unit`, `by` (who took it), `fate` (`killed` or
+`captured`) and `kind` (`civilian`, `soldier` or `scout`). It is the
+closest the record comes to saying what a war was about. A war that opens
+on a captured worker and costs nothing else was a raid on a neighbour's
+labour - common against city-states early - and belongs in the analysis
+as an economic act, not a military one. A war that opens on a captured or
+killed civilian may have been fought over that unit or may merely have
+caught it in the open first; a run of such captures through the same war
+is the evidence that decides which, and one alone is not. A war that
+opens on a scout says nothing at all: scouts wander into borders and die
+there, and no intent should be read from it.
+
+`scale` sizes the war for you from that toll: `war` where a soldier died,
+`raid` where the only cost was a civilian taken or a scout ridden down,
+and `bloodless` where the declaration cost neither side anything at all. A
+bloodless war is an act of diplomacy rather than a campaign - a
+declaration made to press a neighbour, to join an ally's quarrel on paper,
+to deny a rival its city-state, or to line up a Congress vote - and it
+does not belong in a civilization's record of wars fought. Do not count it
+as aggression, do not read an army behind it, and do not explain a
+military outcome with it. Where a civilization declared several of these
+and fought none of them, that pattern is itself the finding: it was
+spending diplomacy, not soldiers.
+
 Where a civilization was eliminated, lost its capital, or was attacked by
 several rivals at once and survived, say why it became the target. A
 coordinated attack has reasons the data can show: it was the civilization
