@@ -56,6 +56,28 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal :raid, detector.wars.first[:scale]
   end
 
+  # A toll says what a war cost and nothing about what it was fought
+  # with. The armies say the rest: crossbows against gatling guns is a
+  # different war from an even one, whatever the count of the dead.
+  test "wars reports the armies each side brought to it" do
+    event("Rome", "unit_created", 5, unit: "UNIT_ARCHER")
+    event("Greece", "unit_created", 5, unit: "UNIT_SPEARMAN")
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    killed("Rome", "Greece", "UNIT_SPEARMAN", 15)
+
+    assert_equal({ "UNIT_ARCHER" => 1 }, detector.wars.first[:forces]["Rome"][:opening])
+  end
+
+  # A war in which nobody exchanged a blow has no order of battle worth
+  # reading: who stood where is not its story, the absence of it is.
+  test "wars leaves the order of battle off a war nobody fought" do
+    event("Rome", "unit_created", 5, unit: "UNIT_ARCHER")
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event(nil, "peace_made", 30, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
+
+    assert_nil detector.wars.first[:forces]
+  end
+
   test "wars ignores losses and captures outside the war window" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event(nil, "peace_made", 30, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])

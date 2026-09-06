@@ -27,6 +27,7 @@ class KeyMomentDetector
     @game = game
     @log = game.event_log
     @casualties = WarCasualties.new(game)
+    @order_of_battle = OrderOfBattle.new(game)
   end
 
   def leader_changes
@@ -367,12 +368,20 @@ class KeyMomentDetector
     war_declarations.map do |war_declared, peace|
       war = declared_war(war_declared, peace)
 
-      war.merge(toll: @casualties.during(war), first_blood: @casualties.first_blood(war),
-                scale: @casualties.scale(war))
+      with_armies(war.merge(toll: @casualties.during(war), first_blood: @casualties.first_blood(war),
+                            scale: @casualties.scale(war)))
     end
   end
 
   private
+
+  # A war in which nobody exchanged a blow has no order of battle worth
+  # reading: who stood where is not its story, the absence of it is.
+  def with_armies(war)
+    return war if war[:scale] == :bloodless
+
+    war.merge(forces: @order_of_battle.during(war))
+  end
 
   # A snapshot with no treasury cannot have the multiplier divided out,
   # so it takes no part in the comparison rather than being guessed at.
