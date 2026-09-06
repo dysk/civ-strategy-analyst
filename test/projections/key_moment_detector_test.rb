@@ -6,13 +6,11 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     @seq = 0
   end
 
-  test "wars reports declaration, territory changes and unit-loss spikes" do
+  test "wars reports declaration, territory changes and what each side lost" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event(nil, "city_captured", 12, city: "Athens", old_owner: "Greece", new_owner: "Rome")
-    event("Greece", "unit_lost", 15)
-    event("Greece", "unit_lost", 15)
-    event("Greece", "unit_lost", 15)
-    event("Rome", "unit_lost", 20)
+    killed("Rome", "Greece", "UNIT_ARCHER", 15)
+    killed("Greece", "Rome", "UNIT_WARRIOR", 20)
     event(nil, "peace_made", 30, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
 
     moments = detector.wars
@@ -26,34 +24,47 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal %w[Rome], war[:attacker_civs]
     assert_equal %w[Greece], war[:defender_civs]
     assert_equal({ "Rome" => 1 }, war[:cities_captured])
-    assert_equal [ { civ: "Greece", turn: 15, count: 3 } ], war[:unit_lost_spikes]
+    assert_equal({ "UNIT_ARCHER" => 1 }, war[:toll]["Greece"][:loss_types])
   end
 
-  test "wars omits unit_lost_spikes when no side loses 3+ units in a single turn" do
+  # What a war opened with is as close as the log comes to saying what it
+  # was about, and it is the whole story of a war fought over one worker.
+  test "wars names what the war opened with" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
-    event("Greece", "unit_lost", 15)
-    event("Greece", "unit_lost", 16)
+    event("Greece", "unit_lost", 12, unit: "UNIT_WORKER", killed_by: "Rome")
+
+    assert_equal({ turn: 12, civ: "Greece", unit: "UNIT_WORKER", by: "Rome",
+                   fate: :captured, kind: :civilian },
+                 detector.wars.first[:first_blood])
+  end
+
+  test "wars leaves the toll empty when no side lost anything" do
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event("Greece", "unit_lost", 15, unit: "UNIT_CARAVAN")
     event(nil, "peace_made", 30, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
 
     war = detector.wars.first
 
-    assert_equal [], war[:unit_lost_spikes]
-    assert_equal({}, war[:cities_captured])
+    assert_equal 0, war[:toll]["Greece"][:losses]
+    assert_nil war[:first_blood]
+  end
+
+  test "wars sizes a war by what it cost" do
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event("Greece", "unit_lost", 12, unit: "UNIT_WORKER", killed_by: "Rome")
+
+    assert_equal :raid, detector.wars.first[:scale]
   end
 
   test "wars ignores losses and captures outside the war window" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event(nil, "peace_made", 30, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
-    # Before the war
-    event("Greece", "unit_lost", 5)
-    event("Greece", "unit_lost", 5)
-    event("Greece", "unit_lost", 5)
-    # After peace
+    killed("Rome", "Greece", "UNIT_ARCHER", 5)
     event(nil, "city_captured", 40, city: "Sparta", old_owner: "Greece", new_owner: "Rome")
 
     war = detector.wars.first
 
-    assert_equal [], war[:unit_lost_spikes]
+    assert_equal 0, war[:toll]["Greece"][:losses]
     assert_equal({}, war[:cities_captured])
   end
 
@@ -798,6 +809,11 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
 
   def detector
     @detector ||= KeyMomentDetector.new(@game)
+  end
+
+  def killed(killer, victim, unit, turn)
+    event(nil, "unit_killed", turn, killer: killer, victim: victim, unit: unit)
+    event(victim, "unit_lost", turn, unit: unit)
   end
 
   def snapshot(civ, turn, **metrics)

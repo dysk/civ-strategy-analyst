@@ -1,5 +1,4 @@
 class KeyMomentDetector
-  UNIT_LOST_SPIKE_THRESHOLD = 3
   LEADER_CHANGE_METRICS = %w[score science production].freeze
   INFLUENCE_TARGET_LEVELS = %w[INFLUENCE_LEVEL_INFLUENTIAL INFLUENCE_LEVEL_DOMINANT].freeze
   EARLY_GAME_GRACE_PERIOD_STANDARD_TURNS = 100
@@ -27,6 +26,7 @@ class KeyMomentDetector
   def initialize(game)
     @game = game
     @log = game.event_log
+    @casualties = WarCasualties.new(game)
   end
 
   def leader_changes
@@ -365,21 +365,10 @@ class KeyMomentDetector
 
   def wars
     war_declarations.map do |war_declared, peace|
-      attacker_civs = Array(war_declared.payload["attacker_civs"])
-      defender_civs = Array(war_declared.payload["defender_civs"])
-      turn_declared = war_declared.turn
-      turn_peace = peace&.turn
-      participants = attacker_civs + defender_civs
+      war = declared_war(war_declared, peace)
 
-      {
-        type: :war,
-        turn: turn_declared,
-        turn_peace: turn_peace,
-        attacker_civs: attacker_civs,
-        defender_civs: defender_civs,
-        cities_captured: cities_captured(participants, turn_declared, turn_peace),
-        unit_lost_spikes: unit_lost_spikes(participants, turn_declared, turn_peace)
-      }
+      war.merge(toll: @casualties.during(war), first_blood: @casualties.first_blood(war),
+                scale: @casualties.scale(war))
     end
   end
 
@@ -406,15 +395,13 @@ class KeyMomentDetector
       .each_with_object(Hash.new(0)) { |e, counts| counts[e.payload["new_owner"]] += 1 }
   end
 
-  def unit_lost_spikes(civs, turn_declared, turn_peace)
-    of_type("unit_lost")
-      .select { |e| in_window?(e.turn, turn_declared, turn_peace) && civs.include?(e.civ) }
-      .group_by { |e| [ e.civ, e.turn ] }
-      .filter_map do |(civ, turn), events|
-        next if events.size < UNIT_LOST_SPIKE_THRESHOLD
-        { civ: civ, turn: turn, count: events.size }
-      end
-      .sort_by { |spike| spike[:turn] }
+  def declared_war(war_declared, peace)
+    attacker_civs = Array(war_declared.payload["attacker_civs"])
+    defender_civs = Array(war_declared.payload["defender_civs"])
+
+    { type: :war, turn: war_declared.turn, turn_peace: peace&.turn,
+      attacker_civs: attacker_civs, defender_civs: defender_civs,
+      cities_captured: cities_captured(attacker_civs + defender_civs, war_declared.turn, peace&.turn) }
   end
 
   def in_window?(turn, turn_declared, turn_peace)
