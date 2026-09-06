@@ -82,7 +82,7 @@ imported/deduped event counts and the roster.
 Don't have a `civ-narrative-logger` log of your own yet? `examples/` has real
 single-human-player game logs to import and poke around with. Best starting
 point is `babylon-domination.jsonl` — a finished domination game, richer in
-events than the other example:
+events than the others:
 
 ```sh
 bin/civ import examples/babylon-domination.jsonl
@@ -90,6 +90,38 @@ bin/civ import examples/babylon-domination.jsonl
 
 `chile-vs-vietnam.jsonl` is also there, though it's an in-progress game with
 fewer events.
+
+`india-diplo.jsonl` is the largest of the three — six majors, per-city
+snapshots, spies and trade routes — and the one to reach for when a projection
+needs testing against volume.
+
+### Feed it raw logs
+
+The importer takes whatever the logger wrote, and that is what it should be
+given. The logger repo ships `tools/pipeline.sh`, which chains
+`reconcile-unit-lost.jq` (annotates each `unit_lost` with a `cause`) and
+`filter-major.sh` (drops lines naming no major nation). Both exist to squeeze a
+game into an LLM's context window when you hand it the log directly. This app
+has no such limit — it imports to Postgres and puts questions to it through
+projections — and the prep costs it information it can use:
+
+- `filter-major.sh` removes every unit event owned by a city-state or by the
+  barbarians. Measured on one raw log: 5999 lines in, 4514 out, 197
+  `unit_created` and 140 `unit_lost` gone. Majors' rosters survive intact, but
+  a minor's army can never be counted afterwards.
+- `reconcile-unit-lost.jq` labels a captured worker `cause: "killed"`,
+  collapsing the capture-versus-kill distinction `WarCasualties` is built on.
+  Nothing here reads `cause` at all; what the projections use is the raw
+  `killed_by` field, which the script leaves alone.
+
+The jq script does infer one thing the raw log cannot state — that an otherwise
+unexplained combat loss was a barbarian kill. That inference belongs in a
+projection, where it can be tested and changed, rather than in a filter that
+runs before the import.
+
+The three files in `examples/` predate this decision and are pipeline output:
+they carry `cause` fields no projection reads. Harmless, but don't take them as
+a model for what an import should look like.
 
 **Analyze a game:**
 
