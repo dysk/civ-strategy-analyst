@@ -78,6 +78,24 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_nil detector.wars.first[:forces]
   end
 
+  # A city-state's units barely reach the log, so its side of a war reads
+  # as an army of nothing. That is a fact about the record and not about
+  # its strength, and a reader handed it draws the wrong one.
+  test "wars leaves out a side the log records no army for" do
+    event("Rome", "unit_created", 5, unit: "UNIT_ARCHER")
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Ragusa])
+    killed("Rome", "Ragusa", "UNIT_SPEARMAN", 15)
+
+    assert_equal %w[Rome], detector.wars.first[:forces].keys
+  end
+
+  test "wars leaves the order of battle off a war the log records no armies for" do
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Ragusa], defender_team: 2, defender_civs: %w[Zurich])
+    killed("Ragusa", "Zurich", "UNIT_SPEARMAN", 15)
+
+    assert_nil detector.wars.first[:forces]
+  end
+
   test "wars ignores losses and captures outside the war window" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event(nil, "peace_made", 30, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])

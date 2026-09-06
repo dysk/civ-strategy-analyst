@@ -380,7 +380,15 @@ class KeyMomentDetector
   def with_armies(war)
     return war if war[:scale] == :bloodless
 
-    war.merge(forces: @order_of_battle.during(war))
+    armies = @order_of_battle.during(war).reject { |_civ, side| unrecorded?(side) }
+    armies.any? ? war.merge(forces: armies) : war
+  end
+
+  # A city-state's units barely reach the log, so its side of a war reads
+  # as an army of nothing. That is a fact about the record and not about
+  # its strength, and a reader handed it draws the wrong one.
+  def unrecorded?(side)
+    side.values_at(:opening, :closing, :raised, :upgraded, :raised_civilian).all?(&:empty?)
   end
 
   # A snapshot with no treasury cannot have the multiplier divided out,
