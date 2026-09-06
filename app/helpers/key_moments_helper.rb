@@ -75,6 +75,16 @@ module KeyMomentsHelper
   # is what tells one army from another; the rest is inventory.
   ARMY_TYPES_NAMED = 3
 
+  # Arrivals run longer, because a war of eighty turns turns on them and
+  # the list is already down to soldiers the side did not start with. A
+  # sentence is still not a table.
+  ARRIVALS_NAMED = 6
+
+  # Where each kind of arrival is counted: a type built is counted among
+  # what the side raised, a type re-armed among what it upgraded. A type
+  # that arrived both ways belongs in each list for its own share.
+  ARRIVAL_COUNTS = { built: :raised, upgraded: :upgraded }.freeze
+
   def self.war_sentence(moment)
     [ declaration(moment), opening(moment), *tolls(moment), *armies(moment) ].compact.join
   end
@@ -83,7 +93,8 @@ module KeyMomentsHelper
     forces = moment[:forces] || {}
 
     [ sides_named(forces, "fielded") { |side| leading(side[:opening]) },
-      sides_named(forces, "new") { |side| arrivals(side) } ]
+      sides_named(forces, "built") { |side| arrivals(side, :built) },
+      sides_named(forces, "re-armed") { |side| arrivals(side, :upgraded) } ]
   end
 
   def self.sides_named(forces, label)
@@ -100,18 +111,16 @@ module KeyMomentsHelper
          .first(ARMY_TYPES_NAMED).map { |unit, count| "#{unit_name(unit)} #{count}" }.join(", ")
   end
 
-  # A long war debuts a dozen types, and the earliest of them are whatever
-  # the tech tree happened to obsolete first. What a side put four of into
-  # the field is the arrival worth the sentence.
-  def self.arrivals(side)
-    side[:debuts].map { |debut| debut.merge(count: acquired(side, debut[:unit])) }
-                 .sort_by { |debut| -debut[:count] }.first(ARMY_TYPES_NAMED)
-                 .map { |debut| "#{unit_name(debut[:unit])} #{debut[:count]} (turn #{debut[:turn]})" }
-                 .join(", ")
-  end
+  # The earliest arrivals in a long war are whatever the tech tree happened
+  # to obsolete first. What a side put four of into the field is the one
+  # worth the sentence.
+  def self.arrivals(side, via)
+    counted = side[:debuts].select { |debut| debut[:via] == via }
+                           .map { |debut| debut.merge(count: side[ARRIVAL_COUNTS.fetch(via)].fetch(debut[:unit], 0)) }
 
-  def self.acquired(side, unit)
-    side[:raised].fetch(unit, 0) + side[:upgraded].fetch(unit, 0)
+    counted.sort_by { |debut| [ -debut[:count], debut[:turn] ] }.first(ARRIVALS_NAMED)
+           .map { |debut| "#{unit_name(debut[:unit])} #{debut[:count]} (turn #{debut[:turn]})" }
+           .join(", ")
   end
 
   def self.declaration(moment)

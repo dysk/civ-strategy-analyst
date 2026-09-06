@@ -80,26 +80,62 @@ class KeyMomentsHelperTest < ActionView::TestCase
                  key_moment_sentence(moment)
   end
 
-  test "names a weapon that reached the war after it began" do
+  test "names a weapon a side built after the war began" do
     moment = war(forces: { "Chile" => forces(raised: { "UNIT_TANK" => 2 },
                                              debuts: [ { turn: 62, unit: "UNIT_TANK", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); new: Chile Tank 2 (turn 62)",
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); built: Chile Tank 2 (turn 62)",
+                 key_moment_sentence(moment)
+  end
+
+  # A regiment handed a new weapon where it stood is a different act from
+  # a new one raised to carry it, and a war is often mostly one or mostly
+  # the other.
+  test "keeps what a side re-armed into apart from what it built" do
+    moment = war(forces: { "Chile" => forces(
+      raised: { "UNIT_BOMBER" => 4 }, upgraded: { "UNIT_ARTILLERY" => 5 },
+      debuts: [ { turn: 60, unit: "UNIT_ARTILLERY", via: :upgraded },
+                { turn: 62, unit: "UNIT_BOMBER", via: :built } ]) })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
+                 "built: Chile Bomber 4 (turn 62); re-armed: Chile Artillery 5 (turn 60)",
                  key_moment_sentence(moment)
   end
 
   # A long war debuts a dozen types and the earliest of them are whatever
   # the tech tree happened to obsolete first. What a side put four of into
   # the field is the arrival worth the sentence.
-  test "names the arrivals a side made most of rather than the earliest" do
+  test "orders arrivals by how many of them reached the field" do
     moment = war(forces: { "Chile" => forces(
-      raised: { "UNIT_BOMBER" => 4 }, upgraded: { "UNIT_CANNON" => 1 },
-      debuts: [ { turn: 60, unit: "UNIT_CANNON", via: :upgraded },
+      raised: { "UNIT_SCOUT" => 1, "UNIT_BOMBER" => 4 },
+      debuts: [ { turn: 60, unit: "UNIT_SCOUT", via: :built },
                 { turn: 62, unit: "UNIT_BOMBER", via: :built } ]) })
 
     assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
-                 "new: Chile Bomber 4 (turn 62), Cannon 1 (turn 60)",
+                 "built: Chile Bomber 4 (turn 62), Scout 1 (turn 60)",
                  key_moment_sentence(moment)
+  end
+
+  # A type can be both built and upgraded into. Each list counts what
+  # actually happened to reach it, not the total that arrived.
+  test "counts a type it built by what was built of it" do
+    moment = war(forces: { "Chile" => forces(
+      raised: { "UNIT_GATLINGGUN" => 1 }, upgraded: { "UNIT_GATLINGGUN" => 2 },
+      debuts: [ { turn: 62, unit: "UNIT_GATLINGGUN", via: :built } ]) })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); built: Chile Gatlinggun 1 (turn 62)",
+                 key_moment_sentence(moment)
+  end
+
+  # A war of eighty turns turns on the weapons that reach it, so this list
+  # runs longer than the roster's - but a sentence is still not a table.
+  test "names at most six arrivals of a kind" do
+    units = %w[UNIT_TANK UNIT_BOMBER UNIT_INFANTRY UNIT_ARTILLERY UNIT_AIRSHIP UNIT_LANCER UNIT_CANNON]
+    moment = war(forces: { "Chile" => forces(
+      raised: units.index_with { 1 },
+      debuts: units.each_with_index.map { |unit, i| { turn: 60 + i, unit: unit, via: :built } }) })
+
+    assert_equal 6, key_moment_sentence(moment).scan(/\(turn \d+\)/).size
   end
 
   test "leaves a side that fielded nothing out of the order of battle" do
