@@ -123,7 +123,7 @@ class KeyMomentsHelperTest < ActionView::TestCase
       raised: { "UNIT_GATLINGGUN" => 1 }, upgraded: { "UNIT_GATLINGGUN" => 2 },
       debuts: [ { turn: 62, unit: "UNIT_GATLINGGUN", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); built: Chile Gatlinggun 1 (turn 62)",
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); built: Chile Gatling Gun 1 (turn 62)",
                  key_moment_sentence(moment)
   end
 
@@ -287,6 +287,24 @@ class KeyMomentsHelperTest < ActionView::TestCase
     moment = { type: :science_victory_imminent, turn: 195, civ: "Chile", parts_assembled: 5 }
 
     assert_equal "Turn 195: Chile assembled 5 of 6 spaceship parts", key_moment_sentence(moment)
+  end
+
+  # The id is not the name: LEKMOD calls UNIT_WWI_BOMBER a Great War
+  # Bomber, and a reader looking for one in the ruleset finds nothing
+  # under "Wwi Bomber".
+  test "names a unit as the ruleset names it" do
+    @game = Game.new(lekmod_version: "35.3")
+    moment = war(first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_WWI_BOMBER", by: "Chile",
+                                fate: :killed, kind: :soldier })
+
+    assert_includes key_moment_sentence(moment), "Vietnam's Great War Bomber killed"
+  end
+
+  test "reads a unit no ruleset names as plain English" do
+    moment = war(first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_MADE_UP_RIDER", by: "Chile",
+                                fate: :killed, kind: :soldier })
+
+    assert_includes key_moment_sentence(moment), "Vietnam's Made Up Rider killed"
   end
 
   private

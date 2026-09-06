@@ -2,12 +2,12 @@
 # in a single chronological list, so the phrasing lives here rather than in
 # a branch of the template.
 module KeyMomentsHelper
-  def self.humanize_influence_level(level)
+  def humanize_influence_level(level)
     level.to_s.sub("INFLUENCE_LEVEL_", "").capitalize
   end
 
   DESCRIPTIONS = {
-    war: ->(m) { KeyMomentsHelper.war_sentence(m) },
+    war: ->(m) { war_sentence(m) },
     buffer_city_lost: ->(m) { "#{m[:civ]} lost #{m[:city]} to #{m[:captured_by]}, " \
                              "the city between its capital and #{m[:against]}'s" },
     leader_change: ->(m) { "#{m[:metric]} lead passed from #{m[:from]} to #{m[:to]}" },
@@ -29,7 +29,7 @@ module KeyMomentsHelper
     snowball: ->(m) { "#{m[:civ]} pulled decisively ahead" },
     nuclear_detonation: ->(m) { "#{m[:civ]} detonated a nuclear weapon on #{m[:city]}" },
     city_state_ally_takeover: ->(m) { "#{m[:to]} took #{m[:city_state]}'s alliance from #{m[:from]}" },
-    influence_level_reached: ->(m) { "#{m[:civ]} became #{KeyMomentsHelper.humanize_influence_level(m[:level])} on #{m[:opponent]}" },
+    influence_level_reached: ->(m) { "#{m[:civ]} became #{humanize_influence_level(m[:level])} on #{m[:opponent]}" },
     cultural_victory_imminent: ->(m) {
       "#{m[:civ]} is culturally influential on #{m[:civs_influential_on]} of #{m[:living_majors]} living majors"
     },
@@ -85,11 +85,11 @@ module KeyMomentsHelper
   # that arrived both ways belongs in each list for its own share.
   ARRIVAL_COUNTS = { built: :raised, upgraded: :upgraded }.freeze
 
-  def self.war_sentence(moment)
+  def war_sentence(moment)
     [ declaration(moment), opening(moment), *tolls(moment), *armies(moment) ].compact.join
   end
 
-  def self.armies(moment)
+  def armies(moment)
     forces = moment[:forces] || {}
 
     [ sides_named(forces, "fielded") { |side| leading(side[:opening]) },
@@ -97,7 +97,7 @@ module KeyMomentsHelper
       sides_named(forces, "re-armed") { |side| arrivals(side, :upgraded) } ]
   end
 
-  def self.sides_named(forces, label)
+  def sides_named(forces, label)
     named = forces.transform_values { |side| yield(side) }.reject { |_civ, text| text.blank? }
     return if named.empty?
 
@@ -106,7 +106,7 @@ module KeyMomentsHelper
 
   # A roster counts workers and caravans, which is right for a ledger and
   # wrong for a sentence about a war.
-  def self.leading(units)
+  def leading(units)
     units.reject { |unit, _count| WarCasualties.kind_of(unit) == :civilian }
          .first(ARMY_TYPES_NAMED).map { |unit, count| "#{unit_name(unit)} #{count}" }.join(", ")
   end
@@ -114,7 +114,7 @@ module KeyMomentsHelper
   # The earliest arrivals in a long war are whatever the tech tree happened
   # to obsolete first. What a side put four of into the field is the one
   # worth the sentence.
-  def self.arrivals(side, via)
+  def arrivals(side, via)
     counted = side[:debuts].select { |debut| debut[:via] == via }
                            .map { |debut| debut.merge(count: side[ARRIVAL_COUNTS.fetch(via)].fetch(debut[:unit], 0)) }
 
@@ -123,12 +123,12 @@ module KeyMomentsHelper
            .join(", ")
   end
 
-  def self.declaration(moment)
+  def declaration(moment)
     "#{moment[:attacker_civs].join(", ")} declared war on #{moment[:defender_civs].join(", ")} " \
       "(#{moment[:turn_peace] ? "peace at turn #{moment[:turn_peace]}" : "ongoing"})"
   end
 
-  def self.opening(moment)
+  def opening(moment)
     blood = moment[:first_blood]
     return unless blood
 
@@ -136,15 +136,15 @@ module KeyMomentsHelper
       "#{blood[:fate] == :captured ? "taken" : "killed"}"
   end
 
-  def self.possessive(civ) = civ.end_with?("s") ? "#{civ}'" : "#{civ}'s"
+  def possessive(civ) = civ.end_with?("s") ? "#{civ}'" : "#{civ}'s"
 
-  def self.tolls(moment)
+  def tolls(moment)
     toll = moment[:toll] || {}
 
     [ counted("dead", toll, :losses, every_side: true), counted("taken", toll, :captured) ]
   end
 
-  def self.counted(label, toll, field, every_side: false)
+  def counted(label, toll, field, every_side: false)
     return if toll.values.sum { |side| side[field] }.zero?
 
     sides = toll.select { |_civ, side| every_side || side[field].positive? }
@@ -152,10 +152,14 @@ module KeyMomentsHelper
     "; #{label}: #{sides.map { |civ, side| "#{civ} #{side[field]}" }.join(", ")}"
   end
 
-  def self.unit_name(unit) = unit.delete_prefix("UNIT_").downcase.titleize
+  def unit_name(unit) = unit_names.call(unit)
+
+  # The view knows the game, and the game knows which ruleset named its
+  # units; a helper called outside one falls back to reading the id.
+  def unit_names = @unit_names ||= UnitNames.for(@game&.lekmod_version)
 
   def key_moment_sentence(moment)
-    "#{key_moment_turns(moment)}: #{DESCRIPTIONS.fetch(moment[:type]).call(moment)}"
+    "#{key_moment_turns(moment)}: #{instance_exec(moment, &DESCRIPTIONS.fetch(moment[:type]))}"
   end
 
   def key_moment_turns(moment)

@@ -15,6 +15,8 @@ db/lekmod/<version>/
   ids.yml            POLICY_*/BELIEF_*/RESOLUTION_* -> display name,
                      extracted from the mod's own XML source (optional;
                      see below)
+  units.yml          UNIT_* -> display name, extracted the same way
+                     (optional; see below)
 ```
 
 There is no `resolutions.md`: LEKMOD leaves the base game's World
@@ -42,6 +44,38 @@ by hand. `ids.yml` covers those: `LekmodReference` looks up an ID
 there whenever no inline backtick annotation and no ID-derivation
 matches, before giving up on it. Manual inline annotation still wins
 when both exist - `ids.yml` is a fallback, not an override.
+
+## Unit names
+
+`units.yml` is the same idea for units, and it exists because the ID is
+not the name: `UNIT_WWI_TANK` is a Landship, `UNIT_GATLINGGUN` a Gatling
+Gun, `UNIT_PROPHET` a Great Prophet, `UNIT_BARBARIAN_WARRIOR` a Brute.
+Roughly two in five of the unit types a game logs read wrong when the ID
+is taken for the name, and the failures are not guessable - LEKMOD
+renamed the Great War Tank to Landship while keeping the vanilla ID.
+
+The mod's `Override/CIV5Units.xml` carries the whole `Units` table rather
+than only the mod's additions - the same surprise as the Resolutions note
+above - so no base-game install is needed. Every unit resolves: vanilla
+units through a `TXT_KEY` in the `Language_en_US` tables, LEKMOD's own
+units through an English `Description` written straight into the row.
+Generate one with:
+
+```sh
+script/extract_lekmod_unit_names /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/units.yml
+```
+
+`UnitNames` resolves a game's version against these files more loosely
+than `LekmodReference` resolves the rules: exact version if it has a
+`units.yml`, otherwise the newest one that does. A unit keeps its name
+across versions far longer than a policy keeps its effect, so a snapshot
+predating the extraction is better served by a later snapshot's names
+than by none. An ID no snapshot names is read as plain English, which is
+what most of them are.
+
+Only English is available. LEKMOD ships `Language_PL_PL`, `Language_DE_DE`
+and `Language_RU_RU` tables, but they are empty stubs - all 30,000-odd
+text entries are `Language_en_US`.
 
 ## Version resolution
 
