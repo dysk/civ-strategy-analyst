@@ -82,12 +82,12 @@ module KeyMomentsHelper
   def self.armies(moment)
     forces = moment[:forces] || {}
 
-    [ sides_named(forces, "fielded", :opening) { |units| leading(units) },
-      sides_named(forces, "new", :debuts) { |debuts| arrivals(debuts) } ]
+    [ sides_named(forces, "fielded") { |side| leading(side[:opening]) },
+      sides_named(forces, "new") { |side| arrivals(side) } ]
   end
 
-  def self.sides_named(forces, label, field)
-    named = forces.transform_values { |side| yield(side[field]) }.reject { |_civ, text| text.blank? }
+  def self.sides_named(forces, label)
+    named = forces.transform_values { |side| yield(side) }.reject { |_civ, text| text.blank? }
     return if named.empty?
 
     "; #{label}: " + named.map { |civ, text| "#{civ} #{text}" }.join("; ")
@@ -100,9 +100,18 @@ module KeyMomentsHelper
          .first(ARMY_TYPES_NAMED).map { |unit, count| "#{unit_name(unit)} #{count}" }.join(", ")
   end
 
-  def self.arrivals(debuts)
-    debuts.first(ARMY_TYPES_NAMED)
-          .map { |debut| "#{unit_name(debut[:unit])} (turn #{debut[:turn]})" }.join(", ")
+  # A long war debuts a dozen types, and the earliest of them are whatever
+  # the tech tree happened to obsolete first. What a side put four of into
+  # the field is the arrival worth the sentence.
+  def self.arrivals(side)
+    side[:debuts].map { |debut| debut.merge(count: acquired(side, debut[:unit])) }
+                 .sort_by { |debut| -debut[:count] }.first(ARMY_TYPES_NAMED)
+                 .map { |debut| "#{unit_name(debut[:unit])} #{debut[:count]} (turn #{debut[:turn]})" }
+                 .join(", ")
+  end
+
+  def self.acquired(side, unit)
+    side[:raised].fetch(unit, 0) + side[:upgraded].fetch(unit, 0)
   end
 
   def self.declaration(moment)

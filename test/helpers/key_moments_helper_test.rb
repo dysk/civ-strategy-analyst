@@ -81,9 +81,24 @@ class KeyMomentsHelperTest < ActionView::TestCase
   end
 
   test "names a weapon that reached the war after it began" do
-    moment = war(forces: { "Chile" => forces(debuts: [ { turn: 62, unit: "UNIT_TANK", via: :built } ]) })
+    moment = war(forces: { "Chile" => forces(raised: { "UNIT_TANK" => 2 },
+                                             debuts: [ { turn: 62, unit: "UNIT_TANK", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); new: Chile Tank (turn 62)",
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); new: Chile Tank 2 (turn 62)",
+                 key_moment_sentence(moment)
+  end
+
+  # A long war debuts a dozen types and the earliest of them are whatever
+  # the tech tree happened to obsolete first. What a side put four of into
+  # the field is the arrival worth the sentence.
+  test "names the arrivals a side made most of rather than the earliest" do
+    moment = war(forces: { "Chile" => forces(
+      raised: { "UNIT_BOMBER" => 4 }, upgraded: { "UNIT_CANNON" => 1 },
+      debuts: [ { turn: 60, unit: "UNIT_CANNON", via: :upgraded },
+                { turn: 62, unit: "UNIT_BOMBER", via: :built } ]) })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
+                 "new: Chile Bomber 4 (turn 62), Cannon 1 (turn 60)",
                  key_moment_sentence(moment)
   end
 
@@ -245,8 +260,8 @@ class KeyMomentsHelperTest < ActionView::TestCase
       defender_civs: %w[Vietnam], first_blood: first_blood, toll: toll, forces: forces }
   end
 
-  def forces(opening: {}, debuts: [])
-    { opening: opening, closing: {}, raised: {}, upgraded: {}, raised_civilian: {},
+  def forces(opening: {}, raised: {}, upgraded: {}, debuts: [])
+    { opening: opening, closing: {}, raised: raised, upgraded: upgraded, raised_civilian: {},
       debuts: debuts, peak: nil, nadir: nil }
   end
 
