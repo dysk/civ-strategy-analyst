@@ -318,7 +318,16 @@
       <% end %>
       <ul>
         <% list[:moments].each do |moment| %>
-          <li><%= key_moment_trend(moment) %><%= key_moment_sentence(moment) %></li>
+          <li>
+            <%= key_moment_trend(moment) %><%= key_moment_sentence(moment) %>
+            <% if (details = key_moment_details(moment)).present? %>
+              <ul class="moment-detail">
+                <% details.each do |detail| %>
+                  <li><%= detail %></li>
+                <% end %>
+              </ul>
+            <% end %>
+          </li>
         <% end %>
       </ul>
     <% end %>

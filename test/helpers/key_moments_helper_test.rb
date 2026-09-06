@@ -10,19 +10,39 @@ class KeyMomentsHelperTest < ActionView::TestCase
     assert_equal "Turn 57: Chile declared war on Vietnam (ongoing)", key_moment_sentence(war)
   end
 
+  # A war reads as a headline the reader scans and a short list of what it
+  # cost underneath, not one line that runs off the edge.
+  test "breaks a war into a headline and a list of what it cost" do
+    moment = war(turn_peace: 70,
+                 first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_SCOUT", by: "Chile",
+                                fate: :killed, kind: :scout },
+                 toll: { "Chile" => toll(losses: 2), "Vietnam" => toll(losses: 11, captured: 1) },
+                 forces: { "Chile" => forces(opening: { "UNIT_BOMBER" => 8 }) })
+
+    assert_equal "Turn 57: Chile declared war on Vietnam (peace at turn 70)", key_moment_sentence(moment)
+    assert_equal [ "opening on Vietnam's Scout killed",
+                   "dead: Chile 2, Vietnam 11",
+                   "taken: Vietnam 1",
+                   "fielded: Chile Bomber 8" ],
+                 key_moment_details(moment)
+  end
+
+  test "a moment that is not a war has no detail list" do
+    assert_nil key_moment_details({ type: :snowball, civ: "Chile", turn: 50, turn_end: 70 })
+  end
+
   test "narrates what a war opened with" do
     moment = war(first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_SCOUT", by: "Chile",
                                 fate: :killed, kind: :scout })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing), opening on Vietnam's Scout killed",
-                 key_moment_sentence(moment)
+    assert_equal [ "opening on Vietnam's Scout killed" ], key_moment_details(moment)
   end
 
   test "leaves a name that already ends in s the bare apostrophe" do
     moment = war(first_blood: { turn: 58, civ: "Philippines", unit: "UNIT_LANCER", by: "Chile",
                                 fate: :killed, kind: :soldier })
 
-    assert_includes key_moment_sentence(moment), "Philippines' Lancer killed"
+    assert_includes key_moment_details(moment), "opening on Philippines' Lancer killed"
   end
 
   # Both sides are named whenever either bled, since a war one side came
@@ -30,24 +50,20 @@ class KeyMomentsHelperTest < ActionView::TestCase
   test "counts each side's dead" do
     moment = war(toll: { "Chile" => toll(losses: 2), "Vietnam" => toll(losses: 11) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); dead: Chile 2, Vietnam 11",
-                 key_moment_sentence(moment)
+    assert_equal [ "dead: Chile 2, Vietnam 11" ], key_moment_details(moment)
   end
 
   test "counts the civilians a war took where it killed nobody" do
     moment = war(toll: { "Chile" => toll, "Vietnam" => toll(captured: 1) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); taken: Vietnam 1",
-                 key_moment_sentence(moment)
+    assert_equal [ "taken: Vietnam 1" ], key_moment_details(moment)
   end
 
   test "names what each side had standing when the war opened" do
     moment = war(forces: { "Chile" => forces(opening: { "UNIT_BOMBER" => 8 }),
                            "Vietnam" => forces(opening: { "UNIT_RIFLEMAN" => 4 }) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
-                 "fielded: Chile Bomber 8; Vietnam Rifleman 4",
-                 key_moment_sentence(moment)
+    assert_equal [ "fielded: Chile Bomber 8; Vietnam Rifleman 4" ], key_moment_details(moment)
   end
 
   # A roster runs to a dozen types with a tail of one unit each. Its head
@@ -56,9 +72,7 @@ class KeyMomentsHelperTest < ActionView::TestCase
     moment = war(forces: { "Chile" => forces(opening: { "UNIT_BOMBER" => 8, "UNIT_TANK" => 5,
                                                         "UNIT_INFANTRY" => 3, "UNIT_SCOUT" => 1 }) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
-                 "fielded: Chile Bomber 8, Tank 5, Infantry 3",
-                 key_moment_sentence(moment)
+    assert_equal [ "fielded: Chile Bomber 8, Tank 5, Infantry 3" ], key_moment_details(moment)
   end
 
   # A roster counts workers and caravans, which is right for a ledger and
@@ -68,24 +82,21 @@ class KeyMomentsHelperTest < ActionView::TestCase
     moment = war(forces: { "Chile" => forces(opening: { "UNIT_WORKER" => 6, "UNIT_CARAVAN" => 4,
                                                         "UNIT_BOMBER" => 3, "UNIT_TANK" => 2 }) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); fielded: Chile Bomber 3, Tank 2",
-                 key_moment_sentence(moment)
+    assert_equal [ "fielded: Chile Bomber 3, Tank 2" ], key_moment_details(moment)
   end
 
   test "leaves out a side whose whole roster was labourers" do
     moment = war(forces: { "Chile" => forces(opening: { "UNIT_BOMBER" => 3 }),
                            "Vietnam" => forces(opening: { "UNIT_WORKER" => 6 }) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); fielded: Chile Bomber 3",
-                 key_moment_sentence(moment)
+    assert_equal [ "fielded: Chile Bomber 3" ], key_moment_details(moment)
   end
 
   test "names a weapon a side built after the war began" do
     moment = war(forces: { "Chile" => forces(raised: { "UNIT_TANK" => 2 },
                                              debuts: [ { turn: 62, unit: "UNIT_TANK", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); built: Chile Tank 2 (turn 62)",
-                 key_moment_sentence(moment)
+    assert_equal [ "built: Chile Tank 2 (turn 62)" ], key_moment_details(moment)
   end
 
   # A regiment handed a new weapon where it stood is a different act from
@@ -97,9 +108,8 @@ class KeyMomentsHelperTest < ActionView::TestCase
       debuts: [ { turn: 60, unit: "UNIT_ARTILLERY", via: :upgraded },
                 { turn: 62, unit: "UNIT_BOMBER", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
-                 "built: Chile Bomber 4 (turn 62); re-armed: Chile Artillery 5 (turn 60)",
-                 key_moment_sentence(moment)
+    assert_equal [ "built: Chile Bomber 4 (turn 62)", "re-armed: Chile Artillery 5 (turn 60)" ],
+                 key_moment_details(moment)
   end
 
   # A long war debuts a dozen types and the earliest of them are whatever
@@ -111,9 +121,7 @@ class KeyMomentsHelperTest < ActionView::TestCase
       debuts: [ { turn: 60, unit: "UNIT_SCOUT", via: :built },
                 { turn: 62, unit: "UNIT_BOMBER", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); " \
-                 "built: Chile Bomber 4 (turn 62), Scout 1 (turn 60)",
-                 key_moment_sentence(moment)
+    assert_equal [ "built: Chile Bomber 4 (turn 62), Scout 1 (turn 60)" ], key_moment_details(moment)
   end
 
   # A type can be both built and upgraded into. Each list counts what
@@ -123,27 +131,25 @@ class KeyMomentsHelperTest < ActionView::TestCase
       raised: { "UNIT_GATLINGGUN" => 1 }, upgraded: { "UNIT_GATLINGGUN" => 2 },
       debuts: [ { turn: 62, unit: "UNIT_GATLINGGUN", via: :built } ]) })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); built: Chile Gatling Gun 1 (turn 62)",
-                 key_moment_sentence(moment)
+    assert_equal [ "built: Chile Gatling Gun 1 (turn 62)" ], key_moment_details(moment)
   end
 
   # A war of eighty turns turns on the weapons that reach it, so this list
-  # runs longer than the roster's - but a sentence is still not a table.
+  # runs longer than the roster's - but a list item is still not a table.
   test "names at most six arrivals of a kind" do
     units = %w[UNIT_TANK UNIT_BOMBER UNIT_INFANTRY UNIT_ARTILLERY UNIT_AIRSHIP UNIT_LANCER UNIT_CANNON]
     moment = war(forces: { "Chile" => forces(
       raised: units.index_with { 1 },
       debuts: units.each_with_index.map { |unit, i| { turn: 60 + i, unit: unit, via: :built } }) })
 
-    assert_equal 6, key_moment_sentence(moment).scan(/\(turn \d+\)/).size
+    assert_equal 6, key_moment_details(moment).join.scan(/\(turn \d+\)/).size
   end
 
   test "leaves a side that fielded nothing out of the order of battle" do
     moment = war(forces: { "Chile" => forces(opening: { "UNIT_BOMBER" => 8 }),
                            "Kathmandu" => forces })
 
-    assert_equal "Turn 57: Chile declared war on Vietnam (ongoing); fielded: Chile Bomber 8",
-                 key_moment_sentence(moment)
+    assert_equal [ "fielded: Chile Bomber 8" ], key_moment_details(moment)
   end
 
   test "narrates a lost buffer city by its captor and the rival it stood against" do
@@ -297,14 +303,14 @@ class KeyMomentsHelperTest < ActionView::TestCase
     moment = war(first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_WWI_BOMBER", by: "Chile",
                                 fate: :killed, kind: :soldier })
 
-    assert_includes key_moment_sentence(moment), "Vietnam's Great War Bomber killed"
+    assert_includes key_moment_details(moment).join, "Vietnam's Great War Bomber killed"
   end
 
   test "reads a unit no ruleset names as plain English" do
     moment = war(first_blood: { turn: 58, civ: "Vietnam", unit: "UNIT_MADE_UP_RIDER", by: "Chile",
                                 fate: :killed, kind: :soldier })
 
-    assert_includes key_moment_sentence(moment), "Vietnam's Made Up Rider killed"
+    assert_includes key_moment_details(moment).join, "Vietnam's Made Up Rider killed"
   end
 
   private

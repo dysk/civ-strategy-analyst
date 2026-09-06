@@ -248,6 +248,12 @@ blockquote {
   font-weight: 600;
 }
 
+.moment-detail {
+  color: var(--color-muted);
+  font-size: 0.9em;
+  margin: 0.15rem 0 0.4rem;
+}
+
 .note {
   color: var(--color-muted);
   font-size: 0.9rem;

@@ -7,7 +7,7 @@ module KeyMomentsHelper
   end
 
   DESCRIPTIONS = {
-    war: ->(m) { war_sentence(m) },
+    war: ->(m) { declaration(m) },
     buffer_city_lost: ->(m) { "#{m[:civ]} lost #{m[:city]} to #{m[:captured_by]}, " \
                              "the city between its capital and #{m[:against]}'s" },
     leader_change: ->(m) { "#{m[:metric]} lead passed from #{m[:from]} to #{m[:to]}" },
@@ -67,17 +67,18 @@ module KeyMomentsHelper
     tag.span(ARROWS[direction], class: "trend trend--#{direction}", aria: { hidden: true })
   end
 
-  # A war's declaration says who and when; what it cost says which kind of
-  # war it was, and that is what tells a raid for a worker from a
-  # conquest. Both sides are named whenever either bled - a war one side
-  # came through untouched reads as an even fight without the other figure.
+  # The declaration says who and when; each further line says what the war
+  # cost, and that is what tells a raid for a worker from a conquest. One
+  # line per kind of cost keeps a long war readable where a single run-on
+  # sentence did not.
+  #
   # A roster runs to a dozen types with a tail of one unit each. Its head
   # is what tells one army from another; the rest is inventory.
   ARMY_TYPES_NAMED = 3
 
   # Arrivals run longer, because a war of eighty turns turns on them and
   # the list is already down to soldiers the side did not start with. A
-  # sentence is still not a table.
+  # line is still not a table.
   ARRIVALS_NAMED = 6
 
   # Where each kind of arrival is counted: a type built is counted among
@@ -85,8 +86,11 @@ module KeyMomentsHelper
   # that arrived both ways belongs in each list for its own share.
   ARRIVAL_COUNTS = { built: :raised, upgraded: :upgraded }.freeze
 
-  def war_sentence(moment)
-    [ declaration(moment), opening(moment), *tolls(moment), *armies(moment) ].compact.join
+  # The view lists these under the moment's headline. Only a war has any.
+  def key_moment_details(moment)
+    return unless moment[:type] == :war
+
+    [ opening(moment), *tolls(moment), *armies(moment) ].compact
   end
 
   def armies(moment)
@@ -101,7 +105,7 @@ module KeyMomentsHelper
     named = forces.transform_values { |side| yield(side) }.reject { |_civ, text| text.blank? }
     return if named.empty?
 
-    "; #{label}: " + named.map { |civ, text| "#{civ} #{text}" }.join("; ")
+    "#{label}: " + named.map { |civ, text| "#{civ} #{text}" }.join("; ")
   end
 
   # A roster counts workers and caravans, which is right for a ledger and
@@ -132,7 +136,7 @@ module KeyMomentsHelper
     blood = moment[:first_blood]
     return unless blood
 
-    ", opening on #{possessive(blood[:civ])} #{unit_name(blood[:unit])} " \
+    "opening on #{possessive(blood[:civ])} #{unit_name(blood[:unit])} " \
       "#{blood[:fate] == :captured ? "taken" : "killed"}"
   end
 
@@ -149,7 +153,7 @@ module KeyMomentsHelper
 
     sides = toll.select { |_civ, side| every_side || side[field].positive? }
 
-    "; #{label}: #{sides.map { |civ, side| "#{civ} #{side[field]}" }.join(", ")}"
+    "#{label}: #{sides.map { |civ, side| "#{civ} #{side[field]}" }.join(", ")}"
   end
 
   def unit_name(unit) = unit_names.call(unit)
