@@ -60,17 +60,49 @@ kept current, serves every game played on it.
 ## Adding a new version
 
 Only add a snapshot when a game imported on that version needs analyzing.
-Two paths, by size of the change:
+Two paths, and the first is the usual one:
 
-**Small changelog** — copy the nearest existing snapshot and hand-apply
-the mod's changelog:
+**From changelogs** — the masterlist Google Docs lag behind the mod, so
+for anything they have not caught up with the release changelogs are the
+only source. Copy the nearest snapshot and apply every changelog between
+it and the target, in release order:
 
 ```sh
-cp -r db/lekmod/34.15 db/lekmod/34.16
-# edit the affected entries, update version numbers in the titles
+cp -r db/lekmod/34.15 db/lekmod/35.3
+# apply 35.0, then 35.2, then 35.3
 ```
 
-**Large drift** — re-normalize from fresh dumps. Copy each Google Doc
+Enumerate the releases from the mod's own installer manifest rather than
+from memory - `LekmodInstaller/github_setup/versions.json` at the target
+commit lists every published version, so a skipped release shows up
+before it silently ages the snapshot. Applying them in order also
+resolves the conflicts for you: an entity touched twice ends up on its
+last value, and a bug reported in one release and fixed in the next
+leaves no trace, which is correct.
+
+While applying:
+
+- record the **final state, not the delta** - `( 110 > 100 Faith )`
+  becomes "100 Faith". The snapshot describes one version's rules, not
+  the path taken to them;
+- drop "Developer note" commentary (rationale, not rules) but keep notes
+  about mechanics being broken, which do affect what happened in a game;
+- put a provenance note under each file's title saying which snapshot and
+  which changelogs it was built from - otherwise the next reader takes it
+  for a masterlist dump and trusts untouched entries too far;
+- a changelog entry that states no rule ("Improved Trade Route
+  Calculations") and one that is purely cosmetic (a new unit model) are
+  worth nothing to an analysis - leave them out deliberately rather than
+  padding the file.
+
+Verify **both directions** against `git diff --no-index db/lekmod/<old>
+db/lekmod/<new>`: every changelog item must appear in the diff (catches
+omissions) and every hunk must trace back to a changelog item (catches
+invention). This replaces the entity-count check below, which needs a
+full source dump to count against.
+
+**From fresh dumps** — when the masterlist has been brought up to date,
+re-normalize from it. Copy each Google Doc
 (civilizations masterlist, general changes, religion, ideologies,
 policies) into a plain-text file, then either:
 
@@ -105,13 +137,15 @@ policies) into a plain-text file, then either:
 above; `script/extract_lekmod_ids` explains the extraction mechanics):
 
 ```sh
-# in the mod checkout: find and check out the commit for this version -
-# there's no consistent tag/branch naming, so search commit messages
-cd /path/to/Lekmod && git log --oneline --all | grep -i '34\.16'
-git checkout <that-commit>
+# find the commit for this version - there's no consistent tag/branch
+# naming (tagging stopped at v30.7), so search commit messages
+git -C /path/to/Lekmod fetch
+git -C /path/to/Lekmod log --oneline --all | grep -i '35\.3'
 
-cd -  # back to civ-strategy-analyst
-script/extract_lekmod_ids /path/to/Lekmod/LEKMOD/Override db/lekmod/34.16/ids.yml
+# export that commit's Override tree instead of checking it out, so the
+# mod checkout is left on whatever branch its owner had it on
+git -C /path/to/Lekmod archive <that-commit> LEKMOD/Override | tar -x -C /tmp/lekmod-35.3
+script/extract_lekmod_ids /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/ids.yml
 ```
 
 Only scan `LEKMOD/Override`, not the whole checkout - a sibling
