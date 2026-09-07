@@ -23,14 +23,31 @@ class ChronicleDigest
   end
 
   # Population points are of no use to a chronicler; the people behind them are.
+  # The real per-city sizes when the log carries them, the empire-wide average
+  # otherwise - and `souls_source` says which, so the figure is never mistaken
+  # for something it is not.
   def with_souls(metrics)
-    metrics.transform_values do |checkpoints|
-      checkpoints.transform_values do |snapshot|
-        souls = Demographics.new(population: snapshot["population"], cities: snapshot["cities"]).souls
-        snapshot.merge("souls" => souls)
-      end
+    metrics.to_h do |civ, checkpoints|
+      [ civ, checkpoints.to_h { |turn, snapshot| [ turn, snapshot.merge(souls_at(civ, turn, snapshot)) ] } ]
     end
   end
+
+  def souls_at(civ, turn, snapshot)
+    demographics = demographics_for(civ, turn, snapshot)
+    souls = { "souls" => demographics.souls, "souls_source" => demographics.source.to_s }
+    return souls unless demographics.source == :cities
+
+    souls.merge("city_souls" => demographics.per_city)
+  end
+
+  def demographics_for(civ, turn, snapshot)
+    sizes = census.applicable? ? census.sizes(civ, turn) : []
+    return Demographics.new(city_sizes: sizes) if sizes.any?
+
+    Demographics.new(population: snapshot["population"], cities: snapshot["cities"])
+  end
+
+  def census = @census ||= CityCensus.for(@game)
 
   def chronicle
     { entries: entries, background: dated(spine.background), quiet_spans: quiet_spans }

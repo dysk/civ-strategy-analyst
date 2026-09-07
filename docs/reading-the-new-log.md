@@ -148,6 +148,10 @@ for irrelevance.
 
 ## 1. Population counted per city
 
+**Implemented 2026-09-07** — `docs/plan.md`, *"population counted per
+city"*. The plan below is as written; it shipped in four cycles with no
+design change.
+
 ### Why
 
 `Demographics` (`app/models/demographics.rb`) says so itself:

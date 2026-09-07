@@ -27,8 +27,36 @@ class ChronicleDigestTest < ActiveSupport::TestCase
     assert_equal [ "1600 BC", "1480 BC" ], [ entry[:from_year], entry[:to_year] ]
   end
 
-  test "counts the souls behind each checkpoint's population" do
+  test "falls back to the averaged souls when the log carries no city snapshots" do
     assert_equal 1_051_000, digest[:metrics]["Rome"][10]["souls"]
+    assert_equal "average", digest[:metrics]["Rome"][10]["souls_source"]
+  end
+
+  test "counts souls city by city when the log carries city snapshots" do
+    event("Carthage", "snapshot", 10, score: 100, population: 42, cities: 3)
+    city_snapshot("Carthage", 10, "Carthage", 40)
+    city_snapshot("Carthage", 10, "Utica", 1)
+    city_snapshot("Carthage", 10, "Hippo", 1)
+
+    checkpoint = digest[:metrics]["Carthage"][10]
+
+    assert_equal Demographics.new(city_sizes: [ 40, 1, 1 ]).souls, checkpoint["souls"]
+    assert_equal "cities", checkpoint["souls_source"]
+  end
+
+  test "breaks the souls out city by city when they come from the census" do
+    event("Carthage", "snapshot", 10, score: 100, population: 42, cities: 3)
+    city_snapshot("Carthage", 10, "Carthage", 40)
+    city_snapshot("Carthage", 10, "Utica", 1)
+    city_snapshot("Carthage", 10, "Hippo", 1)
+
+    city_souls = digest[:metrics]["Carthage"][10]["city_souls"]
+
+    assert_equal [ Demographics.new(city_sizes: [ 40 ]).souls, 1_000, 1_000 ], city_souls
+  end
+
+  test "omits the per-city breakdown when the souls are an empire-wide average" do
+    assert_nil digest[:metrics]["Rome"][10]["city_souls"]
   end
 
   test "dates the quiet spans the chronicle jumps over" do
@@ -40,6 +68,10 @@ class ChronicleDigestTest < ActiveSupport::TestCase
   private
 
   def digest = ChronicleDigest.new(@game).call
+
+  def city_snapshot(civ, turn, city, population)
+    event(civ, "city_snapshot", turn, city: city, population: population)
+  end
 
   def event(civ, event_type, turn, **extra)
     @seq += 1

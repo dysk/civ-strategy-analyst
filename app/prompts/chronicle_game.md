@@ -119,17 +119,25 @@ Three kinds of figures a chronicle may quote outright:
 
 - `souls` in the metric checkpoints - the people of an empire, already
   converted from the game's population points. This is a real population
-  figure and may be given as one.
+  figure and may be given as one. `souls_source` says how it was reached:
+  `cities` means it was counted city by city from the real sizes; `average`
+  means the empire's people were spread evenly over its cities first, which
+  understates a lopsided empire and should be leant on more lightly.
+- `city_souls` at a checkpoint, present only when `souls_source` is `cities`:
+  the people of each city on its own, largest first. This is what lets you
+  write "a city of some tens of thousands" about a named place and mean it -
+  a capital that holds half its empire's people, a frontier town of a few
+  thousand - rather than only about the empire whole.
 - things a person could stand and count: cities, formations, wonders raised,
   capitals held, ships launched, years elapsed.
 - ratios you are given, such as a war's `casualties`.
 
 Even those follow the era. Before the industrial age nobody counted a
-population: give `souls` in round, humbled form - "a city of some tens of
-thousands", "no more than a hundred thousand in all his lands". From the
-industrial era on, censuses and statistical yearbooks exist, and a precise
-figure is in period: "the census of that year returned four million eight
-hundred thousand souls".
+population: give `souls` and `city_souls` in round, humbled form - "a city of
+some tens of thousands", "no more than a hundred thousand in all his lands".
+From the industrial era on, censuses and statistical yearbooks exist, and a
+precise figure is in period: "the census of that year returned four million
+eight hundred thousand souls".
 
 ## Geography: the compass you are given, never one you derive
 

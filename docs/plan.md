@@ -629,3 +629,54 @@ sits within a turn or two of `winning_turn`; a `PlayerTimeline` departure
 marker unifying irrelevance with `player_eliminated` (which nothing reads
 yet); and the note in tranche 2 feature 4 that irrelevance shrinks the
 diplomatic-victory vote pool the way conquering a city-state does.
+
+## Plan: population counted per city (implemented)
+
+Status: tranche 1 point 1 of `docs/reading-the-new-log.md`, implemented
+2026-09-07. Four TDD cycles. Verified against `india-diplo` (game 32) and
+the `babylon-domination` fallback; no A/B pending — the change corrects a
+figure rather than adding a judgement.
+
+Context: `Demographics` spread an empire's population points evenly over its
+cities before applying the `x**2.8` soul curve, because per-city sizes were
+not in the log. `city_snapshot` now carries `population` per city per turn,
+and because the curve is convex the even spread is a systematic
+understatement that varies with the shape of the empire — 1.19×–2.66× across
+india-diplo, and enough to reorder the standings (counted city by city Tibet
+out-populates the Iroquois at turn 180; by the average it was the reverse).
+
+The `sum(city_snapshot.population) == snapshot.population` join holds on
+1,082 of 1,104 `(turn, civ)` pairs in india-diplo; the 22 misses are the
+four reload turns and are off by exactly 2×, i.e. duplication, so the
+projection groups defensively by `(turn, civ, city)` and keeps the later
+payload — the convention `CongressTimeline` already uses.
+
+Iterations (each: failing tests → review → implementation):
+
+1. **`CityCensus`** (`app/projections/city_census.rb`, `extend Projection`) —
+   `sizes(civ, turn)` returns the deduplicated city populations at the last
+   `city_snapshot` turn `<= turn`, largest first; `applicable?` is false when
+   the log carries no `city_snapshot` at all. Reads through `game.event_log`.
+2. **`Demographics.new(city_sizes:)`** — a second constructor path that
+   applies the curve to each real city size and sums. The
+   `population:`/`cities:` path stays as the documented fallback. `#source`
+   returns `:cities` or `:average`; `#per_city` breaks the soul count out
+   city by city. `population: 42, cities: 3 → 4_856_000` still holds, and
+   `city_sizes: [14, 14, 14]` agrees with it — equal cities make the paths
+   equal.
+3. **`ChronicleDigest#with_souls`** asks `CityCensus` first and falls back to
+   the average second, recording `souls_source` (`"cities"` | `"average"`)
+   on every checkpoint so the chronicler never mistakes a spread figure for
+   a counted one.
+4. **`city_souls`** on each checkpoint, present only when `souls_source` is
+   `"cities"`: the souls of each city on its own, largest first. The
+   `chronicle_game.md` figures section gains a paragraph on reading both —
+   it is what lets the chronicle write "a city of some tens of thousands"
+   about a named place and mean it.
+
+Not done, left for later: `CityCensus` is used only in the `ChronicleDigest`
+path, never during `DigestBuilder.new.call`, so it is not in
+`DigestBuilderCostTest::PROJECTIONS` — there is no cost test over the
+chronicle digest to add it to. The digest **size** assertion the
+cross-cutting section calls for is a tranche-wide guardrail, still pending.
+Per-city detail reaches the digest at checkpoints only, per that section.
