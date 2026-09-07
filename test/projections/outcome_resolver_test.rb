@@ -226,7 +226,68 @@ class OutcomeResolverTest < ActiveSupport::TestCase
     )
   end
 
+  # ImportGame reads the winner off the logger's game_ended record onto the
+  # game itself. When it is there, it is read rather than inferred.
+  test "reads the logged winner and victory type from a finished game" do
+    finish(winner_civ: "India", winner_civs: %w[India], victory_type: "diplomatic")
+    snapshot("India", 183, score: 100)
+    snapshot("Rome", 183, score: 900)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: "India", victory_type: "diplomatic", in_progress: false, source: :logged },
+      outcome
+    )
+  end
+
+  # The logged outcome sits between the two existing sources: a hand-given
+  # --winner still wins, so a user override is never silently discarded.
+  test "a declared winner still overrides the logged outcome" do
+    finish(winner_civ: "India", winner_civs: %w[India], victory_type: "diplomatic")
+
+    outcome = OutcomeResolver.new(@game, winner_civ: "Rome", victory_type: "domination").call
+
+    assert_equal(
+      { winner_civ: "Rome", victory_type: "domination", in_progress: false, source: :declared },
+      outcome
+    )
+  end
+
+  # A passed scrap vote ends the game with no winner. Inferring the score
+  # leader would invent one for a game nobody won.
+  test "a scrapped game is over with no winner and no inference" do
+    finish(winner_civ: nil, winner_civs: nil, victory_type: "scrapped")
+    snapshot("Rome", 140, score: 900)
+    snapshot("Greece", 140, score: 100)
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal(
+      { winner_civ: nil, victory_type: "scrapped", in_progress: false, source: :logged },
+      outcome
+    )
+  end
+
+  test "prefers the logged outcome over a contradicting inferred reading" do
+    player("Rome")
+    player("Greece")
+    finish(winner_civ: "Greece", winner_civs: %w[Greece], victory_type: "diplomatic")
+    snapshot("Rome", 100, score: 100, capitals: %w[Rome Greece])
+    snapshot("Greece", 80, score: 500, capitals: %w[Greece])
+
+    outcome = OutcomeResolver.new(@game).call
+
+    assert_equal "diplomatic", outcome[:victory_type]
+    assert_equal "Greece", outcome[:winner_civ]
+    assert_equal :logged, outcome[:source]
+  end
+
   private
+
+  def finish(winner_civ:, victory_type:, winner_civs: nil)
+    @game.update!(completed: true, winner_civ: winner_civ, winner_civs: winner_civs, victory_type: victory_type)
+  end
 
   def player(civ)
     @game.players.create!(civ: civ, leader_name: civ, human: false, handicap: "PRINCE")

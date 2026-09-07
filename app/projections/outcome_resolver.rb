@@ -7,6 +7,7 @@ class OutcomeResolver
 
   def call
     return declared_result if @winner_civ.present?
+    return logged_result if @game.completed?
 
     inferred_result
   end
@@ -15,6 +16,13 @@ class OutcomeResolver
 
   def declared_result
     { winner_civ: @winner_civ, victory_type: @victory_type, in_progress: false, source: :declared }
+  end
+
+  # ImportGame writes the winner, victory type and completion off the
+  # logger's game_ended record. A scrapped game leaves both winner columns
+  # nil - it is over, and nobody won it, so there is nothing to infer.
+  def logged_result
+    { winner_civ: @game.winner_civ, victory_type: @game.victory_type, in_progress: false, source: :logged }
   end
 
   def inferred_result
