@@ -191,6 +191,23 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal 0, war[:cities_lost]
   end
 
+  test "irrelevance returns the vote that removed the civ from contention" do
+    event(nil, "mp_proposal_result", 120, type: "irrelevance", status: "passed",
+      owner: "India", subject: "Rome", yes_votes: 4, no_votes: 1)
+
+    assert_equal(
+      { turn: 120, proposer: "India", yes_votes: 4, no_votes: 1 },
+      timeline.irrelevance("Rome")
+    )
+  end
+
+  test "irrelevance is nil for a civ that was never voted irrelevant" do
+    event(nil, "mp_proposal_result", 120, type: "irrelevance", status: "passed",
+      owner: "India", subject: "Rome", yes_votes: 4, no_votes: 1)
+
+    assert_nil timeline.irrelevance("India")
+  end
+
   private
 
   def timeline

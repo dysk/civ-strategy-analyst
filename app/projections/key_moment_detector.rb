@@ -262,6 +262,20 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
+  # A passed irrelevance vote removes a player from victory contention and
+  # from the session itself, so every standing after it is a game short one
+  # major. concede and scrap end the game outright and arrive as game_ended
+  # instead.
+  def players_declared_irrelevant
+    of_type("mp_proposal_result")
+      .select { |e| e.payload["type"] == "irrelevance" && e.payload["status"] == "passed" }
+      .map do |e|
+        { type: :player_declared_irrelevant, turn: e.turn, civ: e.payload["subject"],
+          proposer: e.payload["owner"], yes_votes: e.payload["yes_votes"], no_votes: e.payload["no_votes"] }
+      end
+      .sort_by { |moment| moment[:turn] }
+  end
+
   # Compares each snapshot's delegate votes against that same snapshot's
   # votes_needed, not the latest known threshold - the threshold itself
   # can move (more delegates enter as civs reach later eras).

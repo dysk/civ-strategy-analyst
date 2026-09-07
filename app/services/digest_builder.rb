@@ -135,6 +135,7 @@ class DigestBuilder
         policies: timeline.policies(civ),
         religion: timeline.religion(civ),
         wars: timeline.wars(civ),
+        irrelevance: timeline.irrelevance(civ),
         great_people: timeline.great_people(civ),
         eras: timeline.eras(civ),
         golden_ages: timeline.golden_ages(civ),
@@ -211,7 +212,8 @@ class DigestBuilder
       capital_control_changes: detector.capital_control_changes,
       apollo_completions: detector.apollo_completions,
       spaceship_part_assemblies: detector.spaceship_part_assemblies,
-      science_victory_imminent: detector.science_victory_imminent
+      science_victory_imminent: detector.science_victory_imminent,
+      players_declared_irrelevant: detector.players_declared_irrelevant
     }
   end
 

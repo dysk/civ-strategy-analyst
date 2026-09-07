@@ -687,6 +687,32 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal [ { type: :united_nations_formed, turn: 220 } ], detector.united_nations_formed
   end
 
+  # A passed irrelevance vote removes a player from victory contention and
+  # from the session - it reshapes every standing that follows.
+  test "players_declared_irrelevant reports each passed irrelevance vote with its subject, proposer and tally" do
+    event(nil, "mp_proposal_result", 120, type: "irrelevance", status: "passed",
+      owner: "India", subject: "Rome", yes_votes: 4, no_votes: 1)
+    event(nil, "mp_proposal_result", 90, type: "irrelevance", status: "passed",
+      owner: "Greece", subject: "Egypt", yes_votes: 3, no_votes: 0)
+
+    assert_equal(
+      [
+        { type: :player_declared_irrelevant, turn: 90, civ: "Egypt", proposer: "Greece", yes_votes: 3, no_votes: 0 },
+        { type: :player_declared_irrelevant, turn: 120, civ: "Rome", proposer: "India", yes_votes: 4, no_votes: 1 }
+      ],
+      detector.players_declared_irrelevant
+    )
+  end
+
+  test "players_declared_irrelevant ignores a failed vote and votes that are not about irrelevance" do
+    event(nil, "mp_proposal_result", 100, type: "irrelevance", status: "failed",
+      owner: "India", subject: "Rome", yes_votes: 2, no_votes: 3)
+    event(nil, "mp_proposal_result", 110, type: "concede", status: "passed",
+      owner: "Rome", subject: "India", yes_votes: 5, no_votes: 0)
+
+    assert_equal [], detector.players_declared_irrelevant
+  end
+
   test "diplomatic_victory_imminent reports the first turn a civ's delegate votes meet the threshold" do
     congress_snapshot(50, host: "Rome",
       delegates: [ { "civ" => "Rome", "votes" => 5 }, { "civ" => "Greece", "votes" => 10 } ], votes_needed: 12)

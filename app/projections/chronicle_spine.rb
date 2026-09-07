@@ -23,7 +23,8 @@ class ChronicleSpine
     united_nations_formed: 4, apollo_completed: 4, era_lead: 3, leader_change: 3,
     religion_founded: 3, world_wonder: 3, city_founded: 2, religion_enhanced: 2,
     reformation_added: 2, congress_host_change: 2, spaceship_part_assembled: 2,
-    pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1
+    pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1,
+    player_declared_irrelevant: 3
   }.freeze
 
   # A war is worth what it cost. A declaration nobody acted on is an act of
@@ -120,7 +121,8 @@ class ChronicleSpine
       detector.ideology_adoptions + detector.nuclear_detonations + detector.capital_control_changes +
       detector.united_nations_formed + detector.congress_host_changes + detector.resolutions_passed +
       detector.leader_changes + detector.cultural_victory_imminent + detector.science_victory_imminent +
-      detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies
+      detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies +
+      detector.players_declared_irrelevant
   end
 
   # The chronicle is told the shape of a war's losses, never their size,

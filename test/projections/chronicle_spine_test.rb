@@ -145,6 +145,16 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_operator capital[:weight], :>, city[:weight]
   end
 
+  test "a player voted out of the game anchors an entry of its own" do
+    event(nil, "mp_proposal_result", 60, type: "irrelevance", status: "passed",
+      owner: "India", subject: "Rome", yes_votes: 4, no_votes: 1)
+
+    moment = spine.entries.flat_map { |entry| entry[:moments] }.find { |m| m[:type] == :player_declared_irrelevant }
+
+    assert_equal 60, moment[:turn]
+    assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
   test "a long game earns more entries than a short one" do
     60.times { |i| event(nil, "city_captured", i * 4 + 1, city: "City #{i}", old_owner: "Greece", new_owner: "Rome") }
     short_game = Game.create!(name: "Short Game")

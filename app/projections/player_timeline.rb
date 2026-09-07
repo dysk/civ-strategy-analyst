@@ -131,6 +131,18 @@ class PlayerTimeline
     war_periods.select { |war| war[:civ] == civ }.map { |war| war.except(:civ) }
   end
 
+  # The single vote, if any, that removed this civ from the game. A passed
+  # irrelevance proposal happens once and ends the civ's contention.
+  def irrelevance(civ)
+    event = of_type("mp_proposal_result").find do |e|
+      e.payload["type"] == "irrelevance" && e.payload["status"] == "passed" && e.payload["subject"] == civ
+    end
+    return unless event
+
+    { turn: event.turn, proposer: event.payload["owner"],
+      yes_votes: event.payload["yes_votes"], no_votes: event.payload["no_votes"] }
+  end
+
   private
 
   def of_type(event_type) = @log.of_type(event_type)
