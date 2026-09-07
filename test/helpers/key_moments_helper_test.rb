@@ -313,19 +313,19 @@ class KeyMomentsHelperTest < ActionView::TestCase
     assert_includes key_moment_details(moment).join, "Vietnam's Made Up Rider killed"
   end
 
-  test "narrates a player voted out of contention with the vote that did it" do
+  test "narrates a player conceding the game as unwinnable with the vote that ratified it" do
     moment = { type: :player_declared_irrelevant, turn: 120, civ: "Rome",
-               proposer: "India", yes_votes: 4, no_votes: 1 }
+               proposer: "Rome", yes_votes: 4, no_votes: 0 }
 
     assert_equal(
-      "Turn 120: Rome was voted irrelevant and removed from contention (proposed by India, 4–1)",
+      "Turn 120: Rome asked to be ruled out of contention, and the other players agreed (4–0)",
       key_moment_sentence(moment)
     )
   end
 
-  test "marks a player voted irrelevant with a downward trend" do
+  test "marks a player ruled out of contention with a downward trend" do
     moment = { type: :player_declared_irrelevant, turn: 120, civ: "Rome",
-               proposer: "India", yes_votes: 4, no_votes: 1 }
+               proposer: "Rome", yes_votes: 4, no_votes: 0 }
 
     assert_match(/trend--down/, key_moment_trend(moment))
   end

@@ -590,16 +590,16 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge", /complete/
   end
 
-  test "show gathers a player voted irrelevant into its own key moment section" do
+  test "show gathers a player ruled out of contention into its own key moment section" do
     game = Game.create!(name: "Irrelevance Game")
     event(game, nil, "mp_proposal_result", 120,
       "type" => "irrelevance", "status" => "passed",
-      "owner" => "India", "subject" => "Rome", "yes_votes" => 4, "no_votes" => 1)
+      "owner" => "Rome", "subject" => "Rome", "yes_votes" => 4, "no_votes" => 0)
 
     get game_url(game)
 
     assert_select "details summary", "Players Declared Irrelevant (1)"
-    assert_match "Rome was voted irrelevant", response.body
+    assert_match "Rome asked to be ruled out of contention", response.body
   end
 
   test "show 404s for an unknown game id" do

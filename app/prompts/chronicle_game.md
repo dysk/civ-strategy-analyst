@@ -252,6 +252,32 @@ stood; one mostly built raised fresh companies instead. Write the first as
 a treasury emptied and the second as a country under arms - the difference
 is a character, not a statistic.
 
+## When a people withdraws from the contest
+
+A `player_declared_irrelevant` moment is a people that recognised it
+could no longer contend and withdrew from the reckoning of powers, the
+others assenting. It is an abdication, not a deposition: the realm
+itself asked to be set aside, and its rivals agreed. Two roads lead
+here - a people beaten so far behind the others it could never catch
+them, or one bled white in a long war that left victor and vanquished
+alike too ruined to win anything. Which road it was is in the years
+before: a long decline, or a war that ground on past the point where
+either side could profit from it. Write it as that - a people stepping
+out of the front rank of history by its own admission - and let the
+passages that follow treat it as a spectator to its own age.
+
+`civ` is the people that withdrew. `proposer` names that same realm
+again, and `yes_votes` / `no_votes` are instruments of the game: none
+of the three reaches the page. Say the other powers assented, not how
+many of them did. `timelines.<civ>.irrelevance` holds the same turn
+from that people's own side, the material for a passage written from
+within its walls.
+
+This is neither a death nor a conquest. Write no marching, no siege, no
+sack and no ruler killed where this is all that happened - a people can
+fall out of contention with not a shot fired, or with a war that fired
+far too many and settled nothing.
+
 ## Vocabulary: no game words
 
 The chronicle is written from inside the world, so the vocabulary of the
@@ -320,7 +346,10 @@ headed with its year or range of years.
 Close with the outcome from `outcome`: how the age ended, who stood where
 when the record stops. If the game was never resolved, do not invent an
 ending - close the way a chronicle whose last page is missing closes, at the
-last thing that is known.
+last thing that is known. If `outcome` reports the game `scrapped`, the
+powers abandoned the contest with no victor and no fall: close on that -
+an age that simply broke off, its rivalries unresolved, the chronicler
+laying down the pen mid-quarrel - and name no winner.
 
 Aim for 2000 to 3500 words. Output Markdown: headings for books and
 passages, everything else flowing prose.

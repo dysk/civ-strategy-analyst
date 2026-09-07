@@ -15,8 +15,8 @@ module KeyMomentsHelper
     pantheon_founded: ->(m) { "#{m[:civ]} founded a pantheon with #{m[:belief]}" },
     religion_founded: ->(m) { "#{m[:civ]} founded #{m[:religion]} (##{m[:order]}) with #{Array(m[:beliefs]).join(", ")}" },
     player_declared_irrelevant: ->(m) {
-      "#{m[:civ]} was voted irrelevant and removed from contention " \
-        "(proposed by #{m[:proposer]}, #{m[:yes_votes]}–#{m[:no_votes]})"
+      "#{m[:civ]} asked to be ruled out of contention, and the other players agreed " \
+        "(#{m[:yes_votes]}–#{m[:no_votes]})"
     },
     religion_enhanced: ->(m) { "#{m[:civ]} enhanced #{m[:religion]} with #{Array(m[:beliefs]).join(", ")}" },
     reformation_added: ->(m) { "#{m[:civ]} added the reformation belief #{m[:belief]} to #{m[:religion]}" },

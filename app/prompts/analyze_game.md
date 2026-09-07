@@ -629,6 +629,36 @@ conditions, not a side note: a civilization far ahead on delegates
 relative to `votes_needed` is a diplomatic-victory threat in the same
 way `civs_influential_on` signals a cultural one.
 
+A `players_declared_irrelevant` key moment is a civilization that asked
+to be ruled out of victory contention - a LEKMOD multiplayer vote a
+player can only call on itself - which the other human players then
+agreed to, near-unanimously, releasing it from the game. It is a
+concession the table ratified, not an ouster: the player judged its own
+position unwinnable and the rest confirmed it. Two situations produce
+it - a civilization left hopelessly behind (on the order of ten
+technologies down, last in population and production by a wide margin),
+or one locked in a grinding war that has wrecked both sides' economies
+past the point where either can still win it ("an irrelevant war").
+Look at the turns before the vote for which one it was: a long
+one-sided decline in the metrics, or a protracted war whose `toll` and
+`forces` show both belligerents spent. `proposer` and the `yes_votes` /
+`no_votes` tally carry little - the proposer is the removed
+civilization itself, and a passed vote is near-unanimous by rule.
+
+The game does not end. It continues one major short, so every
+`standings` position, score ranking, delegate count and influence total
+from that turn on is a game missing that civilization - read a sudden
+gap in `standings`, or a drop in `congress.votes_needed` around that
+turn, as this removal rather than as a collapse the civilization played
+its way into. It also shrinks the diplomatic-victory vote pool the way
+conquering a city-state does. Weigh it on the level of an elimination:
+the removed civilization wins nothing after it, and its metrics and
+timelines stop meaning anything past that turn.
+`timelines.<civ>.irrelevance` carries the same vote from the removed
+civilization's side - `{turn, proposer, yes_votes, no_votes}`, or null
+for a civilization that was never ruled out - and is what dates the turn
+its lines stopped mattering.
+
 The `victory_progress` digest key covers domination and science-victory
 progress per civilization, at ~25-turn checkpoints: `capitals_held` is
 how many original major capitals that civilization currently controls
@@ -687,6 +717,26 @@ civilization's "still has time" case should be argued from its actual
 trajectory (the signals above), not from turns nominally left on the
 clock.
 
+## Abandoned games
+
+`outcome` can report `victory_type: "scrapped"` with no winner and
+`in_progress: false`. This is a game the players abandoned through a
+unanimous scrap vote - not a game still being played, and not a game
+anyone won. `standings` is only the final score ranking. Do not name a
+winner, do not present the score leader as having won or as
+"effectively" winning, and do not assess trajectories toward a victory
+the game was abandoned before anyone reached. The counterfactual
+question for a scrapped game is what would have kept it going or made it
+worth finishing, not who was about to win. Say plainly in Final
+Standings that the game was scrapped.
+
+`outcome.source` says where the result came from: `logged` read from
+the game's own end-of-game record, `declared` supplied by hand, or
+`inferred` derived from the score curve and victory heuristics because
+neither of the other two was available. An `inferred` result is the
+weakest of the three - treat its victory type as a best guess, and say
+so where the metrics do not clearly bear it out.
+
 ## Accuracy of numbers
 
 Verify every number against the digest before you write it down, and
@@ -726,8 +776,9 @@ and add no sections beyond these.
 ## Final Standings
 
 Present the civilizations in the exact order given by `standings`, and
-state the outcome (winner and victory type, or "game in progress" if
-unresolved).
+state the outcome: the winner and victory type; "game in progress" if
+unresolved; or that the game was scrapped if `outcome.victory_type` is
+`"scrapped"`.
 
 ## Per-Player Strategic Verdict
 
