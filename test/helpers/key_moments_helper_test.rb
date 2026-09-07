@@ -162,6 +162,37 @@ class KeyMomentsHelperTest < ActionView::TestCase
     )
   end
 
+  test "narrates a lost wonder race by the wonder, the winner and what was sunk" do
+    moment = { type: :wonder_race_lost, turn: 158, civ: "England", city: "London",
+               wonder: "BUILDING_LOUVRE", wonder_name: "Louvre", scale: :close,
+               production_invested: 425, turns_left: 2, winner: "Netherlands",
+               winner_city: "Amsterdam", winner_finish: :hard_built }
+
+    assert_equal "Turn 158: England lost the race for Louvre to Netherlands, 425 production sunk in",
+                 key_moment_sentence(moment)
+  end
+
+  test "notes when the winner of a race finished it ahead of a hard build" do
+    moment = { type: :wonder_race_lost, turn: 158, civ: "England", city: "London",
+               wonder: "BUILDING_LOUVRE", wonder_name: "Louvre", scale: :close,
+               production_invested: 425, turns_left: 2, winner: "Netherlands",
+               winner_city: "Amsterdam", winner_finish: :ahead_of_estimate }
+
+    assert_match(/ahead of a hard build/, key_moment_sentence(moment))
+  end
+
+  test "narrates a wonder becoming a contest" do
+    moment = { type: :wonder_race, turn: 154, wonder: "BUILDING_LOUVRE", wonder_name: "Louvre",
+               winner: "Netherlands", contenders: %w[England] }
+
+    assert_equal "Turn 154: Louvre became a contested build: Netherlands against England",
+                 key_moment_sentence(moment)
+  end
+
+  test "marks a lost wonder race as a downward moment" do
+    assert_match(/trend--down/, key_moment_trend({ type: :wonder_race_lost, turn: 158 }))
+  end
+
   test "leaves the snowballed metric to the heading above the list" do
     moment = { type: :snowball, civ: "Chile", turn: 50, turn_end: 70, duration_turns: 20 }
 

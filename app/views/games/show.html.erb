@@ -130,6 +130,51 @@
   <% end %>
 <% end %>
 
+<h2>Wonder Races</h2>
+<% if !@wonder_races[:applicable] %>
+  <p class="empty-state">Wonder races need per-city snapshots, which this game's log does not carry.</p>
+<% elsif @wonder_races[:races].empty? %>
+  <p class="empty-state">No world wonder in this game was contested by more than one city.</p>
+<% else %>
+  <p class="note">
+    A race is every world wonder more than one city was building. A contender
+    <strong>lost</strong> it if still building on the turn it fell, and
+    <strong>abandoned</strong> it if it had moved on earlier.
+  </p>
+  <table class="wonder-races">
+    <thead>
+      <tr>
+        <th>Wonder</th>
+        <th>Done</th>
+        <th>Won by</th>
+        <th>Finish</th>
+        <th>Lost by</th>
+        <th>Turns on it</th>
+        <th>Production in</th>
+        <th>Turns left</th>
+        <th>Outcome</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @wonder_races[:races].each do |race| %>
+        <% race[:contenders].each_with_index do |contender, index| %>
+          <tr>
+            <td><%= index.zero? ? race[:wonder_name] : "".html_safe %></td>
+            <td><%= index.zero? ? race[:completed_turn] : "".html_safe %></td>
+            <td><%= index.zero? ? "#{race[:winner][:civ]} (#{race[:winner][:city]})" : "".html_safe %></td>
+            <td><%= index.zero? ? race[:winner_finish].to_s.tr("_", " ") : "".html_safe %></td>
+            <td><%= contender[:civ] %> (<%= contender[:city] %>)</td>
+            <td><%= contender[:turns_building] %></td>
+            <td><%= contender[:production_invested] %></td>
+            <td><%= contender[:turns_left_when_last_seen] || "&mdash;".html_safe %></td>
+            <td><%= contender[:outcome] %></td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
 <h2>Empire Geometry</h2>
 <% if @geometry_rows.empty? %>
   <p class="empty-state">No city coordinates in this game's events.</p>

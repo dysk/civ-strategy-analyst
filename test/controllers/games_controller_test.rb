@@ -524,6 +524,35 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.victory-progress", false
   end
 
+  test "show lists wonder races among the key moments" do
+    game = wonder_race_game("Wonder Moments Game")
+
+    get game_url(game)
+
+    assert_select "details summary", "Wonder Races (2)"
+    assert_select "details li", /England lost the race for Louvre to Netherlands/
+  end
+
+  test "show tabulates each contested wonder and the civ that lost it" do
+    game = wonder_race_game("Wonder Table Game")
+
+    get game_url(game)
+
+    assert_select "table.wonder-races tbody td", "Louvre"
+    assert_select "table.wonder-races tbody td", text: /England \(London\)/
+    assert_select "table.wonder-races tbody td", "lost"
+  end
+
+  test "show explains that wonder races need city snapshots" do
+    game = Game.create!(name: "No Snapshot Wonder Game")
+    war(game, 10)
+
+    get game_url(game)
+
+    assert_select "table.wonder-races", false
+    assert_select "p.empty-state", /city snapshot/i
+  end
+
   test "show marks a civilization whose city count the timeline cannot account for" do
     game = Game.create!(name: "Razed City Game", map_width: 46)
     game.players.create!(civ: "Rome")
@@ -632,6 +661,22 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
       seq: game.game_events.count + 1, session_index: 0, turn: turn, event_type: event_type, civ: civ,
       payload: extra.merge("event" => event_type, "turn" => turn)
     )
+  end
+
+  def wonder_race_game(name)
+    game = Game.create!(name: name)
+    (48..57).each do |t|
+      event(game, "England", "city_snapshot", t, "city" => "London", "producing" => "BUILDING_LOUVRE",
+            "producing_kind" => "wonder", "production_stored" => t == 57 ? 425 : (t - 48) * 40,
+            "production_turns_left" => 58 - t)
+    end
+    (54..57).each do |t|
+      event(game, "Netherlands", "city_snapshot", t, "city" => "Amsterdam", "producing" => "BUILDING_LOUVRE",
+            "producing_kind" => "wonder", "production_stored" => 120 * (t - 53), "production_turns_left" => 1)
+    end
+    event(game, "Netherlands", "building_constructed", 58, "city" => "Amsterdam",
+          "building" => "BUILDING_LOUVRE", "wonder" => "world")
+    game
   end
 
   def pangaea_game(name, civs: %w[Rome Greece])

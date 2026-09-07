@@ -19,6 +19,7 @@ class GamesController < ApplicationController
     @geometry_rows = geometry_rows
     @capital_distances = capital_distances
     @buffer_cities = BufferCities.for(@game).call
+    @wonder_races = wonder_races_view
     @capital_layout_height = CAPITAL_LAYOUT_HEIGHT
     @capital_layout_width = capital_layout_width
     @capital_positions = capital_positions
@@ -33,6 +34,15 @@ class GamesController < ApplicationController
 
   def early_game = EarlyGame.for(@game)
 
+  # One row per losing contender, plus the winner's own row, so a wonder
+  # with two rivals reads top to bottom.
+  def wonder_races_view
+    races = WonderRaces.for(@game)
+    return { applicable: false } unless races.applicable?
+
+    { applicable: true, races: races.races }
+  end
+
   # Kinds of moment that tell one story share a section, each keeping its own
   # list inside it. Empty sections and empty lists are left out.
   def key_moment_groups
@@ -44,6 +54,7 @@ class GamesController < ApplicationController
       [ "Players Declared Irrelevant", { nil => moments.players_declared_irrelevant } ],
       [ "Leader Changes", { nil => moments.leader_changes } ],
       [ "Era Leads", { nil => moments.era_leads } ],
+      [ "Wonder Races", { nil => merge_by_turn(moments.wonder_races, moments.wonder_races_lost) } ],
       [ "Religion", { "Pantheon Foundings" => moments.pantheon_foundings,
                       "Religion Foundings" => moments.religion_foundings,
                       "Religion Enhancements" => moments.religion_enhancements,

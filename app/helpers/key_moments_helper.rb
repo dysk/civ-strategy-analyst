@@ -50,14 +50,20 @@ module KeyMomentsHelper
     capital_lost: ->(m) { "#{m[:civ]} lost control of #{m[:original_owner]}'s original capital" },
     apollo_completed: ->(m) { "#{m[:civ]} completed the Apollo Program" },
     spaceship_part_assembled: ->(m) { "#{m[:civ]} assembled a #{m[:part]} (#{m[:count]} total)" },
-    science_victory_imminent: ->(m) { "#{m[:civ]} assembled #{m[:parts_assembled]} of 6 spaceship parts" }
+    science_victory_imminent: ->(m) { "#{m[:civ]} assembled #{m[:parts_assembled]} of 6 spaceship parts" },
+    wonder_race: ->(m) { "#{m[:wonder_name]} became a contested build: #{m[:winner]} against #{m[:contenders].join(", ")}" },
+    wonder_race_lost: ->(m) {
+      rushed = " — #{m[:winner]} finished it ahead of a hard build" if m[:winner_finish] == :ahead_of_estimate
+      "#{m[:civ]} lost the race for #{m[:wonder_name]} to #{m[:winner]}, #{m[:production_invested]} production sunk in#{rushed}"
+    }
   }.freeze
 
   TRENDS = {
     army_power_surge: :up, army_power_collapse: :down,
     happiness_surge: :up, happiness_collapse: :down,
     capital_gained: :up, capital_lost: :down,
-    buffer_city_lost: :down, player_declared_irrelevant: :down
+    buffer_city_lost: :down, player_declared_irrelevant: :down,
+    wonder_race_lost: :down
   }.freeze
 
   ARROWS = { up: "▲", down: "▼" }.freeze
