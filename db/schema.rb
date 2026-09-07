@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_16_104900) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_125123) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_104900) do
     t.datetime "updated_at", null: false
     t.string "victory_type"
     t.string "winner_civ"
+    t.string "winner_civs", array: true
   end
 
   create_table "players", force: :cascade do |t|

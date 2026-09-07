@@ -203,4 +203,82 @@ class ImportGameTest < ActiveSupport::TestCase
     )
     assert_equal 2, legitimate_duplicate.count
   end
+
+  # The logger now ends the game with a record of its own, so the winner is
+  # read rather than inferred. VICTORY_SPACE_RACE is the logger's id for what
+  # the rest of the codebase already calls a science victory.
+  test "writes the winner, victory type and completion from game_ended" do
+    game = import_with_ending(
+      { event: "game_ended", turn: 300, victory: "VICTORY_SPACE_RACE",
+        winner_civs: [ "Rome" ], winner_team: 1, winning_turn: 300 }
+    )
+
+    assert game.completed?
+    assert_equal "Rome", game.winner_civ
+    assert_equal [ "Rome" ], game.winner_civs
+    assert_equal "science", game.victory_type
+  end
+
+  # winner_civs is an array because a team can win together; flattening it to
+  # one civ would lose the other members of the winning team.
+  test "keeps every civ of a team victory, with winner_civ as the first" do
+    game = import_with_ending(
+      { event: "game_ended", turn: 250, victory: "VICTORY_DOMINATION",
+        winner_civs: [ "Rome", "Carthage" ], winner_team: 1, winning_turn: 250 }
+    )
+
+    assert_equal [ "Rome", "Carthage" ], game.winner_civs
+    assert_equal "Rome", game.winner_civ
+    assert_equal "domination", game.victory_type
+  end
+
+  # A passed scrap vote sets VICTORY_SCRAP with an arbitrary winner_team - the
+  # client that happened to resolve the vote - so the game is over but nobody
+  # won it, and the meaningless winner must not be stored or later inferred.
+  test "records a scrap vote as a completed game with no winner" do
+    game = import_with_ending(
+      { event: "game_ended", turn: 140, victory: "VICTORY_SCRAP",
+        winner_civs: [ "Greece" ], winner_team: 0, winning_turn: 140 }
+    )
+
+    assert game.completed?
+    assert_nil game.winner_civ
+    assert_nil game.winner_civs
+    assert_equal "scrapped", game.victory_type
+  end
+
+  test "leaves the game in progress when no game_ended is logged" do
+    game = ImportGame.call(SAMPLE_PATH, name: "Test Game").game
+
+    refute game.completed?
+    assert_nil game.winner_civ
+    assert_nil game.winner_civs
+    assert_nil game.victory_type
+  end
+
+  # Reading the winner off game_ended must not consume the event: the key
+  # moment detector and the chronicle spine read it too.
+  test "still persists the game_ended event itself" do
+    game = import_with_ending(
+      { event: "game_ended", turn: 300, victory: "VICTORY_SPACE_RACE",
+        winner_civs: [ "Rome" ], winner_team: 1, winning_turn: 300 }
+    )
+
+    assert game.game_events.exists?(event_type: "game_ended")
+  end
+
+  private
+
+  # The first line of the sample fixture is a session_started; append an
+  # ending to it and import the pair.
+  def import_with_ending(ending)
+    path = Tempfile.new([ "ended_game", ".jsonl" ])
+    path.puts(File.readlines(SAMPLE_PATH).first)
+    path.puts(ending.to_json)
+    path.close
+
+    ImportGame.call(path.path, name: "Ended Game").game
+  ensure
+    path&.close!
+  end
 end

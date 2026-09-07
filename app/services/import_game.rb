@@ -37,6 +37,21 @@ class ImportGame
     mp_vote mp_proposal_result united_nations_formed
   ].freeze
 
+  # LEKMOD's victory ids, mapped to the vocabulary the rest of the codebase
+  # already speaks (OutcomeResolver#inferred_result). VICTORY_SPACE_RACE is a
+  # science win. VICTORY_SCRAP is a game abandoned by a passed scrap vote:
+  # the winner_team on that record is only the client that resolved the vote,
+  # so a scrapped game is over with nobody having won it.
+  SCRAPPED = "scrapped".freeze
+  VICTORY_TYPES = {
+    "VICTORY_DOMINATION" => "domination",
+    "VICTORY_SPACE_RACE" => "science",
+    "VICTORY_CULTURAL" => "cultural",
+    "VICTORY_DIPLOMATIC" => "diplomatic",
+    "VICTORY_TIME" => "time",
+    "VICTORY_SCRAP" => SCRAPPED
+  }.freeze
+
   Result = Struct.new(:game, :imported_count, :skipped_count, :logger_error_count, keyword_init: true)
 
   # Rows are written in batches rather than one at a time: a full game is
@@ -92,6 +107,7 @@ class ImportGame
     end
 
     handle_session_boundary(game, payload) if event_type == "session_started"
+    apply_game_ending(game, payload) if event_type == "game_ended"
     return if logger_failure?(event_type)
 
     signature = signature_of(payload)
@@ -165,6 +181,28 @@ class ImportGame
 
     GameEvent.insert_all(@rows)
     @rows = []
+  end
+
+  # The logger ends the game with a record of its own, so the winner is read
+  # here rather than inferred from the last score snapshot. Idempotent: a
+  # reload replays the record and re-applies the same outcome.
+  def apply_game_ending(game, payload)
+    victory_type = normalize_victory(payload["victory"])
+    winners = Array(payload["winner_civs"]).presence
+    winners = nil if victory_type == SCRAPPED
+
+    game.update!(
+      completed: true,
+      victory_type: victory_type,
+      winner_civs: winners,
+      winner_civ: winners&.first
+    )
+  end
+
+  def normalize_victory(victory)
+    return nil if victory.blank?
+
+    VICTORY_TYPES.fetch(victory) { victory.delete_prefix("VICTORY_").downcase }
   end
 
   def apply_game_settings(game, payload)
