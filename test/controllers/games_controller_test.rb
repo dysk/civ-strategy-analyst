@@ -543,7 +543,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.wonder-races tbody td", "lost"
   end
 
-  test "show repeats the wonder on every contender row of a multi-way race" do
+  test "show groups the contenders of a multi-way race under one spanning wonder cell" do
     game = Game.create!(name: "Two Rival Wonder Game")
     (40..50).each do |t|
       event(game, "England", "city_snapshot", t, "city" => "London", "producing" => "BUILDING_GREAT_WALL",
@@ -558,7 +558,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     get game_url(game)
 
-    assert_select "table.wonder-races tbody td", text: "Great Wall", count: 2
+    assert_select "table.wonder-races tbody td[rowspan='2']", text: "Great Wall"
+    assert_select "table.wonder-races tbody tr", 2
   end
 
   test "show explains that wonder races need city snapshots" do

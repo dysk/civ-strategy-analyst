@@ -124,6 +124,12 @@ th, td {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* A wonder race spans one row per losing contender; keep the wonder,
+   winner and finish at the top of the group rather than centred in it. */
+.wonder-races td[rowspan] {
+  vertical-align: top;
+}
+
 th {
   color: var(--color-muted);
   font-weight: 600;
