@@ -35,13 +35,27 @@ class WonderRaces
     wonder = completion.payload["building"]
     winner = { civ: completion.civ, city: completion.payload["city"] }
 
-    contenders = builders_of(wonder, completion.turn)
+    builders = builders_of(wonder, completion.turn)
+    contenders = builders
       .reject { |builder| builder[:civ] == winner[:civ] && builder[:city] == winner[:city] }
       .map { |builder| contender(builder, completion.turn) }
     return if contenders.empty?
 
     { wonder: wonder, wonder_name: @wonders.name(wonder), completed_turn: completion.turn,
-      winner: winner, contenders: contenders, rival_observed: nil }
+      winner: winner, winner_finish: winner_finish(builders, winner),
+      contenders: contenders, rival_observed: nil }
+  end
+
+  # Whether the wonder outran a hard build. A Great Engineer, a production
+  # overflow, a chopped forest or a granted building all read the same way -
+  # the last snapshot before completion still estimating turns to go - and
+  # the log cannot tell them apart. Nil of india-diplo's 42 wonders fired
+  # this, so the :ahead_of_estimate branch is unverified.
+  def winner_finish(builders, winner)
+    own = builders.find { |b| b[:civ] == winner[:civ] && b[:city] == winner[:city] }
+    return :unobserved unless own
+
+    own[:snapshots].last.payload["production_turns_left"].to_i <= LOST_WINDOW ? :hard_built : :ahead_of_estimate
   end
 
   # Every city seen building `wonder` on or before its completion, one entry
@@ -65,6 +79,7 @@ class WonderRaces
     { civ: builder[:civ], city: builder[:city],
       first_seen_turn: turns.first, last_seen_turn: turns.last, turns_building: turns.size,
       production_invested: snapshots.last.payload["production_stored"].to_i,
+      turns_left_when_last_seen: snapshots.last.payload["production_turns_left"],
       outcome: (completed_turn - turns.last <= LOST_WINDOW ? :lost : :abandoned) }
   end
 

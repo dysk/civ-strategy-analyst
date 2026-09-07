@@ -118,6 +118,48 @@ class WonderRacesTest < ActiveSupport::TestCase
     assert_equal "Hanging Gardens", WonderRaces.new(@game).races.first[:wonder_name]
   end
 
+  # The game's own turns-left estimate on the last snapshot is the sharpest
+  # "how close were they": stored alone cannot tell England two turns off the
+  # Louvre from a city that queued a wonder and never put a hammer in it.
+  test "a contender carries the turns it still had left when last seen" do
+    building(48, "England", "London", "BUILDING_LOUVRE", stored: 300, turns_left: 6)
+    building(49, "England", "London", "BUILDING_LOUVRE", stored: 372, turns_left: 4)
+    building(50, "England", "London", "BUILDING_LOUVRE", stored: 425, turns_left: 2)
+    completed(51, "France", "Paris", "BUILDING_LOUVRE")
+
+    england = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal 2, england[:turns_left_when_last_seen]
+  end
+
+  test "a wonder finished no faster than its own estimate is a hard-built win" do
+    building(48, "France", "Paris", "BUILDING_LOUVRE", stored: 400, turns_left: 2)
+    building(49, "France", "Paris", "BUILDING_LOUVRE", stored: 460, turns_left: 1)
+    building(49, "England", "London", "BUILDING_LOUVRE", stored: 300, turns_left: 5)
+    completed(50, "France", "Paris", "BUILDING_LOUVRE")
+
+    assert_equal :hard_built, WonderRaces.new(@game).races.first[:winner_finish]
+  end
+
+  # An engineer, a production overflow, a chopped forest or a granted
+  # building - the log cannot say which, only that the wonder outran a hard
+  # build.
+  test "a wonder that beat its own estimate to completion outran a hard build" do
+    building(48, "France", "Paris", "BUILDING_LOUVRE", stored: 120, turns_left: 9)
+    building(49, "France", "Paris", "BUILDING_LOUVRE", stored: 150, turns_left: 8)
+    building(49, "England", "London", "BUILDING_LOUVRE", stored: 300, turns_left: 3)
+    completed(50, "France", "Paris", "BUILDING_LOUVRE")
+
+    assert_equal :ahead_of_estimate, WonderRaces.new(@game).races.first[:winner_finish]
+  end
+
+  test "a winner never seen building the wonder leaves the finish unobserved" do
+    building(48, "England", "London", "BUILDING_LOUVRE", stored: 400, turns_left: 3)
+    building(49, "England", "London", "BUILDING_LOUVRE", stored: 450, turns_left: 2)
+    completed(50, "France", "Paris", "BUILDING_LOUVRE")
+
+    assert_equal :unobserved, WonderRaces.new(@game).races.first[:winner_finish]
+  end
+
   # Whether the loser had a spy in the winner's city is what separates
   # losing a race you could see from losing one you could not; tranche 2
   # fills this in from spy_moved.
@@ -143,9 +185,9 @@ class WonderRacesTest < ActiveSupport::TestCase
 
   private
 
-  def building(turn, civ, city, producing, stored:)
+  def building(turn, civ, city, producing, stored:, turns_left: 1)
     city_snapshot(turn, civ, city, "producing" => producing, "producing_kind" => "wonder",
-                  "production_stored" => stored, "production_turns_left" => 1)
+                  "production_stored" => stored, "production_turns_left" => turns_left)
   end
 
   def city_snapshot(turn, civ, city, extra)
