@@ -16,7 +16,61 @@ class LekmodIdsExtractor
 
   def unit_names = resolve(unit_to_description)
 
+  # BUILDING_* -> { "name" => display name, "wonder" => scope } where scope
+  # is "world" / "team" / "national" for a building whose class the ruleset
+  # caps, and absent otherwise. The cap sits on the building's class, not
+  # the building - the same three-scope rule the logger reads in adapter.lua.
+  def buildings
+    building_rows.each_with_object({}) do |(type, row), result|
+      name = display_name(texts[row[:description]] || literal(row[:description]))
+      next if name.blank?
+
+      entry = { "name" => name }
+      scope = class_scopes[row[:building_class]]
+      entry["wonder"] = scope if scope
+      result[type] = entry
+    end
+  end
+
   private
+
+  WONDER_SCOPE_FIELDS = { "MaxGlobalInstances" => "world", "MaxTeamInstances" => "team",
+                          "MaxPlayerInstances" => "national" }.freeze
+
+  # The name text of a national wonder carries the game's [COLOR_...] markup
+  # around a trailing "*" that marks it as one; strip both back to the name.
+  def display_name(text)
+    return unless text
+
+    text.gsub(/\[[^\]]*\]/, "").sub(/\s*\*\s*\z/, "").squish
+  end
+
+  def building_rows
+    documents.each_with_object({}) do |doc, result|
+      doc.css("Buildings Row").each do |row|
+        type = row.at_css("Type")&.text
+        next unless type
+
+        result[type] = { building_class: row.at_css("BuildingClass")&.text,
+                         description: row.at_css("Description")&.text }
+      end
+    end
+  end
+
+  # First cap that is set wins, and the fields are checked widest scope
+  # first: Oxford University is one per team, not one per world.
+  def class_scopes
+    documents.each_with_object({}) do |doc, result|
+      doc.css("BuildingClasses Row").each do |row|
+        type = row.at_css("Type")&.text
+        next unless type
+
+        result[type] = WONDER_SCOPE_FIELDS.filter_map do |field, scope|
+          scope if row.at_css(field)&.text.to_i.positive?
+        end.first
+      end
+    end
+  end
 
   def resolve(descriptions)
     descriptions.each_with_object({}) do |(type, description), result|

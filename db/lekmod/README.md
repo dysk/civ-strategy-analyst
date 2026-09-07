@@ -17,6 +17,8 @@ db/lekmod/<version>/
                      see below)
   units.yml          UNIT_* -> display name, extracted the same way
                      (optional; see below)
+  buildings.yml      BUILDING_* -> { name, wonder }, extracted the same
+                     way (optional; see below)
 ```
 
 There is no `resolutions.md`: LEKMOD leaves the base game's World
@@ -76,6 +78,34 @@ what most of them are.
 Only English is available. LEKMOD ships `Language_PL_PL`, `Language_DE_DE`
 and `Language_RU_RU` tables, but they are empty stubs - all 30,000-odd
 text entries are `Language_en_US`.
+
+## Building names and wonder scope
+
+`buildings.yml` maps every `BUILDING_*` to `{ name, wonder }`. `Wonders`
+reads it to answer whether a bare `producing` id in a `city_snapshot` is a
+world wonder - a race for one that nobody finished never reaches a
+`building_constructed` record, so in-game observation alone under-reports.
+`wonder` is `world` / `team` / `national` for a building whose *class* the
+ruleset caps (`MaxGlobalInstances` / `MaxTeamInstances` /
+`MaxPlayerInstances` > 0, checked widest-scope first), absent otherwise -
+the same rule the logger applies in `adapter.lua`.
+
+The `<Buildings>` and `<BuildingClasses>` tables sit in
+`Override/CIV5Units.xml`, not a file named for them - the same misfiled-table
+trap as Resolutions above. Generate one with:
+
+```sh
+script/extract_lekmod_buildings /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/buildings.yml
+```
+
+`Wonders` resolves a game's version against these files the loose way
+`UnitNames` does: exact `buildings.yml`, else the newest snapshot that has
+one; with none anywhere it falls back to the wonders the game was seen to
+complete. Names are cleaned of the game's `[COLOR_...]` markup and the
+trailing `*` national-wonder marker. A handful of civ-unique regular
+buildings resolve to placeholder or non-English text in the mod source
+itself (`BUILDING_ARGENTINA_STABLE` -> "Ocupada estable"); none are
+wonders, so wonder detection is unaffected.
 
 ## Version resolution
 
@@ -180,6 +210,8 @@ git -C /path/to/Lekmod log --oneline --all | grep -i '35\.3'
 # mod checkout is left on whatever branch its owner had it on
 git -C /path/to/Lekmod archive <that-commit> LEKMOD/Override | tar -x -C /tmp/lekmod-35.3
 script/extract_lekmod_ids /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/ids.yml
+script/extract_lekmod_unit_names /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/units.yml
+script/extract_lekmod_buildings /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/buildings.yml
 ```
 
 Only scan `LEKMOD/Override`, not the whole checkout - a sibling

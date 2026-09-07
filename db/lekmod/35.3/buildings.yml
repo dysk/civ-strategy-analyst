@@ -1,0 +1,589 @@
+---
+BUILDING_AIRPORT:
+  name: Airport
+BUILDING_AKKAD_LIBRARY:
+  name: Akkadian Library
+BUILDING_ALCAZABA:
+  name: Alcazaba
+BUILDING_ALHAMBRA:
+  name: Alhambra
+  wonder: world
+BUILDING_ALTHING:
+  name: Althing
+  wonder: world
+BUILDING_AMPHITHEATER:
+  name: Amphitheater
+BUILDING_ANGKOR_WAT:
+  name: Angkor Wat
+  wonder: world
+BUILDING_AQUEDUCT:
+  name: Aqueduct
+BUILDING_ARGENTINA_STABLE:
+  name: Ocupada estable
+BUILDING_ARMENIA_OBSERVATORY:
+  name: Darbas
+BUILDING_ARMORY:
+  name: Armory
+BUILDING_ARSENAL:
+  name: Arsenal
+BUILDING_ARSENAL_OF_VENICE:
+  name: Arsenal of Venice
+  wonder: world
+BUILDING_ARTISTS_GUILD:
+  name: Artists' Guild
+  wonder: national
+BUILDING_ARTIST_HOUSE:
+  name: Art Hall
+BUILDING_ASHOKA:
+  name: Pillar of Ashoka
+BUILDING_ASKUM_NATIONAL_EPIC:
+  name: King Ezana's Stele
+  wonder: national
+BUILDING_AUSTRALIA_CONSTABULARY:
+  name: Convict Penitentiary
+BUILDING_AYYUBIDS_UNIVERSITY:
+  name: Madrasah
+BUILDING_BANK:
+  name: Bank
+BUILDING_BARAY:
+  name: Baray
+BUILDING_BARRACKS:
+  name: Barracks
+BUILDING_BASIL:
+  name: Basilica
+BUILDING_BAZAAR:
+  name: Bazaar
+BUILDING_BELGIUM_ZOO:
+  name: Stade
+BUILDING_BIG_BEN:
+  name: Big Ben
+  wonder: world
+BUILDING_BLAST_FURNACE:
+  name: Blast Furnace
+BUILDING_BOERS_OPERA_HOUSE:
+  name: Staatsmuseum
+BUILDING_BOLIVIA_TRAIT_FOOD:
+  name: Trait Bolivia
+BUILDING_BOLIVIA_TRAIT_PRODUCTION:
+  name: Trait Bolivia
+BUILDING_BOMB_SHELTER:
+  name: Bomb Shelter
+BUILDING_BOROBUDUR:
+  name: Borobudur
+  wonder: world
+BUILDING_BRANDENBURG_GATE:
+  name: Brandenburg Gate
+  wonder: world
+BUILDING_BREWERY:
+  name: Brewery
+BUILDING_BROADCAST_TOWER:
+  name: Broadcast Tower
+BUILDING_BROADWAY:
+  name: Broadway
+  wonder: world
+BUILDING_BRUNEI_REFINERY:
+  name: BMPC Plant
+BUILDING_BURIAL_TOMB:
+  name: Burial Tomb
+BUILDING_BURJ:
+  name: Burj
+BUILDING_CANDI:
+  name: Candi
+BUILDING_CANTON:
+  name: Canton Factory
+BUILDING_CARAVANSARY:
+  name: Caravansary
+BUILDING_CASTLE:
+  name: Castle
+BUILDING_CATHEDRAL:
+  name: Cathedral
+BUILDING_CEILIDH_HALL:
+  name: Ceilidh Hall
+BUILDING_CENSER:
+  name: Censer Maker
+BUILDING_CHICHEN_ITZA:
+  name: Chichen Itza
+  wonder: world
+BUILDING_CIRCUS:
+  name: Circus
+BUILDING_CIRCUS_MAXIMUS:
+  name: Circus Maximus
+  wonder: national
+BUILDING_CN_TOWER:
+  name: CN Tower
+  wonder: world
+BUILDING_COFFEE_HOUSE:
+  name: Coffee House
+BUILDING_COLOMBIAN_GRANARY:
+  name: Cacicazgo
+BUILDING_COLOMBIA_TRAIT:
+  name: Trait Colombia
+BUILDING_COLOSSEUM:
+  name: Colosseum
+BUILDING_COLOSSUS:
+  name: Colossus
+  wonder: world
+BUILDING_CONSERVATORY:
+  name: Conservatory
+BUILDING_CONSTABLE:
+  name: Constabulary
+BUILDING_COOPERATIVE:
+  name: Cooperative
+BUILDING_CORALSHOP:
+  name: Coral Port
+BUILDING_COTHON:
+  name: Cothon
+BUILDING_COURTHOUSE:
+  name: Courthouse
+BUILDING_CRISTO_REDENTOR:
+  name: Cristo Redentor
+  wonder: world
+BUILDING_CUBA_TRAIT_UB2:
+  name: Trait Cuba CapCulture
+BUILDING_CUBA_TRAIT_UB3:
+  name: Trait UU Gift
+BUILDING_CZECHIA_MINT:
+  name: Thaler Mint
+BUILDING_DANCE_HALL:
+  name: Dance Hall
+BUILDING_DOJO:
+  name: Dojo
+BUILDING_DUCAL_STABLE:
+  name: Ducal Stable
+BUILDING_DUMMY_ARABIA:
+  name: Trait Arabia
+BUILDING_DUMMY_MUGHALS:
+  name: Trait Mughals
+BUILDING_ECONOMIC_UNION_GOLD:
+  name: Policy Eco Union Gold
+BUILDING_EIFFEL_TOWER:
+  name: Eiffel Tower
+  wonder: world
+BUILDING_FACTORY:
+  name: Factory
+BUILDING_FALU_GRUVA:
+  name: Falu Gruva
+  wonder: national
+BUILDING_FEITORIA:
+  name: Feitoria
+BUILDING_FINNISH_SAUNA:
+  name: Sauna
+BUILDING_FLOATING_GARDENS:
+  name: Floating Gardens
+BUILDING_FORBIDDEN_PALACE:
+  name: Forbidden Palace
+  wonder: world
+BUILDING_FORGE:
+  name: Forge
+BUILDING_GALLERY:
+  name: Gallery
+BUILDING_GARDEN:
+  name: Garden
+BUILDING_GEMCUTTER:
+  name: Gemcutter
+BUILDING_GEORGIA_TSIKHE:
+  name: Tsikhe
+BUILDING_GLOBE_THEATER:
+  name: Globe Theatre
+  wonder: world
+BUILDING_GOVERNORS_MANSION:
+  name: Governor's Mansion
+BUILDING_GRANARY:
+  name: Granary
+BUILDING_GRAND_TEMPLE:
+  name: Grand Temple
+  wonder: national
+BUILDING_GREAT_FIREWALL:
+  name: Great Firewall
+  wonder: world
+BUILDING_GREAT_LIBRARY:
+  name: Great Library
+  wonder: world
+BUILDING_GREAT_LIGHTHOUSE:
+  name: Great Lighthouse
+  wonder: world
+BUILDING_GREAT_WALL:
+  name: Great Wall
+  wonder: world
+BUILDING_GROCER:
+  name: Grocer
+BUILDING_GURDWARA:
+  name: Gurdwara
+BUILDING_HACIENDA:
+  name: Hacienda
+BUILDING_HAGIA_SOPHIA:
+  name: Hagia Sophia
+  wonder: world
+BUILDING_HANGING_GARDEN:
+  name: Hanging Gardens
+  wonder: world
+BUILDING_HANSE:
+  name: Hanse
+BUILDING_HARBOR:
+  name: Harbor
+BUILDING_HERMITAGE:
+  name: Hermitage
+  wonder: national
+BUILDING_HEROIC_EPIC:
+  name: Heroic Epic
+  wonder: national
+BUILDING_HIMEJI_CASTLE:
+  name: Himeji Castle
+  wonder: world
+BUILDING_HIPPODROME:
+  name: Hippodrome
+BUILDING_HORDE_YAM_ROUTE:
+  name: Yam Route
+BUILDING_HOSPITAL:
+  name: Hospital
+BUILDING_HOTEL:
+  name: Hotel
+BUILDING_HUBBLE:
+  name: Hubble Space Telescope
+  wonder: world
+BUILDING_HYDRO_PLANT:
+  name: Hydro Plant
+BUILDING_IKANDA:
+  name: Ikanda
+BUILDING_INTELLIGENCE_AGENCY:
+  name: National Intelligence Agency
+  wonder: national
+BUILDING_INTERNATIONAL_SPACE_STATION:
+  name: International Space Station
+  wonder: world
+BUILDING_IRISH_PUB:
+  name: Irish Pub
+BUILDING_IRONWORKS:
+  name: Ironworks
+  wonder: national
+BUILDING_ISRAEL_NATIONAL_COLLEGE:
+  name: King Solomon's Temple
+  wonder: national
+BUILDING_KHAMBAR:
+  name: Khambar
+BUILDING_KILWA_TRAIT:
+  name: Trait Kilwa TR
+BUILDING_KNYAZ:
+  name: Knyaz Court
+BUILDING_KREMLIN:
+  name: Kremlin
+  wonder: world
+BUILDING_KREPOST:
+  name: Krepost
+BUILDING_KYAWWAT:
+  name: Kyawwat
+BUILDING_LABORATORY:
+  name: Research Lab
+BUILDING_LAKE_WONDER:
+  name: Huey Teocalli
+  wonder: world
+BUILDING_LEANING_TOWER:
+  name: Leaning Tower of Pisa
+  wonder: world
+BUILDING_LIBRARY:
+  name: Library
+BUILDING_LIGHTHOUSE:
+  name: Lighthouse
+BUILDING_LIONS_GATE:
+  name: Lion's Gate
+BUILDING_LONGHOUSE:
+  name: Longhouse
+BUILDING_LOUVRE:
+  name: Louvre
+  wonder: world
+BUILDING_MACHU_PICHU:
+  name: Machu Picchu
+  wonder: world
+BUILDING_MALI_NATIONAL_TREASURY:
+  name: Grand Treasury of Mali
+  wonder: national
+BUILDING_MANDIR:
+  name: Mandir
+BUILDING_MARKET:
+  name: Market
+BUILDING_MAUSOLEUM_HALICARNASSUS:
+  name: Mausoleum of Halicarnassus
+  wonder: world
+BUILDING_MAYA_PYRAMID:
+  name: Pyramid
+BUILDING_MC_KOKH:
+  name: Rock-Cut Tomb
+BUILDING_MC_OMANI_MINAA:
+  name: Minaa'
+BUILDING_MC_ROMANIAN_PAINTED_MONASTERY:
+  name: Painted Monastery
+BUILDING_MC_TONGAN_MALAE:
+  name: Mala'e
+BUILDING_MEADHALLL:
+  name: Mead Hall
+BUILDING_MEDICAL_LAB:
+  name: Medical Lab
+BUILDING_MILITARY_ACADEMY:
+  name: Military Academy
+BUILDING_MILITARY_BASE:
+  name: Military Base
+BUILDING_MINT:
+  name: Mint
+BUILDING_MONASTERY:
+  name: Monastery
+BUILDING_MONGOL_TRAIT:
+  name: Trait Mongol Food
+BUILDING_MONUMENT:
+  name: Monument
+BUILDING_MOORS_TRAIT2:
+  name: Trait Moors
+BUILDING_MOSQUE:
+  name: Mosque
+BUILDING_MOSQUE_OF_DJENNE:
+  name: Great Mosque of Djenne
+  wonder: world
+BUILDING_MUD_PYRAMID_MOSQUE:
+  name: Mud Pyramid Mosque
+BUILDING_MUGHALS_CARAVANSARY:
+  name: Mansabdari Estate
+BUILDING_MUGHAL_FORT:
+  name: Mughal Fort
+BUILDING_MURUS_GALLICUS:
+  name: Murus Gallicus
+BUILDING_MUSEUM:
+  name: Museum
+BUILDING_MUSICIANS_GUILD:
+  name: Musicians' Guild
+  wonder: national
+BUILDING_MUSIC_HOUSE:
+  name: Vocal Chamber
+BUILDING_MYSORE_PALACE:
+  name: Mysore Palace
+  wonder: national
+BUILDING_NATIONALCHURCH:
+  name: National Church
+BUILDING_NATIONAL_COLLEGE:
+  name: National College
+  wonder: national
+BUILDING_NATIONAL_EPIC:
+  name: National Epic
+  wonder: national
+BUILDING_NATIONAL_TREASURY:
+  name: East India Company
+  wonder: national
+BUILDING_NEUSCHWANSTEIN:
+  name: Neuschwanstein
+  wonder: world
+BUILDING_NOTRE_DAME:
+  name: Notre Dame
+  wonder: world
+BUILDING_NUCLEAR_PLANT:
+  name: Nuclear Plant
+BUILDING_OBSERVATORY:
+  name: Observatory
+BUILDING_ODEON:
+  name: Odeon
+BUILDING_OPERA_HOUSE:
+  name: Opera House
+BUILDING_ORACLE:
+  name: Oracle
+  wonder: world
+BUILDING_ORSZ:
+  name: Orszaggyules
+  wonder: national
+BUILDING_OUTREMER:
+  name: Outremer
+BUILDING_OXFORD_UNIVERSITY:
+  name: Oxford University
+  wonder: team
+BUILDING_PAGODA:
+  name: Pagoda
+BUILDING_PALACE:
+  name: Palace
+  wonder: national
+BUILDING_PALMYRA_FORUM:
+  name: Palmyrene Theater
+BUILDING_PANAMA:
+  name: Panama Canal
+  wonder: world
+BUILDING_PAPER_MAKER:
+  name: Paper Maker
+BUILDING_PARTHENON:
+  name: Parthenon
+  wonder: world
+BUILDING_PENTAGON:
+  name: Pentagon
+  wonder: world
+BUILDING_PETRA:
+  name: Petra
+  wonder: world
+BUILDING_PHILIPPINES_TRAIT:
+  name: Trait Phil POP
+BUILDING_PHOENICIAN_TRAIT:
+  name: Phoenicia Trait
+BUILDING_PLAZA_DE_TOROS:
+  name: Plaza de Toros
+BUILDING_POLICE_STATION:
+  name: Police Station
+BUILDING_PORCELAIN_TOWER:
+  name: Porcelain Tower
+  wonder: world
+BUILDING_PRORA_RESORT:
+  name: Prora
+  wonder: world
+BUILDING_PRUSSIAN_FACTORY:
+  name: Fabrik
+BUILDING_PUBLIC_SCHOOL:
+  name: Public School
+BUILDING_PYRAMID:
+  name: Pyramids
+  wonder: world
+BUILDING_QARA:
+  name: Qara U'y
+BUILDING_RECYCLING_CENTER:
+  name: Recycling Center
+  wonder: national
+BUILDING_RED_FORT:
+  name: Red Fort
+  wonder: world
+BUILDING_REFINERY:
+  name: Oil Refinery
+BUILDING_ROVA:
+  name: Rova
+BUILDING_ROYAL_LIBRARY:
+  name: Royal Library
+BUILDING_SATRAPS_COURT:
+  name: Satrap's Court
+BUILDING_SCOTLAND_TRAIT:
+  name: Trait Scotland
+BUILDING_SCRIPTORIUM:
+  name: Scriptorium
+BUILDING_SEAPORT:
+  name: Seaport
+BUILDING_SERAI:
+  name: Serai
+BUILDING_SHRINE:
+  name: Shrine
+BUILDING_SILVERSMITH:
+  name: Silversmith
+BUILDING_SISTINE_CHAPEL:
+  name: Sistine Chapel
+  wonder: world
+BUILDING_SLAVE:
+  name: Slave Market
+BUILDING_SOLAR_PLANT:
+  name: Solar Plant
+BUILDING_SPACESHIP_FACTORY:
+  name: Spaceship Factory
+BUILDING_STABLE:
+  name: Stable
+BUILDING_STADIUM:
+  name: Stadium
+BUILDING_STATUE_OF_LIBERTY:
+  name: Statue of Liberty
+  wonder: world
+BUILDING_STATUE_ZEUS:
+  name: Statue of Zeus
+  wonder: world
+BUILDING_STAVE:
+  name: Stave Church
+BUILDING_STOCK_EXCHANGE:
+  name: Stock Exchange
+BUILDING_STONEHENGE:
+  name: Stonehenge
+  wonder: world
+BUILDING_STONE_MASON:
+  name: Stone Mason
+BUILDING_STONE_WORKS:
+  name: Stone Works
+BUILDING_STPETERS:
+  name: St. Peter's Basilica
+  wonder: national
+BUILDING_SWISS_REISLAUFER:
+  name: Reisläufer Post
+BUILDING_SWISS_SKI_RESORT:
+  name: Ski Resort
+BUILDING_SYDNEY_OPERA_HOUSE:
+  name: Sydney Opera House
+  wonder: world
+BUILDING_SYNAGOGUE:
+  name: Synagogue
+BUILDING_TAJ_MAHAL:
+  name: Taj Mahal
+  wonder: world
+BUILDING_TEMPLE:
+  name: Temple
+BUILDING_TEMPLE_ARTEMIS:
+  name: Temple of Artemis
+  wonder: world
+BUILDING_TERRACOTTA_ARMY:
+  name: Terracotta Army
+  wonder: world
+BUILDING_TEXTILE:
+  name: Textile Mill
+BUILDING_THEATRE:
+  name: Zoo
+BUILDING_TIMMYS:
+  name: Tim Horton's
+BUILDING_TOGTVORTOI:
+  name: Trait Mongol HorseRev
+BUILDING_TOURIST_CENTER:
+  name: National Visitor Center
+  wonder: national
+BUILDING_TOWER_OF_BELEM:
+  name: Tower of Belém
+  wonder: world
+BUILDING_TRADE_HARBOUR:
+  name: Trade Harbour
+BUILDING_TUNISIA_CASTLE:
+  name: Ribat
+BUILDING_UA_AKKAD:
+  name: The Great Unification
+BUILDING_UC_HALKEVLERI:
+  name: Halkevleri
+BUILDING_UFFIZI:
+  name: Uffizi
+  wonder: world
+BUILDING_UKRAINE_TRAIT:
+  name: Trait Ukraine
+BUILDING_ULUG:
+  name: Ulugh Beg's Observatory
+BUILDING_UNIVERSITY:
+  name: University
+BUILDING_VIHARA:
+  name: Vihara
+BUILDING_VILNIUS:
+  name: Grand Cathedral of Vilnius
+  wonder: national
+BUILDING_VOKHI:
+  name: Vo Khi
+BUILDING_WALES_TRAIT:
+  name: Trait Wales
+BUILDING_WALLS:
+  name: Walls
+BUILDING_WALLS_OF_BABYLON:
+  name: Walls of Babylon
+BUILDING_WAT:
+  name: Wat
+BUILDING_WATCH_TOWER:
+  name: Watch Tower
+BUILDING_WATERMILL:
+  name: Water Mill
+BUILDING_WINDMILL:
+  name: Windmill
+BUILDING_WIRR:
+  name: Trait Normans
+BUILDING_WORKSHOP:
+  name: Workshop
+BUILDING_WRITERS_GUILD:
+  name: Writers' Guild
+  wonder: national
+BUILDING_WRITER_HOUSE:
+  name: Writing Auditorium
+BUILDING_YUGO_AUTOCRACY:
+  name: Trait Yugo Auto
+BUILDING_YUGO_FREEDOM:
+  name: Trait Yugo Freedom
+BUILDING_YUGO_ORDER:
+  name: Trait Yugo Order
+BUILDING_YUGO_SPOMENIK:
+  name: Spomenik
+BUILDING_ZIGGURAT:
+  name: Ziggurat
+BUILDING_ZIMBABWE_TRAIT:
+  name: Trait Zim Cap

@@ -15,5 +15,11 @@
 		<Row Tag="TXT_KEY_UNIT_TEST_ONE">
 			<Text>Test Gatling Gun</Text>
 		</Row>
+		<Row Tag="TXT_KEY_BUILDING_TEST_WONDER">
+			<Text>Test Wonder</Text>
+		</Row>
+		<Row Tag="TXT_KEY_BUILDING_TEST_PLAIN">
+			<Text>Test Plain Building</Text>
+		</Row>
 	</Language_en_US>
 </GameData>

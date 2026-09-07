@@ -65,4 +65,45 @@ class LekmodIdsExtractorTest < ActiveSupport::TestCase
 
     refute names.key?("POLICY_TEST_ONE")
   end
+
+  test "resolves a building name from the Buildings table via its text key" do
+    assert_equal "Test Wonder", buildings["BUILDING_TEST_WONDER"]["name"]
+  end
+
+  # Same as units: LEKMOD's own buildings write English straight into Description.
+  test "takes a building description that is already English as the name" do
+    assert_equal "Test Team Wonder", buildings["BUILDING_TEST_TEAM"]["name"]
+  end
+
+  # A wonder is whatever the ruleset caps, and it caps in three scopes -
+  # the cap sits on the building's class, not the building.
+  test "classifies a building whose class is capped once globally as a world wonder" do
+    assert_equal "world", buildings["BUILDING_TEST_WONDER"]["wonder"]
+  end
+
+  test "classifies a building whose class is capped per team as a team wonder" do
+    assert_equal "team", buildings["BUILDING_TEST_TEAM"]["wonder"]
+  end
+
+  test "classifies a building whose class is capped per player as a national wonder" do
+    assert_equal "national", buildings["BUILDING_TEST_NATIONAL"]["wonder"]
+  end
+
+  test "leaves an uncapped building unclassified" do
+    refute buildings["BUILDING_TEST_PLAIN"].key?("wonder")
+  end
+
+  test "omits a building whose text key resolves to nothing" do
+    refute buildings.key?("BUILDING_TEST_UNNAMED")
+  end
+
+  # National wonders carry the game's [COLOR_...] markup and a trailing "*"
+  # marker in their name text; a display name wants neither.
+  test "strips Civ5 text markup and the national-wonder marker from a building name" do
+    assert_equal "Test Markup Wonder", buildings["BUILDING_TEST_MARKUP"]["name"]
+  end
+
+  private
+
+  def buildings = LekmodIdsExtractor.new(SOURCE_DIR).buildings
 end

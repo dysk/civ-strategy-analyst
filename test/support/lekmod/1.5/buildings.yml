@@ -1,0 +1,9 @@
+---
+BUILDING_LOUVRE:
+  name: Louvre
+  wonder: world
+BUILDING_OXFORD_UNIVERSITY:
+  name: Oxford University
+  wonder: team
+BUILDING_LIBRARY:
+  name: Library

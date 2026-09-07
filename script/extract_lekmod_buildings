@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/buildings.yml: BUILDING_* -> { name:, wonder: }
+# extracted from a checkout of the mod's XML source. The game logs a wonder
+# by a bare building id, and only for wonders that got finished; this file
+# carries the ruleset's cap for every building so a race for an unfinished
+# one is still recognisable (see db/lekmod/README.md, LekmodIdsExtractor and
+# Wonders).
+#
+# The <Buildings> and <BuildingClasses> tables sit in Override/CIV5Units.xml,
+# not a file named for them - the same trap the README notes for Resolutions.
+#
+# Usage:
+#   script/extract_lekmod_buildings SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_buildings /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/buildings.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+abort "Usage: script/extract_lekmod_buildings SOURCE_DIR TARGET_YML" unless source_dir && target
+
+buildings = LekmodIdsExtractor.new(source_dir).buildings
+abort "No buildings resolved from #{source_dir} - check the path points at LEKMOD/Override." if buildings.empty?
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, buildings.sort.to_h.to_yaml)
+
+wonders = buildings.count { |_id, entry| entry["wonder"] }
+puts "Wrote #{target} - #{buildings.size} buildings resolved, #{wonders} of them wonders."

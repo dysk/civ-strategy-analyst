@@ -42,4 +42,62 @@
 			<Description>Test Anti-Tank Rifle</Description>
 		</Row>
 	</Units>
+	<BuildingClasses>
+		<Row>
+			<Type>BUILDINGCLASS_TEST_WONDER</Type>
+			<MaxGlobalInstances>1</MaxGlobalInstances>
+			<MaxTeamInstances>-1</MaxTeamInstances>
+			<MaxPlayerInstances>-1</MaxPlayerInstances>
+		</Row>
+		<Row>
+			<Type>BUILDINGCLASS_TEST_TEAM</Type>
+			<MaxGlobalInstances>-1</MaxGlobalInstances>
+			<MaxTeamInstances>1</MaxTeamInstances>
+			<MaxPlayerInstances>-1</MaxPlayerInstances>
+		</Row>
+		<Row>
+			<Type>BUILDINGCLASS_TEST_NATIONAL</Type>
+			<MaxGlobalInstances>-1</MaxGlobalInstances>
+			<MaxTeamInstances>-1</MaxTeamInstances>
+			<MaxPlayerInstances>1</MaxPlayerInstances>
+		</Row>
+		<Row>
+			<Type>BUILDINGCLASS_TEST_PLAIN</Type>
+			<MaxGlobalInstances>-1</MaxGlobalInstances>
+			<MaxTeamInstances>-1</MaxTeamInstances>
+			<MaxPlayerInstances>-1</MaxPlayerInstances>
+		</Row>
+	</BuildingClasses>
+	<Buildings>
+		<Row>
+			<Type>BUILDING_TEST_WONDER</Type>
+			<BuildingClass>BUILDINGCLASS_TEST_WONDER</BuildingClass>
+			<Description>TXT_KEY_BUILDING_TEST_WONDER</Description>
+		</Row>
+		<Row>
+			<Type>BUILDING_TEST_TEAM</Type>
+			<BuildingClass>BUILDINGCLASS_TEST_TEAM</BuildingClass>
+			<Description>Test Team Wonder</Description>
+		</Row>
+		<Row>
+			<Type>BUILDING_TEST_NATIONAL</Type>
+			<BuildingClass>BUILDINGCLASS_TEST_NATIONAL</BuildingClass>
+			<Description>Test National Wonder</Description>
+		</Row>
+		<Row>
+			<Type>BUILDING_TEST_PLAIN</Type>
+			<BuildingClass>BUILDINGCLASS_TEST_PLAIN</BuildingClass>
+			<Description>TXT_KEY_BUILDING_TEST_PLAIN</Description>
+		</Row>
+		<Row>
+			<Type>BUILDING_TEST_UNNAMED</Type>
+			<BuildingClass>BUILDINGCLASS_TEST_PLAIN</BuildingClass>
+			<Description>TXT_KEY_BUILDING_TEST_UNNAMED</Description>
+		</Row>
+		<Row>
+			<Type>BUILDING_TEST_MARKUP</Type>
+			<BuildingClass>BUILDINGCLASS_TEST_NATIONAL</BuildingClass>
+			<Description>Test Markup Wonder [COLOR_CYAN]*[ENDCOLOR]</Description>
+		</Row>
+	</Buildings>
 </GameData>
