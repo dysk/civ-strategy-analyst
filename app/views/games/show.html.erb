@@ -101,11 +101,14 @@
     </thead>
     <tbody>
       <% @buffer_cities[:pairs].each do |pair| %>
-        <% pair[:civs].each do |civ| %>
+        <% pair[:civs].each_with_index do |civ, index| %>
           <% buffer = pair[:buffers][civ] %>
           <tr>
-            <td><%= pair[:civs].first %> &ndash; <%= pair[:civs].last %></td>
-            <td><%= pair[:distance] %></td>
+            <% if index.zero? %>
+              <% span = pair[:civs].size %>
+              <td rowspan="<%= span %>"><%= pair[:civs].first %> &ndash; <%= pair[:civs].last %></td>
+              <td rowspan="<%= span %>"><%= pair[:distance] %></td>
+            <% end %>
             <td><%= civ %></td>
             <td><%= buffer&.dig(:city) || "&mdash;".html_safe %></td>
             <td>

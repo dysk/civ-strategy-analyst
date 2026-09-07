@@ -324,6 +324,18 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.buffer-cities tbody tr:last-child td", "Greece"
   end
 
+  test "show spans a pair's shared cells across its two civ rows" do
+    game = pangaea_game("Buffer Span Game")
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 27, 20)
+    named_city(game, "Rome", "Ostia", 30, 18, 20)
+
+    get game_url(game)
+
+    assert_select "table.buffer-cities tbody tr", 2
+    assert_select "table.buffer-cities tbody td[rowspan='2']", 2
+  end
+
   test "show badges the civilization that settled its corridor first" do
     game = pangaea_game("Buffer Race Game")
     named_city(game, "Rome", "Roma", 0, 10, 20)
