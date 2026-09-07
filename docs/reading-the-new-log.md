@@ -83,6 +83,10 @@ context for the order, to be detailed when reached.
 
 ## 0. `game_ended` is the outcome
 
+**Implemented 2026-09-07** — `docs/plan.md`, *"the game's outcome, read
+rather than inferred"*. What follows is the plan as written plus the three
+game-ending mechanisms found while implementing it.
+
 `OutcomeResolver` infers the winner from the last score snapshot and
 `civ analyze` takes `--winner` / `--victory-type` by hand, because the plan
 was written when *"there's no victory event in the data"*. There is now:
@@ -92,15 +96,55 @@ was written when *"there's no victory event in the data"*. There is now:
  "winner_civs":["India"],"winner_team":0,"winning_turn":183}
 ```
 
-- `ImportGame` writes `games.winner_civ`, `victory_type`, `completed` from it
-  (`app/services/import_game.rb`, beside `apply_game_settings`).
-- `OutcomeResolver` gains a `source: :logged` ahead of `:declared` and
+- `ImportGame` writes `games.winner_civ`, `winner_civs`, `victory_type`,
+  `completed` from it (`app/services/import_game.rb`, beside
+  `apply_game_settings`). `victory_type` is mapped onto the words
+  `OutcomeResolver#inferred_result` already speaks.
+- `OutcomeResolver` gains a `source: :logged` between `:declared` and
   `:inferred`; the explicit `--winner` still wins, so a user override is never
   silently discarded.
 - `winner_civs` is an array (team victory), so a team win must not be flattened
-  to one civ.
+  to one civ. It is a Postgres string array; `winner_civ` stays as its first
+  element for the views and CLI that show one name.
 
-Iterations: one failing test on `ImportGame`, one on `OutcomeResolver`.
+### Three ways a game ends, not one
+
+`game_ended` fires off `Game.SetWinner`. LEKMOD's own multiplayer vote system
+(`mp_proposal_result`, unrelated to the World Congress) also ends games, and
+only some of those paths reach `SetWinner`. Checked against
+`civ-narrative-logger/src/victory.lua`, `src/extractors.lua` and LEKMOD's
+`ProposalChartPopup.lua` `onProposalResult`:
+
+| vote | effect on pass | `SetWinner`? | reaches `game_ended`? |
+|---|---|---|---|
+| **concede** | `SetWinner(subject.team, VICTORY_DIPLOMATIC)` | yes | yes — as a diplomatic win |
+| **scrap** | `SetWinner(activePlayer.team, VICTORY_SCRAP)` | yes | yes — with a meaningless winner |
+| **irrelevance** | host kicks the subject, game continues | no | no |
+| remap | lobby reshuffle | no | no |
+
+- **concede** already arrives as `game_ended`, labelled `VICTORY_DIPLOMATIC`.
+  No outcome work — the only loss is the label. Relabelling it from a genuine
+  delegate win (cross-reference a passed `concede` near `winning_turn`) is a
+  follow-up, not a correctness gap.
+- **scrap** ends the game with no real winner — the `winner_civs` on that
+  record is only the client that resolved the vote. `ImportGame` maps
+  `VICTORY_SCRAP` → `victory_type: "scrapped"`, both winner columns nil;
+  `OutcomeResolver` returns no winner and does **not** fall through to
+  inference, which would otherwise invent a score-leader winner for a game
+  nobody won.
+- **irrelevance** never reaches `game_ended` — it takes a major out of victory
+  contention and out of the session without ending the game. It is a
+  `KeyMomentDetector#players_declared_irrelevant` moment (weight 3, anchors its
+  own chronicle entry) plus a `PlayerTimeline#irrelevance(civ)` record, not an
+  outcome.
+
+**None of the three example logs carries `game_ended` or any `mp_*` record** —
+all are one human against bots — so every branch above ships tested only
+against synthetic fixtures.
+
+Iterations: `ImportGame` (`game_ended` + `VICTORY_SCRAP`); `OutcomeResolver`
+(`source: :logged`); `KeyMomentDetector` + `PlayerTimeline` + `ChronicleSpine`
+for irrelevance.
 
 ## 1. Population counted per city
 

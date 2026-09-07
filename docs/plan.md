@@ -563,3 +563,69 @@ All three are done, and the file now carries what the change actually
 cost and what it turned up on the way — including a dedup that had
 stopped working the moment the logger started stamping records with the
 engine clock: `docs/import-volume.md`.
+
+## Plan: the game's outcome, read rather than inferred (implemented)
+
+Status: tranche 1 point 0 of `docs/reading-the-new-log.md`, implemented
+2026-09-07 (commits `415faa7`, `3d61926`, `0b71022`). Three TDD cycles,
+one commit each. Untested against a real log: none of the three example
+games carries `game_ended` or any `mp_*` record — all are effectively
+one human against bots.
+
+Context: `OutcomeResolver` inferred the winner from the last score
+snapshot and `civ analyze` took `--winner` / `--victory-type` by hand,
+because the plan predates any victory event in the data. The logger now
+emits `game_ended` (`victory`, `winner_civs`, `winner_team`,
+`winning_turn`), and LEKMOD's own multiplayer vote system emits
+`mp_proposal_result` for irrelevance / concede / scrap / remap proposals.
+
+What the log turned out to carry, checked against `civ-narrative-logger`
+`src/victory.lua`, `src/extractors.lua` and LEKMOD's
+`ProposalChartPopup.lua` `onProposalResult`:
+
+- **concede** passing calls `Game.SetWinner(subject.team, VICTORY_DIPLOMATIC)`,
+  so it already arrives as `game_ended` — labelled a diplomatic win. No
+  outcome work needed; relabelling it from a genuine delegate win is a
+  follow-up, not a correctness gap.
+- **scrap** passing calls `Game.SetWinner(activePlayer.team, VICTORY_SCRAP)` —
+  the winner is only the client that resolved the vote. `game_ended` fires
+  with a meaningless `winner_civs`. Inference would either store that
+  garbage or fall through and invent a score-leader winner for a game
+  nobody won. Handled here.
+- **irrelevance** passing kicks the subject and does *not* call
+  `SetWinner`, so `game_ended` never fires; the game continues one major
+  short. Not an outcome — a `KeyMomentDetector` moment.
+- **remap** is a lobby mechanic with no game meaning; ignored.
+
+Iterations (each: failing tests → review → implementation → commit):
+
+1. **`ImportGame` reads `game_ended`** — writes `completed`, `victory_type`
+   and the winning roster beside `apply_game_settings`. `victory_type` is
+   mapped onto the words `OutcomeResolver#inferred_result` already uses
+   (`VICTORY_SPACE_RACE` → `science`), unknown ids fall back to the
+   prefix-stripped downcase. `VICTORY_SCRAP` → `scrapped`, both winner
+   columns nil. `winner_civs` is a Postgres string array (migration
+   `20260907125123`) so a team win keeps every member; `winner_civ` stays
+   as the first for the views and CLI that show one name. The `game_ended`
+   event is still stored — the key moment detector and chronicle spine
+   read it too.
+2. **`OutcomeResolver` gains `source: :logged`** — between `:declared` and
+   `:inferred`: a hand-given `--winner` still wins, but a finished game is
+   no longer re-derived from its last snapshot. Reads the persisted
+   columns (`@game.completed?`), not the event, to avoid duplicating the
+   `VICTORY_TYPES` map. A scrapped game returns no winner and does not fall
+   through to inference.
+3. **`KeyMomentDetector#players_declared_irrelevant`** — off
+   `mp_proposal_result` where `type == "irrelevance"` and
+   `status == "passed"`. `ChronicleSpine` weights it 3 (anchors its own
+   entry — a contender leaving reshapes every standing that follows).
+   `PlayerTimeline#irrelevance(civ)` records the vote against the civ it
+   removed, so the digest can say why that civ stopped mattering. Both
+   reach the digest via `DigestBuilder`.
+
+Not done, left for later: relabelling a concede-driven `VICTORY_DIPLOMATIC`
+in the digest when an `mp_proposal_result type: "concede" status: "passed"`
+sits within a turn or two of `winning_turn`; a `PlayerTimeline` departure
+marker unifying irrelevance with `player_eliminated` (which nothing reads
+yet); and the note in tranche 2 feature 4 that irrelevance shrinks the
+diplomatic-victory vote pool the way conquering a city-state does.
