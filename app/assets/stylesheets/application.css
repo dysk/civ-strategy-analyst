@@ -80,6 +80,26 @@ h2 {
   border-bottom: 1px solid var(--color-border);
 }
 
+h2[id] {
+  scroll-margin-top: 1rem;
+}
+
+.heading-anchor {
+  color: var(--color-muted);
+  opacity: 0.3;
+  transition: opacity 0.1s ease;
+}
+
+.heading-anchor svg {
+  vertical-align: middle;
+}
+
+h2:hover .heading-anchor,
+.heading-anchor:focus {
+  opacity: 1;
+  text-decoration: none;
+}
+
 h3 {
   font-size: 1.05rem;
   margin: 1.5rem 0 0.5rem;

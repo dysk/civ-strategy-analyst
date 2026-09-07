@@ -572,6 +572,18 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "p.empty-state", /city snapshot/i
   end
 
+  test "show gives each major section a self-linking anchor" do
+    game = Game.create!(name: "Anchored Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    %w[capital-distances buffer-cities wonder-races empire-geometry early-game military
+       cultural-standing world-congress victory-progress key-moments strategy-report].each do |id|
+      assert_select "h2##{id} a.heading-anchor[href=?]", "##{id}"
+    end
+  end
+
   test "show marks a civilization whose city count the timeline cannot account for" do
     game = Game.create!(name: "Razed City Game", map_width: 46)
     game.players.create!(civ: "Rome")

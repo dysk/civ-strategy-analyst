@@ -35,7 +35,7 @@
   </ol>
 <% end %>
 
-<h2>Capital Distances</h2>
+<%= section_heading("Capital Distances", "capital-distances") %>
 <% if @capital_positions.any? %>
   <svg class="capital-layout" viewBox="0 0 <%= @capital_layout_width %> <%= @capital_layout_height %>" role="img" aria-label="Capital positions">
     <% @capital_positions.each do |point| %>
@@ -72,7 +72,7 @@
   <% end %>
 <% end %>
 
-<h2>Buffer Cities</h2>
+<%= section_heading("Buffer Cities", "buffer-cities") %>
 <% if !@buffer_cities[:applicable] %>
   <p class="empty-state">Buffer cities are only computed for Pangaea maps.</p>
 <% elsif @buffer_cities[:pairs].empty? %>
@@ -130,7 +130,7 @@
   <% end %>
 <% end %>
 
-<h2>Wonder Races</h2>
+<%= section_heading("Wonder Races", "wonder-races") %>
 <% if !@wonder_races[:applicable] %>
   <p class="empty-state">Wonder races need per-city snapshots, which this game's log does not carry.</p>
 <% elsif @wonder_races[:races].empty? %>
@@ -178,7 +178,7 @@
   </table>
 <% end %>
 
-<h2>Empire Geometry</h2>
+<%= section_heading("Empire Geometry", "empire-geometry") %>
 <% if @geometry_rows.empty? %>
   <p class="empty-state">No city coordinates in this game's events.</p>
 <% else %>
@@ -213,7 +213,7 @@
   <p><%= link_to "See how these shapes came about", game_geometry_path(@game) %></p>
 <% end %>
 
-<h2>Early Game</h2>
+<%= section_heading("Early Game", "early-game") %>
 <% if @early_game_rows.empty? %>
   <p class="empty-state">No players in this game.</p>
 <% else %>
@@ -244,7 +244,7 @@
   </table>
 <% end %>
 
-<h2>Military</h2>
+<%= section_heading("Military", "military") %>
 <% if @army_rows.empty? %>
   <p class="empty-state">No military data in this game's snapshots.</p>
 <% else %>
@@ -275,7 +275,7 @@
   <p><%= link_to "See how these armies were built", game_army_path(@game) %></p>
 <% end %>
 
-<h2>Cultural Standing</h2>
+<%= section_heading("Cultural Standing", "cultural-standing") %>
 <% if @cultural_rows.empty? %>
   <p class="empty-state">No tourism data in this game's snapshots.</p>
 <% else %>
@@ -302,7 +302,7 @@
   <p><%= link_to "See how cultural standing changed over time", game_cultural_path(@game) %></p>
 <% end %>
 
-<h2>World Congress</h2>
+<%= section_heading("World Congress", "world-congress") %>
 <% if @congress_summary.nil? %>
   <p class="empty-state">No World Congress data in this game's events.</p>
 <% else %>
@@ -329,7 +329,7 @@
   <p><%= link_to "See host changes, votes and resolutions over time", game_congress_path(@game) %></p>
 <% end %>
 
-<h2>Victory Progress</h2>
+<%= section_heading("Victory Progress", "victory-progress") %>
 <% if @victory_progress_rows.empty? %>
   <p class="empty-state">No domination or space-race data in this game's snapshots.</p>
 <% else %>
@@ -354,7 +354,7 @@
   <p><%= link_to "See capitals and spaceship assembly over time", game_victory_progress_path(@game) %></p>
 <% end %>
 
-<h2>Key Moments</h2>
+<%= section_heading("Key Moments", "key-moments") %>
 
 <% if @key_moment_groups.empty? %>
   <p class="empty-state">No key moments detected yet.</p>
@@ -385,7 +385,7 @@
   </details>
 <% end %>
 
-<h2 id="strategy-report">Strategy Report</h2>
+<%= section_heading("Strategy Report", "strategy-report") %>
 <% if @latest_analysis %>
   <p class="meta">
     Model: <%= @latest_analysis.model %> &middot; generated <%= @latest_analysis.created_at.strftime("%Y-%m-%d %H:%M") %>
