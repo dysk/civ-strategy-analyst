@@ -350,13 +350,24 @@ So the resistance rule is stated as a rule in the prompt **and** carried as
 observed turns in the digest, and the two can disagree in a way that is
 informative rather than embarrassing.
 
-**Honest limit on the evidence:** india-diplo has exactly two captures and both
-cities were razed within a turn (`resistance_turns > 0` on 4 city snapshots,
-`occupied` on 2, `razing` on 2). The fields fire, but no imported game yet shows
-a captured city being *held* through its resistance — babylon-domination has
-eight captures and no `city_snapshot` at all. The resistance and tourism-shortening
-rule therefore ships as a prompt rule with a measured field beside it, and is
-declared uncalibrated until a log holds a conquered city.
+**Honest limit on the evidence:** india-diplo has exactly two captures, both
+`conquest: true`, and they went opposite ways. **Buffalo Creek** (pop 7, a
+border town) was occupied and razed — `occupied` and `razing` on both its
+post-capture snapshots, gone from the log by turn 157. **Onondaga** (pop 18, the
+Iroquois capital) was puppeted on the capture turn and **held to the end of the
+game** — 32 turns, never occupied, never razed, population recovering 9 → 17. So
+one real conquered city *is* held through its resistance and observed turn by
+turn; `occupied`/`razing` are exercised only by the town that was thrown away.
+Baseline resistance is the post-capture population in turns, which makes both
+captures a measured point for the tourism-shortening rule rather than none:
+Onondaga fell to pop 9 and resisted **3** (`resistance_turns` 3 → 2 → 1 → 0 over
+turns 153–156), Buffalo Creek fell to pop 2 and resisted **1**. Both captors
+were India, whose tourism over the Iroquois read 66 points and
+`INFLUENCE_TREND_RISING` on the capture turn. Still missing: a capture by a civ
+with no tourism lead, to tell that roughly two-thirds cut apart from era or
+buildings — and the named `level` the rule keys on, which is
+`INFLUENCE_LEVEL_UNKNOWN` for every pair in this log. babylon-domination's eight
+captures carry no `city_snapshot` at all.
 
 ### Design
 
