@@ -281,6 +281,27 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :wonder_races_lost
   end
 
+  test "carries the contested wonder races in full" do
+    (6..9).each do |t|
+      event("Greece", "city_snapshot", t, city: "Athens", producing: "BUILDING_LOUVRE",
+            producing_kind: "wonder", production_stored: 40 * t, production_turns_left: 12 - t)
+      event("Rome", "city_snapshot", t, city: "Rome", producing: "BUILDING_LOUVRE",
+            producing_kind: "wonder", production_stored: 60 * t, production_turns_left: 10 - t)
+    end
+    event("Rome", "building_constructed", 10, building: "BUILDING_LOUVRE", city: "Rome", wonder: "world")
+
+    races = DigestBuilder.new(@game).call[:wonder_races]
+
+    assert_equal 1, races.size
+    assert_equal "BUILDING_LOUVRE", races.first[:wonder]
+    assert_equal "Greece", races.first[:contenders].sole[:civ]
+  end
+
+  test "wonder_races degrades to inapplicable when the log carries no city snapshots" do
+    assert_equal({ applicable: false, reason: :no_city_snapshots },
+                 DigestBuilder.new(@game).call[:wonder_races])
+  end
+
   test "includes a cultural-standing matrix per civ from the latest known influence data" do
     snapshot("Rome", 10, influence: [ { "civ" => "Greece", "points" => 100, "level" => "INFLUENCE_LEVEL_FAMILIAR", "trend" => "INFLUENCE_TREND_RISING" } ])
     snapshot("Rome", 20, influence: [ { "civ" => "Greece", "points" => 320, "level" => "INFLUENCE_LEVEL_INFLUENTIAL", "trend" => "INFLUENCE_TREND_RISING" } ])

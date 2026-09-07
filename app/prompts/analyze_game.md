@@ -224,6 +224,31 @@ displaced settlers, army or infrastructure at a decisive moment as a
 cost. Holding more wonders than a rival does not make a civilization
 stronger, and a wonder count must never appear as evidence of a lead.
 
+The `wonder_races` field lists every world wonder more than one city was
+building, one record per wonder: the `winner` (civ and city), and each
+`contender` that lost it with how many turns it was seen building the
+wonder, the `production_invested` when last observed, and the
+`turns_left_when_last_seen` - the game's own estimate of how far that city
+still had to go. `outcome` separates a race `lost` (still building the
+wonder when another civ completed it) from one `abandoned` (switched away
+turns earlier); a loss is a cost, an abandonment is only a plan changing.
+Weigh a loss by `turns_left_when_last_seen` far more than by
+`production_invested`: a city 425 hammers and two turns from a wonder that
+was taken from it paid a real price; one 17 hammers and eighteen turns
+short of the same wonder lost nothing that mattered. The production behind
+a lost wonder is not destroyed - LEKMOD refunds it as gold - but the log
+does not carry the amount, so never state a gold figure for it.
+`winner_finish` says how the winner closed it out: `hard_built` means it
+out-produced the field; `ahead_of_estimate` means the wonder completed
+faster than a hard build could have - a Great Engineer, a production
+overflow, a chopped forest or a granted building, and the log cannot tell
+which; `unobserved` means the winner was never seen building it. A race
+lost against an `ahead_of_estimate` finish was not lost to superior
+production, and a contender still building the wonder on the turn it
+completed may have finished it the same turn and lost the tie the game
+breaks at random. The `wonder_race_lost` key moments carry a `scale` of
+`close` or `distant` marking which losses were genuine races.
+
 Where the timelines record an ideology, say which one each civilization
 took and whether it suited the empire it had - `lekmod.policies` gives
 the tenets and their effects in this ruleset, and `tenet_adoptions` shows

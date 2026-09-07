@@ -124,6 +124,38 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_empty spine.entries
   end
 
+  test "a wonder race lost by a hair outweighs one lost from far back" do
+    lost_wonder_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158,
+                     loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+    lost_wonder_race("BUILDING_GREAT_WALL", winner: %w[England London], completed: 60,
+                     loser: %w[Zimbabwe Harare], first: 40, last: 59, invested: 30, turns_left: 12)
+
+    lost = all_moments.select { |m| m[:type] == :wonder_race_lost }.index_by { |m| m[:wonder] }
+
+    assert_operator lost["BUILDING_LOUVRE"][:weight], :>, lost["BUILDING_GREAT_WALL"][:weight]
+    assert_operator lost["BUILDING_LOUVRE"][:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+    assert_operator lost["BUILDING_GREAT_WALL"][:weight], :<, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
+  test "the turn a wonder became a contest is background, not an anchor" do
+    lost_wonder_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158,
+                     loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+
+    start = all_moments.find { |m| m[:type] == :wonder_race }
+
+    assert_equal 1, start[:weight]
+  end
+
+  test "a lost race and the wonder that won it share one entry" do
+    lost_wonder_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158,
+                     loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+
+    types = spine.entries.sole[:moments].map { |m| m[:type] }
+
+    assert_includes types, :wonder_race_lost
+    assert_includes types, :world_wonder
+  end
+
   test "the first religion founded outweighs the ones that follow" do
     event("Rome", "religion_founded", 40, religion: "RELIGION_CHRISTIANITY", holy_city: "Rome", beliefs: [])
     event("Greece", "religion_founded", 80, religion: "RELIGION_HELLENISM", holy_city: "Athens", beliefs: [])
@@ -267,6 +299,23 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   private
 
   def spine = ChronicleSpine.for(@game)
+
+  def all_moments = spine.entries.flat_map { |entry| entry[:moments] } + spine.background
+
+  def lost_wonder_race(wonder, winner:, completed:, loser:, first:, last:, invested:, turns_left:)
+    winner_civ, winner_city = winner
+    loser_civ, loser_city = loser
+
+    (completed - 3...completed).each do |turn|
+      event(winner_civ, "city_snapshot", turn, city: winner_city, producing: wonder,
+            producing_kind: "wonder", production_stored: 100, production_turns_left: 1)
+    end
+    (first..last).each do |turn|
+      event(loser_civ, "city_snapshot", turn, city: loser_city, producing: wonder, producing_kind: "wonder",
+            production_stored: turn == last ? invested : 0, production_turns_left: turn == last ? turns_left : 25)
+    end
+    event(winner_civ, "building_constructed", completed, building: wonder, city: winner_city, wonder: "world")
+  end
 
   def war_moment = war_moments.first
 

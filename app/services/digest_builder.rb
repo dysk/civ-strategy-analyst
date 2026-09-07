@@ -34,6 +34,7 @@ class DigestBuilder
       capital_proximity: CapitalProximity.for(@game).call,
       buffer_cities: BufferCities.for(@game).call,
       key_moments: key_moments,
+      wonder_races: wonder_races,
       unit_names: unit_names,
       cultural: cultural_by_civ,
       congress: congress,
@@ -217,6 +218,16 @@ class DigestBuilder
       wonder_races: detector.wonder_races,
       wonder_races_lost: detector.wonder_races_lost
     }
+  end
+
+  # Every contested world wonder in full, at its conclusion - the whole
+  # race per record, not sampled per turn. Degrades like BufferCities when
+  # the log carries no city snapshots to reconstruct a race from.
+  def wonder_races
+    races = WonderRaces.for(@game)
+    return { applicable: false, reason: :no_city_snapshots } unless races.applicable?
+
+    races.races
   end
 
   def civs

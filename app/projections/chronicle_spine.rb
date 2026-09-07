@@ -24,13 +24,18 @@ class ChronicleSpine
     religion_founded: 3, world_wonder: 3, city_founded: 2, religion_enhanced: 2,
     reformation_added: 2, congress_host_change: 2, spaceship_part_assembled: 2,
     pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1,
-    player_declared_irrelevant: 3
+    player_declared_irrelevant: 3, wonder_race: 1
   }.freeze
 
   # A war is worth what it cost. A declaration nobody acted on is an act of
   # diplomacy that the chronicle need not stop for, and a raid for a worker
   # earns a sentence where a war of conquest earns an entry.
   WAR_WEIGHTS = { war: 5, raid: 2, bloodless: 1 }.freeze
+
+  # Losing a wonder race outweighs winning one - the win already has its
+  # own moment - but only a race lost close. One lost from far back is
+  # texture around the entry, not an entry of its own.
+  WONDER_RACE_LOST_WEIGHTS = { close: 4, distant: 2 }.freeze
 
   FIRST_OF_ITS_KIND_BONUS = 1
 
@@ -109,6 +114,7 @@ class ChronicleSpine
 
   def base_weight(moment)
     return WAR_WEIGHTS.fetch(moment[:scale]) if moment[:type] == :war
+    return WONDER_RACE_LOST_WEIGHTS.fetch(moment[:scale]) if moment[:type] == :wonder_race_lost
 
     WEIGHTS.fetch(moment[:type], 1)
   end
@@ -122,7 +128,7 @@ class ChronicleSpine
       detector.united_nations_formed + detector.congress_host_changes + detector.resolutions_passed +
       detector.leader_changes + detector.cultural_victory_imminent + detector.science_victory_imminent +
       detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies +
-      detector.players_declared_irrelevant
+      detector.players_declared_irrelevant + detector.wonder_races_lost + detector.wonder_races
   end
 
   # The chronicle is told the shape of a war's losses, never their size,

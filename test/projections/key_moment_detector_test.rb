@@ -899,6 +899,27 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal "BUILDING_LOUVRE", moment[:wonder]
   end
 
+  # A loss the game still rated many turns off is a different fact from one
+  # decided on the last turn; the scale carries the difference to the spine.
+  test "wonder_races_lost scales a near-miss apart from a distant loss" do
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+    lost_race("BUILDING_GREAT_WALL", winner: %w[England London], completed: 60, winner_from: 52,
+              loser: %w[Zimbabwe Harare], first: 40, last: 59, invested: 30, turns_left: 12)
+
+    by_wonder = detector.wonder_races_lost.index_by { |m| m[:wonder] }
+
+    assert_equal :close, by_wonder["BUILDING_LOUVRE"][:scale]
+    assert_equal :distant, by_wonder["BUILDING_GREAT_WALL"][:scale]
+  end
+
+  test "wonder_races_lost counts a heavy investment as close even from further back" do
+    lost_race("BUILDING_RED_FORT", winner: %w[India Vijayanagara], completed: 163, winner_from: 156,
+              loser: %w[Iroquois GrandRiver], first: 150, last: 162, invested: 268, turns_left: 6)
+
+    assert_equal :close, detector.wonder_races_lost.sole[:scale]
+  end
+
   private
 
   def lost_race(wonder, winner:, completed:, winner_from:, loser:, first:, last:, invested:, turns_left:)

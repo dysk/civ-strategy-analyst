@@ -7,6 +7,8 @@ class KeyMomentDetector
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
   WONDER_RACE_MIN_INVESTED = 1
+  WONDER_RACE_CLOSE_TURNS_LEFT = 4
+  WONDER_RACE_HEAVY_INVESTMENT = 200
   IDEOLOGY_BRANCHES = %w[POLICY_BRANCH_FREEDOM POLICY_BRANCH_ORDER POLICY_BRANCH_AUTOCRACY].freeze
 
   # LEKMOD keeps the underlying policy IDs from vanilla Civ5 BNW even where it
@@ -399,7 +401,7 @@ class KeyMomentDetector
         .select { |c| c[:outcome] == :lost && c[:production_invested] >= WONDER_RACE_MIN_INVESTED }
         .map do |c|
           { type: :wonder_race_lost, turn: race[:completed_turn], civ: c[:civ], city: c[:city],
-            wonder: race[:wonder], wonder_name: race[:wonder_name],
+            wonder: race[:wonder], wonder_name: race[:wonder_name], scale: race_loss_scale(c),
             production_invested: c[:production_invested], turns_left: c[:turns_left_when_last_seen],
             winner: race[:winner][:civ], winner_city: race[:winner][:city], winner_finish: race[:winner_finish] }
         end
@@ -417,6 +419,20 @@ class KeyMomentDetector
   end
 
   private
+
+  # A race the game still rated many turns off when it fell is a lighter
+  # fact than one decided on the last turn - unless the loser had sunk a
+  # wonder's worth of production into it regardless.
+  def race_loss_scale(contender)
+    turns_left = contender[:turns_left_when_last_seen]
+
+    if (turns_left && turns_left <= WONDER_RACE_CLOSE_TURNS_LEFT) ||
+       contender[:production_invested] >= WONDER_RACE_HEAVY_INVESTMENT
+      :close
+    else
+      :distant
+    end
+  end
 
   # A war in which nobody exchanged a blow has no order of battle worth
   # reading: who stood where is not its story, the absence of it is.

@@ -680,3 +680,66 @@ path, never during `DigestBuilder.new.call`, so it is not in
 chronicle digest to add it to. The digest **size** assertion the
 cross-cutting section calls for is a tranche-wide guardrail, still pending.
 Per-city detail reaches the digest at checkpoints only, per that section.
+
+## Plan: the wonder race (implemented)
+
+Status: tranche 1 point 2 of `docs/reading-the-new-log.md`, implemented
+2026-09-07. Five TDD cycles (iteration 2 gained an amendment cycle for the
+Great Engineer question). Verified against `india-diplo` (game 32) and the
+`babylon-domination` inapplicable path. Detailed rules and calibration in
+`docs/wonder-race.md`.
+
+Context: 42 world wonders were completed in india-diplo and ten of them
+were contested — the log says by whom, for how long, and for how much
+production — but nothing read `city_snapshot.producing`, so a race like
+England sinking 425 hammers into the Louvre and losing it to Amsterdam was
+invisible. There is no "wonder started" event and no gold-refund record;
+the race is reconstructed by scanning `producing` up to the completion
+turn, and the refund is a rule reported to the model, never a number.
+
+Iterations (each: failing tests → review → implementation):
+
+1. **`LekmodIdsExtractor#buildings`** + **`Wonders`** — a wonder nobody
+   completes never reaches a `building_constructed` record, so a
+   `db/lekmod/<version>/buildings.yml` carries every `BUILDING_*`'s display
+   name and its `wonder` scope (`world`/`team`/`national`), read from the
+   cap on its *class* the way `adapter.lua` does. `Wonders.for(version,
+   observed:)` resolves it the loose way `UnitNames` does and falls back to
+   the wonders a game was seen to complete when no catalogue is present.
+   The `<Buildings>`/`<BuildingClasses>` tables sit in `CIV5Units.xml` —
+   the misfiled-table trap the README already notes for Resolutions.
+2. **`WonderRaces`** (`app/projections/wonder_races.rb`, `extend
+   Projection`) — one record per contested completed world wonder:
+   `winner`, `contended_from_turn`, `winner_finish`, and a `contenders`
+   list carrying `production_invested` (last observed `production_stored`),
+   `turns_left_when_last_seen`, `turns_building`, and `outcome` (`:lost`
+   when still building it on the completion turn or the one before,
+   `:abandoned` earlier). `rival_observed` is left nil for tranche 2 to
+   fill from `spy_moved`. `applicable?` false with no `city_snapshot`.
+   Amendment: `winner_finish` is `:hard_built` when the winner's last
+   snapshot still estimated ≤ 1 turn, `:ahead_of_estimate` when more (a
+   Great Engineer, an overflow, a chop or a grant — the log cannot tell
+   which; 0 of india-diplo's 42 exercised it), `:unobserved` when the
+   winner was never seen building it.
+3. **`KeyMomentDetector#wonder_races_lost`** — one moment per contender
+   that `:lost` with `production_invested > 0`, carrying a `scale` of
+   `:close` (`turns_left ≤ 4` or `production_invested ≥ 200`) or
+   `:distant`. **`#wonder_races`** — the light race-start moment at
+   `contended_from_turn`. Both reach the digest via
+   `DigestBuilder#key_moments`; `WonderRaces` joins the digest cost test.
+4. **`ChronicleSpine`** — `wonder_race_lost` weighted `4` when `:close`
+   (above `world_wonder`'s 3 — the win already has a moment), `2` when
+   `:distant` (texture, below the anchor threshold); `wonder_race` weight
+   1. **`DigestBuilder#wonder_races`** carries every contested race in full
+   at its conclusion, degrading to `{applicable: false, reason:
+   :no_city_snapshots}`. Both prompts gain a paragraph: `analyze_game.md`
+   on reading a race and never inventing the refund gold, `chronicle_game.md`
+   on weighing a lost wonder by how close it was.
+
+Not done, left for later: `rival_observed` (tranche 2, from `spy_moved`);
+relabelling a same-turn tied loss, which reads as an ordinary `:lost`; the
+`WONDER_RACE_MIN_INVESTED` floor and the `:close`/`:distant` cut are the
+user's calibration, not a measurement, and are declared uncalibrated in
+`docs/wonder-race.md`. `WonderRaces` hardcodes `Rails.root.join("db/lekmod")`
+rather than taking the root `DigestBuilder` threads for `UnitNames` — it
+uses the catalogue for display names only, so this has not mattered yet.

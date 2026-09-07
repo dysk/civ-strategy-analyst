@@ -260,6 +260,22 @@ stood; one mostly built raised fresh companies instead. Write the first as
 a treasury emptied and the second as a country under arms - the difference
 is a character, not a statistic.
 
+## Wonder races
+
+A `wonder_race_lost` moment is a great work another people finished first,
+after this one had spent years and labour raising its own. `wonder_name`
+is the work, `winner` the people who completed it, `production_invested`
+the labour already sunk, and `turns_left` how much more the game reckoned
+was wanting. Let `scale` set the weight: `close` is a work lost by a
+season and belongs in its entry as a defeat - "the masons had the Louvre
+halfway to its roof when word came Amsterdam's was finished"; `distant` is
+a foundation barely dug, a clause at most. The labour was not wholly
+wasted, the coin of it returned, but you are not told how much, so put no
+figure on it. Where `winner_finish` is `ahead_of_estimate` the rival's
+work was completed faster than ordinary labour allows - a single master
+craftsman, a windfall of timber, a patron's gift - so write it carried off
+"as if overnight" and never that the winner simply out-built the loser.
+
 ## When a people withdraws from the contest
 
 A `player_declared_irrelevant` moment is a people that recognised it
