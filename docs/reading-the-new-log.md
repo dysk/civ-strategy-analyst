@@ -222,6 +222,13 @@ snapshotted twice`).
 
 ## 2. The wonder race
 
+**Implemented 2026-09-07** — `docs/plan.md`, *"the wonder race"*, and
+`docs/wonder-race.md` for the calibration. Shipped in five cycles: the
+design below plus a `winner_finish` field (the closest the log comes to
+seeing a Great Engineer instant-buy, which it cannot see directly) and a
+`:close`/`:distant` scale on the loss instead of a flat spine weight of 4,
+so a wonder the game still rated many turns off does not anchor an entry.
+
 ### Why, with the evidence
 
 42 world wonders were completed in india-diplo. **Ten of them were contested,**
