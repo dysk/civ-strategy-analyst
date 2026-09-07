@@ -42,8 +42,17 @@ class WonderRaces
     return if contenders.empty?
 
     { wonder: wonder, wonder_name: @wonders.name(wonder), completed_turn: completion.turn,
-      winner: winner, winner_finish: winner_finish(builders, winner),
-      contenders: contenders, rival_observed: nil }
+      contended_from_turn: contended_from(builders), winner: winner,
+      winner_finish: winner_finish(builders, winner), contenders: contenders, rival_observed: nil }
+  end
+
+  # The turn a second builder joined a wonder already under way. With only
+  # one builder ever seen - the winner completed it unobserved - it is that
+  # builder's own start, from when they were racing whoever finished it.
+  def contended_from(builders)
+    starts = builders.map { |builder| builder[:snapshots].first.turn }.sort
+
+    starts[1] || starts[0]
   end
 
   # Whether the wonder outran a hard build. A Great Engineer, a production

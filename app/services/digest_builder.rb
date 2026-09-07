@@ -213,7 +213,9 @@ class DigestBuilder
       apollo_completions: detector.apollo_completions,
       spaceship_part_assemblies: detector.spaceship_part_assemblies,
       science_victory_imminent: detector.science_victory_imminent,
-      players_declared_irrelevant: detector.players_declared_irrelevant
+      players_declared_irrelevant: detector.players_declared_irrelevant,
+      wonder_races: detector.wonder_races,
+      wonder_races_lost: detector.wonder_races_lost
     }
   end
 

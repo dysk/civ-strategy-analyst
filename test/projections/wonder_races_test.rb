@@ -99,6 +99,21 @@ class WonderRacesTest < ActiveSupport::TestCase
     assert_equal 180, england[:production_invested]
   end
 
+  test "contended_from_turn is when the second builder joined a wonder already under way" do
+    (40..50).each { |t| building(t, "England", "London", "BUILDING_LOUVRE", stored: t) }
+    (46..50).each { |t| building(t, "France", "Paris", "BUILDING_LOUVRE", stored: t) }
+    completed(51, "France", "Paris", "BUILDING_LOUVRE")
+
+    assert_equal 46, WonderRaces.new(@game).races.first[:contended_from_turn]
+  end
+
+  test "contended_from_turn falls back to the lone contender's start when the winner was never seen on it" do
+    (46..50).each { |t| building(t, "England", "London", "BUILDING_LOUVRE", stored: t) }
+    completed(51, "France", "Paris", "BUILDING_LOUVRE")
+
+    assert_equal 46, WonderRaces.new(@game).races.first[:contended_from_turn]
+  end
+
   test "races are ordered by completion turn" do
     building(20, "A", "Ac", "BUILDING_STONEHENGE", stored: 1)
     building(20, "B", "Bc", "BUILDING_STONEHENGE", stored: 1)

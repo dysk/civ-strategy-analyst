@@ -14,7 +14,7 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
   PROJECTIONS = [
     MetricSeries, PlayerTimeline, SpaceshipTimeline, MapBounds, EarlyGame,
     CapitalsTimeline, CapitalProximity, BufferCities, InfluenceTimeline,
-    CongressTimeline, EmpireGeometry, ArmyComposition
+    CongressTimeline, EmpireGeometry, ArmyComposition, WonderRaces
   ].freeze
 
   # Capital distances are measured twice on purpose: once on the wrapped map,
@@ -129,6 +129,17 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
     end
     event("Greece", "tech_researched", 4, team: 2, civs: %w[Greece], tech: "TECH_METAL_CASTING")
     event("Greece", "building_constructed", 9, building: "BUILDING_UNIVERSITY", city: "Greece Capital")
+    race_a_wonder
+  end
+
+  def race_a_wonder
+    (7..10).each do |turn|
+      event("Rome", "city_snapshot", turn, city: "Rome Capital", producing: "BUILDING_PYRAMID",
+            producing_kind: "wonder", production_stored: 30 * turn, production_turns_left: 11 - turn)
+      event("Greece", "city_snapshot", turn, city: "Greece Capital", producing: "BUILDING_PYRAMID",
+            producing_kind: "wonder", production_stored: 20 * turn, production_turns_left: 14 - turn)
+    end
+    event("Rome", "building_constructed", 11, building: "BUILDING_PYRAMID", city: "Rome Capital", wonder: "world")
   end
 
   def hold_a_congress

@@ -277,6 +277,8 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :apollo_completions
     assert_includes digest[:key_moments].keys, :spaceship_part_assemblies
     assert_includes digest[:key_moments].keys, :science_victory_imminent
+    assert_includes digest[:key_moments].keys, :wonder_races
+    assert_includes digest[:key_moments].keys, :wonder_races_lost
   end
 
   test "includes a cultural-standing matrix per civ from the latest known influence data" do

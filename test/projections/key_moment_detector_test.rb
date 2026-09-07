@@ -856,7 +856,67 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_empty detector.buffer_city_losses
   end
 
+  test "wonder_races_lost reports each civ that lost a race it had invested in" do
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+
+    moment = detector.wonder_races_lost.sole
+
+    assert_equal :wonder_race_lost, moment[:type]
+    assert_equal 158, moment[:turn]
+    assert_equal "England", moment[:civ]
+    assert_equal "London", moment[:city]
+    assert_equal "BUILDING_LOUVRE", moment[:wonder]
+    assert_equal 425, moment[:production_invested]
+    assert_equal 2, moment[:turns_left]
+    assert_equal "Netherlands", moment[:winner]
+  end
+
+  # Losing a race and walking away from one are different facts; only the
+  # loss is a moment.
+  test "wonder_races_lost ignores a race a civ abandoned before it was decided" do
+    lost_race("BUILDING_MACHU_PICHU", winner: %w[Zimbabwe Harare], completed: 115, winner_from: 108,
+              loser: %w[India Vijayanagara], first: 100, last: 109, invested: 90, turns_left: 4)
+
+    assert_empty detector.wonder_races_lost
+  end
+
+  test "wonder_races_lost ignores a race lost with nothing sunk into it" do
+    lost_race("BUILDING_GREAT_LIBRARY", winner: %w[England London], completed: 36, winner_from: 33,
+              loser: %w[Zimbabwe Harare], first: 35, last: 35, invested: 0, turns_left: 10)
+
+    assert_empty detector.wonder_races_lost
+  end
+
+  test "wonder_races marks the turn a wonder became a contest, lightly" do
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 140,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+
+    moment = detector.wonder_races.sole
+
+    assert_equal :wonder_race, moment[:type]
+    assert_equal 148, moment[:turn]
+    assert_equal "BUILDING_LOUVRE", moment[:wonder]
+  end
+
   private
+
+  def lost_race(wonder, winner:, completed:, winner_from:, loser:, first:, last:, invested:, turns_left:)
+    winner_civ, winner_city = winner
+    loser_civ, loser_city = loser
+
+    (winner_from..completed - 1).each do |turn|
+      event(winner_civ, "city_snapshot", turn, city: winner_city, producing: wonder,
+            producing_kind: "wonder", production_stored: 50 * (turn - winner_from + 1), production_turns_left: 1)
+    end
+
+    (first..last).each do |turn|
+      event(loser_civ, "city_snapshot", turn, city: loser_city, producing: wonder, producing_kind: "wonder",
+            production_stored: turn == last ? invested : 0, production_turns_left: turn == last ? turns_left : 20)
+    end
+
+    event(winner_civ, "building_constructed", completed, building: wonder, city: winner_city, wonder: "world")
+  end
 
   # Rome and Greece 17 hexes apart with Ostia standing in the corridor.
   def pangaea_with_a_roman_buffer

@@ -6,6 +6,7 @@ class KeyMomentDetector
   HAPPINESS_SWING_THRESHOLD = 10
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
+  WONDER_RACE_MIN_INVESTED = 1
   IDEOLOGY_BRANCHES = %w[POLICY_BRANCH_FREEDOM POLICY_BRANCH_ORDER POLICY_BRANCH_AUTOCRACY].freeze
 
   # LEKMOD keeps the underlying policy IDs from vanilla Civ5 BNW even where it
@@ -385,6 +386,34 @@ class KeyMomentDetector
       with_armies(war.merge(toll: @casualties.during(war), first_blood: @casualties.first_blood(war),
                             scale: @casualties.scale(war)))
     end
+  end
+
+  # Losing a wonder race is the story the winning it already has a moment
+  # for, so only the loss is surfaced - and only when the loser had put
+  # real production behind it. A race abandoned before it was decided was a
+  # change of plans, not a defeat. `turns_left` is the game's own estimate
+  # of the distance the loser still had to cover.
+  def wonder_races_lost
+    WonderRaces.for(@game).races.flat_map do |race|
+      race[:contenders]
+        .select { |c| c[:outcome] == :lost && c[:production_invested] >= WONDER_RACE_MIN_INVESTED }
+        .map do |c|
+          { type: :wonder_race_lost, turn: race[:completed_turn], civ: c[:civ], city: c[:city],
+            wonder: race[:wonder], wonder_name: race[:wonder_name],
+            production_invested: c[:production_invested], turns_left: c[:turns_left_when_last_seen],
+            winner: race[:winner][:civ], winner_city: race[:winner][:city], winner_finish: race[:winner_finish] }
+        end
+    end.sort_by { |moment| moment[:turn] }
+  end
+
+  # The moment a wonder became a contest. Light on its own - a game has many
+  # - it is texture for the entry its loss anchors.
+  def wonder_races
+    WonderRaces.for(@game).races.map do |race|
+      { type: :wonder_race, turn: race[:contended_from_turn], wonder: race[:wonder],
+        wonder_name: race[:wonder_name], winner: race[:winner][:civ],
+        contenders: race[:contenders].map { |c| c[:civ] } }
+    end.sort_by { |moment| moment[:turn] }
   end
 
   private
