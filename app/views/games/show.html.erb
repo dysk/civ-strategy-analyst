@@ -157,12 +157,12 @@
     </thead>
     <tbody>
       <% @wonder_races[:races].each do |race| %>
-        <% race[:contenders].each_with_index do |contender, index| %>
+        <% race[:contenders].each do |contender| %>
           <tr>
-            <td><%= index.zero? ? race[:wonder_name] : "".html_safe %></td>
-            <td><%= index.zero? ? race[:completed_turn] : "".html_safe %></td>
-            <td><%= index.zero? ? "#{race[:winner][:civ]} (#{race[:winner][:city]})" : "".html_safe %></td>
-            <td><%= index.zero? ? race[:winner_finish].to_s.tr("_", " ") : "".html_safe %></td>
+            <td><%= race[:wonder_name] %></td>
+            <td><%= race[:completed_turn] %></td>
+            <td><%= race[:winner][:civ] %> (<%= race[:winner][:city] %>)</td>
+            <td><%= race[:winner_finish].to_s.tr("_", " ") %></td>
             <td><%= contender[:civ] %> (<%= contender[:city] %>)</td>
             <td><%= contender[:turns_building] %></td>
             <td><%= contender[:production_invested] %></td>

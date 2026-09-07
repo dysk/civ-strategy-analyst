@@ -543,6 +543,24 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.wonder-races tbody td", "lost"
   end
 
+  test "show repeats the wonder on every contender row of a multi-way race" do
+    game = Game.create!(name: "Two Rival Wonder Game")
+    (40..50).each do |t|
+      event(game, "England", "city_snapshot", t, "city" => "London", "producing" => "BUILDING_GREAT_WALL",
+            "producing_kind" => "wonder", "production_stored" => t, "production_turns_left" => 1)
+      %w[Zimbabwe Iroquois].each do |civ|
+        event(game, civ, "city_snapshot", t, "city" => "#{civ} City", "producing" => "BUILDING_GREAT_WALL",
+              "producing_kind" => "wonder", "production_stored" => t * 2, "production_turns_left" => 3)
+      end
+    end
+    event(game, "England", "building_constructed", 51, "city" => "London",
+          "building" => "BUILDING_GREAT_WALL", "wonder" => "world")
+
+    get game_url(game)
+
+    assert_select "table.wonder-races tbody td", text: "Great Wall", count: 2
+  end
+
   test "show explains that wonder races need city snapshots" do
     game = Game.create!(name: "No Snapshot Wonder Game")
     war(game, 10)
