@@ -9,10 +9,13 @@
 
 <h2>Outcome</h2>
 <p>
-  <% if @outcome[:winner_civ] %>
-    <strong><%= @outcome[:winner_civ] %></strong>
+  <% if @outcome[:victory_type] == "scrapped" %>
+    <strong>Scrapped</strong> &mdash; abandoned by vote, no winner
+    <span class="badge"><%= outcome_source_label(@outcome[:source]) %></span>
+  <% elsif @outcome[:winner_civ] %>
+    <strong><%= outcome_winner_names(@game, @outcome) %></strong>
     <%= "(#{@outcome[:victory_type]})" if @outcome[:victory_type] %>
-    <span class="badge"><%= @outcome[:source] == :inferred ? "inferred leader" : "declared winner" %></span>
+    <span class="badge"><%= outcome_source_label(@outcome[:source]) %></span>
   <% else %>
     No leader yet.
   <% end %>

@@ -14,6 +14,10 @@ module KeyMomentsHelper
     era_lead: ->(m) { "#{m[:civs].join(", ")} reached #{m[:era]} first" },
     pantheon_founded: ->(m) { "#{m[:civ]} founded a pantheon with #{m[:belief]}" },
     religion_founded: ->(m) { "#{m[:civ]} founded #{m[:religion]} (##{m[:order]}) with #{Array(m[:beliefs]).join(", ")}" },
+    player_declared_irrelevant: ->(m) {
+      "#{m[:civ]} was voted irrelevant and removed from contention " \
+        "(proposed by #{m[:proposer]}, #{m[:yes_votes]}–#{m[:no_votes]})"
+    },
     religion_enhanced: ->(m) { "#{m[:civ]} enhanced #{m[:religion]} with #{Array(m[:beliefs]).join(", ")}" },
     reformation_added: ->(m) { "#{m[:civ]} added the reformation belief #{m[:belief]} to #{m[:religion]}" },
     ideology_unlocked: ->(m) { "#{m[:civ]} unlocked #{m[:ideology]}" },
@@ -53,7 +57,7 @@ module KeyMomentsHelper
     army_power_surge: :up, army_power_collapse: :down,
     happiness_surge: :up, happiness_collapse: :down,
     capital_gained: :up, capital_lost: :down,
-    buffer_city_lost: :down
+    buffer_city_lost: :down, player_declared_irrelevant: :down
   }.freeze
 
   ARROWS = { up: "▲", down: "▼" }.freeze

@@ -555,6 +555,53 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.geometry", false
   end
 
+  test "show marks a winner read from the game's own end-of-game record" do
+    game = Game.create!(name: "Logged Outcome Game", completed: true,
+      winner_civ: "India", winner_civs: [ "India" ], victory_type: "diplomatic")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_match "India", response.body
+    assert_match "diplomatic", response.body
+    assert_match "from game log", response.body
+    assert_no_match(/declared winner/, response.body)
+    assert_select ".badge", /complete/
+  end
+
+  test "show names every civilization of a team victory" do
+    game = Game.create!(name: "Team Victory Game", completed: true,
+      winner_civ: "India", winner_civs: [ "India", "Carthage" ], victory_type: "domination")
+
+    get game_url(game)
+
+    assert_match "India, Carthage", response.body
+  end
+
+  test "show reports a scrapped game as abandoned with no winner" do
+    game = Game.create!(name: "Scrapped Game", completed: true,
+      winner_civ: nil, winner_civs: nil, victory_type: "scrapped")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_match(/scrapped/i, response.body)
+    assert_no_match(/No leader yet/, response.body)
+    assert_select ".badge", /complete/
+  end
+
+  test "show gathers a player voted irrelevant into its own key moment section" do
+    game = Game.create!(name: "Irrelevance Game")
+    event(game, nil, "mp_proposal_result", 120,
+      "type" => "irrelevance", "status" => "passed",
+      "owner" => "India", "subject" => "Rome", "yes_votes" => 4, "no_votes" => 1)
+
+    get game_url(game)
+
+    assert_select "details summary", "Players Declared Irrelevant (1)"
+    assert_match "Rome was voted irrelevant", response.body
+  end
+
   test "show 404s for an unknown game id" do
     get game_url(id: 999_999)
 

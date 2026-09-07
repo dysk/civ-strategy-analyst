@@ -10,7 +10,7 @@ class GamesController < ApplicationController
 
   def show
     @game = Game.find(params[:id])
-    @outcome = OutcomeResolver.new(@game, winner_civ: @game.winner_civ, victory_type: @game.victory_type).call
+    @outcome = OutcomeResolver.new(@game).call
     @standings = MetricSeries.for(@game).final_ranking("score")
     @early_game_rows = early_game.series.values
     @early_game_deadline_turn = early_game.deadline_turn
@@ -41,6 +41,7 @@ class GamesController < ApplicationController
     [
       [ "Wars", { nil => moments.wars } ],
       [ "Buffer Cities Lost", { nil => moments.buffer_city_losses } ],
+      [ "Players Declared Irrelevant", { nil => moments.players_declared_irrelevant } ],
       [ "Leader Changes", { nil => moments.leader_changes } ],
       [ "Era Leads", { nil => moments.era_leads } ],
       [ "Religion", { "Pantheon Foundings" => moments.pantheon_foundings,
