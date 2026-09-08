@@ -568,6 +568,16 @@ Counterfactuals read the gap between a `buffer_city_lost` and a capital falling
 as the warning the defender actually had. The A/B is pending a fresh
 `bin/civ analyze` run — `analyses.digest` is a frozen snapshot.
 
+Sketched, not started: **city-states as buffers**. A city-state in the corridor
+blocks expansion, absorbs the first strike, and — allied — fights alongside its
+patron, so a corridor city-state graded by control (unowned / your ally / third
+party's ally / conquered) is worth a row and its gain or loss a key moment. The
+log already carries it (`city_state_snapshot.ally` + `relations[]`,
+`city_state_ally_changed`, `city_captured`). Full design, the Ljubljana example
+from `india-diplo`, and the three open questions (annex boundary, third-party
+ally, what makes a control change a moment rather than churn) are in the
+"Proposed extension" section of `docs/buffer-city.md`.
+
 ## Plan: import at the logger's new volume (implemented)
 
 `civ-narrative-logger` is adding stock fields to `snapshot` and a

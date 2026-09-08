@@ -674,3 +674,117 @@ data invites and neither is supported by it.
   no war — it may be worth reporting the pair-level fact rather than leaving
   the model to notice it. Not before: on the two games we have, the mutual
   case occurs once and is not convincing.
+- **City-states as buffers.** A city-state sitting in a corridor blocks
+  expansion, absorbs the first strike, and — allied — fights alongside its
+  patron like an owned city. Sketched in full below.
+
+---
+
+## Proposed extension: city-states as buffers
+
+Everything above is about a city a civilization *founds* in the corridor. A
+city-state already standing there does much of the same work, and in one case
+more:
+
+- it **limits expansion** — the minor's borders close the gap the same way a
+  major's would, and neither neighbour can settle through it
+- it **buys reaction time** — when someone marches on the corridor they have to
+  take the city-state first, and those turns are the warning the capital behind
+  it gets
+- **allied, it is almost an owned city** — a garrison, units that sortie, shared
+  vision, and a partner that joins the patron's wars. That is a real defensive
+  base and a staging ground for an attack in the other direction
+
+So a corridor city-state is worth reporting, and it has to be **graded by
+control**: an unowned city-state is a passive obstacle; *your* ally is an active
+asset; a third party's ally is still an obstacle but may carry a strong garrison
+or be someone else's forward base. Annexed, it stops being a city-state buffer
+and becomes an ordinary owned city.
+
+The example that prompted this: in `examples/india-diplo.jsonl`, **Ljubljana**
+sits in the corridor between the Iroquois and the Netherlands (later India too),
+and its alliance is fought over for the whole game.
+
+### The data is already in the log
+
+Confirmed against `india-diplo`:
+
+| Need | Source |
+|---|---|
+| city-state position | `CapitalProximity#city_state_capitals` (from `city_founded`), already computed |
+| control each turn | `city_state_snapshot` — `ally` plus `relations[]` with `influence` / `level` / `protected` per major |
+| control changes | `city_state_ally_changed` (`new_ally`), `city_state_alliance_changed` (`allied`, `civ`, friendship deltas) |
+| conquest / razing | `city_captured` / `city_destroyed` with `x`, `y`, `old_owner`, `new_owner` |
+| protectors | `city_state_protected` / `city_state_protection_ended` (`civ`) |
+
+### How it differs from a founded buffer
+
+- **No race.** A city-state is present from turn 0, so `order`,
+  `capital_population`, `reach_before` and `settled_first` have no meaning. It is
+  a structural fact about the map, not a contested settle.
+- **It is a buffer for both neighbours at once.** A founded buffer belongs to
+  one civ; a corridor city-state screens A from B and B from A simultaneously.
+  The row is "city-state X between A and B" with a control attribute: unowned /
+  ally = A / ally = B / ally = third party / conquered by Z.
+- **Control churns.** Ljubljana's alliance flips India → none → India →
+  Netherlands → India → Netherlands → India across turns 98–160, plus a dozen
+  friendship toggles. A raw "ally changed" key moment would flood the timeline;
+  see the threshold question below.
+
+### Geometry reuse
+
+The corridor test is unchanged — `offset_from_line <= LATERAL_TOLERANCE` plus
+betweenness plus `NEIGHBOUR_DISTANCE`, Pangaea only, unwrapped grid. The
+city-state's founding plot feeds the same predicate. What is new is the
+candidate source (city-state capitals rather than a civ's foundings) and a
+per-city-state *control timeline*. A sibling projection `CityStateBuffers`
+sharing the corridor predicate keeps `BufferCities` single-purpose; the two
+merge only in the digest and the view.
+
+### Table and map
+
+- **Table** — a separate sub-block inside the existing buffer-cities
+  disclosure. The columns diverge from the founded-buffer table (no founding
+  turn or population; instead current control, protectors, times contested), so
+  a shared table would be mostly empty cells.
+- **Map** — city-states are already grey dots. Ring or enlarge a corridor
+  city-state; if it ends the window allied to a neighbour, tint it that civ's
+  colour the way founded buffers are tinted. Keep the name label.
+
+### Key moments
+
+Gaining or losing a corridor city-state belongs on the timeline:
+
+- **gain** — securing it as an ally, or conquering and keeping it
+- **loss** — losing ally status, or it being conquered by anyone (patron
+  included, since annexation ends its buffer role too)
+
+Conquest (`city_captured` with the city-state as `old_owner`) is unambiguous and
+rare — two in this whole game — so it needs no threshold. Ally changes do: only
+count a change of control that **held for ≥ N turns**, or only the first time a
+neighbour secures it and the last decisive loss, possibly weighted by influence
+margin or coincidence with a war. Otherwise Ljubljana alone produces a dozen
+moments.
+
+### Increments (each testable on its own)
+
+1. `CityStateBuffers` identifies corridor city-states and their control status
+   at the end of the window → new rows in the table, new marks on the map.
+2. A control timeline per corridor city-state (ally spans, protector set,
+   conqueror).
+3. `KeyMomentDetector` picks up sustained control changes and conquest of a
+   corridor city-state.
+
+Do (1), put it on the page, then decide on (2)/(3) from what it looks like.
+
+### Open questions for this extension
+
+- **Annex boundary.** When a neighbour conquers a corridor city-state and
+  *keeps* it, is the row still "city-state buffer (conquered by A)", or does it
+  graduate to an ordinary founded-buffer row?
+- **Third-party ally.** Does a city-state allied to a civ that is neither A nor
+  B still count as a buffer between A and B? (Leaning yes — it is a passive
+  obstacle regardless of whose ally it is.)
+- **Churn threshold.** What makes a control change a key moment rather than
+  noise — a minimum held duration, first-secure / last-loss only, an influence
+  margin, or war coincidence?
