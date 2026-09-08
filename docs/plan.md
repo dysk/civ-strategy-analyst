@@ -468,15 +468,18 @@ Status: steps 1–4 implemented 2026-08-22, planned in detail in
 `docs/buffer-city.md`. For every pair of capitals close enough to threaten each
 other, the analysis now says who settled the ground between them. `BufferCities`
 (`app/projections/buffer_cities.rb`) is the new projection; it feeds the digest
-(`buffer_cities`, next to `capital_proximity`), the game page's "Buffer Cities"
-table, and one key moment, `KeyMomentDetector#buffer_city_losses`.
+(`buffer_cities`, next to `capital_proximity`), the game page, and one key
+moment, `KeyMomentDetector#buffer_city_losses`.
 
-The capital layout diagram (in "Capital Distances") also draws them: each civ
-takes a colour slot from the data-viz reference palette, its capital keeps the
-bold marker, and its buffer cities are plotted small in the same colour, with a
-thin line down each contested corridor. Colour is redundant here - every mark
-is labelled and joined to its capital - so the all-pairs CVD floor is carried
-by the labels, not the hues (the eight-slot palette does not clear it alone).
+On the page the buffer cities live inside the "Capital Distances" section, not
+their own. The capital layout diagram draws them: each civ takes a colour slot
+from the data-viz reference palette, its capital keeps the bold marker, and its
+buffer cities are plotted small in the same colour, with a thin line down each
+contested corridor. Colour is redundant here - every mark is labelled and
+joined to its capital - so the all-pairs CVD floor is carried by the labels,
+not the hues (the eight-slot palette does not clear it alone). The full table
+and the corridor thresholds sit below the map behind a collapsed disclosure,
+next to the one for the capital-distance table.
 
 The rule:
 

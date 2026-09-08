@@ -677,7 +677,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     get game_url(game)
 
-    %w[capital-distances buffer-cities wonder-races empire-geometry early-game military
+    %w[capital-distances wonder-races empire-geometry early-game military
        cultural-standing world-congress victory-progress key-moments strategy-report].each do |id|
       assert_select "h2##{id} a.heading-anchor[href=?]", "##{id}"
     end

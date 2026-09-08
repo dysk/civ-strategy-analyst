@@ -84,11 +84,10 @@
   </details>
 <% end %>
 
-<%= section_heading("Buffer Cities", "buffer-cities") %>
 <% if !@buffer_cities[:applicable] %>
   <p class="empty-state">Buffer cities are only computed for Pangaea maps.</p>
 <% elsif @buffer_cities[:pairs].empty? %>
-  <p class="empty-state">No two capitals started within <%= @buffer_cities[:neighbour_distance] %> hexes.</p>
+  <p class="empty-state">No two capitals started within <%= @buffer_cities[:neighbour_distance] %> hexes, so no buffer cities.</p>
 <% else %>
   <details class="disclosure">
     <summary>Buffer cities table</summary>
