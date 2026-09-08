@@ -58,27 +58,30 @@
 <% if @capital_distances.empty? %>
   <p class="empty-state">No capital coordinates in this game's events.</p>
 <% else %>
-  <table class="capital-distances">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Civ</th>
-        <th>Hexes apart</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @capital_distances.each do |pair| %>
+  <details class="disclosure">
+    <summary>Capital distances table</summary>
+    <table class="capital-distances">
+      <thead>
         <tr>
-          <td><%= pair[:civs].first %></td>
-          <td><%= pair[:civs].last %></td>
-          <td><%= pair[:distance] %></td>
+          <th>Civ</th>
+          <th>Civ</th>
+          <th>Hexes apart</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <% if @map_bounds.estimated? %>
-    <p><span class="badge">map width estimated</span> distances across the map's edge may be shorter than shown</p>
-  <% end %>
+      </thead>
+      <tbody>
+        <% @capital_distances.each do |pair| %>
+          <tr>
+            <td><%= pair[:civs].first %></td>
+            <td><%= pair[:civs].last %></td>
+            <td><%= pair[:distance] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @map_bounds.estimated? %>
+      <p><span class="badge">map width estimated</span> distances across the map's edge may be shorter than shown</p>
+    <% end %>
+  </details>
 <% end %>
 
 <%= section_heading("Buffer Cities", "buffer-cities") %>
@@ -87,59 +90,62 @@
 <% elsif @buffer_cities[:pairs].empty? %>
   <p class="empty-state">No two capitals started within <%= @buffer_cities[:neighbour_distance] %> hexes.</p>
 <% else %>
-  <p class="note">
-    Founded by turn <%= @buffer_cities[:window_turn] %>; neighbours within
-    <%= @buffer_cities[:neighbour_distance] %> hexes, corridor city up to
-    <%= @buffer_cities[:lateral_tolerance] %> hexes off the line between them.
-  </p>
-  <table class="buffer-cities">
-    <thead>
-      <tr>
-        <th>Pair</th>
-        <th>Apart</th>
-        <th>Civ</th>
-        <th>Buffer</th>
-        <th>Founded</th>
-        <th>City #</th>
-        <th>Capital pop</th>
-        <th>Reach before</th>
-        <th>Detour</th>
-        <th>From own</th>
-        <th>From rival</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @buffer_cities[:pairs].each do |pair| %>
-        <% pair[:civs].each_with_index do |civ, index| %>
-          <% buffer = pair[:buffers][civ] %>
-          <tr>
-            <% if index.zero? %>
-              <% span = pair[:civs].size %>
-              <td rowspan="<%= span %>"><%= pair[:civs].first %> &ndash; <%= pair[:civs].last %></td>
-              <td rowspan="<%= span %>"><%= pair[:distance] %></td>
-            <% end %>
-            <td><%= civ %></td>
-            <td><%= buffer&.dig(:city) || "&mdash;".html_safe %></td>
-            <td>
-              <%= buffer&.dig(:turn) || "&mdash;".html_safe %>
-              <% if pair[:settled_first] == civ %>
-                <span class="badge">first</span>
+  <details class="disclosure">
+    <summary>Buffer cities table</summary>
+    <p class="note">
+      Founded by turn <%= @buffer_cities[:window_turn] %>; neighbours within
+      <%= @buffer_cities[:neighbour_distance] %> hexes, corridor city up to
+      <%= @buffer_cities[:lateral_tolerance] %> hexes off the line between them.
+    </p>
+    <table class="buffer-cities">
+      <thead>
+        <tr>
+          <th>Pair</th>
+          <th>Apart</th>
+          <th>Civ</th>
+          <th>Buffer</th>
+          <th>Founded</th>
+          <th>City #</th>
+          <th>Capital pop</th>
+          <th>Reach before</th>
+          <th>Detour</th>
+          <th>From own</th>
+          <th>From rival</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @buffer_cities[:pairs].each do |pair| %>
+          <% pair[:civs].each_with_index do |civ, index| %>
+            <% buffer = pair[:buffers][civ] %>
+            <tr>
+              <% if index.zero? %>
+                <% span = pair[:civs].size %>
+                <td rowspan="<%= span %>"><%= pair[:civs].first %> &ndash; <%= pair[:civs].last %></td>
+                <td rowspan="<%= span %>"><%= pair[:distance] %></td>
               <% end %>
-            </td>
-            <td><%= buffer&.dig(:order) || "&mdash;".html_safe %></td>
-            <td><%= buffer&.dig(:capital_population) || "&mdash;".html_safe %></td>
-            <td><%= buffer&.dig(:reach_before) || "&mdash;".html_safe %></td>
-            <td><%= buffer&.dig(:detour) || "&mdash;".html_safe %></td>
-            <td><%= buffer&.dig(:from_own_capital) || "&mdash;".html_safe %></td>
-            <td><%= buffer&.dig(:from_rival_capital) || "&mdash;".html_safe %></td>
-          </tr>
+              <td><%= civ %></td>
+              <td><%= buffer&.dig(:city) || "&mdash;".html_safe %></td>
+              <td>
+                <%= buffer&.dig(:turn) || "&mdash;".html_safe %>
+                <% if pair[:settled_first] == civ %>
+                  <span class="badge">first</span>
+                <% end %>
+              </td>
+              <td><%= buffer&.dig(:order) || "&mdash;".html_safe %></td>
+              <td><%= buffer&.dig(:capital_population) || "&mdash;".html_safe %></td>
+              <td><%= buffer&.dig(:reach_before) || "&mdash;".html_safe %></td>
+              <td><%= buffer&.dig(:detour) || "&mdash;".html_safe %></td>
+              <td><%= buffer&.dig(:from_own_capital) || "&mdash;".html_safe %></td>
+              <td><%= buffer&.dig(:from_rival_capital) || "&mdash;".html_safe %></td>
+            </tr>
+          <% end %>
         <% end %>
-      <% end %>
-    </tbody>
-  </table>
-  <% @buffer_cities[:priority].each do |civ, rivals| %>
-    <p><%= civ %> secured its corridors in this order: <%= rivals.join(", ") %>.</p>
-  <% end %>
+      </tbody>
+    </table>
+    <% @buffer_cities[:priority].each do |civ, rivals| %>
+      <p><%= civ %> secured its corridors in this order: <%= rivals.join(", ") %>.</p>
+    <% end %>
+  </details>
 <% end %>
 
 <%= section_heading("Wonder Races", "wonder-races") %>

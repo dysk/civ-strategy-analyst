@@ -208,6 +208,34 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.capital-distances", false
   end
 
+  test "show keeps the capital distances table behind a collapsed disclosure" do
+    game = Game.create!(name: "Collapsed Proximity Game", map_width: 46)
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+
+    get game_url(game)
+
+    disclosure = disclosure_wrapping("table.capital-distances")
+    assert disclosure, "capital distances table is not inside a details.disclosure"
+    assert_nil disclosure["open"], "capital distances table is expanded by default"
+    assert_select "details.disclosure summary", "Capital distances table"
+  end
+
+  test "show keeps the buffer cities table behind a collapsed disclosure" do
+    game = pangaea_game("Collapsed Buffer Game", civs: %w[Rome Greece])
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 24, 20)
+    named_city(game, "Rome", "Ostia", 30, 17, 20)
+
+    get game_url(game)
+
+    disclosure = disclosure_wrapping("table.buffer-cities")
+    assert disclosure, "buffer cities table is not inside a details.disclosure"
+    assert_nil disclosure["open"], "buffer cities table is expanded by default"
+    assert_select "details.disclosure summary", "Buffer cities table"
+  end
+
   test "show flags capital distances measured against an estimated map width" do
     game = Game.create!(name: "Estimated Width Game")
     %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
@@ -785,6 +813,10 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     game = Game.create!(name: name, map_script: "Pangaea")
     civs.each { |civ| game.players.create!(civ: civ) }
     game
+  end
+
+  def disclosure_wrapping(selector)
+    css_select("details.disclosure").find { |node| node.css(selector).any? }
   end
 
   def city_states(game, *civs)

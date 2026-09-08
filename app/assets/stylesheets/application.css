@@ -311,6 +311,21 @@ blockquote {
   font-weight: 600;
 }
 
+.disclosure {
+  margin: 0.5rem 0 1rem;
+}
+
+.disclosure summary {
+  cursor: pointer;
+  width: fit-content;
+  color: var(--color-accent);
+}
+
+.disclosure > table,
+.disclosure > .note {
+  margin-top: 0.5rem;
+}
+
 .moment-detail {
   color: var(--color-muted);
   font-size: 0.9em;
