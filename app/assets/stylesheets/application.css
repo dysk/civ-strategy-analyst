@@ -233,6 +233,11 @@ blockquote {
   text-anchor: middle;
 }
 
+.capital-layout .corridor {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
 .capital--major circle {
   fill: var(--color-accent);
 }
@@ -249,6 +254,38 @@ blockquote {
 .capital--minor text {
   fill: var(--color-muted);
   font-size: 11px;
+}
+
+.buffer-city text {
+  fill: var(--color-muted);
+  font-size: 11px;
+}
+
+/*
+ * Per-civ colour: the data-viz reference categorical palette, fixed order.
+ * A capital and its buffer cities share a slot. The label always stays in
+ * ink (rules above) - the slot only fills the dot - so identity is carried
+ * by the label and position, not by colour alone. Slots outnumbering the
+ * palette fall back to var(--color-accent).
+ */
+.capital-layout .map-civ-0 circle { fill: #2a78d6; }
+.capital-layout .map-civ-1 circle { fill: #eb6834; }
+.capital-layout .map-civ-2 circle { fill: #1baf7a; }
+.capital-layout .map-civ-3 circle { fill: #eda100; }
+.capital-layout .map-civ-4 circle { fill: #e87ba4; }
+.capital-layout .map-civ-5 circle { fill: #008300; }
+.capital-layout .map-civ-6 circle { fill: #4a3aa7; }
+.capital-layout .map-civ-7 circle { fill: #e34948; }
+
+@media (prefers-color-scheme: dark) {
+  .capital-layout .map-civ-0 circle { fill: #3987e5; }
+  .capital-layout .map-civ-1 circle { fill: #d95926; }
+  .capital-layout .map-civ-2 circle { fill: #199e70; }
+  .capital-layout .map-civ-3 circle { fill: #c98500; }
+  .capital-layout .map-civ-4 circle { fill: #d55181; }
+  .capital-layout .map-civ-5 circle { fill: #008300; }
+  .capital-layout .map-civ-6 circle { fill: #9085e9; }
+  .capital-layout .map-civ-7 circle { fill: #e66767; }
 }
 
 .trend {

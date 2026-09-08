@@ -290,6 +290,65 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "svg.capital-layout", false
   end
 
+  test "show colours each civilization's capital with its own palette slot" do
+    game = pangaea_game("Coloured Layout Game", civs: %w[Rome Greece])
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 24, 20)
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "svg.capital-layout g.capital--major.map-civ-0 text", "Rome"
+    assert_select "svg.capital-layout g.capital--major.map-civ-1 text", "Greece"
+  end
+
+  test "show plots a buffer city as a small point in its civ's colour, labelled with its name" do
+    game = pangaea_game("Buffer Map Game", civs: %w[Rome Greece])
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 24, 20)
+    named_city(game, "Rome", "Ostia", 30, 17, 20)
+
+    get game_url(game)
+
+    assert_select "svg.capital-layout g.buffer-city.map-civ-0 circle[r='4']"
+    assert_select "svg.capital-layout g.buffer-city.map-civ-0 text", "Ostia"
+  end
+
+  test "show draws a corridor line between each neighbouring pair of capitals" do
+    game = pangaea_game("Corridor Line Game", civs: %w[Rome Greece])
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 24, 20)
+
+    get game_url(game)
+
+    assert_select "svg.capital-layout line.corridor", 1
+  end
+
+  test "show keeps an off-line buffer city inside the layout canvas" do
+    game = pangaea_game("Off-line Buffer Game", civs: %w[Rome Greece])
+    named_city(game, "Rome", "Roma", 0, 10, 20)
+    named_city(game, "Greece", "Athenai", 0, 24, 20)
+    named_city(game, "Rome", "Ostia", 30, 17, 23)
+
+    get game_url(game)
+
+    buffer_cy = css_select("svg.capital-layout g.buffer-city circle").first["cy"].to_f
+    assert buffer_cy.between?(0, GamesController::CAPITAL_LAYOUT_HEIGHT), "buffer city clipped at cy=#{buffer_cy}"
+  end
+
+  test "show draws no corridor lines or buffer points when the map is not Pangaea" do
+    game = Game.create!(name: "Continents Map Game", map_script: "Continents", map_width: 46)
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 20)
+    city(game, "Greece", 0, 24, 20)
+
+    get game_url(game)
+
+    assert_select "svg.capital-layout line.corridor", false
+    assert_select "svg.capital-layout g.buffer-city", false
+    assert_select "svg.capital-layout g.capital--major circle", 2
+  end
+
   test "show displays where each civilization's early game ends" do
     game = Game.create!(name: "Early Game Game", game_speed: "GAMESPEED_QUICK")
     game.players.create!(civ: "Rome")

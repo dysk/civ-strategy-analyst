@@ -37,11 +37,20 @@
 
 <%= section_heading("Capital Distances", "capital-distances") %>
 <% if @capital_positions.any? %>
-  <svg class="capital-layout" viewBox="0 0 <%= @capital_layout_width %> <%= @capital_layout_height %>" role="img" aria-label="Capital positions">
+  <svg class="capital-layout" viewBox="0 0 <%= @capital_layout_width %> <%= @capital_layout_height %>" role="img" aria-label="Capital positions and buffer cities">
+    <% @corridor_segments.each do |segment| %>
+      <line class="corridor" x1="<%= segment[:x1] %>" y1="<%= segment[:y1] %>" x2="<%= segment[:x2] %>" y2="<%= segment[:y2] %>" />
+    <% end %>
     <% @capital_positions.each do |point| %>
-      <g class="<%= point[:major] ? "capital--major" : "capital--minor" %>">
+      <g class="<%= point[:major] ? "capital--major" : "capital--minor" %><%= " map-civ-#{point[:colour_slot]}" if point[:colour_slot] %>">
         <circle cx="<%= point[:cx] %>" cy="<%= point[:cy] %>" r="<%= point[:major] ? 7 : 4 %>" />
         <text x="<%= point[:cx] %>" y="<%= point[:cy] - 12 %>"><%= point[:civ] %></text>
+      </g>
+    <% end %>
+    <% @buffer_positions.each do |point| %>
+      <g class="buffer-city<%= " map-civ-#{point[:colour_slot]}" if point[:colour_slot] %>">
+        <circle cx="<%= point[:cx] %>" cy="<%= point[:cy] %>" r="4" />
+        <text x="<%= point[:cx] %>" y="<%= point[:cy] - 9 %>"><%= point[:city] %></text>
       </g>
     <% end %>
   </svg>

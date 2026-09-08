@@ -471,6 +471,13 @@ other, the analysis now says who settled the ground between them. `BufferCities`
 (`buffer_cities`, next to `capital_proximity`), the game page's "Buffer Cities"
 table, and one key moment, `KeyMomentDetector#buffer_city_losses`.
 
+The capital layout diagram (in "Capital Distances") also draws them: each civ
+takes a colour slot from the data-viz reference palette, its capital keeps the
+bold marker, and its buffer cities are plotted small in the same colour, with a
+thin line down each contested corridor. Colour is redundant here - every mark
+is labelled and joined to its capital - so the all-pairs CVD floor is carried
+by the labels, not the hues (the eight-slot palette does not clear it alone).
+
 The rule:
 
 - **neighbours** — a pair of capitals at hex distance **≤ 17**
