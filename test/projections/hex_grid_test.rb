@@ -71,4 +71,21 @@ class HexGridTest < ActiveSupport::TestCase
   test "a plot lies in no direction from itself" do
     assert_nil @grid.bearing([ 10, 10 ], [ 10, 10 ])
   end
+
+  test "a plot on the line between two others sits no distance off it" do
+    assert_in_delta 0, @grid.offset_from_line([ 10, 20 ], [ 27, 20 ], [ 18, 20 ]), 0.001
+  end
+
+  test "measures how far a plot sits off the line between two others" do
+    assert_in_delta 3, @grid.offset_from_line([ 10, 20 ], [ 27, 20 ], [ 18, 23 ]), 0.001
+  end
+
+  test "reads the offset in the game's metric, so a diagonal pair's flank is nearer than a ruler says" do
+    assert_in_delta 5.15, @grid.offset_from_line([ 30, 16 ], [ 29, 29 ], [ 24, 20 ]), 0.01
+    assert_in_delta 1.49, @grid.offset_from_line([ 30, 16 ], [ 29, 29 ], [ 28, 24 ]), 0.01
+  end
+
+  test "a line of no length leaves the offset at zero" do
+    assert_equal 0.0, @grid.offset_from_line([ 10, 20 ], [ 10, 20 ], [ 15, 25 ])
+  end
 end

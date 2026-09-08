@@ -444,8 +444,9 @@ as one. They are, in rough order of how measurable each is:
 - **A buffer**, slightly worse than a buffer city of one's own but on the same
   ground. This one reuses code rather than adding any:
   `CapitalProximity#city_state_capitals` already holds every city-state's plot,
-  and `BufferCities`' detour test already decides whether a city sits in the
-  corridor between two capitals. Running that test with a city-state capital as
+  and `BufferCities`' corridor test (lateral offset plus betweenness) already
+  decides whether a city sits in the corridor between two capitals. Running
+  that test with a city-state capital as
   the corridor city, weighted by whether the alliance was held at the time,
   answers "who covered that approach" for allies as it already does for cities.
 

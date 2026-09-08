@@ -3,9 +3,16 @@ require "test_helper"
 # Coordinates are read off the corridor diagram in docs/buffer-city.md:
 # Rome's capital at (10, 20) and Greece's at (27, 20) are 17 hexes apart,
 # so every plot between them has a detour equal to its rows off that line.
+#
+# The diagonal pair - Rome at (30, 16), Greece at (29, 29), 13 apart - is
+# the case the detour metric alone reads wrongly: its zero-detour band is a
+# wide rhombus, so a flank city scores a low detour. Those coordinates come
+# from examples/india-diplo.jsonl (India vs Iroquois).
 class BufferCitiesTest < ActiveSupport::TestCase
   ROME_CAPITAL = [ 10, 20 ].freeze
   GREECE_CAPITAL = [ 27, 20 ].freeze
+  DIAGONAL_ROME = [ 30, 16 ].freeze
+  DIAGONAL_GREECE = [ 29, 29 ].freeze
 
   setup do
     @game = Game.create!(
@@ -30,7 +37,7 @@ class BufferCitiesTest < ActiveSupport::TestCase
 
     assert_equal true, digest[:applicable]
     assert_equal 17, digest[:neighbour_distance]
-    assert_equal 6, digest[:detour_tolerance]
+    assert_equal 3, digest[:lateral_tolerance]
     assert_equal 100, digest[:window_turn]
   end
 
@@ -63,16 +70,38 @@ class BufferCitiesTest < ActiveSupport::TestCase
 
   test "call says which way the buffer lies from the capital it shields" do
     capitals
-    founded("Rome", "Ostia", 30, 14, 26)
+    founded("Rome", "Ostia", 30, 14, 23)
 
     assert_equal "NE", pair[:buffers]["Rome"][:bearing]
   end
 
-  test "call counts a city at the edge of the detour tolerance as a buffer" do
+  test "call counts a city at the edge of the lateral tolerance as a buffer" do
+    capitals
+    founded("Rome", "Ostia", 30, 18, 23)
+
+    assert_equal "Ostia", pair[:buffers]["Rome"][:city]
+  end
+
+  test "call rejects a city off to the side though its detour is within tolerance" do
     capitals
     founded("Rome", "Ostia", 30, 18, 26)
 
-    assert_equal 6, pair[:buffers]["Rome"][:detour]
+    assert_nil pair[:buffers]["Rome"]
+  end
+
+  test "call rejects a flank city on a diagonal pair whose detour reads low" do
+    diagonal_capitals
+    founded("Greece", "Buffalo Creek", 72, 24, 20)
+
+    assert_nil diagonal_pair[:buffers]["Greece"]
+    assert_includes diagonal_pair[:without_buffer], "Greece"
+  end
+
+  test "call counts a city near the capital line as a buffer on a diagonal pair" do
+    diagonal_capitals
+    founded("Greece", "Vijayanagara", 33, 28, 24)
+
+    assert_equal "Vijayanagara", diagonal_pair[:buffers]["Greece"][:city]
   end
 
   test "call rejects a city beyond the detour tolerance" do
@@ -123,12 +152,12 @@ class BufferCitiesTest < ActiveSupport::TestCase
 
   test "call lets one city be the buffer against two rivals" do
     capitals
-    founded("Egypt", "Thebes", 0, 15, 13)
-    founded("Rome", "Ostia", 30, 18, 20)
+    founded("Egypt", "Thebes", 0, 23, 24)
+    founded("Rome", "Ostia", 30, 18, 22)
 
     assert_equal(
       [ { civ: "Rome", rival: "Greece", city: "Ostia" }, { civ: "Rome", rival: "Egypt", city: "Ostia" } ].sort_by { |b| b[:rival] },
-      buffer_cities.by_plot.fetch([ 18, 20 ]).sort_by { |b| b[:rival] }
+      buffer_cities.by_plot.fetch([ 18, 22 ]).sort_by { |b| b[:rival] }
     )
   end
 
@@ -269,10 +298,16 @@ class BufferCitiesTest < ActiveSupport::TestCase
   def pair
     buffer_cities.call[:pairs].find { |entry| entry[:civs].sort == %w[Greece Rome] }
   end
+  alias diagonal_pair pair
 
   def capitals
     founded("Rome", "Roma", 0, *ROME_CAPITAL)
     founded("Greece", "Athenai", 0, *GREECE_CAPITAL)
+  end
+
+  def diagonal_capitals
+    founded("Rome", "Roma", 0, *DIAGONAL_ROME)
+    founded("Greece", "Athenai", 0, *DIAGONAL_GREECE)
   end
 
   def city_states(*civs)

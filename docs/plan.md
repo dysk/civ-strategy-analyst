@@ -474,10 +474,16 @@ table, and one key moment, `KeyMomentDetector#buffer_city_losses`.
 The rule:
 
 - **neighbours** — a pair of capitals at hex distance **≤ 17**
-- **corridor** — a city whose *detour* (`d(A,C) + d(C,B) − d(A,B)`) is **≤ 6**
-  and which lies strictly between the two capitals (`d(A,C) < d(A,B)` and
-  `d(C,B) < d(A,B)`) — the betweenness test is what separates a buffer from a
-  back city, which scores the same detour
+- **corridor** — a city that lies **≤ 3 hexes off the line between the two
+  capitals** (`HexGrid#offset_from_line`, perpendicular distance in hexspace)
+  and strictly between them (`d(A,C) < d(A,B)` and `d(C,B) < d(A,B)`) — the
+  betweenness test separates a buffer from a back city on the same line.
+  Recalibrated 2026-09-08 from an earlier `detour <= 6` rule (`detour =
+  d(A,C) + d(C,B) − d(A,B)`): on a diagonal pair the zero-detour band is a
+  wide rhombus, so a flank city scored a low detour and counted wrongly —
+  `examples/india-diplo.jsonl`, Buffalo Creek. `detour` is still reported
+  per city as texture (`0` = squarely on a shortest path); it no longer
+  filters
 - **window** — founded on or before the game-wide `EarlyGame#deadline_turn`,
   capped at the last logged turn. One clock for both sides: a per-civ boundary
   would give the faster developer the shorter window to claim contested ground
@@ -524,13 +530,16 @@ Arabia on turn 87. Medina (t152) is **not** one: it is a corridor city for
 Arabia against the Philippines, but Damascus sits further forward, and the rule
 takes only the forward-most city as the buffer.
 
-**Neither threshold is calibrated.** All three games are `WORLDSIZE_TINY` with
-one human against `HANDICAP_AI_DEFAULT` bots, and every pair lands at 13–17, so
-the 17 has never had to decide a close case; it is an absolute hex count that
-does not scale with map size. The 6 is likewise a first hypothesis — and note
-that detour on this grid runs one per hex of deviation, not two as
-`docs/buffer-city.md` claims in prose, so a tolerance of 6 admits a corridor six
-hexes wide either side of the marching line. Revisit both against the first
+**Neither threshold is calibrated.** All three example games are
+`WORLDSIZE_TINY` with one human against `HANDICAP_AI_DEFAULT` bots, and every
+pair lands at 13–17, so the 17 has never had to decide a close case; it is an
+absolute hex count that does not scale with map size. The lateral tolerance of
+3 is likewise a first hypothesis — it started life as `detour <= 6` and was
+retightened once a fourth game (`india-diplo`) showed detour passing a flank
+city on a diagonal pair. The verification tables above were computed under the
+old rule; `detour` values in them are still correct as reported figures, but
+whether each flank-ish city still counts as a buffer needs the pending fresh
+`bin/civ analyze` run to confirm. Revisit both thresholds against the first
 larger map and the first human-multiplayer log.
 
 The prompt now teaches three things in "How to weigh the signals": what a

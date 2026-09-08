@@ -21,6 +21,23 @@ class HexGrid
     end
   end
 
+  # How far `point` lies off the line through `from` and `to`, in hexes.
+  # `distance` says a city is near a capital; this says whether it stands on
+  # the road between two of them or off to one side. Measured in hexspace so
+  # it reads in the same metric as `distance`, not off a straight ruler: a
+  # diagonal pair's shortest paths fan into a rhombus, so a city well off the
+  # geometric line can still sit only a hex or two off the route.
+  def offset_from_line(from, to, point)
+    along_x = wrapped(hexspace_x(to) - hexspace_x(from))
+    along_y = to.last - from.last
+    span = Math.hypot(along_x, along_y)
+    return 0.0 if span.zero?
+
+    across_x = wrapped(hexspace_x(point) - hexspace_x(from))
+    across_y = point.last - from.last
+    (along_x * across_y - along_y * across_x).abs / span
+  end
+
   # Which way `to` lies from `from`, as a compass point - "N", "SW" and so
   # on - in the game's own frame: y counts north from the south edge and x
   # counts east. Rows and columns are close enough to the same size that a

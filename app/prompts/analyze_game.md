@@ -390,8 +390,11 @@ capital it shields, on the same compass as `capital_proximity`. Read
 the city sits - a buffer four hexes from
 its own capital is a shield hugging the capital, one twelve hexes out is
 contesting the ground. `detour` says how squarely it sits across the
-route an army would march, `0` being on it and `detour_tolerance` on the
-flank. The corridor sometimes fits only one city, and where it does, one
+route an army would march, `0` meaning it stands on a shortest path
+between the capitals; a corridor city counts only when it sits within
+`lateral_tolerance` hexes of the line between the capitals, so a city off
+to one flank is not read as a buffer at all. The corridor sometimes fits
+only one city, and where it does, one
 side holding it explains why the other has none - but do not reach for
 that first: the more common reason a civilization has no buffer is that
 it did not settle one. When `applicable` is false the map was never

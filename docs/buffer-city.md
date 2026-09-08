@@ -24,8 +24,8 @@ city, and when.**
 The rule (settled, expected to be recalibrated against more logs):
 
 - **neighbours** — a pair of capitals at hex distance **≤ 17**
-- **corridor** — a city whose *detour* is **≤ 6** and which lies strictly
-  between the two capitals
+- **corridor** — a city that lies **≤ 3 hexes off the line between the two
+  capitals** (`HexGrid#offset_from_line`) and strictly between them
 - **window** — founded on or before the game-wide early game deadline
   (turn 150 standard / 100 quick, capped at the last logged turn)
 - **map** — Pangaea only, decided by `map_script`
@@ -39,52 +39,52 @@ as `EmpireGeometry` and `CapitalProximity`.
 
 ## The corridor rule
 
-The natural phrasing — "no more than 3 hexes off the line between the
-capitals" — needs no line geometry. In the game's own metric,
+A buffer stands on the road between the two capitals. Two conditions say so:
+it lies close to the line between them, and it lies strictly between them.
 
-```
-detour(C) = d(A, C) + d(C, B) − d(A, B)
-```
+**Lateral offset.** `HexGrid#offset_from_line(A, B, C)` is the perpendicular
+distance from C to the line through A and B, measured in hexspace so it reads
+in the same metric as `HexGrid#distance`. The corridor is
+**`offset_from_line <= 3`** — three hexes off the line, either side.
 
-is the number of extra hexes an army walking from A to B pays for passing
-through C. Computed over `HexGrid` for A=(10,20), B=(27,20), d=17:
-
-```
-y=23  6 5 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 4 5 6 .
-y=22 6 4 3 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 3 4 6
-y=21  4 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 4 6
-y=20 4 2 A 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 B 2 4
-y=19  4 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 4 6
-y=18 6 4 3 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 3 4 6
-```
-
-`detour = 2 × (rows off the line)`, exactly and symmetrically. So **"3 hexes
-of deviation" is `detour <= 6`** — one subtraction, in the same metric
-`HexGrid#distance` already provides, with no second notion of distance
-introduced into the codebase.
-
-**Detour alone is not enough.** The corridor in the diagram extends past both
-capitals: a city 3 hexes *behind* A also scores 6. A city behind your capital
-is not a buffer, it is a back city. Hence the second condition, betweenness:
+**Betweenness.** The line extends past both capitals; a city three hexes
+*behind* A sits on it too, and is a back city, not a buffer. So also:
 
 ```
 d(A, C) < d(A, B)  and  d(C, B) < d(A, B)
 ```
 
-### Two properties of the rule worth knowing before it ships
+### Detour, and why it stopped being the filter
 
-**The zero-detour band is wide for diagonal pairs.** On a hex grid the set of
-points with `detour == 0` is not a line but every point lying on *some*
-shortest path, which for a pair offset along both axes is a rhombus — up to 6
-hexes across at d=19. A city 5 hexes from the straight geometric line can
-therefore score `detour = 0`. This is deliberate and, we think, correct: the
-question is "does this city stand on a route an army would march", not "does
-it sit on a ruler". But it means `detour` is not interchangeable with
-"distance from the line", and the digest carries the raw `detour` per city so
-the model can tell a city squarely across the road (0) from one on the flank
-(5) rather than reading a boolean.
+The first cut of this rule used *detour* instead of lateral offset:
 
-**No minimum distance from the owner's capital.** A city 4 hexes out is
+```
+detour(C) = d(A, C) + d(C, B) − d(A, B)
+```
+
+— the extra hexes an army walking A→B pays to pass through C, `<= 6` to
+count. It needs no line geometry, only `HexGrid#distance`, which is why it was
+tried first. It reads a strongly diagonal pair wrongly. The set of points
+with `detour == 0` is not a line but every point on *some* shortest path,
+which for a pair offset along both axes is a rhombus — up to 6 hexes across at
+d=19. A city 5 hexes from the geometric line can score `detour = 0`, and one
+well off the flank can still come in under `detour <= 6`.
+
+`examples/india-diplo.jsonl` is the case that forced the change: on the
+India–Iroquois pair (Delhi (30,16), Onondaga (29,29), d=13) the Iroquois city
+Buffalo Creek at (24,20) scores `detour 5` but sits ~5 hexes off the line —
+an aggressive forward settle on the flank, not a barrier on the road India's
+army would march. `offset_from_line` reads it at ~5.1 and the rule now
+rejects it; India's own Vijayanagara at (28,24), `detour 0` and ~1.5 off the
+line, still counts.
+
+`detour` stays in the digest as a **per-city texture field**: `0` means the
+city stands squarely on a shortest path between the capitals, a higher value
+that it sits toward the edge of the corridor. It no longer filters.
+
+### No minimum distance from the owner's capital
+
+A city 4 hexes out is
 counted the same as one 9 hexes out; the pair carries `from_own_capital` and
 `from_rival_capital` and the model weighs them. This matters in practice — in
 game #21 the Philippines' buffer against Arabia sits 4 hexes from Malolos and

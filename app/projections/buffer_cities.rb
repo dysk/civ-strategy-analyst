@@ -12,7 +12,7 @@
 # when they were founded; the prompt weighs what that was worth.
 class BufferCities
   NEIGHBOUR_DISTANCE = 17
-  DETOUR_TOLERANCE = 6
+  LATERAL_TOLERANCE = 3
   MIN_NEIGHBOURS_FOR_PRIORITY = 2
 
   # The seam HexGrid wraps across is ocean on Pangaea, not a route anyone
@@ -30,7 +30,7 @@ class BufferCities
     return { applicable: false, reason: :map_not_pangaea } unless pangaea?
 
     {
-      applicable: true, neighbour_distance: NEIGHBOUR_DISTANCE, detour_tolerance: DETOUR_TOLERANCE,
+      applicable: true, neighbour_distance: NEIGHBOUR_DISTANCE, lateral_tolerance: LATERAL_TOLERANCE,
       window_turn: window_turn, pairs: pairs, priority: priority
     }
   end
@@ -87,16 +87,19 @@ class BufferCities
       .filter_map { |event| entry(event, own, rival, distance) }
   end
 
-  # The detour is what an army marching from one capital to the other pays
-  # for passing through this city. Betweenness is the second condition: a
-  # city three hexes behind your own capital scores the same detour as one
-  # three hexes to the side of the road, and is a back city, not a buffer.
+  # A buffer stands on the road between the two capitals. `offset_from_line`
+  # is how far to the side of that road the city sits - an army marching
+  # between the capitals walks around anything much further off than this.
+  # Betweenness is the second condition: a city behind your own capital sits
+  # on the line too, and is a back city, not a buffer. `detour` is reported
+  # for texture - 0 means squarely on a shortest path - but does not filter.
   def entry(event, own, rival, distance)
     plot = plot_of(event)
     from_own = @grid.distance(own, plot)
     from_rival = @grid.distance(plot, rival)
     detour = from_own + from_rival - distance
-    return unless detour <= DETOUR_TOLERANCE && from_own < distance && from_rival < distance
+    return unless @grid.offset_from_line(own, rival, plot) <= LATERAL_TOLERANCE &&
+                  from_own < distance && from_rival < distance
 
     {
       city: event.payload["city"], turn: event.turn, x: plot.first, y: plot.last, detour: detour,

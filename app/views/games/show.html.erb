@@ -80,8 +80,8 @@
 <% else %>
   <p class="note">
     Founded by turn <%= @buffer_cities[:window_turn] %>; neighbours within
-    <%= @buffer_cities[:neighbour_distance] %> hexes, corridor detour up to
-    <%= @buffer_cities[:detour_tolerance] %>.
+    <%= @buffer_cities[:neighbour_distance] %> hexes, corridor city up to
+    <%= @buffer_cities[:lateral_tolerance] %> hexes off the line between them.
   </p>
   <table class="buffer-cities">
     <thead>
