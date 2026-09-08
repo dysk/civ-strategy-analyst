@@ -147,6 +147,74 @@
   </details>
 <% end %>
 
+<% if @geometry_rows.empty? %>
+  <p class="empty-state">No city coordinates, so no empire geometry.</p>
+<% else %>
+  <details class="disclosure">
+    <summary>Empire geometry table</summary>
+    <table class="geometry">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>Cities</th>
+          <th>Span</th>
+          <th>Spacing</th>
+          <th>Elongation</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @geometry_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:cities] %></td>
+            <td><%= row[:span] || "&mdash;".html_safe %></td>
+            <td><%= row[:mean_spacing] || "&mdash;".html_safe %></td>
+            <td><%= row[:elongation] || "&mdash;".html_safe %></td>
+            <td>
+              <% if row[:mismatch] %>
+                <span class="badge">approximate from turn <%= row[:mismatch][:turn] %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how these shapes came about", game_geometry_path(@game) %></p>
+  </details>
+<% end %>
+
+<%= section_heading("Early Game", "early-game") %>
+<% if @early_game_rows.empty? %>
+  <p class="empty-state">No players in this game.</p>
+<% else %>
+  <p class="note">Deadline: turn <%= @early_game_deadline_turn %> (<%= @game.game_speed %>).</p>
+  <table class="early-game">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Ends Turn</th>
+        <th>Why</th>
+        <th>Milestone</th>
+        <th>Tech</th>
+        <th>Building</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @early_game_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:end_turn] %></td>
+          <td><%= row[:reason] %></td>
+          <td><%= early_game_milestone(row) || "&mdash;".html_safe %></td>
+          <td><%= row[:tech_turn] || "&mdash;".html_safe %></td>
+          <td><%= row[:building_turn] || "&mdash;".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
 <%= section_heading("Wonder Races", "wonder-races") %>
 <% if !@wonder_races[:applicable] %>
   <p class="empty-state">Wonder races need per-city snapshots, which this game's log does not carry.</p>
@@ -190,72 +258,6 @@
             <td><%= contender[:outcome] %></td>
           </tr>
         <% end %>
-      <% end %>
-    </tbody>
-  </table>
-<% end %>
-
-<%= section_heading("Empire Geometry", "empire-geometry") %>
-<% if @geometry_rows.empty? %>
-  <p class="empty-state">No city coordinates in this game's events.</p>
-<% else %>
-  <table class="geometry">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Cities</th>
-        <th>Span</th>
-        <th>Spacing</th>
-        <th>Elongation</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @geometry_rows.each do |row| %>
-        <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:cities] %></td>
-          <td><%= row[:span] || "&mdash;".html_safe %></td>
-          <td><%= row[:mean_spacing] || "&mdash;".html_safe %></td>
-          <td><%= row[:elongation] || "&mdash;".html_safe %></td>
-          <td>
-            <% if row[:mismatch] %>
-              <span class="badge">approximate from turn <%= row[:mismatch][:turn] %></span>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p><%= link_to "See how these shapes came about", game_geometry_path(@game) %></p>
-<% end %>
-
-<%= section_heading("Early Game", "early-game") %>
-<% if @early_game_rows.empty? %>
-  <p class="empty-state">No players in this game.</p>
-<% else %>
-  <p class="note">Deadline: turn <%= @early_game_deadline_turn %> (<%= @game.game_speed %>).</p>
-  <table class="early-game">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Ends Turn</th>
-        <th>Why</th>
-        <th>Milestone</th>
-        <th>Tech</th>
-        <th>Building</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @early_game_rows.each do |row| %>
-        <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:end_turn] %></td>
-          <td><%= row[:reason] %></td>
-          <td><%= early_game_milestone(row) || "&mdash;".html_safe %></td>
-          <td><%= row[:tech_turn] || "&mdash;".html_safe %></td>
-          <td><%= row[:building_turn] || "&mdash;".html_safe %></td>
-        </tr>
       <% end %>
     </tbody>
   </table>

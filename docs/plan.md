@@ -479,7 +479,9 @@ contested corridor. Colour is redundant here - every mark is labelled and
 joined to its capital - so the all-pairs CVD floor is carried by the labels,
 not the hues (the eight-slot palette does not clear it alone). The full table
 and the corridor thresholds sit below the map behind a collapsed disclosure,
-next to the one for the capital-distance table.
+next to the ones for the capital-distance table and — since it reads the same
+city coordinates — the empire-geometry table, which lost its own `<h2>` in the
+same pass. "Wonder Races" moved down below "Early Game".
 
 The rule:
 

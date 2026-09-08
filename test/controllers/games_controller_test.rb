@@ -247,6 +247,40 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge", /map width estimated/
   end
 
+  test "show keeps the empire geometry table behind a collapsed disclosure" do
+    game = Game.create!(name: "Collapsed Geometry Game", map_width: 46)
+    game.players.create!(civ: "Rome")
+    city(game, "Rome", 1, 10, 10)
+    city(game, "Rome", 5, 14, 10)
+
+    get game_url(game)
+
+    disclosure = disclosure_wrapping("table.geometry")
+    assert disclosure, "geometry table is not inside a details.disclosure"
+    assert_nil disclosure["open"], "geometry table is expanded by default"
+    assert_select "details.disclosure summary", "Empire geometry table"
+  end
+
+  test "show groups the empire geometry disclosure with the capital distances ones" do
+    game = Game.create!(name: "Geometry Placement Game", map_width: 46)
+    game.players.create!(civ: "Rome")
+    city(game, "Rome", 1, 10, 10)
+    city(game, "Rome", 5, 14, 10)
+
+    get game_url(game)
+
+    assert_operator response.body.index('class="geometry"'), :<, response.body.index('id="wonder-races"')
+  end
+
+  test "show places the Wonder Races section below Early Game" do
+    game = Game.create!(name: "Section Order Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    assert_operator response.body.index('id="early-game"'), :<, response.body.index('id="wonder-races"')
+  end
+
   test "show draws a point and label for every capital in the layout diagram" do
     game = Game.create!(name: "Layout Game", map_width: 46)
     %w[Rome Greece Carthage].each { |civ| game.players.create!(civ: civ) }
@@ -677,7 +711,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
     get game_url(game)
 
-    %w[capital-distances wonder-races empire-geometry early-game military
+    %w[capital-distances early-game wonder-races military
        cultural-standing world-congress victory-progress key-moments strategy-report].each do |id|
       assert_select "h2##{id} a.heading-anchor[href=?]", "##{id}"
     end
