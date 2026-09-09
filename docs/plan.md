@@ -835,3 +835,52 @@ uncalibrated in `docs/city-value.md`; `babylon-domination`'s eight
 captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
+
+## Plan: espionage — the primitive four features share (planned)
+
+Status: tranche 1 point 4 of `docs/reading-the-new-log.md`. **Not
+implemented** — there is no `app/projections/espionage.rb` yet. The design
+is in `docs/espionage.md` (the game rules and the honest limits) and
+`docs/reading-the-new-log.md` (§4, the joins and the six iterations). The
+one piece of code that exists is `WonderRaces#rival_observed`, carried nil
+and waiting for `observers_of`.
+
+Context: a spy is a position held over a span of turns, and four questions
+join against it — did a wonder-race loser see the winner's build, what
+moved a city-state's influence, was an empire garrisoned against theft,
+did a paradrop have a spotter. The primitive is `Espionage#tenures`; the
+rest of the projection hangs off it.
+
+The reason this section exists before the projection does: **the espionage
+half of the log was mostly reconstruction, and a run of `civ-narrative-logger`
+fixes has since turned much of it into fact.** As of those commits:
+
+- `spy_surveillance_established` — `visible_from_turn` is a logged event,
+  not `posting + 1 + surveillance_time` arithmetic.
+- `completed()` requires an unchanged state — the "23 of 53 completions
+  are state-transition artifacts" filter is no longer needed on new logs;
+  `missions(civ)` can count `spy_mission_completed` straight.
+- `spy_created` and `spy_killed` carry a `city`/`city_civ` — `losses`
+  reads the death site off the record rather than the last known tenure.
+- `spy_moved` fires after a revival into a city — the revival half of the
+  missed-posting gap is closed.
+- `spy_moved` fires on the transition into `counter_intel` — a counterspy
+  garrison is read from the event, and `#counterspies`' three-signal
+  inference drops to a fallback.
+
+Still owed upstream, so the projection keeps every fallback for now: the
+rest of the missed-`spy_moved` gap (re-postings, and a move lost when a
+poll catches `CityX == -1` mid-`MoveSpyTo`), `known` persisting across a
+session reload, and the successful coup (needs its own `CanStageCoup`
+read). Tracked in `civ-narrative-logger/docs/planned-changes.md`.
+
+`examples/india-diplo.jsonl` (game 32), the log every number in the design
+docs is measured against, **predates all of these fixes**. So iteration 1
+must ship the fallbacks — the arithmetic dating, the completion filter,
+the tenure-inferred death site, the counterspy inference — and the
+event-reading paths stay unexercised until a post-fix log is imported,
+declared unexercised the way `winner_finish`'s `:ahead_of_estimate` is.
+
+Not done: the whole projection. When it is built, this becomes a
+`(implemented)` section with the commit range and the per-iteration notes,
+like the tranche-1 features above.
