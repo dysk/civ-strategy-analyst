@@ -51,15 +51,41 @@ takes a base **3 turns** after arrival, shortened by
 `GetInfluenceSurveillanceTime` against the target, the same tourism mechanic
 that shortens occupation resistance in `docs/city-value.md`.
 
-Two dating rules follow, and the difference between them is load-bearing:
+A spy therefore does not see anything for the first few turns of a posting: it
+travels, then it establishes surveillance, and only then does the city screen
+open. That delay is **computable, not guessable**, because both terms are
+constants:
 
-- **Certain** — a `spy_mission_completed` in city C on turn T proves
-  surveillance was live in C on T, because those mission states imply it.
-- **Estimated** — a `spy_moved` to C on turn T grants sight no earlier than
-  `T + 3`, travel on top.
+```
+vision begins at  posting + iSpyTurnsToTravel + GetInfluenceSurveillanceTime
+                = posting + 1 + (3, or 1 with a tourism lead)
+                = posting + 4, or posting + 2
+```
 
-`visible_from_turn` takes the certain rule. `visible_from_turn_estimated` is
-carried beside it and is never used to assert that somebody knew something.
+`iSpyTurnsToTravel = 1` (`CvEspionageClasses.cpp:23`).
+`GetInfluenceSurveillanceTime` (`CvCultureClasses.cpp:2919`) is **3**, cut to
+**1** when the spy's owner is at `INFLUENCE_LEVEL_FAMILIAR` or better over the
+target — and for a city-state, over that city-state's *ally*. `InfluenceTimeline`
+already carries the level per pair, so the projection picks the branch rather
+than assuming one.
+
+**The log corroborates the constant.** See the next section: the first
+`spy_mission_completed` after a posting lands at **+3 or +4 in 14 of 18
+postings**, which is that formula and not a mission.
+
+So three dating rules, in descending order of what they may be used for:
+
+- **Computed** — `posting + 1 + surveillance_time`. Exact when the posting is
+  known, which is 13 of 24 spies. This is `visible_from_turn`.
+- **Certain floor** — a `spy_mission_completed` in city C on turn T proves
+  surveillance was live in C on T, because those mission states imply it
+  (`CvEspionageClasses.cpp:1795`). Used when the posting was lost, and then
+  `visible_from_turn` is a **lower bound** with `visible_from_turn_bounded:
+  true` on the record.
+- **Never** — a `spy_moved` turn on its own. It is the order to go, not the
+  arrival, and it is never used unadjusted.
+
+None of the three says the player looked.
 
 ## Tenure, and what the log loses
 
@@ -80,6 +106,56 @@ Reported upstream in `civ-narrative-logger/docs/planned-changes.md`, *"Let a
 counterspy leave a trace"*. Until it is fixed, a tenure's `from_turn` is the
 first sighting, **not** the arrival, and every span is a lower bound on how
 long the spy was actually there.
+
+## Most logged missions did not happen
+
+`completed()` in the logger reads any fall in `PercentComplete` as a finished
+mission, but progress also restarts at a **state transition** — travelling,
+surveillance and gathering intel share one `amount / goal` counter and each new
+state begins it at zero (`CvEspionageClasses.cpp:2474-2487`). Surveillance
+finishing therefore reads as a mission finishing, at exactly
+`posting + 1 + surveillance_time`.
+
+Anchoring every completion in india-diplo against the nearest preceding
+`spy_created` or `spy_moved`:
+
+| | count |
+|---|---|
+| state-transition artifacts | **23** |
+| genuine completions | 21 |
+| unclassifiable — the posting was lost | 9 |
+
+**23 of 53.** The damage is worst where the volume is lowest. India's rigged
+elections mostly survive, because they land on a fixed ten-turn cycle that
+corroborates them independently; England's ten tech thefts reduce to two that
+can be confirmed, and the Netherlands, Tibet and the Iroquois to none.
+
+Rigging is damaged least for a readable reason, and it is the strongest
+evidence this reading is right: for `SPY_STATE_RIG_ELECTION` progress comes
+from the global election clock, not the city's counter, so the transition does
+not always produce a fall. The defect's footprint follows the progress formula
+exactly.
+
+**What the projection must do about it.** Filter a completion that lands 3 to 6
+turns after that spy's last posting or creation in the same city, and count it
+as the surveillance moment instead of a mission. Where no anchor survived,
+carry the completion with `anchored: false` — it may be either — and never let
+an unanchored count reach a prompt as a bare number.
+
+Two consequences worth stating plainly, because both bite the headline:
+
+- **Mission counts are upper bounds** until the logger is fixed, and the
+  per-civ split is unreliable for every civ but India.
+- **A kill hides a completion.** The roll that kills a spy happens *at*
+  `HasReachedGoal`, and `diffSpy` takes the `dead` branch first, so the
+  completion is never written. The nine deaths in Delhi are nine completions
+  the log does not carry.
+
+Reported upstream as *"Report the completions that never happened"*. The fix is
+one clause — a fall in progress is a completion only when the state is
+unchanged — and the request beside it is that the logger emit the
+`EstablishedSurveillance` flag it already extracts and drops, which would make
+this whole section unnecessary.
 
 ## The counterspy, which must be inferred
 
@@ -171,14 +247,16 @@ the game:
 ```
 t148  London starts the Louvre                    0 stored, 12 turns left
 t148  England creates spy ENGLAND_6
-t152  ENGLAND_6 completes a mission in AMSTERDAM  <- surveillance proven live
+t152  ENGLAND_6's surveillance completes in AMSTERDAM   (t148 + 1 + 3)
 t154  Amsterdam appears building the Louvre       0 stored, 4 turns left
 t157  Amsterdam 469 stored, 1 left | London 425 stored, 2 left
 t158  Netherlands completes the Louvre. England loses by one turn, 425 sunk.
 ```
 
-England's spy was established in Amsterdam two turns before Amsterdam started
-the wonder. London's rate over the whole build: 52, 44, 44, 46, 46, 46, 47,
+England's spy was established in Amsterdam **two turns before Amsterdam started
+the wonder**, and that date is computed, not guessed: the spy was created on
+148 and `1 + 3` puts its surveillance live on 152. It watched the Louvre go
+from 0 to 469 hammers. London's rate over the whole build: 52, 44, 44, 46, 46, 46, 47,
 47, 53 — **flat**. England had the intelligence, did not accelerate, did not
 stop, and lost by a turn.
 
@@ -217,7 +295,9 @@ of civs with the contender flagged, never a boolean on the contender.
 - **Which technology was stolen.** No API exposes it. The logger's suggested
   reconstruction — a `tech_researched` not matching the thief's `researching`
   on the turn a `gathering_intel` mission completed — is untested and must not
-  ship as fact.
+  ship as fact. It is also built on the completion event, which the section
+  above shows is mostly artifact, so it would currently fire against turns on
+  which nothing was stolen.
 - **Whether a player looked at the city screen a spy opened.**
 - **Gold gifts to city-states** (`CvDeal` unreachable) and **quests**
   (`MinorCivQuestTypes` is a C++ enum with no database table).
@@ -229,15 +309,25 @@ of civs with the contender flagged, never a boolean on the contender.
 The cheapest honest measure of who played this game at all, and the shape it
 takes here:
 
-| civ | missions | rigging | intel | spies lost | garrisoned |
-|---|---|---|---|---|---|
-| India | 23 | 23 | 0 | 0 | yes, Delhi (inferred) |
-| England | 10 | 0 | 10 | 4 | one explicit recall, t156 |
-| Iroquois | 6 | 0 | 6 | 1 | — |
-| Tibet | 6 | 0 | 6 | 3 | — |
-| Netherlands | 4 | 0 | 4 | 1 | signal 1 only |
-| Zimbabwe | 4 | 0 | 4 | 0 | — |
+Logged completions against what survives the artifact filter:
 
-India pointed every spy at city-states and nobody else rigged a single
-election; every other civ pointed every spy at technology. India lost no spies
-and killed nine.
+| civ | logged | artifact | real | unanchored | spies lost | garrisoned |
+|---|---|---|---|---|---|---|
+| India | 23 | 5 | **18** | 0 | 0 | yes, Delhi (inferred) |
+| England | 10 | 7 | **2** | 1 | 4 | one explicit recall, t156 |
+| Tibet | 6 | 3 | **0** | 3 | 3 | — |
+| Iroquois | 6 | 2 | **0** | 4 | 1 | — |
+| Netherlands | 4 | 3 | **0** | 1 | 1 | signal 1 only |
+| Zimbabwe | 4 | 3 | **1** | 0 | 0 | — |
+
+The qualitative split survives the correction and is the finding: **India
+pointed every spy at city-states and nobody else rigged a single election;
+every other civ pointed every spy at technology.** India lost no spies and
+killed nine.
+
+The quantitative split does not survive. What looked like a busy espionage war
+among the other five civs is mostly postings counted twice — between them they
+have **three** confirmable tech thefts, plus whatever hides behind the nine
+deaths and the nine unanchored completions. The honest sentence is that the
+other five civs *tried* repeatedly against Delhi and were caught; not that they
+succeeded thirty times.

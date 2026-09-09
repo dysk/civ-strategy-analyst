@@ -514,14 +514,16 @@ biggest wonder loss in the game:
 ```
 t148  London starts the Louvre                    0 stored, 12 turns left
 t148  England creates spy ENGLAND_6
-t152  ENGLAND_6 completes a mission in AMSTERDAM  <- surveillance proven live
+t152  ENGLAND_6's surveillance completes in AMSTERDAM   (t148 + 1 + 3)
 t154  Amsterdam appears building the Louvre       0 stored, 4 turns left
 t157  Amsterdam 469 stored, 1 left | London 425 stored, 2 left
 t158  Netherlands completes the Louvre. England loses by one turn, 425 sunk.
 ```
 
 England's spy was established in Amsterdam **two turns before Amsterdam
-started the wonder**, and watched it go from 0 to 469 hammers. London's rate
+started the wonder** — a computed date, not a guess: created on 148, `1 + 3`
+puts surveillance live on 152 — and watched it go from 0 to 469 hammers.
+London's rate
 over the whole build: 52, 44, 44, 46, 46, 46, 47, 47, 53. **Flat.** England had
 the intelligence, did not accelerate, did not stop, and lost by a turn.
 
@@ -690,13 +692,23 @@ say so — do not calibrate it against nothing.
   `applicable?` false when the log carries no `spy_*` record at all — the two
   older example logs must be checked before this ships.
   - `tenures(civ = nil)` → `{civ, spy, city, city_civ, from_turn, to_turn,
-    visible_from_turn, states, ended_by: :moved | :killed | :log_end}`.
+    visible_from_turn, visible_from_turn_bounded, states,
+    ended_by: :moved | :killed | :log_end}`. `visible_from_turn` is
+    **computed** — `posting + 1 + (3, or 1 at INFLUENCE_LEVEL_FAMILIAR or
+    better over the target)`, both DLL constants — and falls back to a bounded
+    floor only where the posting was lost.
   - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
     overlaps the window, which is the whole of joins A and D.
   - `missions(civ)` → `spy_mission_completed` split on `city_civ` against
     `game.players`: `:tech_theft` in a major's city, `:election_rigging` in a
-    city-state's. Never a stolen technology — no API exposes it, and the
-    logger's suggested reconstruction is untested and must not ship as fact.
+    city-state's. **Filtered first**: a completion 3–6 turns after that spy's
+    posting or creation in the same city is the surveillance transition, not a
+    mission — 23 of india-diplo's 53 are, and the per-civ split is mostly
+    artifact without the filter (`docs/espionage.md`). Unanchored completions
+    carry `anchored: false` and never reach a prompt as a bare count. Never a
+    stolen technology — no API exposes it, and the logger's suggested
+    reconstruction is untested, built on the same corrupted event, and must not
+    ship as fact.
   - `losses` → one record per `spy_killed` with the inferred host city, the
     host's civ, and `turns_since_last_seen`.
   - `counterspies(civ)` → the inferred garrisons: `{city, spy, confidence,
@@ -721,8 +733,9 @@ say so — do not calibrate it against nothing.
 
 ### Iterations
 
-1. `Espionage#tenures` — the run reconstruction, `visible_from_turn` from the
-   certain rule, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
+1. `Espionage#tenures` — the run reconstruction, `visible_from_turn` computed
+   from the two constants with `InfluenceTimeline` picking the branch, the
+   bounded fallback, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
 2. `#missions`, `#losses`, `#capacity` — the splits, the inferred host city and
    its staleness.
 3. `#counterspies` — the three signals and the confidence they combine to.
