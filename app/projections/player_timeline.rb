@@ -2,6 +2,7 @@ class PlayerTimeline
   extend Projection
 
   def initialize(game)
+    @game = game
     @log = game.event_log
   end
 
@@ -12,12 +13,12 @@ class PlayerTimeline
 
     captured = of_type("city_captured").select { |e| e.payload["new_owner"] == civ }.map do |e|
       { turn: e.turn, city: e.payload["city"], action: :captured,
-        from: e.payload["old_owner"], conquest: e.payload["conquest"] }
+        from: e.payload["old_owner"], conquest: e.payload["conquest"], valuation: valuation(e) }
     end
 
     lost = of_type("city_captured").select { |e| e.payload["old_owner"] == civ }.map do |e|
       { turn: e.turn, city: e.payload["city"], action: :lost,
-        to: e.payload["new_owner"], conquest: e.payload["conquest"] }
+        to: e.payload["new_owner"], conquest: e.payload["conquest"], valuation: valuation(e) }
     end
 
     sort_events(founded + captured + lost)
@@ -144,6 +145,67 @@ class PlayerTimeline
   end
 
   private
+
+  # What a capture cost the side that lost it: the city's share of that
+  # empire before the transfer, its size before and after, the resistance
+  # the captor then sat through, and the captor's cultural standing over
+  # the former owner on the capture turn. Nil where the log carries no
+  # city snapshot to read any of it from.
+  def valuation(capture)
+    return unless city_value.applicable?
+
+    city = capture.payload["city"]
+    before = last_snapshot(city, capture.turn - 1)
+    after = first_snapshot_from(city, capture.turn, capture.payload["new_owner"])
+
+    { value: city_value.at(city, capture.turn - 1),
+      before: size_of(before), after: size_of(after),
+      resistance: resistance_after(city, capture),
+      captor_influence: captor_influence(capture) }
+  end
+
+  def size_of(snapshot)
+    return unless snapshot
+
+    { population: snapshot.payload["population"].to_i, buildings: snapshot.payload["buildings"].to_i }
+  end
+
+  # The captor's snapshots of the city from the capture turn on, up to and
+  # including the first turn its resistance had run out.
+  def resistance_after(city, capture)
+    rows = snapshots_of(city)
+      .select { |e| e.turn >= capture.turn && e.civ == capture.payload["new_owner"] }
+      .index_by(&:turn).values.sort_by(&:turn)
+    settled = rows.index { |e| e.payload["resistance_turns"].to_i.zero? }
+
+    (settled ? rows.first(settled + 1) : rows).map do |e|
+      { turn: e.turn, resistance_turns: e.payload["resistance_turns"].to_i,
+        occupied: e.payload["occupied"], puppet: e.payload["puppet"], razing: e.payload["razing"] }
+    end
+  end
+
+  def captor_influence(capture)
+    points = InfluenceTimeline.for(@game)
+      .series(capture.payload["new_owner"], capture.payload["old_owner"])
+      .select { |point| point[:turn] <= capture.turn }.last
+    return unless points
+
+    points.slice(:points, :level, :trend)
+  end
+
+  def last_snapshot(city, turn)
+    snapshots_of(city).select { |e| e.turn <= turn }.max_by(&:turn)
+  end
+
+  def first_snapshot_from(city, turn, civ)
+    snapshots_of(city).select { |e| e.turn >= turn && e.civ == civ }.min_by(&:turn)
+  end
+
+  def snapshots_of(city) = snapshots_by_city.fetch(city, [])
+
+  def snapshots_by_city = @snapshots_by_city ||= of_type("city_snapshot").group_by { |e| e.payload["city"] }
+
+  def city_value = @city_value ||= CityValue.for(@game)
 
   def of_type(event_type) = @log.of_type(event_type)
 

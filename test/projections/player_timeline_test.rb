@@ -17,8 +17,8 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal(
       [
         { turn: 1, city: "Roma", action: :founded },
-        { turn: 10, city: "Athens", action: :captured, from: "Greece", conquest: nil },
-        { turn: 15, city: "Roma", action: :lost, to: "Carthage", conquest: nil }
+        { turn: 10, city: "Athens", action: :captured, from: "Greece", conquest: nil, valuation: nil },
+        { turn: 15, city: "Roma", action: :lost, to: "Carthage", conquest: nil, valuation: nil }
       ],
       cities
     )
@@ -28,9 +28,88 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     event(nil, "city_captured", 10, city: "Athens", old_owner: "Greece", new_owner: "Rome", conquest: false)
 
     assert_equal(
-      [ { turn: 10, city: "Athens", action: :captured, from: "Greece", conquest: false } ],
+      [ { turn: 10, city: "Athens", action: :captured, from: "Greece", conquest: false, valuation: nil } ],
       timeline.cities("Rome")
     )
+  end
+
+  test "a captured city carries what it was worth to the empire that lost it" do
+    city_snapshot("Iroquois", 151, "Onondaga", population: 18, buildings: 18, yield_science: 54)
+    city_snapshot("Iroquois", 151, "Cattaraugus", population: 6, buildings: 6, yield_science: 6)
+    city_snapshot("India", 153, "Onondaga", population: 9, buildings: 10, yield_science: 0)
+    event(nil, "city_captured", 152, city: "Onondaga", old_owner: "Iroquois", new_owner: "India", conquest: true)
+
+    valuation = timeline.cities("India").find { |c| c[:city] == "Onondaga" }[:valuation]
+
+    assert_in_delta 0.9, valuation[:value][:science_share], 0.001
+    assert_equal 1, valuation[:value][:population_rank]
+    assert_equal({ population: 18, buildings: 18 }, valuation[:before])
+    assert_equal({ population: 9, buildings: 10 }, valuation[:after])
+  end
+
+  test "the same valuation reaches the losing civ's timeline" do
+    city_snapshot("Iroquois", 151, "Onondaga", population: 18, buildings: 18)
+    city_snapshot("India", 153, "Onondaga", population: 9, buildings: 10)
+    event(nil, "city_captured", 152, city: "Onondaga", old_owner: "Iroquois", new_owner: "India", conquest: true)
+
+    lost = timeline.cities("Iroquois").find { |c| c[:city] == "Onondaga" }
+
+    assert_equal :lost, lost[:action]
+    assert_equal({ population: 18, buildings: 18 }, lost[:valuation][:before])
+  end
+
+  test "valuation observes the resistance that followed, capture turn through its end" do
+    event(nil, "city_captured", 152, city: "Onondaga", old_owner: "Iroquois", new_owner: "India", conquest: true)
+    city_snapshot("India", 152, "Onondaga", population: 9, buildings: 10, resistance_turns: 3, puppet: true)
+    city_snapshot("India", 153, "Onondaga", population: 9, buildings: 10, resistance_turns: 2, puppet: true)
+    city_snapshot("India", 154, "Onondaga", population: 10, buildings: 10, resistance_turns: 0, puppet: true)
+    city_snapshot("India", 160, "Onondaga", population: 15, buildings: 12, resistance_turns: 0, puppet: true)
+
+    resistance = timeline.cities("India").find { |c| c[:city] == "Onondaga" }[:valuation][:resistance]
+
+    assert_equal [ 152, 153, 154 ], resistance.map { |r| r[:turn] }
+    assert_equal [ 3, 2, 0 ], resistance.map { |r| r[:resistance_turns] }
+    assert(resistance.all? { |r| r[:puppet] })
+  end
+
+  test "valuation names the captor's cultural standing over the former owner at the capture turn" do
+    city_snapshot("Iroquois", 151, "Onondaga", population: 18)
+    event(nil, "city_captured", 152, city: "Onondaga", old_owner: "Iroquois", new_owner: "India", conquest: true)
+    snapshot_with_influence("India", 150, "Iroquois", points: 60, trend: "INFLUENCE_TREND_RISING")
+    snapshot_with_influence("India", 155, "Iroquois", points: 90, trend: "INFLUENCE_TREND_RISING")
+
+    influence = timeline.cities("India").find { |c| c[:city] == "Onondaga" }[:valuation][:captor_influence]
+
+    assert_equal 60, influence[:points]
+    assert_equal "INFLUENCE_TREND_RISING", influence[:trend]
+  end
+
+  test "a city handed over by diplomacy is still valued, and saw no resistance" do
+    city_snapshot("Greece", 20, "Athens", population: 10, buildings: 8)
+    event(nil, "city_captured", 21, city: "Athens", old_owner: "Greece", new_owner: "Rome", conquest: false)
+
+    captured = timeline.cities("Rome").find { |c| c[:city] == "Athens" }
+
+    assert_equal false, captured[:conquest]
+    assert_equal({ population: 10, buildings: 8 }, captured[:valuation][:before])
+    assert_empty captured[:valuation][:resistance]
+  end
+
+  test "cities carries no valuation when the log has no city snapshot" do
+    event(nil, "city_captured", 10, city: "Athens", old_owner: "Greece", new_owner: "Rome")
+
+    assert_nil timeline.cities("Rome").first[:valuation]
+    assert_nil timeline.cities("Greece").first[:valuation]
+  end
+
+  test "founded cities carry no valuation key" do
+    city_snapshot("Rome", 5, "Roma", population: 3)
+    event("Rome", "city_founded", 1, city: "Roma", x: 1, y: 1)
+
+    founded = timeline.cities("Rome").first
+
+    assert_equal :founded, founded[:action]
+    assert_not founded.key?(:valuation)
   end
 
   test "techs combines team research and goody hut techs for a civ" do
@@ -212,6 +291,19 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
   def timeline
     @timeline ||= PlayerTimeline.new(@game)
+  end
+
+  def city_snapshot(civ, turn, city, population:, buildings: 0, yield_science: 0, resistance_turns: 0,
+                    occupied: false, puppet: false, razing: false)
+    event(civ, "city_snapshot", turn, city: city, population: population, buildings: buildings,
+          yield_science: yield_science, yield_production: 0, yield_gold: 0, yield_culture: 0,
+          yield_faith: 0, resistance_turns: resistance_turns, occupied: occupied, puppet: puppet,
+          razing: razing)
+  end
+
+  def snapshot_with_influence(civ, turn, opponent, points:, trend:, level: "INFLUENCE_LEVEL_UNKNOWN")
+    event(civ, "snapshot", turn,
+          influence: [ { "civ" => opponent, "points" => points, "level" => level, "trend" => trend } ])
   end
 
   def event(civ, event_type, turn, extra = {})

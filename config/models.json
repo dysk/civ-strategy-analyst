@@ -13362,17 +13362,16 @@
     },
     "capabilities": [
       "function_calling",
-      "structured_output",
       "reasoning",
       "vision"
     ],
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.22,
-          "output_per_million": 1.32,
-          "cache_read_input_per_million": 0.022,
-          "cache_write_input_per_million": 0.275
+          "input_per_million": 0.2,
+          "output_per_million": 1.2,
+          "cache_read_input_per_million": 0.02,
+          "cache_write_input_per_million": 0.25
         }
       }
     },
@@ -13397,16 +13396,16 @@
         }
       ],
       "cost": {
-        "input": 0.22,
-        "output": 1.32,
-        "cache_read": 0.022,
-        "cache_write": 0.275,
+        "input": 0.2,
+        "output": 1.2,
+        "cache_read": 0.02,
+        "cache_write": 0.25,
         "tiers": [
           {
-            "input": 0.44,
-            "output": 1.98,
-            "cache_read": 0.044,
-            "cache_write": 0.55,
+            "input": 0.4,
+            "output": 1.8,
+            "cache_read": 0.04,
+            "cache_write": 0.5,
             "tier": {
               "type": "context",
               "size": 272000
@@ -13414,10 +13413,10 @@
           }
         ],
         "context_over_200k": {
-          "input": 0.44,
-          "output": 1.98,
-          "cache_read": 0.044,
-          "cache_write": 0.55
+          "input": 0.4,
+          "output": 1.8,
+          "cache_read": 0.04,
+          "cache_write": 0.5
         }
       },
       "limit": {
@@ -13449,17 +13448,16 @@
     },
     "capabilities": [
       "function_calling",
-      "structured_output",
       "reasoning",
       "vision"
     ],
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 5.5,
-          "output_per_million": 33,
-          "cache_read_input_per_million": 0.55,
-          "cache_write_input_per_million": 6.875
+          "input_per_million": 4,
+          "output_per_million": 20,
+          "cache_read_input_per_million": 0.4,
+          "cache_write_input_per_million": 5
         }
       }
     },
@@ -13484,16 +13482,16 @@
         }
       ],
       "cost": {
-        "input": 5.5,
-        "output": 33,
-        "cache_read": 0.55,
-        "cache_write": 6.875,
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.4,
+        "cache_write": 5,
         "tiers": [
           {
-            "input": 11,
-            "output": 49.5,
-            "cache_read": 1.1,
-            "cache_write": 13.75,
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.8,
+            "cache_write": 10,
             "tier": {
               "type": "context",
               "size": 272000
@@ -13501,10 +13499,10 @@
           }
         ],
         "context_over_200k": {
-          "input": 11,
-          "output": 49.5,
-          "cache_read": 1.1,
-          "cache_write": 13.75
+          "input": 8,
+          "output": 30,
+          "cache_read": 0.8,
+          "cache_write": 10
         }
       },
       "limit": {
@@ -13536,17 +13534,16 @@
     },
     "capabilities": [
       "function_calling",
-      "structured_output",
       "reasoning",
       "vision"
     ],
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 2.2,
-          "output_per_million": 13.2,
-          "cache_read_input_per_million": 0.22,
-          "cache_write_input_per_million": 2.75
+          "input_per_million": 2,
+          "output_per_million": 12,
+          "cache_read_input_per_million": 0.2,
+          "cache_write_input_per_million": 2.5
         }
       }
     },
@@ -13571,16 +13568,16 @@
         }
       ],
       "cost": {
-        "input": 2.2,
-        "output": 13.2,
-        "cache_read": 0.22,
-        "cache_write": 2.75,
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "cache_write": 2.5,
         "tiers": [
           {
-            "input": 4.4,
-            "output": 19.8,
-            "cache_read": 0.44,
-            "cache_write": 5.5,
+            "input": 4,
+            "output": 18,
+            "cache_read": 0.4,
+            "cache_write": 5,
             "tier": {
               "type": "context",
               "size": 272000
@@ -13588,10 +13585,10 @@
           }
         ],
         "context_over_200k": {
-          "input": 4.4,
-          "output": 19.8,
-          "cache_read": 0.44,
-          "cache_write": 5.5
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4,
+          "cache_write": 5
         }
       },
       "limit": {
@@ -16285,7 +16282,7 @@
       "provider_id": "amazon-bedrock",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2026-06-01",
       "cost": {
         "input": 2.75,
@@ -16491,10 +16488,10 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 5.5,
-          "output_per_million": 33,
-          "cache_read_input_per_million": 0.55,
-          "cache_write_input_per_million": 6.875
+          "input_per_million": 4.4,
+          "output_per_million": 22,
+          "cache_read_input_per_million": 0.44,
+          "cache_write_input_per_million": 5.5
         }
       }
     },
@@ -16519,16 +16516,16 @@
         }
       ],
       "cost": {
-        "input": 5.5,
-        "output": 33,
-        "cache_read": 0.55,
-        "cache_write": 6.875,
+        "input": 4.4,
+        "output": 22,
+        "cache_read": 0.44,
+        "cache_write": 5.5,
         "tiers": [
           {
-            "input": 11,
-            "output": 49.5,
-            "cache_read": 1.1,
-            "cache_write": 13.75,
+            "input": 8.8,
+            "output": 33,
+            "cache_read": 0.88,
+            "cache_write": 11,
             "tier": {
               "type": "context",
               "size": 272000
@@ -16536,10 +16533,10 @@
           }
         ],
         "context_over_200k": {
-          "input": 11,
-          "output": 49.5,
-          "cache_read": 1.1,
-          "cache_write": 13.75
+          "input": 8.8,
+          "output": 33,
+          "cache_read": 0.88,
+          "cache_write": 11
         }
       },
       "limit": {
@@ -16670,7 +16667,7 @@
     "metadata": {
       "source": "models.dev",
       "provider_id": "amazon-bedrock",
-      "open_weights": false,
+      "open_weights": true,
       "attachment": false,
       "temperature": true,
       "last_updated": "2025-08-05",
@@ -16746,7 +16743,7 @@
       },
       "source": "models.dev",
       "provider_id": "amazon-bedrock",
-      "open_weights": false,
+      "open_weights": true,
       "attachment": false,
       "temperature": true,
       "last_updated": "2025-08-05",
@@ -16803,7 +16800,7 @@
     "metadata": {
       "source": "models.dev",
       "provider_id": "amazon-bedrock",
-      "open_weights": false,
+      "open_weights": true,
       "attachment": false,
       "temperature": true,
       "last_updated": "2025-08-05",
@@ -16879,7 +16876,7 @@
       },
       "source": "models.dev",
       "provider_id": "amazon-bedrock",
-      "open_weights": false,
+      "open_weights": true,
       "attachment": false,
       "temperature": true,
       "last_updated": "2025-08-05",
@@ -16954,7 +16951,7 @@
       },
       "source": "models.dev",
       "provider_id": "amazon-bedrock",
-      "open_weights": false,
+      "open_weights": true,
       "attachment": false,
       "temperature": true,
       "last_updated": "2025-10-29",
@@ -17019,7 +17016,7 @@
       },
       "source": "models.dev",
       "provider_id": "amazon-bedrock",
-      "open_weights": false,
+      "open_weights": true,
       "attachment": false,
       "temperature": true,
       "last_updated": "2025-10-29",
@@ -26654,6 +26651,152 @@
     }
   },
   {
+    "id": "zai-glm-5-2",
+    "name": "GLM-5.2",
+    "provider": "mistral",
+    "family": "glm",
+    "created_at": "2026-06-13 00:00:00 UTC",
+    "context_window": 1000000,
+    "max_output_tokens": 131072,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "function_calling",
+      "structured_output",
+      "reasoning"
+    ],
+    "pricing": {
+      "text_tokens": {
+        "standard": {
+          "input_per_million": 1.4,
+          "output_per_million": 4.4,
+          "cache_read_input_per_million": 0.14
+        }
+      }
+    },
+    "metadata": {
+      "source": "models.dev",
+      "provider_id": "mistral",
+      "open_weights": true,
+      "attachment": false,
+      "temperature": true,
+      "last_updated": "2026-06-13",
+      "status": "beta",
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_read": 0.14
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 131072
+      }
+    }
+  },
+  {
+    "id": "google/gemma-4-26b-a4b-qat",
+    "name": "google/gemma-4-26b-a4b-qat",
+    "provider": "ollama",
+    "family": "ollama",
+    "created_at": null,
+    "context_window": null,
+    "max_output_tokens": null,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "streaming",
+      "function_calling",
+      "structured_output",
+      "vision"
+    ],
+    "pricing": {},
+    "metadata": {
+      "owned_by": "organization_owner"
+    }
+  },
+  {
+    "id": "qwen/qwen3-coder-30b",
+    "name": "qwen/qwen3-coder-30b",
+    "provider": "ollama",
+    "family": "ollama",
+    "created_at": null,
+    "context_window": null,
+    "max_output_tokens": null,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "streaming",
+      "function_calling",
+      "structured_output",
+      "vision"
+    ],
+    "pricing": {},
+    "metadata": {
+      "owned_by": "organization_owner"
+    }
+  },
+  {
+    "id": "text-embedding-nomic-embed-text-v1.5",
+    "name": "text-embedding-nomic-embed-text-v1.5",
+    "provider": "ollama",
+    "family": "ollama",
+    "created_at": null,
+    "context_window": null,
+    "max_output_tokens": null,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "streaming",
+      "function_calling",
+      "structured_output",
+      "vision"
+    ],
+    "pricing": {},
+    "metadata": {
+      "owned_by": "organization_owner"
+    }
+  },
+  {
     "id": "babbage-002",
     "name": "babbage-002",
     "provider": "openai",
@@ -28608,7 +28751,7 @@
       "provider_id": "openai",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2025-11-13",
       "cost": {
         "input": 1.25,
@@ -28926,7 +29069,7 @@
       "provider_id": "openai",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2025-12-11",
       "cost": {
         "input": 1.75,
@@ -29293,7 +29436,7 @@
       "provider_id": "openai",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2026-02-05",
       "cost": {
         "input": 1.75,
@@ -29427,7 +29570,7 @@
       "provider_id": "openai",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2026-03-05",
       "cost": {
         "input": 2.5,
@@ -29543,7 +29686,7 @@
       "provider_id": "openai",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2026-03-17",
       "cost": {
         "input": 0.75,
@@ -29643,7 +29786,7 @@
       "provider_id": "openai",
       "open_weights": false,
       "attachment": true,
-      "temperature": false,
+      "temperature": true,
       "last_updated": "2026-03-17",
       "cost": {
         "input": 0.2,
@@ -30068,10 +30211,10 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 5,
-          "output_per_million": 30,
-          "cache_read_input_per_million": 0.5,
-          "cache_write_input_per_million": 6.25
+          "input_per_million": 4,
+          "output_per_million": 20,
+          "cache_read_input_per_million": 0.4,
+          "cache_write_input_per_million": 5
         }
       }
     },
@@ -30096,16 +30239,16 @@
         }
       ],
       "cost": {
-        "input": 5,
-        "output": 30,
-        "cache_read": 0.5,
-        "cache_write": 6.25,
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.4,
+        "cache_write": 5,
         "tiers": [
           {
-            "input": 10,
-            "output": 45,
-            "cache_read": 1,
-            "cache_write": 12.5,
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.8,
+            "cache_write": 10,
             "tier": {
               "type": "context",
               "size": 272000
@@ -30113,10 +30256,10 @@
           }
         ],
         "context_over_200k": {
-          "input": 10,
-          "output": 45,
-          "cache_read": 1,
-          "cache_write": 12.5
+          "input": 8,
+          "output": 30,
+          "cache_read": 0.8,
+          "cache_write": 10
         }
       },
       "limit": {
@@ -30242,10 +30385,10 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 5,
-          "output_per_million": 30,
-          "cache_read_input_per_million": 0.5,
-          "cache_write_input_per_million": 6.25
+          "input_per_million": 4,
+          "output_per_million": 20,
+          "cache_read_input_per_million": 0.4,
+          "cache_write_input_per_million": 5
         }
       }
     },
@@ -30270,16 +30413,16 @@
         }
       ],
       "cost": {
-        "input": 5,
-        "output": 30,
-        "cache_read": 0.5,
-        "cache_write": 6.25,
+        "input": 4,
+        "output": 20,
+        "cache_read": 0.4,
+        "cache_write": 5,
         "tiers": [
           {
-            "input": 10,
-            "output": 45,
-            "cache_read": 1,
-            "cache_write": 12.5,
+            "input": 8,
+            "output": 30,
+            "cache_read": 0.8,
+            "cache_write": 10,
             "tier": {
               "type": "context",
               "size": 272000
@@ -30287,10 +30430,10 @@
           }
         ],
         "context_over_200k": {
-          "input": 10,
-          "output": 45,
-          "cache_read": 1,
-          "cache_write": 12.5
+          "input": 8,
+          "output": 30,
+          "cache_read": 0.8,
+          "cache_write": 10
         }
       },
       "limit": {
@@ -32697,7 +32840,7 @@
     "family": "llama",
     "created_at": "2025-02-04 00:00:00 UTC",
     "context_window": 32768,
-    "max_output_tokens": 32768,
+    "max_output_tokens": 29491,
     "knowledge_cutoff": "2023-12-31",
     "modalities": {
       "input": [
@@ -32754,7 +32897,7 @@
       },
       "limit": {
         "context": 32768,
-        "output": 32768
+        "output": 29491
       },
       "knowledge": "2023-12-31"
     }
@@ -32766,7 +32909,7 @@
     "family": "allenai",
     "created_at": "2025-11-21 00:00:00 UTC",
     "context_window": 65536,
-    "max_output_tokens": 65536,
+    "max_output_tokens": 58982,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -32837,7 +32980,7 @@
       },
       "limit": {
         "context": 65536,
-        "output": 65536
+        "output": 58982
       },
       "reasoning_options": []
     }
@@ -32923,7 +33066,11 @@
         "context": 1000000,
         "output": 65535
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -33630,11 +33777,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 63999
         }
       ]
     }
@@ -33725,11 +33867,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 31999
         }
       ]
     }
@@ -33823,11 +33960,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 31999
         }
       ]
     }
@@ -33922,19 +34054,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 63999
         }
       ]
     }
@@ -34824,11 +34943,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 63999
         }
       ]
     }
@@ -34941,11 +35055,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 63999
         }
       ]
     }
@@ -35304,7 +35413,7 @@
     "family": "trinity",
     "created_at": "2026-04-01 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -35380,7 +35489,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": []
     }
@@ -35623,7 +35732,11 @@
         "output": 16000
       },
       "knowledge": "2025-03-31",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -35718,7 +35831,11 @@
         "context": 262144,
         "output": 32768
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -35813,7 +35930,11 @@
         "context": 262144,
         "output": 32768
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -35823,7 +35944,7 @@
     "family": "seed",
     "created_at": "2026-08-12 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -35856,14 +35977,18 @@
       "attachment": true,
       "temperature": true,
       "last_updated": "2026-08-12",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.5,
         "output": 2.5
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       }
     }
   },
@@ -36695,7 +36820,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-06-17",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0,
         "output": 0
@@ -36879,7 +37008,7 @@
     "family": "deepseek",
     "created_at": "2025-03-24 00:00:00 UTC",
     "context_window": 163840,
-    "max_output_tokens": 163840,
+    "max_output_tokens": 147456,
     "knowledge_cutoff": "2024-07-31",
     "modalities": {
       "input": [
@@ -36951,7 +37080,7 @@
       },
       "limit": {
         "context": 163840,
-        "output": 163840
+        "output": 147456
       },
       "knowledge": "2024-07-31"
     }
@@ -36963,7 +37092,7 @@
     "family": "deepseek",
     "created_at": "2025-08-21 00:00:00 UTC",
     "context_window": 163840,
-    "max_output_tokens": 161000,
+    "max_output_tokens": 144900,
     "knowledge_cutoff": "2025-03-31",
     "modalities": {
       "input": [
@@ -37040,7 +37169,7 @@
       },
       "limit": {
         "context": 163840,
-        "output": 161000
+        "output": 144900
       },
       "knowledge": "2025-03-31",
       "reasoning_options": [
@@ -37233,7 +37362,7 @@
     "family": "deepseek-thinking",
     "created_at": "2025-01-23 00:00:00 UTC",
     "context_window": 8192,
-    "max_output_tokens": 8192,
+    "max_output_tokens": 7372,
     "knowledge_cutoff": "2024-07-31",
     "modalities": {
       "input": [
@@ -37303,10 +37432,14 @@
       },
       "limit": {
         "context": 8192,
-        "output": 8192
+        "output": 7372
       },
       "knowledge": "2024-07-31",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -37492,7 +37625,7 @@
     "family": "deepseek",
     "created_at": "2025-12-01 00:00:00 UTC",
     "context_window": 163840,
-    "max_output_tokens": 163840,
+    "max_output_tokens": 147456,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -37569,7 +37702,7 @@
       },
       "limit": {
         "context": 163840,
-        "output": 163840
+        "output": 147456
       },
       "knowledge": "2024-07",
       "reasoning_options": [
@@ -37698,9 +37831,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.05026,
-          "output_per_million": 0.10052,
-          "cache_read_input_per_million": 0.010052
+          "input_per_million": 0.07952,
+          "output_per_million": 0.15904,
+          "cache_read_input_per_million": 0.015904
         }
       }
     },
@@ -37754,9 +37887,9 @@
         "field": "reasoning_content"
       },
       "cost": {
-        "input": 0.05026,
-        "output": 0.10052,
-        "cache_read": 0.010052
+        "input": 0.07952,
+        "output": 0.15904,
+        "cache_read": 0.015904
       },
       "limit": {
         "context": 1048576,
@@ -37784,7 +37917,7 @@
     "family": "deepseek-flash",
     "created_at": "2026-07-31 00:00:00 UTC",
     "context_window": 1310720,
-    "max_output_tokens": 384000,
+    "max_output_tokens": 943718,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -37802,9 +37935,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.08,
-          "output_per_million": 0.18,
-          "cache_read_input_per_million": 0.016
+          "input_per_million": 0.06,
+          "output_per_million": 0.12,
+          "cache_read_input_per_million": 0.012
         }
       }
     },
@@ -37829,13 +37962,13 @@
         }
       ],
       "cost": {
-        "input": 0.08,
-        "output": 0.18,
-        "cache_read": 0.016
+        "input": 0.06,
+        "output": 0.12,
+        "cache_read": 0.012
       },
       "limit": {
         "context": 1310720,
-        "output": 384000
+        "output": 943718
       },
       "knowledge": "2025-05"
     }
@@ -37930,9 +38063,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.396894,
-          "output_per_million": 0.793788,
-          "cache_read_input_per_million": 0.033075
+          "input_per_million": 0.87,
+          "output_per_million": 1.74,
+          "cache_read_input_per_million": 0.0725
         }
       }
     },
@@ -37986,9 +38119,9 @@
         "field": "reasoning_content"
       },
       "cost": {
-        "input": 0.396894,
-        "output": 0.793788,
-        "cache_read": 0.033075
+        "input": 0.87,
+        "output": 1.74,
+        "cache_read": 0.0725
       },
       "limit": {
         "context": 1048576,
@@ -38016,7 +38149,7 @@
     "family": "deepseek-thinking",
     "created_at": "2026-08-12 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 384000,
+    "max_output_tokens": 943717,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -38067,7 +38200,7 @@
       },
       "limit": {
         "context": 1048576,
-        "output": 384000
+        "output": 943717
       }
     }
   },
@@ -38078,7 +38211,7 @@
     "family": null,
     "created_at": "2026-08-14 00:00:00 UTC",
     "context_window": 512000,
-    "max_output_tokens": 512000,
+    "max_output_tokens": 460800,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -38103,14 +38236,18 @@
       "attachment": true,
       "temperature": true,
       "last_updated": "2026-08-14",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0,
         "output": 0
       },
       "limit": {
         "context": 512000,
-        "output": 512000
+        "output": 460800
       }
     }
   },
@@ -38292,11 +38429,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 0,
-          "max": 24576
         }
       ]
     }
@@ -38480,11 +38612,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 512,
-          "max": 24576
         }
       ]
     }
@@ -39264,7 +39391,7 @@
     "family": "gemini-flash",
     "created_at": "2026-02-26 00:00:00 UTC",
     "context_window": 65536,
-    "max_output_tokens": 65536,
+    "max_output_tokens": 58982,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -39334,7 +39461,7 @@
       },
       "limit": {
         "context": 65536,
-        "output": 65536
+        "output": 58982
       },
       "knowledge": "2025-01",
       "reasoning_options": [
@@ -39467,7 +39594,7 @@
     "family": "gemini-flash-lite",
     "created_at": "2026-06-30 00:00:00 UTC",
     "context_window": 65536,
-    "max_output_tokens": 65536,
+    "max_output_tokens": 58982,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -39516,7 +39643,7 @@
       },
       "limit": {
         "context": 65536,
-        "output": 65536
+        "output": 58982
       },
       "knowledge": "2025-01"
     }
@@ -40364,7 +40491,7 @@
     "family": "gemma",
     "created_at": "2025-03-12 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2024-08-31",
     "modalities": {
       "input": [
@@ -40441,7 +40568,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2024-08-31"
     }
@@ -40792,7 +40919,7 @@
     "family": "gemma",
     "created_at": "2026-04-02 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 16384,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -40815,9 +40942,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.1,
+          "input_per_million": 0.09,
           "output_per_million": 0.34,
-          "cache_read_input_per_million": 0.1
+          "cache_read_input_per_million": 0.05
         }
       }
     },
@@ -40870,13 +40997,13 @@
       "temperature": true,
       "last_updated": "2026-04-02",
       "cost": {
-        "input": 0.1,
+        "input": 0.09,
         "output": 0.34,
-        "cache_read": 0.1
+        "cache_read": 0.05
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 16384
       },
       "reasoning_options": [
         {
@@ -41108,7 +41235,7 @@
     "family": "gryphe",
     "created_at": "2023-07-02 00:00:00 UTC",
     "context_window": 8192,
-    "max_output_tokens": 4096,
+    "max_output_tokens": 3686,
     "knowledge_cutoff": "2023-06-30",
     "modalities": {
       "input": [
@@ -41180,7 +41307,7 @@
       },
       "limit": {
         "context": 8192,
-        "output": 4096
+        "output": 3686
       },
       "knowledge": "2023-06-30"
     }
@@ -41192,7 +41319,7 @@
     "family": "granite",
     "created_at": "2025-10-20 00:00:00 UTC",
     "context_window": 131000,
-    "max_output_tokens": 131000,
+    "max_output_tokens": 117900,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -41258,7 +41385,7 @@
       },
       "limit": {
         "context": 131000,
-        "output": 131000
+        "output": 117900
       }
     }
   },
@@ -41269,7 +41396,7 @@
     "family": "granite",
     "created_at": "2026-04-30 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -41340,7 +41467,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       }
     }
   },
@@ -41635,7 +41762,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-07-23",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.021,
         "output": 0.063,
@@ -42439,6 +42570,9 @@
       "last_updated": "2026-07-20",
       "reasoning_options": [
         {
+          "type": "toggle"
+        },
+        {
           "type": "budget_tokens"
         }
       ],
@@ -42698,7 +42832,7 @@
     "family": "llama",
     "created_at": "2024-07-23 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -42772,7 +42906,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2023-12"
     }
@@ -42866,7 +43000,7 @@
     "family": "llama",
     "created_at": "2024-09-25 00:00:00 UTC",
     "context_window": 60000,
-    "max_output_tokens": 60000,
+    "max_output_tokens": 54000,
     "knowledge_cutoff": "2023-12-31",
     "modalities": {
       "input": [
@@ -42932,7 +43066,7 @@
       },
       "limit": {
         "context": 60000,
-        "output": 60000
+        "output": 54000
       },
       "knowledge": "2023-12-31"
     }
@@ -42944,7 +43078,7 @@
     "family": "llama",
     "created_at": "2024-09-25 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2023-12-31",
     "modalities": {
       "input": [
@@ -43011,7 +43145,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2023-12-31"
     }
@@ -43089,7 +43223,7 @@
     "family": "llama",
     "created_at": "2024-12-06 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 16384,
+    "max_output_tokens": 115200,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -43108,8 +43242,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.1,
-          "output_per_million": 0.32
+          "input_per_million": 0.71,
+          "output_per_million": 0.71,
+          "cache_read_input_per_million": 0.71
         }
       }
     },
@@ -43156,12 +43291,13 @@
       "temperature": true,
       "last_updated": "2024-12-06",
       "cost": {
-        "input": 0.1,
-        "output": 0.32
+        "input": 0.71,
+        "output": 0.71,
+        "cache_read": 0.71
       },
       "limit": {
         "context": 131072,
-        "output": 16384
+        "output": 115200
       },
       "knowledge": "2023-12"
     }
@@ -43329,7 +43465,7 @@
     "family": "llama",
     "created_at": "2025-04-05 00:00:00 UTC",
     "context_window": 1310720,
-    "max_output_tokens": 16384,
+    "max_output_tokens": 8192,
     "knowledge_cutoff": "2024-08-31",
     "modalities": {
       "input": [
@@ -43350,8 +43486,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.1,
-          "output_per_million": 0.3
+          "input_per_million": 0.11,
+          "output_per_million": 0.34,
+          "cache_read_input_per_million": 0.055
         }
       }
     },
@@ -43399,12 +43536,13 @@
       "temperature": true,
       "last_updated": "2025-04-05",
       "cost": {
-        "input": 0.1,
-        "output": 0.3
+        "input": 0.11,
+        "output": 0.34,
+        "cache_read": 0.055
       },
       "limit": {
         "context": 1310720,
-        "output": 16384
+        "output": 8192
       },
       "knowledge": "2024-08-31"
     }
@@ -43493,7 +43631,7 @@
     "provider": "openrouter",
     "family": "llama",
     "created_at": "2025-04-30 00:00:00 UTC",
-    "context_window": 1048576,
+    "context_window": 163840,
     "max_output_tokens": 16384,
     "knowledge_cutoff": "2024-08-31",
     "modalities": {
@@ -43563,7 +43701,7 @@
         "output": 0.18
       },
       "limit": {
-        "context": 1048576,
+        "context": 163840,
         "output": 16384
       },
       "knowledge": "2024-08-31"
@@ -43576,7 +43714,7 @@
     "family": "muse",
     "created_at": "2026-08-10 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2026-01-04",
     "modalities": {
       "input": [
@@ -43627,7 +43765,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2026-01-04"
     }
@@ -43639,7 +43777,7 @@
     "family": "muse",
     "created_at": "2026-04-08 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 1048576,
+    "max_output_tokens": 943718,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -43694,7 +43832,7 @@
       },
       "limit": {
         "context": 1048576,
-        "output": 1048576
+        "output": 943718
       }
     }
   },
@@ -43705,7 +43843,7 @@
     "family": "muse",
     "created_at": "2026-08-05 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 1048576,
+    "max_output_tokens": 943718,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -43760,7 +43898,7 @@
       },
       "limit": {
         "context": 1048576,
-        "output": 1048576
+        "output": 943718
       }
     }
   },
@@ -43771,7 +43909,7 @@
     "family": "muse",
     "created_at": "2026-08-21 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 1048576,
+    "max_output_tokens": 943718,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -43826,7 +43964,7 @@
       },
       "limit": {
         "context": 1048576,
-        "output": 1048576
+        "output": 943718
       }
     }
   },
@@ -43837,7 +43975,7 @@
     "family": "phi",
     "created_at": "2025-01-10 00:00:00 UTC",
     "context_window": 16384,
-    "max_output_tokens": 16384,
+    "max_output_tokens": 14745,
     "knowledge_cutoff": "2024-06-30",
     "modalities": {
       "input": [
@@ -43908,7 +44046,7 @@
       },
       "limit": {
         "context": 16384,
-        "output": 16384
+        "output": 14745
       },
       "knowledge": "2024-06-30"
     }
@@ -44075,7 +44213,7 @@
     "family": "minimax",
     "created_at": "2025-01-15 00:00:00 UTC",
     "context_window": 1000192,
-    "max_output_tokens": 1000192,
+    "max_output_tokens": 900172,
     "knowledge_cutoff": "2024-03-31",
     "modalities": {
       "input": [
@@ -44135,7 +44273,7 @@
       },
       "limit": {
         "context": 1000192,
-        "output": 1000192
+        "output": 900172
       },
       "knowledge": "2024-03-31"
     }
@@ -44219,7 +44357,11 @@
         "output": 40000
       },
       "knowledge": "2024-06-30",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -44596,9 +44738,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.24,
-          "output_per_million": 0.96,
-          "cache_read_input_per_million": 0.048
+          "input_per_million": 0.3,
+          "output_per_million": 1.2,
+          "cache_read_input_per_million": 0.06
         }
       }
     },
@@ -44649,15 +44791,55 @@
       "temperature": true,
       "last_updated": "2026-03-18",
       "cost": {
-        "input": 0.24,
-        "output": 0.96,
-        "cache_read": 0.048
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06
       },
       "limit": {
         "context": 204800,
         "output": 131072
       },
       "reasoning_options": []
+    }
+  },
+  {
+    "id": "minimax/minimax-m2.7:free",
+    "name": "MiniMax M2.7 (free)",
+    "provider": "openrouter",
+    "family": "minimax",
+    "created_at": "2026-03-18 00:00:00 UTC",
+    "context_window": 196608,
+    "max_output_tokens": 176947,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "function_calling",
+      "reasoning"
+    ],
+    "pricing": {},
+    "metadata": {
+      "source": "models.dev",
+      "provider_id": "openrouter",
+      "open_weights": true,
+      "attachment": false,
+      "temperature": true,
+      "last_updated": "2026-03-18",
+      "reasoning_options": [],
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 196608,
+        "output": 176947
+      }
     }
   },
   {
@@ -44741,7 +44923,58 @@
         "context": 1048576,
         "output": 512000
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
+    }
+  },
+  {
+    "id": "minimax/minimax-m3:free",
+    "name": "MiniMax M3 (free)",
+    "provider": "openrouter",
+    "family": "minimax",
+    "created_at": "2026-06-01 00:00:00 UTC",
+    "context_window": 1048576,
+    "max_output_tokens": 943718,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "function_calling",
+      "reasoning",
+      "vision"
+    ],
+    "pricing": {},
+    "metadata": {
+      "source": "models.dev",
+      "provider_id": "openrouter",
+      "open_weights": true,
+      "attachment": true,
+      "temperature": true,
+      "last_updated": "2026-06-01",
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 943718
+      }
     }
   },
   {
@@ -44751,7 +44984,7 @@
     "family": "codestral",
     "created_at": "2025-08-01 00:00:00 UTC",
     "context_window": 256000,
-    "max_output_tokens": 256000,
+    "max_output_tokens": 204800,
     "knowledge_cutoff": "2025-03-31",
     "modalities": {
       "input": [
@@ -44823,7 +45056,7 @@
       },
       "limit": {
         "context": 256000,
-        "output": 256000
+        "output": 204800
       },
       "knowledge": "2025-03-31"
     }
@@ -44835,7 +45068,7 @@
     "family": "devstral",
     "created_at": "2025-12-09 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 209715,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -44855,9 +45088,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.4,
-          "output_per_million": 2,
-          "cache_read_input_per_million": 0.04
+          "input_per_million": 0.44,
+          "output_per_million": 2.2,
+          "cache_read_input_per_million": 0.044
         }
       }
     },
@@ -44902,13 +45135,13 @@
       "last_updated": "2025-12-09",
       "status": "deprecated",
       "cost": {
-        "input": 0.4,
-        "output": 2,
-        "cache_read": 0.04
+        "input": 0.44,
+        "output": 2.2,
+        "cache_read": 0.044
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 209715
       },
       "knowledge": "2025-12"
     }
@@ -44920,7 +45153,7 @@
     "family": "ministral",
     "created_at": "2025-12-02 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 209715,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -44995,7 +45228,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 209715
       }
     }
   },
@@ -45006,7 +45239,7 @@
     "family": "ministral",
     "created_at": "2025-12-02 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 104857,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -45081,7 +45314,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 104857
       }
     }
   },
@@ -45092,7 +45325,7 @@
     "family": "ministral",
     "created_at": "2024-10-17 00:00:00 UTC",
     "context_window": 128000,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 102400,
     "knowledge_cutoff": "2024-09-30",
     "modalities": {
       "input": [
@@ -45126,7 +45359,7 @@
       },
       "limit": {
         "context": 128000,
-        "output": 128000
+        "output": 102400
       },
       "knowledge": "2024-09-30"
     }
@@ -45138,7 +45371,7 @@
     "family": "ministral",
     "created_at": "2025-12-02 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 209715,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -45213,7 +45446,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 209715
       }
     }
   },
@@ -45224,7 +45457,7 @@
     "family": "mistral-large",
     "created_at": "2024-02-26 00:00:00 UTC",
     "context_window": 128000,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 102400,
     "knowledge_cutoff": "2024-11-30",
     "modalities": {
       "input": [
@@ -45296,7 +45529,7 @@
       },
       "limit": {
         "context": 128000,
-        "output": 128000
+        "output": 102400
       },
       "knowledge": "2024-11-30"
     }
@@ -45308,7 +45541,7 @@
     "family": "mistral-large",
     "created_at": "2024-11-19 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 104857,
     "knowledge_cutoff": "2024-03-31",
     "modalities": {
       "input": [
@@ -45380,7 +45613,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 104857
       },
       "knowledge": "2024-03-31"
     }
@@ -45392,7 +45625,7 @@
     "family": "mistral-large",
     "created_at": "2024-11-01 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 209715,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -45466,7 +45699,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 209715
       },
       "knowledge": "2024-11"
     }
@@ -45478,7 +45711,7 @@
     "family": "mistral-medium",
     "created_at": "2025-05-07 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 104857,
     "knowledge_cutoff": "2025-03-31",
     "modalities": {
       "input": [
@@ -45552,7 +45785,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 104857
       },
       "knowledge": "2025-03-31"
     }
@@ -45564,7 +45797,7 @@
     "family": "mistral-medium",
     "created_at": "2026-04-30 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 209715,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -45639,7 +45872,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 209715
       },
       "reasoning_options": [
         {
@@ -45659,7 +45892,7 @@
     "family": "mistral-medium",
     "created_at": "2025-08-13 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 104857,
     "knowledge_cutoff": "2025-06-30",
     "modalities": {
       "input": [
@@ -45733,7 +45966,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 262144
+        "output": 104857
       },
       "knowledge": "2025-06-30"
     }
@@ -45829,7 +46062,7 @@
     "family": "mistral",
     "created_at": "2025-02-17 00:00:00 UTC",
     "context_window": 32768,
-    "max_output_tokens": 32768,
+    "max_output_tokens": 26214,
     "knowledge_cutoff": "2024-09-30",
     "modalities": {
       "input": [
@@ -45901,7 +46134,7 @@
       },
       "limit": {
         "context": 32768,
-        "output": 32768
+        "output": 26214
       },
       "knowledge": "2024-09-30"
     }
@@ -45994,7 +46227,7 @@
     "family": "mistral-small",
     "created_at": "2026-03-16 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 209715,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -46070,7 +46303,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 209715
       },
       "knowledge": "2025-06",
       "reasoning_options": [
@@ -46091,7 +46324,7 @@
     "family": "mistral-small",
     "created_at": "2025-03-17 00:00:00 UTC",
     "context_window": 128000,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 102400,
     "knowledge_cutoff": "2023-10-31",
     "modalities": {
       "input": [
@@ -46160,7 +46393,7 @@
       },
       "limit": {
         "context": 128000,
-        "output": 128000
+        "output": 102400
       },
       "knowledge": "2023-10-31"
     }
@@ -46259,7 +46492,7 @@
     "family": "mistral",
     "created_at": "2024-04-17 00:00:00 UTC",
     "context_window": 65536,
-    "max_output_tokens": 65536,
+    "max_output_tokens": 52428,
     "knowledge_cutoff": "2024-01-31",
     "modalities": {
       "input": [
@@ -46331,7 +46564,7 @@
       },
       "limit": {
         "context": 65536,
-        "output": 65536
+        "output": 52428
       },
       "knowledge": "2024-01-31"
     }
@@ -46343,7 +46576,7 @@
     "family": "mistral",
     "created_at": "2025-10-30 00:00:00 UTC",
     "context_window": 32000,
-    "max_output_tokens": 32000,
+    "max_output_tokens": 25600,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -46417,7 +46650,7 @@
       },
       "limit": {
         "context": 32000,
-        "output": 32000
+        "output": 25600
       }
     }
   },
@@ -46683,7 +46916,7 @@
     "family": "kimi-k2",
     "created_at": "2026-01-01 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -46768,10 +47001,14 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "knowledge": "2025-01",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -46781,7 +47018,7 @@
     "family": "kimi-k2",
     "created_at": "2026-04-21 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -46868,10 +47105,14 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "knowledge": "2025-01",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -46952,7 +47193,7 @@
     "family": "kimi-k2",
     "created_at": "2026-06-12 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -46974,7 +47215,7 @@
         "standard": {
           "input_per_million": 0.67,
           "output_per_million": 3.4,
-          "cache_read_input_per_million": 0.17
+          "cache_read_input_per_million": 0.19
         }
       }
     },
@@ -46989,11 +47230,11 @@
       "cost": {
         "input": 0.67,
         "output": 3.4,
-        "cache_read": 0.17
+        "cache_read": 0.19
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "knowledge": "2025-01"
     }
@@ -47005,7 +47246,7 @@
     "family": "kimi-k3",
     "created_at": "2026-07-16 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 1048576,
+    "max_output_tokens": 943718,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -47059,7 +47300,7 @@
       },
       "limit": {
         "context": 1048576,
-        "output": 1048576
+        "output": 943718
       }
     }
   },
@@ -47207,7 +47448,7 @@
     "family": "agi",
     "created_at": "2026-06-24 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -47240,7 +47481,11 @@
       "attachment": true,
       "temperature": true,
       "last_updated": "2026-06-24",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.025,
         "output": 0.1,
@@ -47248,7 +47493,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       }
     }
   },
@@ -47259,7 +47504,7 @@
     "family": "agi",
     "created_at": "2026-06-08 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -47291,7 +47536,11 @@
       "attachment": true,
       "temperature": true,
       "last_updated": "2026-06-08",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.25,
         "output": 1,
@@ -47299,7 +47548,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       }
     }
   },
@@ -47602,7 +47851,7 @@
     "family": "hermes",
     "created_at": "2025-08-26 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2024-08-31",
     "modalities": {
       "input": [
@@ -47667,7 +47916,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2024-08-31",
       "reasoning_options": [
@@ -47684,7 +47933,7 @@
     "family": "hermes",
     "created_at": "2025-08-26 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2024-08-31",
     "modalities": {
       "input": [
@@ -47749,7 +47998,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2024-08-31",
       "reasoning_options": [
@@ -47850,7 +48099,7 @@
     "family": "nemotron",
     "created_at": "2025-12-15 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -47926,9 +48175,13 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -48075,6 +48328,9 @@
       },
       "reasoning_options": [
         {
+          "type": "toggle"
+        },
+        {
           "type": "budget_tokens"
         }
       ]
@@ -48189,7 +48445,7 @@
     "family": "nemotron",
     "created_at": "2026-03-11 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -48249,7 +48505,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": [
         {
@@ -48275,7 +48531,7 @@
     "family": "nemotron",
     "created_at": "2026-06-04 00:00:00 UTC",
     "context_window": 512288,
-    "max_output_tokens": 16384,
+    "max_output_tokens": 461059,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -48352,7 +48608,7 @@
       },
       "limit": {
         "context": 512288,
-        "output": 16384
+        "output": 461059
       },
       "reasoning_options": [
         {
@@ -48520,7 +48776,11 @@
         "context": 128000,
         "output": 8192
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -48940,7 +49200,7 @@
     "family": "gpt",
     "created_at": "2024-01-25 00:00:00 UTC",
     "context_window": 4095,
-    "max_output_tokens": 4096,
+    "max_output_tokens": 3685,
     "knowledge_cutoff": "2021-09-30",
     "modalities": {
       "input": [
@@ -49010,7 +49270,7 @@
       },
       "limit": {
         "context": 4095,
-        "output": 4096
+        "output": 3685
       },
       "knowledge": "2021-09-30"
     }
@@ -49105,7 +49365,7 @@
     "family": "gpt",
     "created_at": "2023-09-28 00:00:00 UTC",
     "context_window": 4095,
-    "max_output_tokens": 4096,
+    "max_output_tokens": 3685,
     "knowledge_cutoff": "2021-09-30",
     "modalities": {
       "input": [
@@ -49172,7 +49432,7 @@
       },
       "limit": {
         "context": 4095,
-        "output": 4096
+        "output": 3685
       },
       "knowledge": "2021-09-30"
     }
@@ -53625,7 +53885,7 @@
     "family": "gpt-oss",
     "created_at": "2025-08-05 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -53702,7 +53962,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2024-06-30",
       "reasoning_options": [
@@ -53793,7 +54053,7 @@
     "family": "gpt-oss",
     "created_at": "2025-08-05 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -53872,7 +54132,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2024-06-30",
       "reasoning_options": [
@@ -54130,12 +54390,7 @@
       "knowledge": "2023-09",
       "reasoning_options": [
         {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
+          "type": "toggle"
         }
       ]
     }
@@ -54217,7 +54472,11 @@
         "output": 100000
       },
       "knowledge": "2023-09",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -54304,12 +54563,7 @@
       "knowledge": "2024-05",
       "reasoning_options": [
         {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
+          "type": "toggle"
         }
       ]
     }
@@ -54488,12 +54742,7 @@
       "knowledge": "2024-05",
       "reasoning_options": [
         {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
+          "type": "toggle"
         }
       ]
     }
@@ -54670,12 +54919,7 @@
       "knowledge": "2024-05",
       "reasoning_options": [
         {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
+          "type": "toggle"
         }
       ]
     }
@@ -54764,12 +55008,7 @@
       "knowledge": "2024-05",
       "reasoning_options": [
         {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
+          "type": "toggle"
         }
       ]
     }
@@ -55445,7 +55684,11 @@
         "context": 32768,
         "output": 8192
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -55455,7 +55698,7 @@
     "family": "sonar",
     "created_at": "2025-01-27 00:00:00 UTC",
     "context_window": 127072,
-    "max_output_tokens": 127072,
+    "max_output_tokens": 114364,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -55519,7 +55762,7 @@
       },
       "limit": {
         "context": 127072,
-        "output": 127072
+        "output": 114364
       }
     }
   },
@@ -55530,7 +55773,7 @@
     "family": "sonar-deep-research",
     "created_at": "2025-03-07 00:00:00 UTC",
     "context_window": 128000,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 115200,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -55596,9 +55839,13 @@
       },
       "limit": {
         "context": 128000,
-        "output": 128000
+        "output": 115200
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -55764,7 +56011,7 @@
     "family": "sonar-reasoning",
     "created_at": "2025-03-07 00:00:00 UTC",
     "context_window": 128000,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 115200,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -55831,9 +56078,13 @@
       },
       "limit": {
         "context": 128000,
-        "output": 128000
+        "output": 115200
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -55942,7 +56193,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-07-21",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.09,
         "output": 0.18,
@@ -55983,7 +56238,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-07-21",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0,
         "output": 0
@@ -56031,7 +56290,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-07-02",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.06,
         "output": 0.12,
@@ -56072,7 +56335,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-07-02",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0,
         "output": 0
@@ -56325,7 +56592,7 @@
     "family": "qwen",
     "created_at": "2024-10-16 00:00:00 UTC",
     "context_window": 32768,
-    "max_output_tokens": 32768,
+    "max_output_tokens": 29491,
     "knowledge_cutoff": "2024-06-30",
     "modalities": {
       "input": [
@@ -56393,7 +56660,7 @@
       },
       "limit": {
         "context": 32768,
-        "output": 32768
+        "output": 29491
       },
       "knowledge": "2024-06-30"
     }
@@ -56405,7 +56672,7 @@
     "family": "qwen",
     "created_at": "2024-11-11 00:00:00 UTC",
     "context_window": 32768,
-    "max_output_tokens": 32768,
+    "max_output_tokens": 29491,
     "knowledge_cutoff": "2024-06-30",
     "modalities": {
       "input": [
@@ -56471,7 +56738,7 @@
       },
       "limit": {
         "context": 32768,
-        "output": 32768
+        "output": 29491
       },
       "knowledge": "2024-06-30"
     }
@@ -56773,7 +57040,7 @@
     "family": "qwen",
     "created_at": "2025-02-01 00:00:00 UTC",
     "context_window": 128000,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 28800,
     "knowledge_cutoff": "2024-06-30",
     "modalities": {
       "input": [
@@ -56793,9 +57060,8 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.8,
-          "output_per_million": 1,
-          "cache_read_input_per_million": 0.4
+          "input_per_million": 0.25,
+          "output_per_million": 0.75
         }
       }
     },
@@ -56840,13 +57106,12 @@
       "temperature": true,
       "last_updated": "2025-02-01",
       "cost": {
-        "input": 0.8,
-        "output": 1,
-        "cache_read": 0.4
+        "input": 0.25,
+        "output": 0.75
       },
       "limit": {
         "context": 128000,
-        "output": 128000
+        "output": 28800
       },
       "knowledge": "2024-06-30"
     }
@@ -57024,11 +57289,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 38912
         }
       ]
     }
@@ -57123,8 +57383,8 @@
     "provider": "openrouter",
     "family": "qwen",
     "created_at": "2025-07-25 00:00:00 UTC",
-    "context_window": 262144,
-    "max_output_tokens": 32768,
+    "context_window": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2025-06-30",
     "modalities": {
       "input": [
@@ -57197,8 +57457,8 @@
         "output": 2.3
       },
       "limit": {
-        "context": 262144,
-        "output": 32768
+        "context": 131072,
+        "output": 117964
       },
       "knowledge": "2025-06-30",
       "reasoning_options": []
@@ -57744,7 +58004,7 @@
     "family": "qwen",
     "created_at": "2025-04-01 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -57813,7 +58073,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "knowledge": "2025-04"
     }
@@ -57926,7 +58186,7 @@
     "family": "qwen",
     "created_at": "2026-02-03 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -58000,7 +58260,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "knowledge": "2025-09"
     }
@@ -58376,9 +58636,7 @@
       },
       "reasoning_options": [
         {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 81920
+          "type": "toggle"
         }
       ]
     }
@@ -58390,7 +58648,7 @@
     "family": "qwen",
     "created_at": "2025-09-01 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -58464,7 +58722,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "knowledge": "2025-04"
     }
@@ -59234,7 +59492,7 @@
     "family": "qwen",
     "created_at": "2026-02-23 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -59316,7 +59574,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": [
         {
@@ -59430,7 +59688,7 @@
     "family": "qwen",
     "created_at": "2026-02-23 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -59514,7 +59772,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": [
         {
@@ -59628,7 +59886,7 @@
     "family": "qwen",
     "created_at": "2026-02-23 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -59710,7 +59968,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": [
         {
@@ -59804,11 +60062,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 81920
         }
       ]
     }
@@ -59913,11 +60166,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 81920
         }
       ]
     }
@@ -60025,11 +60273,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 81920
         }
       ]
     }
@@ -60041,7 +60284,7 @@
     "family": "qwen",
     "created_at": "2026-04-22 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 81920,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -60064,9 +60307,8 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.6,
-          "output_per_million": 3.6,
-          "cache_read_input_per_million": 0.12
+          "input_per_million": 0.32,
+          "output_per_million": 3.2
         }
       }
     },
@@ -60119,13 +60361,12 @@
       "temperature": true,
       "last_updated": "2026-04-22",
       "cost": {
-        "input": 0.6,
-        "output": 3.6,
-        "cache_read": 0.12
+        "input": 0.32,
+        "output": 3.2
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 81920
       },
       "reasoning_options": [
         {
@@ -60141,7 +60382,7 @@
     "family": "qwen",
     "created_at": "2026-04-17 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -60225,7 +60466,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": [
         {
@@ -60337,11 +60578,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 81920
         }
       ]
     }
@@ -60442,11 +60678,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 131072
         }
       ]
     }
@@ -60555,11 +60786,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 81920
         }
       ]
     }
@@ -60606,6 +60832,9 @@
       "temperature": true,
       "last_updated": "2026-07-15",
       "reasoning_options": [
+        {
+          "type": "toggle"
+        },
         {
           "type": "budget_tokens"
         }
@@ -60731,11 +60960,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 262144
         }
       ]
     }
@@ -60848,11 +61072,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1,
-          "max": 262144
         }
       ]
     }
@@ -60944,9 +61163,10 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.4,
-          "output_per_million": 3,
-          "cache_read_input_per_million": 0.05
+          "input_per_million": 0.425,
+          "output_per_million": 2.55,
+          "cache_read_input_per_million": 0.085,
+          "cache_write_input_per_million": 0.53125
         }
       }
     },
@@ -60971,9 +61191,10 @@
         }
       ],
       "cost": {
-        "input": 0.4,
-        "output": 3,
-        "cache_read": 0.05
+        "input": 0.425,
+        "output": 2.55,
+        "cache_read": 0.085,
+        "cache_write": 0.53125
       },
       "limit": {
         "context": 1000000,
@@ -61054,7 +61275,7 @@
     "family": "reka",
     "created_at": "2026-03-20 00:00:00 UTC",
     "context_window": 16384,
-    "max_output_tokens": 16384,
+    "max_output_tokens": 14745,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -61126,7 +61347,7 @@
       },
       "limit": {
         "context": 16384,
-        "output": 16384
+        "output": 14745
       }
     }
   },
@@ -61137,7 +61358,7 @@
     "family": "reka",
     "created_at": "2025-03-12 00:00:00 UTC",
     "context_window": 65536,
-    "max_output_tokens": 65536,
+    "max_output_tokens": 58982,
     "knowledge_cutoff": "2025-01-31",
     "modalities": {
       "input": [
@@ -61203,7 +61424,7 @@
       },
       "limit": {
         "context": 65536,
-        "output": 65536
+        "output": 58982
       },
       "knowledge": "2025-01-31",
       "reasoning_options": []
@@ -61495,7 +61716,7 @@
     "family": "llama",
     "created_at": "2024-08-13 00:00:00 UTC",
     "context_window": 8192,
-    "max_output_tokens": 16384,
+    "max_output_tokens": 7372,
     "knowledge_cutoff": "2023-12-31",
     "modalities": {
       "input": [
@@ -61564,7 +61785,7 @@
       },
       "limit": {
         "context": 8192,
-        "output": 16384
+        "output": 7372
       },
       "knowledge": "2023-12-31"
     }
@@ -61955,7 +62176,7 @@
     "family": "step",
     "created_at": "2026-05-29 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 256000,
+    "max_output_tokens": 230400,
     "knowledge_cutoff": "2026-03-01",
     "modalities": {
       "input": [
@@ -62032,7 +62253,7 @@
       "limit": {
         "context": 262144,
         "input": 256000,
-        "output": 256000
+        "output": 230400
       },
       "reasoning_options": [
         {
@@ -62128,7 +62349,7 @@
     "family": "hunyuan",
     "created_at": "2025-07-08 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2025-03-31",
     "modalities": {
       "input": [
@@ -62193,10 +62414,14 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2025-03-31",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -62357,9 +62582,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.132,
-          "output_per_million": 0.528,
-          "cache_read_input_per_million": 0.033
+          "input_per_million": 0.0825,
+          "output_per_million": 0.33,
+          "cache_read_input_per_million": 0.020625
         }
       }
     },
@@ -62381,9 +62606,9 @@
         }
       ],
       "cost": {
-        "input": 0.132,
-        "output": 0.528,
-        "cache_read": 0.033
+        "input": 0.0825,
+        "output": 0.33,
+        "cache_read": 0.020625
       },
       "limit": {
         "context": 262144,
@@ -62398,7 +62623,7 @@
     "family": "Hy",
     "created_at": "2026-04-20 00:00:00 UTC",
     "context_window": 262144,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 235929,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -62468,7 +62693,7 @@
       },
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 235929
       },
       "reasoning_options": [
         {
@@ -62489,7 +62714,7 @@
     "family": "thedrummer",
     "created_at": "2025-09-27 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": "2024-04-30",
     "modalities": {
       "input": [
@@ -62557,7 +62782,7 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
       "knowledge": "2024-04-30"
     }
@@ -62569,7 +62794,7 @@
     "family": "thedrummer",
     "created_at": "2024-09-30 00:00:00 UTC",
     "context_window": 65536,
-    "max_output_tokens": 65536,
+    "max_output_tokens": 58982,
     "knowledge_cutoff": "2024-04-30",
     "modalities": {
       "input": [
@@ -62642,7 +62867,7 @@
       },
       "limit": {
         "context": 65536,
-        "output": 65536
+        "output": 58982
       },
       "knowledge": "2024-04-30"
     }
@@ -62654,7 +62879,7 @@
     "family": "thedrummer",
     "created_at": "2025-03-10 00:00:00 UTC",
     "context_window": 32768,
-    "max_output_tokens": 32768,
+    "max_output_tokens": 29491,
     "knowledge_cutoff": "2024-06-30",
     "modalities": {
       "input": [
@@ -62722,7 +62947,7 @@
       },
       "limit": {
         "context": 32768,
-        "output": 32768
+        "output": 29491
       },
       "knowledge": "2024-06-30"
     }
@@ -62734,7 +62959,7 @@
     "family": "thedrummer",
     "created_at": "2024-11-08 00:00:00 UTC",
     "context_window": 1024000,
-    "max_output_tokens": 1024000,
+    "max_output_tokens": 26214,
     "knowledge_cutoff": "2024-04-30",
     "modalities": {
       "input": [
@@ -62804,7 +63029,7 @@
       },
       "limit": {
         "context": 1024000,
-        "output": 1024000
+        "output": 26214
       },
       "knowledge": "2024-04-30"
     }
@@ -62836,9 +63061,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 1,
+          "input_per_million": 0.95,
           "output_per_million": 4.05,
-          "cache_read_input_per_million": 0.17
+          "cache_read_input_per_million": 0.16
         }
       }
     },
@@ -62863,9 +63088,9 @@
         }
       ],
       "cost": {
-        "input": 1,
+        "input": 0.95,
         "output": 4.05,
-        "cache_read": 0.17
+        "cache_read": 0.16
       },
       "limit": {
         "context": 1048576,
@@ -62894,7 +63119,6 @@
     },
     "capabilities": [
       "function_calling",
-      "structured_output",
       "reasoning",
       "vision"
     ],
@@ -62944,7 +63168,7 @@
     "provider": "openrouter",
     "family": "ling",
     "created_at": "2026-07-30 00:00:00 UTC",
-    "context_window": 262144,
+    "context_window": 1048576,
     "max_output_tokens": 262144,
     "knowledge_cutoff": null,
     "modalities": {
@@ -62988,7 +63212,7 @@
         "output": 0
       },
       "limit": {
-        "context": 262144,
+        "context": 1048576,
         "output": 262144
       }
     }
@@ -62999,7 +63223,7 @@
     "provider": "openrouter",
     "family": "ling",
     "created_at": "2026-07-15 00:00:00 UTC",
-    "context_window": 262144,
+    "context_window": 1048576,
     "max_output_tokens": 262144,
     "knowledge_cutoff": null,
     "modalities": {
@@ -63043,7 +63267,7 @@
         "output": 0
       },
       "limit": {
-        "context": 262144,
+        "context": 1048576,
         "output": 262144
       }
     }
@@ -63055,7 +63279,7 @@
     "family": "undi95",
     "created_at": "2023-07-22 00:00:00 UTC",
     "context_window": 6144,
-    "max_output_tokens": 6144,
+    "max_output_tokens": 4096,
     "knowledge_cutoff": "2023-06-30",
     "modalities": {
       "input": [
@@ -63127,7 +63351,7 @@
       },
       "limit": {
         "context": 6144,
-        "output": 6144
+        "output": 4096
       },
       "knowledge": "2023-06-30"
     }
@@ -63139,7 +63363,7 @@
     "family": "solar-pro",
     "created_at": "2026-01-27 00:00:00 UTC",
     "context_window": 131072,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 117964,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -63206,9 +63430,13 @@
       },
       "limit": {
         "context": 131072,
-        "output": 131072
+        "output": 117964
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -63249,7 +63477,11 @@
       "attachment": false,
       "temperature": true,
       "last_updated": "2026-08-10",
-      "reasoning_options": [],
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
       "cost": {
         "input": 0.03,
         "output": 0.12,
@@ -63338,7 +63570,7 @@
     "family": "grok",
     "created_at": "2026-03-31 00:00:00 UTC",
     "context_window": 2000000,
-    "max_output_tokens": 2000000,
+    "max_output_tokens": 1800000,
     "knowledge_cutoff": "2025-09-01",
     "modalities": {
       "input": [
@@ -63430,10 +63662,14 @@
       },
       "limit": {
         "context": 2000000,
-        "output": 2000000
+        "output": 1800000
       },
       "knowledge": "2025-09-01",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -63443,7 +63679,7 @@
     "family": "grok",
     "created_at": "2026-03-31 00:00:00 UTC",
     "context_window": 2000000,
-    "max_output_tokens": 2000000,
+    "max_output_tokens": 1800000,
     "knowledge_cutoff": "2025-09-01",
     "modalities": {
       "input": [
@@ -63532,7 +63768,7 @@
       },
       "limit": {
         "context": 2000000,
-        "output": 2000000
+        "output": 1800000
       },
       "knowledge": "2025-09-01",
       "reasoning_options": [
@@ -63555,7 +63791,7 @@
     "family": "grok",
     "created_at": "2026-04-17 00:00:00 UTC",
     "context_window": 1000000,
-    "max_output_tokens": 1000000,
+    "max_output_tokens": 900000,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -63649,7 +63885,7 @@
       },
       "limit": {
         "context": 1000000,
-        "output": 1000000
+        "output": 900000
       },
       "reasoning_options": [
         {
@@ -63671,7 +63907,7 @@
     "family": "grok",
     "created_at": "2026-07-08 00:00:00 UTC",
     "context_window": 500000,
-    "max_output_tokens": 500000,
+    "max_output_tokens": 450000,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -63738,7 +63974,7 @@
       },
       "limit": {
         "context": 500000,
-        "output": 500000
+        "output": 450000
       }
     }
   },
@@ -63749,7 +63985,7 @@
     "family": "grok",
     "created_at": "2026-08-12 00:00:00 UTC",
     "context_window": 500000,
-    "max_output_tokens": 500000,
+    "max_output_tokens": 450000,
     "knowledge_cutoff": "2026-02-01",
     "modalities": {
       "input": [
@@ -63817,7 +64053,7 @@
       },
       "limit": {
         "context": 500000,
-        "output": 500000
+        "output": 450000
       },
       "knowledge": "2026-02-01"
     }
@@ -63829,7 +64065,7 @@
     "family": "grok-build",
     "created_at": "2026-04-16 00:00:00 UTC",
     "context_window": 256000,
-    "max_output_tokens": 256000,
+    "max_output_tokens": 230400,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -63923,7 +64159,7 @@
       },
       "limit": {
         "context": 256000,
-        "output": 256000
+        "output": 230400
       },
       "reasoning_options": []
     }
@@ -64703,7 +64939,11 @@
         "output": 131072
       },
       "knowledge": "2025-04",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -64793,7 +65033,11 @@
         "output": 32768
       },
       "knowledge": "2025-04",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -64888,7 +65132,11 @@
         "output": 131072
       },
       "knowledge": "2025-04",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -64981,7 +65229,11 @@
         "output": 16384
       },
       "knowledge": "2025-04",
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -65073,7 +65325,11 @@
         "context": 204800,
         "output": 128000
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -65163,7 +65419,11 @@
         "context": 202752,
         "output": 131072
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -65173,7 +65433,7 @@
     "family": "glm",
     "created_at": "2026-04-07 00:00:00 UTC",
     "context_window": 204800,
-    "max_output_tokens": 128000,
+    "max_output_tokens": 182476,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -65193,9 +65453,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.966,
-          "output_per_million": 3.036,
-          "cache_read_input_per_million": 0.1794
+          "input_per_million": 1.26,
+          "output_per_million": 3.96,
+          "cache_read_input_per_million": 0.234
         }
       }
     },
@@ -65251,15 +65511,19 @@
         "field": "reasoning_content"
       },
       "cost": {
-        "input": 0.966,
-        "output": 3.036,
-        "cache_read": 0.1794
+        "input": 1.26,
+        "output": 3.96,
+        "cache_read": 0.234
       },
       "limit": {
         "context": 204800,
-        "output": 128000
+        "output": 182476
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -65269,7 +65533,7 @@
     "family": "glm",
     "created_at": "2026-06-13 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 131072,
+    "max_output_tokens": 262144,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -65287,9 +65551,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.966,
-          "output_per_million": 3.036,
-          "cache_read_input_per_million": 0.1932
+          "input_per_million": 1.19,
+          "output_per_million": 3.74,
+          "cache_read_input_per_million": 0.221
         }
       }
     },
@@ -65316,13 +65580,13 @@
         }
       ],
       "cost": {
-        "input": 0.966,
-        "output": 3.036,
-        "cache_read": 0.1932
+        "input": 1.19,
+        "output": 3.74,
+        "cache_read": 0.221
       },
       "limit": {
         "context": 1048576,
-        "output": 131072
+        "output": 262144
       }
     }
   },
@@ -65333,7 +65597,7 @@
     "family": "glm",
     "created_at": "2026-06-13 00:00:00 UTC",
     "context_window": 256000,
-    "max_output_tokens": 256000,
+    "max_output_tokens": 230400,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -65374,7 +65638,7 @@
       },
       "limit": {
         "context": 256000,
-        "output": 256000
+        "output": 230400
       }
     }
   },
@@ -65432,6 +65696,68 @@
       },
       "limit": {
         "context": 1048576,
+        "output": 131072
+      }
+    }
+  },
+  {
+    "id": "z-ai/glm-5.3-flash",
+    "name": "GLM-5.3-Flash",
+    "provider": "openrouter",
+    "family": "glm",
+    "created_at": "2026-08-26 00:00:00 UTC",
+    "context_window": 1310720,
+    "max_output_tokens": 131072,
+    "knowledge_cutoff": null,
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "capabilities": [
+      "function_calling",
+      "structured_output",
+      "reasoning",
+      "vision"
+    ],
+    "pricing": {
+      "text_tokens": {
+        "standard": {
+          "input_per_million": 0.075,
+          "output_per_million": 0.25,
+          "cache_read_input_per_million": 0.015
+        }
+      }
+    },
+    "metadata": {
+      "source": "models.dev",
+      "provider_id": "openrouter",
+      "open_weights": false,
+      "attachment": true,
+      "temperature": true,
+      "last_updated": "2026-08-26",
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "cost": {
+        "input": 0.075,
+        "output": 0.25,
+        "cache_read": 0.015
+      },
+      "limit": {
+        "context": 1310720,
         "output": 131072
       }
     }
@@ -65519,7 +65845,11 @@
         "context": 202752,
         "output": 131072
       },
-      "reasoning_options": []
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ]
     }
   },
   {
@@ -65677,11 +66007,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "budget_tokens",
-          "min": 1024,
-          "max": 63999
         }
       ]
     }
@@ -65900,7 +66225,7 @@
     "family": "deepseek",
     "created_at": "2026-08-01 00:00:00 UTC",
     "context_window": 1310720,
-    "max_output_tokens": 262144,
+    "max_output_tokens": 131072,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -65918,9 +66243,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 0.04,
-          "output_per_million": 0.13,
-          "cache_read_input_per_million": 0.01
+          "input_per_million": 0.03,
+          "output_per_million": 0.075,
+          "cache_read_input_per_million": 0.007
         }
       }
     },
@@ -65945,13 +66270,13 @@
         }
       ],
       "cost": {
-        "input": 0.04,
-        "output": 0.13,
-        "cache_read": 0.01
+        "input": 0.03,
+        "output": 0.075,
+        "cache_read": 0.007
       },
       "limit": {
         "context": 1310720,
-        "output": 262144
+        "output": 131072
       }
     }
   },
@@ -66188,7 +66513,7 @@
     "family": "kimi",
     "created_at": "2026-04-27 00:00:00 UTC",
     "context_window": 1048576,
-    "max_output_tokens": 974842,
+    "max_output_tokens": 943718,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -66211,9 +66536,9 @@
     "pricing": {
       "text_tokens": {
         "standard": {
-          "input_per_million": 2.6,
-          "output_per_million": 13,
-          "cache_read_input_per_million": 0.29
+          "input_per_million": 2.55,
+          "output_per_million": 12.75,
+          "cache_read_input_per_million": 0.256
         }
       }
     },
@@ -66267,13 +66592,13 @@
       "temperature": true,
       "last_updated": "2026-04-27",
       "cost": {
-        "input": 2.6,
-        "output": 13,
-        "cache_read": 0.29
+        "input": 2.55,
+        "output": 12.75,
+        "cache_read": 0.256
       },
       "limit": {
         "context": 1048576,
-        "output": 974842
+        "output": 943718
       },
       "reasoning_options": [
         {
@@ -66512,7 +66837,7 @@
     "family": "grok",
     "created_at": "2026-07-08 00:00:00 UTC",
     "context_window": 500000,
-    "max_output_tokens": 1000000,
+    "max_output_tokens": 450000,
     "knowledge_cutoff": null,
     "modalities": {
       "input": [
@@ -66580,7 +66905,7 @@
       },
       "limit": {
         "context": 500000,
-        "output": 1000000
+        "output": 450000
       }
     }
   },

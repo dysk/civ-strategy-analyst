@@ -14,7 +14,7 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
   PROJECTIONS = [
     MetricSeries, PlayerTimeline, SpaceshipTimeline, MapBounds, EarlyGame,
     CapitalsTimeline, CapitalProximity, BufferCities, InfluenceTimeline,
-    CongressTimeline, EmpireGeometry, ArmyComposition, WonderRaces
+    CongressTimeline, EmpireGeometry, ArmyComposition, WonderRaces, CityValue
   ].freeze
 
   # Capital distances are measured twice on purpose: once on the wrapped map,
