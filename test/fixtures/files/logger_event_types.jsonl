@@ -64,6 +64,7 @@
 {"event":"spy_moved","turn":1}
 {"event":"spy_promoted","turn":1}
 {"event":"spy_revived","turn":1}
+{"event":"spy_surveillance_established","turn":1}
 {"event":"teams_met","turn":1}
 {"event":"tech_from_ruins","turn":1}
 {"event":"tech_researched","turn":1}
