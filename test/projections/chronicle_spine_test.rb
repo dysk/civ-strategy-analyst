@@ -177,6 +177,38 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_operator capital[:weight], :>, city[:weight]
   end
 
+  test "a captured capital keeps the heavy city-captured weight" do
+    event(nil, "city_captured", 40, city: "Onondaga", old_owner: "Iroquois", new_owner: "India", capital: true)
+
+    moment = all_moments.find { |m| m[:type] == :city_captured }
+
+    assert_equal :major, moment[:scale]
+    assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
+  test "a border town falling is lighter than a heartland city and drops below the anchor" do
+    city_snapshot("Iroquois", 39, "Onondaga", population: 18)
+    city_snapshot("Iroquois", 39, "Buffalo Creek", population: 3)
+    event(nil, "city_captured", 40, city: "Onondaga", old_owner: "Iroquois", new_owner: "India")
+    event(nil, "city_captured", 45, city: "Buffalo Creek", old_owner: "Iroquois", new_owner: "India")
+
+    captured = all_moments.select { |m| m[:type] == :city_captured }.index_by { |m| m[:city] }
+
+    assert_equal :major, captured["Onondaga"][:scale]
+    assert_equal :minor, captured["Buffalo Creek"][:scale]
+    assert_operator captured["Onondaga"][:weight], :>, captured["Buffalo Creek"][:weight]
+    assert_operator captured["Buffalo Creek"][:weight], :<, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
+  test "a capture keeps the flat weight when no city snapshot places it" do
+    event(nil, "city_captured", 40, city: "Athens", old_owner: "Greece", new_owner: "Rome")
+
+    moment = all_moments.find { |m| m[:type] == :city_captured }
+
+    assert_nil moment[:scale]
+    assert_equal ChronicleSpine::WEIGHTS[:city_captured], moment[:weight]
+  end
+
   test "a player voted out of the game anchors an entry of its own" do
     event(nil, "mp_proposal_result", 60, type: "irrelevance", status: "passed",
       owner: "India", subject: "Rome", yes_votes: 4, no_votes: 1)
@@ -328,6 +360,10 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   def declare_war
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event(nil, "peace_made", 20, team_a: 1, team_a_civs: %w[Rome], team_b: 2, team_b_civs: %w[Greece])
+  end
+
+  def city_snapshot(civ, turn, city, population:)
+    event(civ, "city_snapshot", turn, city: city, population: population)
   end
 
   def killed(killer, victim, unit, turn)

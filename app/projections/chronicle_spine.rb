@@ -37,9 +37,18 @@ class ChronicleSpine
   # texture around the entry, not an entry of its own.
   WONDER_RACE_LOST_WEIGHTS = { close: 4, distant: 2 }.freeze
 
+  # A capture is worth what the city was worth. A capital or a city that
+  # carried a fifth of its owner's people keeps the heavy weight; a border
+  # town drops below the anchor. The share it falls to `city_snapshot`,
+  # so a log without one leaves the weight flat. Break points uncalibrated
+  # - see docs/city-value.md.
+  CITY_CAPTURED_WEIGHTS = { major: 4, minor: 2 }.freeze
+  MAJOR_POPULATION_SHARE = 0.2
+
   FIRST_OF_ITS_KIND_BONUS = 1
 
   def initialize(game)
+    @game = game
     @log = game.event_log
     @detector = KeyMomentDetector.new(game)
   end
@@ -115,6 +124,9 @@ class ChronicleSpine
   def base_weight(moment)
     return WAR_WEIGHTS.fetch(moment[:scale]) if moment[:type] == :war
     return WONDER_RACE_LOST_WEIGHTS.fetch(moment[:scale]) if moment[:type] == :wonder_race_lost
+    if moment[:type] == :city_captured
+      return CITY_CAPTURED_WEIGHTS.fetch(moment[:scale], WEIGHTS[:city_captured])
+    end
 
     WEIGHTS.fetch(moment[:type], 1)
   end
@@ -186,7 +198,7 @@ class ChronicleSpine
 
     captured = of_type("city_captured").map do |e|
       { type: :city_captured, turn: e.turn, city: e.payload["city"],
-        from: e.payload["old_owner"], to: e.payload["new_owner"] }
+        from: e.payload["old_owner"], to: e.payload["new_owner"], scale: capture_scale(e) }
     end
 
     destroyed = razings.map do |e|
@@ -227,6 +239,20 @@ class ChronicleSpine
 
     natural + golden
   end
+
+  # A capital, or a city that stood for a fifth of its owner's people
+  # before it fell, is a major loss; anything smaller is a border town.
+  # Nil where no city snapshot places the city, leaving the weight flat.
+  def capture_scale(event)
+    return :major if event.payload["capital"]
+
+    share = city_value.at(event.payload["city"], event.turn - 1)
+    return unless share
+
+    share[:population_share].to_f >= MAJOR_POPULATION_SHARE ? :major : :minor
+  end
+
+  def city_value = @city_value ||= CityValue.for(@game)
 
   def of_type(event_type) = @log.of_type(event_type)
 
