@@ -955,8 +955,10 @@ action: :academy|:manufactory|:bulb|:hurry|…, city, killed_by}`, or split
 a `GreatPeople` projection off if the joins grow. The digest already wires
 `great_people:`, so a richer row is backward compatible.
 
-A/B: verify against a real log that carries `unit_created`,
-`improvement_built` and `unit_lost` at volume — `india-diplo.jsonl`
-(game 32) predates the logger's tier-1/tier-2 volume. The regression
-signal is the classification split: how many great people bulbed versus
-planted, how many Great Generals died to raids.
+A/B: `india-diplo.jsonl` (game 32) is a usable target — it carries
+`unit_created` (1402), `unit_lost` (1041), `improvement_built` (985),
+`unit_killed` (194) and `great_person_expended` (88), all at volume, and
+none of these events changed in the recent logger work (that was
+espionage and congress only). The regression signal is the classification
+split: how many great people bulbed versus planted, how many Great
+Generals died to raids.
