@@ -884,3 +884,79 @@ declared unexercised the way `winner_finish`'s `:ahead_of_estimate` is.
 Not done: the whole projection. When it is built, this becomes a
 `(implemented)` section with the commit range and the per-iteration notes,
 like the tranche-1 features above.
+
+## Plan: great people — appearance, use, and death (planned)
+
+Status: **Not implemented as its own reading.** `PlayerTimeline#great_people`
+today reads only `great_person_expended` and returns `{turn, great_person}`,
+surfaced in the digest as `great_people:`. It shows a bare list of "civ
+expended a Great X on turn N" — no birth, no what the expend was *for*, no
+death.
+
+Everything below is already in the log and already in
+`ImportGame::KNOWN_EVENT_TYPES`. This is analyst logic only; no
+`civ-narrative-logger` change is needed.
+
+**Appearance.** `unit_created` carries `unit` (the unit *type* name, e.g.
+`Great Scientist`), `civ`, `city`, `x`, `y`, `turn` — for every unit,
+great people included. Filtered to the great-person unit types it is a
+births timeline: which great person, on what turn, in which city. The one
+appearance signal used now is the per-turn `great_people` /
+`great_generals` counter in the player stats snapshot, which carries no
+type and no name.
+
+**Use, with a target.** A great person that plants an improvement fires
+`BuildFinished` before it is expended, so the log holds, same civ same
+turn, both an `improvement_built` (`improvement` type, `x`, `y`) and a
+`great_person_expended`. Pair them and the expend has a target: Academy,
+Manufactory, Customs House, Citadel, Holy Site, Landmark.
+
+**Use, without a target.** A `great_person_expended` with no same-turn
+`improvement_built` for that civ is an instant use — bulb (Scientist),
+hurry production (Engineer), trade mission (Merchant), Great Work /
+treatise / concert tour (Artist / Writer / Musician), a religious action
+(Prophet). The great-person type narrows it to one or two; nearby context
+(a wonder in progress in one of the civ's cities) separates Engineer hurry
+from Engineer manufactory.
+
+**Death by an enemy.** `unit_lost` (from `UnitPrekill`) carries `civ`
+(owner), `unit` (type), `city`, `x`, `y`, and `killed_by` (the killer's
+civ, nil when there is none). A Great General destroyed in a raid is here
+with `killed_by` set. Combat deaths also emit `unit_killed`
+(`killer` / `victim` / `unit`).
+
+**Telling the three fates apart** for a great-person unit that leaves play:
+
+- `killed_by` set, no same-turn `great_person_expended` → killed by an enemy.
+- `killed_by` nil *and* a same-turn `great_person_expended` for that civ →
+  expended (the expend path also fires `UnitPrekill`, with no killer).
+- `killed_by` nil, no `great_person_expended` → disbanded by the owner
+  (rare for a great person).
+
+Limits:
+
+- `unit` / `great_person` are unit *type* names, never the individual's
+  flavour name. Two great people of one type expended by one civ on one
+  turn cannot be told apart, and an improvement cannot be matched to a
+  specific one. Uncommon.
+- The great-person ↔ improvement pairing is `(turn, civ)` coincidence, not
+  an id. On a turn a civ finishes a worker farm and an Academy there are
+  two `improvement_built` rows; take the great-person-improvement type. Two
+  great-person improvements, same civ, same turn is possible but rare.
+- `improvement_built` carries only `x` / `y` and `great_person_expended`
+  carries no location; tile→city is the projection's job, from
+  `city_snapshot` the way `PlayerTimeline#valuation` already does it.
+- The great-person unit-type list is mod-defined and belongs in `ids.yml`
+  (its own planned section above), not hard-coded here.
+
+Shape: extend `PlayerTimeline#great_people(civ)` to return
+`{turn, great_person, fate: :expended|:killed|:disbanded,
+action: :academy|:manufactory|:bulb|:hurry|…, city, killed_by}`, or split
+a `GreatPeople` projection off if the joins grow. The digest already wires
+`great_people:`, so a richer row is backward compatible.
+
+A/B: verify against a real log that carries `unit_created`,
+`improvement_built` and `unit_lost` at volume — `india-diplo.jsonl`
+(game 32) predates the logger's tier-1/tier-2 volume. The regression
+signal is the classification split: how many great people bulbed versus
+planted, how many Great Generals died to raids.
