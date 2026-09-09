@@ -622,13 +622,18 @@ promoted twice in two turns — and `bCounterSpyUpgrade` is set precisely on
 `INDIA_7` was sitting in Delhi the whole game, doing the thing that decided
 every other civ's espionage, and the logger has no record of it.
 
-Why it is invisible: the logger emits `spy_moved` on a move order and
-`spy_mission_completed` on a mission, and a counterspy placed once and left
-alone does neither. **This is a logger blind spot worth reporting upstream**,
-and until it closes the projection infers the garrison rather than reading it.
+Why india-diplo missed it: the logger emitted `spy_moved` only on a coordinate
+change and `spy_mission_completed` only on a mission, and a counterspy placed
+once and left alone did neither. **Reported upstream and fixed** in *"Give a
+revived or homebound spy back its posting"*: `spy_moved` now also fires on the
+transition into `counter_intel` with a city present, so a post-fix log records
+the garrison as a `spy_moved` with `state: "counter_intel"` and
+`Espionage#counterspies` reads it directly. india-diplo predates the fix, so
+for that game the projection still infers the garrison.
 
-`Espionage#counterspies(civ)` — inferred, never asserted, from three
-independent signals that agree:
+`Espionage#counterspies(civ)` — read from a `counter_intel` `spy_moved` where
+one is present, otherwise inferred, never asserted, from three independent
+signals that agree:
 
 1. **a spy with no location** — created, sometimes promoted, never in a city;
 2. **enemy spies dying in one of the civ's cities**, which the DLL says is
@@ -726,10 +731,12 @@ say so — do not calibrate it against nothing.
     stolen technology — no API exposes it, and the logger's suggested
     reconstruction is untested, built on the same corrupted event, and must not
     ship as fact.
-  - `losses` → one record per `spy_killed` with the inferred host city, the
-    host's civ, and `turns_since_last_seen`.
-  - `counterspies(civ)` → the inferred garrisons: `{city, spy, confidence,
-    kills}` from the three agreeing signals. Inferred, and labelled inferred
+  - `losses` → one record per `spy_killed` with the host city (on the record
+    in a post-fix log, the last known tenure in india-diplo), the host's civ,
+    and `turns_since_last_seen`.
+  - `counterspies(civ)` → the garrisons: `{city, spy, confidence, kills}`. Read
+    from a `spy_moved` into `counter_intel` where the log carries one; in
+    india-diplo inferred from the three agreeing signals and labelled inferred
     everywhere it surfaces.
   - `coups` → `{civ, city_state, turn, outcome: :failed | :succeeded}` from the
     two signatures. Unexercised here; ships that way.
@@ -756,16 +763,18 @@ say so — do not calibrate it against nothing.
    fallback, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
 2. `#missions`, `#losses`, `#capacity` — the splits, the inferred host city and
    its staleness.
-3. `#counterspies` — the three signals and the confidence they combine to.
-   `docs/espionage.md` carries the DLL rank table this rests on, since a reader
-   has no other way to know why a kill implies a garrison.
+3. `#counterspies` — the `counter_intel` `spy_moved` where present, else the
+   three signals and the confidence they combine to. `docs/espionage.md`
+   carries the DLL rank table the inference rests on, since a reader has no
+   other way to know why a kill implies a garrison.
 4. `#coups` — both signatures, both unexercised.
 5. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
    five-way classification with four branches declared unexercised.
 6. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
    the opportunity-not-knowledge rule, the read-only-city-screen scope of what
-   an observer saw, and the counterspy inference with its confidence;
-   `chronicle_game.md` gets how to write a race lost in full view.
+   an observer saw, and the counterspy — read from the log where present, its
+   inference and confidence where not; `chronicle_game.md` gets how to write a
+   race lost in full view.
 
 ## 5. City-state influence and the vote
 
@@ -847,13 +856,14 @@ answers, the log sees two:
 
 | counter | visible? | fired here |
 |---|---|---|
-| garrison your own cities against theft | **only by inference** — feature 4's counterspy signals | yes, and invisibly: India held Delhi all game and killed nine spies |
+| garrison your own cities against theft | **read** from a `counter_intel` `spy_moved` in a post-fix log; **by inference** (feature 4's counterspy signals) in india-diplo | yes, and invisibly: India held Delhi all game and killed nine spies, in a log that predates the fix |
 | coup an ally away outright | **only by inference** — feature 4's two signatures | never |
 | conquer a city-state to shrink the vote pool | yes — `city_captured` with `old_owner` in `game.city_state_civs`, and `votes_needed_for_diplo_victory` moving | never; the threshold sat at 34 from turn 101 to the end |
 | outbid with gold | **no** — `CvDeal` unreachable | — |
 | run the quests | **no** — not logged | — |
 
-Only one of the five is read straight from an event. Two are inferences the
+In a post-fix log two of the five are read straight from an event; in
+india-diplo only the conquest is, the garrison and the coup are inferences the
 projection must label as inferences, and two are invisible. The digest must
 carry that shape beside the influence curve — without it the analysis credits
 every aggressor and never sees a defence, which is exactly the failure this

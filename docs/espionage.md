@@ -118,15 +118,22 @@ that is 24 spies with a location and 39 tenures.
   either (0 of 9), though the DLL holds one in both cases.
 
 Reported upstream in `civ-narrative-logger/docs/planned-changes.md`, *"Let a
-counterspy leave a trace"*. **Partly fixed:** the *"Stop trusting a progress
-fall…"* commit gave `spy_created` and `spy_killed` a `city`/`city_civ` (read
-from the last live poll for the kill, since the DLL empties the record before
-`SPY_STATE_DEAD`), and `spy_surveillance_established` now anchors many arrivals
-the move event missed. Still open is the `spy_moved` gap itself — re-postings
-and post-revival postings — which needs upstream instrumentation first.
-india-diplo predates all of it, so for that game a tenure's `from_turn` is the
-first sighting, **not** the arrival, and every span is a lower bound on how
-long the spy was actually there.
+counterspy leave a trace"*. **Mostly fixed:**
+
+- *"Stop trusting a progress fall…"* gave `spy_created` and `spy_killed` a
+  `city`/`city_civ` (read from the last live poll for the kill, since the DLL
+  empties the record before `SPY_STATE_DEAD`), and `spy_surveillance_established`
+  now anchors many arrivals the move event missed.
+- *"Give a revived or homebound spy back its posting"* closed the **revival**
+  half of the `spy_moved` gap: `diffSpy` no longer returns straight after
+  `spy_revived`, so a spy that revives already in a city now emits its posting.
+
+Still open is the rest of the `spy_moved` gap — **re-postings** (`ENGLAND_6`
+above) and a `spy_moved` lost mid-`MoveSpyTo` when a poll catches `CityX == -1`
+— which needs upstream instrumentation first. india-diplo predates all of it,
+so for that game a tenure's `from_turn` is the first sighting, **not** the
+arrival, and every span is a lower bound on how long the spy was actually
+there.
 
 ## Most logged missions did not happen — in logs written before the fix
 
@@ -187,7 +194,17 @@ Two consequences worth stating plainly:
 Reported upstream as *"Report the completions that never happened"* and fixed
 there; this section applies only to logs written before that commit.
 
-## The counterspy, which must be inferred
+## The counterspy — read in a post-fix log, inferred in india-diplo
+
+**Post-fix logs record the garrison.** *"Give a revived or homebound spy back
+its posting"* made `spy_moved` fire on the transition into `counter_intel` with
+a city present, even when the coordinates did not change — the one case a
+counterspy could previously produce no event at all. So in a log written after
+that commit, a counterspy is a `spy_moved` with `state: "counter_intel"` into
+one of its own owner's cities, and `Espionage#counterspies` reads the garrison
+city and the spy name straight off it. The three-signal inference below is the
+fallback for india-diplo, which predates the fix and still mentions no
+counterspy anywhere.
 
 `CvEspionageClasses.cpp:538-582`, under `ESPIONAGE_SYSTEM_REWORK` (defined at
 `_Defines.h:1441`, so this is the live branch), resolves a completed mission
@@ -217,8 +234,8 @@ spy is nameable: India created six spies, five appear in a city, and
 sixth. `bCounterSpyUpgrade` is set on `SPOTTED` and `KILLED`, and the first
 kill in the game is turn 109.
 
-`Espionage#counterspies(civ)` infers a garrison from three independent signals
-that agree:
+`Espionage#counterspies(civ)`, where no `counter_intel` `spy_moved` is present,
+infers a garrison from three independent signals that agree:
 
 1. **a spy with no location** — created, sometimes promoted, never in a city;
 2. **enemy spies dying in one of the civ's cities**, which the rank table says
