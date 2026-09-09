@@ -774,3 +774,60 @@ user's calibration, not a measurement, and are declared uncalibrated in
 `docs/wonder-race.md`. `WonderRaces` hardcodes `Rails.root.join("db/lekmod")`
 rather than taking the root `DigestBuilder` threads for `UnitNames` — it
 uses the catalogue for display names only, so this has not mattered yet.
+
+## Plan: what a city was worth when it changed hands (implemented)
+
+Status: tranche 1 point 3 of `docs/reading-the-new-log.md`, implemented
+2026-09-09. Four TDD cycles. Verified against `india-diplo` (game 32) and
+the `babylon-domination` inapplicable path. Detailed rules and calibration
+in `docs/city-value.md`.
+
+Context: `ChronicleSpine` gave `city_captured` a flat weight of 4, rating
+the Iroquois capital (a fifth of their potential, a third of their
+science) and a border town alike. `city_snapshot` now carries per-city
+population, buildings and yields, so a capture can be priced as a share of
+the owner's empire rather than read off a bend in the empire-wide
+`population` line — a workaround the analyze prompt no longer needs.
+
+Iterations (each: failing tests → review → implementation):
+
+1. **`CityValue`** (`app/projections/city_value.rb`, `extend Projection`)
+   — `at(city, turn)` reads the last `city_snapshot` of the city on or
+   before `turn`, takes the owner from that row, and reports
+   `<metric>_share` and `<metric>_rank` for population, buildings and the
+   five per-city yields, each over the owner's own cities at that turn —
+   never over the empire-wide `snapshot`. Nil share for a yield the empire
+   earns nothing of; reload dedup keeps the later payload. `applicable?`
+   false with no `city_snapshot`.
+2. **`PlayerTimeline#cities`** — every `:captured` / `:lost` entry gains a
+   `valuation`: `value` (`CityValue#at(city, capture_turn - 1)`, the
+   losing empire's share), `before` / `after` population and buildings
+   (last snapshot under the old owner, first under the new), `resistance`
+   (the captor's snapshots from the capture turn to the first with
+   `resistance_turns` zero, each with `occupied` / `puppet` / `razing`),
+   and `captor_influence` (the new owner's influence over the old on the
+   capture turn). Nil entirely with no `city_snapshot`. `CityValue` joins
+   the digest cost test.
+3. **`ChronicleSpine`** — the `city_captured` moment gains a `scale`:
+   `:major` (weight 4, anchors) when the payload has `capital: true` or
+   the city's `population_share` the turn before was ≥ `0.20`
+   (`MAJOR_POPULATION_SHARE`), `:minor` (weight 2, texture) otherwise,
+   absent when no `city_snapshot` places the city and then the weight
+   stays flat at 4.
+4. Digest + both prompts + docs. The `valuation` reaches the digest for
+   free through `timelines.<civ>.cities`; captures are one of the
+   checkpoints the cross-cutting rule allows per-city detail at.
+   `analyze_game.md`: the "read the bend in the `population` line"
+   paragraph is replaced with the `valuation` fields, the
+   gain-is-less-than-loss rule kept, the cession exception and the
+   resistance/`captor_influence` mechanism added. `chronicle_game.md`
+   gains a "When a city changes hands" section on weighing the moment by
+   `scale` and drawing the sacking from the `valuation`.
+
+Not done, left for later: razing (`city_destroyed` with no matching
+capture) is not valued — only captures are. `MAJOR_POPULATION_SHARE` and
+the population-only choice of metric are the user's calibration, declared
+uncalibrated in `docs/city-value.md`; `babylon-domination`'s eight
+captures carry no `city_snapshot` and exercise only the flat fallback.
+`rival_observed`-style "did the captor have a spy in the city" is a
+tranche 2 join, not attempted here.

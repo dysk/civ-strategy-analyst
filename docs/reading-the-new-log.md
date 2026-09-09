@@ -300,6 +300,11 @@ nothing has today.
 
 ## 3. What a city was worth when it changed hands
 
+**Implemented 2026-09-09** — `docs/plan.md`, *"what a city was worth when
+it changed hands"*, and `docs/city-value.md` for the calibration. Shipped
+in four cycles as the design below, scaling the `city_captured` weight on
+population share plus the `capital` flag the capture event already carries.
+
 ### Why
 
 `ChronicleSpine::WEIGHTS` gives `city_captured` a flat **4**. In india-diplo

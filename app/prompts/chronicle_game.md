@@ -276,6 +276,38 @@ work was completed faster than ordinary labour allows - a single master
 craftsman, a windfall of timber, a patron's gift - so write it carried off
 "as if overnight" and never that the winner simply out-built the loser.
 
+## When a city changes hands
+
+A `city_captured` moment is a city passing from one people to another.
+`scale` sets its weight: `major` is a capital or a city that carried a
+fifth or more of its owner's people - a loss that anchors its entry and
+is written as one. `minor` is a border town, a clause where the entry is
+already about the war. When `scale` is absent the log had no city
+snapshot to size the place by; write the change of hands and leave its
+weight to the surrounding events.
+
+The detail is in `timelines.<from>.cities`, the entry whose `city` and
+`turn` match the moment. Its `valuation.value` is the share the city was
+of its owner - `population_share`, `science_share` and the rest against
+that owner's other cities - so a capital taken can be written as a people
+losing a third of its learning in a day, not merely a city. `before` and
+`after` give population and buildings on the last day under the old owner
+and the first under the new: a stormed city comes out with about half its
+people and two-thirds of its buildings, and the passage should show the
+smoke, not just the flag. Weigh the loss by `before` - what was destroyed
+in the taking is not what the victor now holds. A `conquest: false` entry
+is a cession, already covered above: no sack, `before` and `after` alike,
+and none of this applies.
+
+`valuation.resistance` is the years the new ruler spent holding the city
+down, `resistance_turns` counting to zero. A larger city seethes longer;
+`captor_influence` is the conqueror's cultural pull over the dispossessed
+people on the day it fell, and a strong one shortens the unrest. A city
+`occupied` with `razing` through every entry was put to the torch, not
+kept - write it as a place unmade. One turning from `puppet` back to
+growth was kept and rebuilt, and the years of resistance before that are
+a garrison in the streets and a sullen populace.
+
 ## When a people withdraws from the contest
 
 A `player_declared_irrelevant` moment is a people that recognised it

@@ -893,22 +893,45 @@ otherwise have built. None of that development comes back, and the
 timelines show it happening: the order technologies were taken in, which
 policies were bought, what was built and when.
 
-A war can also take a city outright. The city carrying a civilization's
-lead - the specialist city doing its science, the one holding the wonders
-and Great Works that generate its tourism - is rarely anything other than
-the capital, but any city lost is a share of the empire's potential gone
-with it: its population, its buildings, the tiles it worked. Population
-is the best measure of that potential the data offers, and it comes as an
-empire-wide figure at each checkpoint rather than per city, so read a
-capture's cost from where the owner's `population` line bends around that
-turn. A captured city keeps only about half its population and loses
-roughly a third of its buildings in the sacking, so weigh the loss by the
-city as it stood before the capture, not by what the captor gained - much
-of the difference is destroyed rather than transferred. Retaking it does
-not restore it either: a recaptured city comes back smaller and with
+A war can also take a city outright, and the `cities` timeline prices
+that loss rather than leaving it to be read off a bending curve. A
+`captured` or `lost` entry carries a `valuation`. Its `value` is the
+city's share and rank in its owner's empire on the turn before it fell -
+`population_share`, `science_share`, `production_share` and the rest,
+each measured against that owner's own cities - so "a third of its
+owner's science" is a figure to state, not an impression to hedge. The
+city carrying a civilization's lead is rarely anything other than the
+capital, but any city lost is a share of the empire's potential gone with
+it, and `value` is how large a share.
+
+`before` and `after` give the city's population and buildings on the last
+snapshot under the old owner and the first under the new one. A conquered
+city keeps roughly half its population and loses about a third of its
+buildings in the sacking; weigh the loss by `before`, never by `after` or
+by what the captor later grew it back to - much of the difference is
+destroyed, not transferred. The exception is a cession (`conquest:
+false`): nothing is sacked, `before` and `after` sit close, and there the
+gain does equal the loss.
+
+`resistance` lists the turns the captor spent holding the city down,
+`resistance_turns` counting to zero with `occupied`, `puppet` and
+`razing` beside it. A bigger city resists longer; a captor with a strong
+tourism lead over the former owner puts it down faster, and
+`captor_influence` carries that lead as it stood on the capture turn
+(`points` and `trend` - `level` is often `INFLUENCE_LEVEL_UNKNOWN`, and
+then only the points carry meaning). Where the observed `resistance` and
+that rule of thumb disagree, the observed turns are the fact. A city
+`occupied` with `razing` set across every snapshot was thrown away, not
+kept; one `puppet` and recovering its population was annexed to hold.
+
+Retaking a city does not restore it: it comes back smaller and with
 buildings missing again, so a city that changed hands twice is worth less
-to its original owner than it was on the turn the war began. A diplomatic
-lead rests on city-state allies, and allies change hands:
+to its original owner than it was on the turn the war began. Where the
+log carries no city snapshots the `valuation` is absent - fall back to
+the empire-wide `population` line and read the capture's cost from where
+it bends around that turn.
+
+A diplomatic lead rests on city-state allies, and allies change hands:
 `city_state_ally_takeovers` shows it happening, and every ally taken or
 besieged is votes removed from the count. A cultural lead can be answered
 by accumulating a lot of culture, adopting a different ideology and
