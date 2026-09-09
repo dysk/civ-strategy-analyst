@@ -53,7 +53,19 @@ that shortens occupation resistance in `docs/city-value.md`.
 
 A spy therefore does not see anything for the first few turns of a posting: it
 travels, then it establishes surveillance, and only then does the city screen
-open. That delay is **computable, not guessable**, because both terms are
+open.
+
+**The logger now records that turn directly.** As of `civ-narrative-logger`
+*"Stop trusting a progress fall on its own to mean a mission finished"*, a
+`spy_surveillance_established` event fires the turn a spy's
+`HasEstablishedSurveillance` flag goes false → true, carrying
+`{civ, spy, turn, city, city_civ}`. One per posting, roughly 39 a game. That
+event **is** `visible_from_turn` — a logged fact, not a reconstruction — for
+every log written after the fix.
+
+`examples/india-diplo.jsonl` predates it and carries no such event, so the rest
+of this section is the fallback the projection still needs for that game and
+the two older ones. The delay is **computable** because both terms are
 constants:
 
 ```
@@ -69,23 +81,26 @@ target — and for a city-state, over that city-state's *ally*. `InfluenceTimeli
 already carries the level per pair, so the projection picks the branch rather
 than assuming one.
 
-**The log corroborates the constant.** See the next section: the first
-`spy_mission_completed` after a posting lands at **+3 or +4 in 14 of 18
-postings**, which is that formula and not a mission.
+**The old log corroborates the constant.** See the next section: in india-diplo
+the first `spy_mission_completed` after a posting lands at **+3 or +4 in 14 of
+18 postings**, which is that formula and not a mission.
 
-So three dating rules, in descending order of what they may be used for:
+So four dating rules, in descending order of what they may be used for:
 
-- **Computed** — `posting + 1 + surveillance_time`. Exact when the posting is
-  known, which is 13 of 24 spies. This is `visible_from_turn`.
+- **Logged** — `spy_surveillance_established` in city C on turn T.
+  Authoritative wherever the event is present. This is `visible_from_turn`.
+- **Computed** — `posting + 1 + surveillance_time`. The fallback for logs
+  predating the event; exact when the posting is known, which is 13 of 24
+  spies in india-diplo.
 - **Certain floor** — a `spy_mission_completed` in city C on turn T proves
   surveillance was live in C on T, because those mission states imply it
-  (`CvEspionageClasses.cpp:1795`). Used when the posting was lost, and then
-  `visible_from_turn` is a **lower bound** with `visible_from_turn_bounded:
-  true` on the record.
+  (`CvEspionageClasses.cpp:1795`). Used when both of the above are missing —
+  the posting was lost — and then `visible_from_turn` is a **lower bound**
+  with `visible_from_turn_bounded: true` on the record.
 - **Never** — a `spy_moved` turn on its own. It is the order to go, not the
   arrival, and it is never used unadjusted.
 
-None of the three says the player looked.
+None of the four says the player looked.
 
 ## Tenure, and what the log loses
 
@@ -103,18 +118,32 @@ that is 24 spies with a location and 39 tenures.
   either (0 of 9), though the DLL holds one in both cases.
 
 Reported upstream in `civ-narrative-logger/docs/planned-changes.md`, *"Let a
-counterspy leave a trace"*. Until it is fixed, a tenure's `from_turn` is the
+counterspy leave a trace"*. **Partly fixed:** the *"Stop trusting a progress
+fall…"* commit gave `spy_created` and `spy_killed` a `city`/`city_civ` (read
+from the last live poll for the kill, since the DLL empties the record before
+`SPY_STATE_DEAD`), and `spy_surveillance_established` now anchors many arrivals
+the move event missed. Still open is the `spy_moved` gap itself — re-postings
+and post-revival postings — which needs upstream instrumentation first.
+india-diplo predates all of it, so for that game a tenure's `from_turn` is the
 first sighting, **not** the arrival, and every span is a lower bound on how
 long the spy was actually there.
 
-## Most logged missions did not happen
+## Most logged missions did not happen — in logs written before the fix
 
-`completed()` in the logger reads any fall in `PercentComplete` as a finished
-mission, but progress also restarts at a **state transition** — travelling,
-surveillance and gathering intel share one `amount / goal` counter and each new
-state begins it at zero (`CvEspionageClasses.cpp:2474-2487`). Surveillance
-finishing therefore reads as a mission finishing, at exactly
+`completed()` in the logger used to read any fall in `PercentComplete` as a
+finished mission, but progress also restarts at a **state transition** —
+travelling, surveillance and gathering intel share one `amount / goal` counter
+and each new state begins it at zero (`CvEspionageClasses.cpp:2474-2487`).
+Surveillance finishing therefore read as a mission finishing, at exactly
 `posting + 1 + surveillance_time`.
+
+**Fixed upstream** in *"Stop trusting a progress fall on its own to mean a
+mission finished"*: `completed()` now also requires `known.state == spy.state`,
+and the transition it used to mislabel is emitted as
+`spy_surveillance_established` instead. Logs written after that fix carry
+neither the artifact nor the need for the filter below — `missions(civ)` can
+count `spy_mission_completed` straight. The rest of this section is what
+`examples/india-diplo.jsonl` and the two older logs still require.
 
 Anchoring every completion in india-diplo against the nearest preceding
 `spy_created` or `spy_moved`:
@@ -136,26 +165,27 @@ from the global election clock, not the city's counter, so the transition does
 not always produce a fall. The defect's footprint follows the progress formula
 exactly.
 
-**What the projection must do about it.** Filter a completion that lands 3 to 6
-turns after that spy's last posting or creation in the same city, and count it
-as the surveillance moment instead of a mission. Where no anchor survived,
-carry the completion with `anchored: false` — it may be either — and never let
-an unanchored count reach a prompt as a bare number.
+**What the projection must do about it, for a pre-fix log.** Filter a
+completion that lands 3 to 6 turns after that spy's last posting or creation in
+the same city, and count it as the surveillance moment instead of a mission.
+Where no anchor survived, carry the completion with `anchored: false` — it may
+be either — and never let an unanchored count reach a prompt as a bare number.
+A `spy_surveillance_established` on the same spy and turn makes the filter
+exact rather than a window; its absence is how the projection knows it is
+reading a pre-fix log at all.
 
-Two consequences worth stating plainly, because both bite the headline:
+Two consequences worth stating plainly:
 
-- **Mission counts are upper bounds** until the logger is fixed, and the
-  per-civ split is unreliable for every civ but India.
-- **A kill hides a completion.** The roll that kills a spy happens *at*
-  `HasReachedGoal`, and `diffSpy` takes the `dead` branch first, so the
-  completion is never written. The nine deaths in Delhi are nine completions
-  the log does not carry.
+- **Mission counts are upper bounds in india-diplo**, and the per-civ split
+  there is unreliable for every civ but India.
+- **A kill still hides a completion, in every log.** The roll that kills a spy
+  happens *at* `HasReachedGoal`, and `diffSpy` takes the `dead` branch before
+  `completed()`, so the completion is never written — the fix above did not
+  change this. The nine deaths in Delhi are nine completions the log does not
+  carry.
 
-Reported upstream as *"Report the completions that never happened"*. The fix is
-one clause — a fall in progress is a completion only when the state is
-unchanged — and the request beside it is that the logger emit the
-`EstablishedSurveillance` flag it already extracts and drops, which would make
-this whole section unnecessary.
+Reported upstream as *"Report the completions that never happened"* and fixed
+there; this section applies only to logs written before that commit.
 
 ## The counterspy, which must be inferred
 
@@ -203,8 +233,10 @@ having. The Netherlands has a never-located spy (`NETHERLANDS_1`) with no
 deaths to corroborate it — signal 1 alone, and the record says so rather than
 promoting a guess to a garrison.
 
-`spy_killed` carries no city, so the death site is the last known tenure.
-Carry `turns_since_last_seen` (4 to 13 here) so a reader can discount it.
+In india-diplo `spy_killed` carries no city, so the death site is the last
+known tenure; carry `turns_since_last_seen` (4 to 13 here) so a reader can
+discount it. Post-fix logs put `city`/`city_civ` on the kill directly, taken
+from the last live poll, and `turns_since_last_seen` is then 0.
 
 ## The coup, which has no event at all
 
@@ -255,10 +287,12 @@ t158  Netherlands completes the Louvre. England loses by one turn, 425 sunk.
 
 England's spy was established in Amsterdam **two turns before Amsterdam started
 the wonder**, and that date is computed, not guessed: the spy was created on
-148 and `1 + 3` puts its surveillance live on 152. It watched the Louvre go
-from 0 to 469 hammers. London's rate over the whole build: 52, 44, 44, 46, 46, 46, 47,
-47, 53 — **flat**. England had the intelligence, did not accelerate, did not
-stop, and lost by a turn.
+148 and `1 + 3` puts its surveillance live on 152. (A post-fix log would carry
+a `spy_surveillance_established` for `ENGLAND_6` in Amsterdam on turn 152 and
+this would be read, not derived.) It watched the Louvre go from 0 to 469
+hammers. London's rate over the whole build: 52, 44, 44, 46, 46, 46, 47, 47,
+53 — **flat**. England had the intelligence, did not accelerate, did not stop,
+and lost by a turn.
 
 Three rules follow:
 
@@ -295,8 +329,8 @@ of civs with the contender flagged, never a boolean on the contender.
 - **Which technology was stolen.** No API exposes it. The logger's suggested
   reconstruction — a `tech_researched` not matching the thief's `researching`
   on the turn a `gathering_intel` mission completed — is untested and must not
-  ship as fact. It is also built on the completion event, which the section
-  above shows is mostly artifact, so it would currently fire against turns on
+  ship as fact. On a pre-fix log it is also built on the completion event that
+  the section above shows is mostly artifact, so it would fire against turns on
   which nothing was stolen.
 - **Whether a player looked at the city screen a spy opened.**
 - **Gold gifts to city-states** (`CvDeal` unreachable) and **quests**

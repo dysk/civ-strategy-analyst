@@ -441,12 +441,19 @@ city-state projection and leave the wonder-race join with nowhere to live.
 ### The primitive: spy tenure
 
 The log names every spy (`TXT_KEY_SPY_NAME_INDIA_7`) and the name is stable
-across events, so a spy is trackable. Two event types carry a location:
+across events, so a spy is trackable. The event types that carry a location:
 
 - `spy_moved` — `{civ, spy, city, city_civ, state, x, y}`, 34 records, 32 of
   them `travelling`. This is the **order to go**, not the arrival.
 - `spy_mission_completed` — the same fields, 53 records. This is **proof of
   presence**, and of established surveillance (below).
+- `spy_surveillance_established` — `{civ, spy, city, city_civ}`, added upstream
+  in *"Stop trusting a progress fall on its own to mean a mission finished"*.
+  Fires the turn the spy's `HasEstablishedSurveillance` flag goes true, one
+  per posting. `examples/india-diplo.jsonl` predates it and carries none;
+  every later log does.
+- `spy_created` and `spy_killed` — no location in india-diplo (0 of 18, 0 of
+  9), given `city`/`city_civ` by that same upstream commit.
 
 A tenure is a maximal run of sightings of one spy in one city. Reconstructed
 over india-diplo that gives **24 spies with a location and 39 tenures**, and
@@ -485,17 +492,22 @@ against `LEKMOD_DLL/CvGameCoreDLL_Expansion2/`:
   arrival, shortened by `GetInfluenceSurveillanceTime` against the target — the
   same tourism mechanic that shortens occupation resistance in tranche 1.
 
-Two dating rules fall straight out of that, and the difference between them
-matters:
+Dating rules fall straight out of that, in descending order of what they may be
+used for. `docs/espionage.md` carries the full version with the DLL constants;
+in short:
 
-- **Certain** — a `spy_mission_completed` in city C on turn T proves
-  surveillance was live in C on T, because the mission states imply it.
-- **Estimated** — a `spy_moved` to C on turn T grants sight no earlier than
-  `T + 3`, and travel time is on top of that.
-
-`visible_from_turn` is taken from the certain rule; the estimated one is
-carried beside it as `visible_from_turn_estimated` and never used to assert
-that somebody knew something.
+- **Logged** — a `spy_surveillance_established` in city C on turn T. The turn
+  vision opened, stated outright. This is `visible_from_turn` wherever the
+  event is present, which is every log after the upstream fix.
+- **Computed** — `posting + 1 + surveillance_time` (`surveillance_time` is 3,
+  or 1 with a tourism lead over the target). The fallback for india-diplo and
+  the two older logs, exact where the posting survived.
+- **Certain floor** — a `spy_mission_completed` in city C on turn T proves
+  surveillance was live in C on T, because the mission states imply it. Used
+  when neither of the above is available; `visible_from_turn` is then a lower
+  bound with `visible_from_turn_bounded: true`.
+- **Never** — a `spy_moved` turn on its own. It is the order to go, not the
+  arrival.
 
 **The log never shows that a player looked.** It shows the opportunity to
 know. Every field here is named for opportunity — `observed_by`, not
@@ -522,7 +534,8 @@ t158  Netherlands completes the Louvre. England loses by one turn, 425 sunk.
 
 England's spy was established in Amsterdam **two turns before Amsterdam
 started the wonder** — a computed date, not a guess: created on 148, `1 + 3`
-puts surveillance live on 152 — and watched it go from 0 to 469 hammers.
+puts surveillance live on 152 (a post-fix log would state that turn outright
+in a `spy_surveillance_established`) — and watched it go from 0 to 469 hammers.
 London's rate
 over the whole build: 52, 44, 44, 46, 46, 46, 47, 47, 53. **Flat.** England had
 the intelligence, did not accelerate, did not stop, and lost by a turn.
@@ -693,19 +706,23 @@ say so — do not calibrate it against nothing.
   older example logs must be checked before this ships.
   - `tenures(civ = nil)` → `{civ, spy, city, city_civ, from_turn, to_turn,
     visible_from_turn, visible_from_turn_bounded, states,
-    ended_by: :moved | :killed | :log_end}`. `visible_from_turn` is
-    **computed** — `posting + 1 + (3, or 1 at INFLUENCE_LEVEL_FAMILIAR or
-    better over the target)`, both DLL constants — and falls back to a bounded
-    floor only where the posting was lost.
+    ended_by: :moved | :killed | :log_end}`. `visible_from_turn` is **read
+    from `spy_surveillance_established`** where the log carries one; on a
+    pre-fix log it is **computed** — `posting + 1 + (3, or 1 at
+    INFLUENCE_LEVEL_FAMILIAR or better over the target)`, both DLL constants —
+    and falls back to a bounded floor only where the posting was lost.
   - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
     overlaps the window, which is the whole of joins A and D.
   - `missions(civ)` → `spy_mission_completed` split on `city_civ` against
     `game.players`: `:tech_theft` in a major's city, `:election_rigging` in a
-    city-state's. **Filtered first**: a completion 3–6 turns after that spy's
-    posting or creation in the same city is the surveillance transition, not a
-    mission — 23 of india-diplo's 53 are, and the per-civ split is mostly
-    artifact without the filter (`docs/espionage.md`). Unanchored completions
-    carry `anchored: false` and never reach a prompt as a bare count. Never a
+    city-state's. **On a pre-fix log, filtered first**: a completion 3–6 turns
+    after that spy's posting or creation in the same city is the surveillance
+    transition, not a mission — 23 of india-diplo's 53 are, and the per-civ
+    split is mostly artifact without the filter (`docs/espionage.md`).
+    Unanchored completions carry `anchored: false` and never reach a prompt as
+    a bare count. A log carrying `spy_surveillance_established` has already had
+    that transition split off upstream, so the filter is skipped and the count
+    is taken straight. Never a
     stolen technology — no API exposes it, and the logger's suggested
     reconstruction is untested, built on the same corrupted event, and must not
     ship as fact.
@@ -733,9 +750,10 @@ say so — do not calibrate it against nothing.
 
 ### Iterations
 
-1. `Espionage#tenures` — the run reconstruction, `visible_from_turn` computed
-   from the two constants with `InfluenceTimeline` picking the branch, the
-   bounded fallback, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
+1. `Espionage#tenures` — the run reconstruction, `visible_from_turn` from
+   `spy_surveillance_established` where present and otherwise computed from the
+   two constants with `InfluenceTimeline` picking the branch, the bounded
+   fallback, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
 2. `#missions`, `#losses`, `#capacity` — the splits, the inferred host city and
    its staleness.
 3. `#counterspies` — the three signals and the confidence they combine to.
