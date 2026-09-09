@@ -429,8 +429,8 @@ joining against that position:
 | question | feature | needs |
 |---|---|---|
 | did the loser of a wonder race know? | tranche 1, `rival_observed` | tenure in the winner's city |
-| what moved a city-state's influence? | 5 | rig missions, per city-state |
-| how well was an empire defended? | 4 itself | where spies died |
+| what moved a city-state's influence? | 5 | rig missions and coups, per city-state |
+| was an empire garrisoned against theft? | 4 itself | where spies died, and which spies never appear |
 | could that drop have been made blind? | later, war logs | tenure adjacent to a plot |
 
 Building it inside feature 5 would bury the tenure reconstruction inside a
@@ -465,10 +465,19 @@ against `LEKMOD_DLL/CvGameCoreDLL_Expansion2/`:
 
 - `CvPlot.cpp:1888` — a plot grants
   `changeAdjacentSight(..., ESPIONAGE_SURVEILLANCE_SIGHT_RANGE, ...)` to every
-  major with `HasEstablishedSurveillanceInCity`. Sight of the city plot means
-  the city banner, and the banner carries what is being produced and the turns
-  left. It is also the vision that lets artillery and bombers fire without a
-  spotter, and a paradrop pick a target.
+  major with `HasEstablishedSurveillanceInCity`. That is the map half: the
+  vision that lets artillery and bombers fire without a spotter, and a paradrop
+  pick a target.
+- **The intelligence half is larger than the map half, and it is not a banner.**
+  A spy with surveillance opens the target's **full city screen, read-only** —
+  every yield, every detail, and the **whole production queue**, exactly as its
+  owner sees it (the user's own knowledge of the game; it is a UI affordance,
+  not a DLL constant, so it is recorded here as a played rule rather than a
+  cited line). The consequence for the wonder race is sharper than "they saw a
+  wonder being built": the observer saw **what was queued behind it too**, so
+  `city_snapshot.producing` is the *floor* of what a watcher knew, never the
+  ceiling. An analysis may say a contender could see the rival's plan, not
+  merely its current item.
 - `CvEspionageClasses.cpp:1795` — surveillance counts as established when the
   spy's state is `SURVEILLANCE` **and** the goal is reached, **or** whenever the
   state is `GATHERING_INTEL`, `RIG_ELECTION` or `SCHMOOZE`.
@@ -557,30 +566,116 @@ list of civs with the contender flagged, not a boolean on the contender.
 Feature 5 depends on this and the measurement is in the next section, because
 the finding belongs to the influence curve rather than to the spies.
 
-### Join C: where spies die, and what that says about a defence
+### Join C: where spies die, and the counterspy the log never records
 
-The first draft says counter-intelligence "reads off `spy_moved`". Measured,
-that is wrong for this game, and wrong in an instructive way.
+The first draft said counter-intelligence "reads off `spy_moved`", and that
+nine kills in Delhi against a civ with no counter-intel posting proved a
+**passive** defence of buildings and a tech lead. Checked against the DLL, that
+reading is wrong — and the truth is a better finding.
 
-**All nine spy kills in india-diplo happened in Delhi** — England lost four
-there, Tibet three, the Netherlands and the Iroquois one each. India never
-posted a single counter-intelligence spy; all 23 of its missions were rigging
-elections in city-states. So the defence was entirely **passive** — constabulary,
-police station, and a large tech lead over every thief — and it is visible in
-the log with no counter-intel record involved.
+`CvEspionageClasses.cpp:538-582`, under `ESPIONAGE_SYSTEM_REWORK` (defined at
+`_Defines.h:1441`, so this is the live branch), resolves every completed
+mission on a rank difference:
 
-That is the detector to build, and it is a count per **host city**, not per
-posting:
+```
+iSpyRankDifference = (attacker rank + 1) - iCounterspyRank + 1
 
-- `spy_killed` carries `{civ, spy, turn}` and **no city**. The location is the
-  spy's last known tenure, which is an inference; carry it with the staleness
-  (`turns_since_last_seen`, 4 to 13 here) so a reader can discount it.
-- The per-civ ledger that falls out is stark and cheap: India ran 23 missions
-  and lost 0 spies; England ran 10 and lost 4; Tibet ran 6 and lost 3.
+with a counterspy:      >2 DETECTED   2|1 IDENTIFIED   0 SPOTTED   <0 KILLED
+without a counterspy:   >3 UNDETECTED   3 DETECTED     2 IDENTIFIED
+```
 
-An explicit `counter_intel` posting stays worth detecting — it fired once,
-England recalling `ENGLAND_1` to London on turn 156 — but it is the rare case,
-not the mechanism.
+**There is no `KILLED` branch without a counterspy.** An attacking spy cannot
+die in a city its owner's rival has not garrisoned. And the whole
+`iCounterspyRank` computation — `BUILDING_CONSTABLE`,
+`BUILDING_AUSTRALIA_CONSTABULARY` and `BUILDING_INTELLIGENCE_AGENCY`, each
+worth `+1`, plus a flat `+1` — sits **inside** `if (pCityEspionage->HasCounterSpy())`.
+So the buildings raise the **defending spy's effective rank** and are worth
+exactly nothing on their own; without a garrison they neither kill nor slow.
+(Note for the implementation: it is Constable and Intelligence Agency, *not*
+Police Station, that carry the bonus in this branch.)
+
+**So the nine kills in Delhi are proof of a counterspy the log never mentions.**
+And the spy is identifiable:
+
+| spy | created | events | ever located |
+|---|---|---|---|
+| `INDIA_7` | turn 94 | promoted `agent` t108, `special_agent` t109 | **never** |
+
+India created six spies; five appear in a city and `INDIA_7` never does. It was
+promoted twice in two turns — and `bCounterSpyUpgrade` is set precisely on
+`SPOTTED` and `KILLED`, while the **first kill in the game is on turn 109**.
+`INDIA_7` was sitting in Delhi the whole game, doing the thing that decided
+every other civ's espionage, and the logger has no record of it.
+
+Why it is invisible: the logger emits `spy_moved` on a move order and
+`spy_mission_completed` on a mission, and a counterspy placed once and left
+alone does neither. **This is a logger blind spot worth reporting upstream**,
+and until it closes the projection infers the garrison rather than reading it.
+
+`Espionage#counterspies(civ)` — inferred, never asserted, from three
+independent signals that agree:
+
+1. **a spy with no location** — created, sometimes promoted, never in a city;
+2. **enemy spies dying in one of the civ's cities**, which the DLL says is
+   impossible without a garrison there;
+3. **promotions clustering with those deaths**, since the defender is what
+   levels up on a kill.
+
+The record carries `city` (the modal death site), `confidence` (how many of the
+three signals fired) and `spy` when a never-located spy can be named. Signal 2
+alone locates the garrison without naming it, which is the common case and
+still worth having.
+
+`Netherlands` has its own never-located spy (`NETHERLANDS_1`) with no deaths to
+corroborate it — signal 1 alone, and the record must say so rather than promote
+a guess to a garrison.
+
+**`spy_killed` carries no city**, so the death site is the spy's last known
+tenure. Carry `turns_since_last_seen` (4 to 13 here) so a reader can discount
+the inference.
+
+The per-civ ledger that falls out of this is the honest version of the
+"who defended themselves" question: India ran 23 missions, lost 0 spies, and
+garrisoned its capital; England ran 10 and lost 4; Tibet ran 6 and lost 3.
+
+### The coup — the one mission with no event at all
+
+A spy in a city-state that already has an ally can **stage a coup**:
+`CvEspionageClasses.cpp:2110`, *"if success, the spy's owner becomes the ally;
+if failure, the spy dies."* It is the fast, risky alternative to rigging
+elections for ten turns at a time, and it is the counter a rival uses against a
+diplomatic runaway.
+
+What the DLL says exactly, because the signature depends on it:
+
+- `CanStageCoup` requires the city-state to **already have an ally** — a coup
+  takes an alliance, it cannot create one from nothing.
+- On success the couper's influence is **swapped** with the previous ally's,
+  and every other major's is cut by
+  `ESPIONAGE_COUP_OTHER_PLAYERS_INFLUENCE_DROP`. Not a flat grant — a swap.
+- On failure the couper's influence is set to **−10** and the spy is killed
+  (`ExtractSpyFromCity` then `SPY_STATE_DEAD`).
+
+**The logger has no coup event.** Its six `spy_*` types are `created`, `moved`,
+`mission_completed`, `killed`, `promoted`, `revived` — a coup is neither a move
+nor a completed mission, so nothing fires. Like the counterspy, it must be
+inferred, and unlike the counterspy its signature is loud:
+
+- **failed** — a `spy_killed` whose last tenure is in a **city-state** (not a
+  major), with that civ's influence there at or near **−10** on the next
+  `city_state_snapshot`. Both halves are needed: the death alone could be a
+  garrisoned major, and a −10 alone could be other things (India sat at −60 at
+  Harappa on turn 35, long before any spy existed).
+- **succeeded** — two civs' influence at one city-state **exchanging values**
+  between consecutive snapshots, with an `city_state_ally_changed` on the same
+  turn and no `rigging_election` mission to explain it.
+
+**Zero coups in india-diplo** — all nine kills were in Delhi, a major's city,
+and no influence pair ever swapped. Both detectors ship unexercised, and they
+are the second-most likely thing a human-versus-human log will contain that
+this one does not. They also matter to feature 5: a coup is a way an alliance
+changes hands with **no logged cause**, so it is a candidate explanation for
+part of that feature's residual, and must be named there as one.
 
 ### Join D: vision as a weapon
 
@@ -604,8 +699,14 @@ say so — do not calibrate it against nothing.
     logger's suggested reconstruction is untested and must not ship as fact.
   - `losses` → one record per `spy_killed` with the inferred host city, the
     host's civ, and `turns_since_last_seen`.
-  - `capacity(civ)` → created / revived / killed / promoted counts, which is
-    the cheapest honest measure of how much a civ invested in the game at all.
+  - `counterspies(civ)` → the inferred garrisons: `{city, spy, confidence,
+    kills}` from the three agreeing signals. Inferred, and labelled inferred
+    everywhere it surfaces.
+  - `coups` → `{civ, city_state, turn, outcome: :failed | :succeeded}` from the
+    two signatures. Unexercised here; ships that way.
+  - `capacity(civ)` → created / revived / killed / promoted counts, and the
+    count of spies **never located**, which is the cheapest honest measure of
+    both how much a civ invested and how much of that investment sat at home.
 - `WonderRaces` fills its `rival_observed` from `observers_of`, and each
   contender gains `observed_from_turn`, `observed_turns`, `observed_by`, and
   `rate_before` / `rate_after` from `production_stored` deltas.
@@ -624,10 +725,15 @@ say so — do not calibrate it against nothing.
    certain rule, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
 2. `#missions`, `#losses`, `#capacity` — the splits, the inferred host city and
    its staleness.
-3. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
+3. `#counterspies` — the three signals and the confidence they combine to.
+   `docs/espionage.md` carries the DLL rank table this rests on, since a reader
+   has no other way to know why a kill implies a garrison.
+4. `#coups` — both signatures, both unexercised.
+5. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
    five-way classification with four branches declared unexercised.
-4. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
-   the opportunity-not-knowledge rule and the passive-defence reading;
+6. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
+   the opportunity-not-knowledge rule, the read-only-city-screen scope of what
+   an observer saw, and the counterspy inference with its confidence;
    `chronicle_game.md` gets how to write a race lost in full view.
 
 ## 5. City-state influence and the vote
@@ -669,7 +775,11 @@ what the log explains and what it does not**, and to say so in that order. That
 residual is the vocabulary the first draft said was missing for the normal case:
 it is where gold gifts and quests live, and both are unloggable —
 `CvDeal` is unreachable from Lua and `MinorCivQuestTypes` is a C++ enum with no
-database table.
+database table. **A successful coup also lands in the residual** — it moves an
+alliance with no event of its own — so feature 4's coup detector is the one
+tool that can carve a piece out of this number, and the residual field must
+name coups among its candidate causes rather than implying the whole of it is
+gold and quests.
 
 The residual also names the bridge to feature 7. India ran **15 CS-bound trade
 routes** and adopted `POLICY_MERCHANT_CONFEDERACY` on turn 81 (+1 influence per
@@ -706,14 +816,17 @@ answers, the log sees two:
 
 | counter | visible? | fired here |
 |---|---|---|
-| counter-intelligence in your own city-states | yes, via feature 4 | never |
+| garrison your own cities against theft | **only by inference** — feature 4's counterspy signals | yes, and invisibly: India held Delhi all game and killed nine spies |
+| coup an ally away outright | **only by inference** — feature 4's two signatures | never |
 | conquer a city-state to shrink the vote pool | yes — `city_captured` with `old_owner` in `game.city_state_civs`, and `votes_needed_for_diplo_victory` moving | never; the threshold sat at 34 from turn 101 to the end |
 | outbid with gold | **no** — `CvDeal` unreachable | — |
 | run the quests | **no** — not logged | — |
 
-Both visible detectors ship **unexercised**, and the digest must state the two
-blind spots beside the influence curve. Without that the analysis will credit
-every aggressor and never see a defence.
+Only one of the five is read straight from an event. Two are inferences the
+projection must label as inferences, and two are invisible. The digest must
+carry that shape beside the influence curve — without it the analysis credits
+every aggressor and never sees a defence, which is exactly the failure this
+game's data invites, since the one defence that did happen left no record.
 
 ### Design
 
