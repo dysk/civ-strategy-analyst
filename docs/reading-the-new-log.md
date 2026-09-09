@@ -66,16 +66,18 @@ context for the order, to be detailed when reached.
 3. What a city was worth when it changed hands
 
 **Tranche 2 — the diplomatic game**
-4. City-state influence and the spies that move it (the india game is decided
-   by exactly this, and by nothing else that is logged)
-5. Diplomatic ties (logged, exact, read by nothing)
-6. Trade routes
+4. Espionage — the shared primitive, and it retro-fills tranche 1's
+   `rival_observed` (promoted from a paragraph inside 5; see the section for why)
+5. City-state influence and the vote (the india game is decided by exactly
+   this, and by nothing else that is logged)
+6. Diplomatic ties (logged, exact, read by nothing)
+7. Trade routes
 
 **Tranche 3 — intent and belief**
-7. Research beelines (`researching`)
-8. Yield attribution (`yield_sources`)
-9. Religion and conversion
-10. Resource-flow deal reconstruction (explicitly inferred)
+8. Research beelines (`researching`)
+9. Yield attribution (`yield_sources`)
+10. Religion and conversion
+11. Resource-flow deal reconstruction (explicitly inferred)
 
 ---
 
@@ -408,206 +410,430 @@ captures carry no `city_snapshot` at all.
 
 ---
 
-# Tranche 2 and 3 — why in this order
+# Tranche 2
 
-**4. City-state influence.** India ended allied to **10 of 11** city-states and
-won on diplomacy.
+Ordered so that the shared primitive is built before the three features that
+join against it. Espionage was a paragraph inside city-state influence in the
+first draft of this plan; measuring it moved it to the front, for the reason
+the next section opens with.
 
-**Build this to measure a contest, not a ramp.** India faced one human's worth
-of opposition and five bots' worth of none, and among humans a diplomatic
-victory is rare precisely because it is answerable: rivals flip their spies to
-counter-intelligence, outbid with gold, run the quests, or take the city-states
-outright to shrink the vote pool. The log sees the first and the last of those
-four and is blind to the middle two — gold gifts are not logged at all
-(`CvDeal` is unreachable) and quests are not logged either. That asymmetry must
-be stated in the digest, or the analysis will credit every aggressor and never
-see a defence. A projection tuned on this one game will describe an uncontested
-climb and have no vocabulary for the normal case.
+## 4. Espionage — the primitive that four features share
 
-Of the two counters the log can see, one is trivial to detect and neither is
-tested. **Counter-intelligence** reads off `spy_moved` (see below).
-**Conquering a city-state to shrink the vote pool** is a `city_captured` whose
-`old_owner` is in `game.city_state_civs`, and it should show up twice — as a
-capture, and as `votes_needed_for_diplo_victory` moving in `congress_snapshot`.
-**No city-state was taken in india-diplo**, and the threshold sat at 34 from
-turn 101 to the end, so the detector has never fired. Build it and say it is
-unexercised.
+### Why it is its own feature, and why it comes first
 
-**Allies are not only a victory condition**, and the plan should not treat them
-as one. They are, in rough order of how measurable each is:
+Espionage has no separate slot in the first draft because it looked like a
+sub-part of the diplomatic game. It is not. A spy is a **position on the map
+held over a span of turns**, and four unrelated questions are answered by
+joining against that position:
 
-- **Votes**, exactly. `congress_snapshot` carries `votes` and `core_votes` per
-  civ, and the difference is what the city-states are paying. At turn 167 India
-  held **28 votes of which 4 were core** — 24 bought — against everyone else's
-  0 to 2. `CongressTimeline` already reads this record and takes only the total;
-  splitting it is nearly free and is the single clearest number in the game.
-  Votes also elect the host and carry ordinary resolutions, which matter long
-  before anyone is near a diplomatic win.
-- **Bonuses**, from the trait in `session_started.city_states[]` — and at two
-  strengths, since a friend already pays something and an ally pays more. The
-  `level` field in `city_state_snapshot.relations[]` separates them.
-- **A buffer**, slightly worse than a buffer city of one's own but on the same
-  ground. This one reuses code rather than adding any:
-  `CapitalProximity#city_state_capitals` already holds every city-state's plot,
-  and `BufferCities`' corridor test (lateral offset plus betweenness) already
-  decides whether a city sits in the corridor between two capitals. Running
-  that test with a city-state capital as
-  the corridor city, weighted by whether the alliance was held at the time,
-  answers "who covered that approach" for allies as it already does for cities.
-
-`city_state_snapshot` carries the full matrix — influence,
-`per_turn` rate, level, `protected`, `ally` — and `session_started.city_states[]`
-carries trait, LEKMOD personality and unique unit. Today `PlayerTimeline` sees
-only the threshold-crossing events, so it can say *that* Ljubljana flipped eight
-times and never *how close* anyone was. The snapshot is sparse (238 records over
-87 turns, emitted on level change plus a per-session baseline) but lossless: the
-curve between two records is read back from `per_turn`.
-
-**Espionage belongs in this feature, and not as a footnote.** The mission
-breakdown is the sharpest single split in the whole log:
-
-| civ | `rigging_election` | `gathering_intel` |
+| question | feature | needs |
 |---|---|---|
-| **India** | **23** | 0 |
-| England | 0 | 10 |
-| Iroquois | 0 | 6 |
-| Tibet | 0 | 6 |
-| Netherlands | 0 | 4 |
-| Zimbabwe | 0 | 4 |
+| did the loser of a wonder race know? | tranche 1, `rival_observed` | tenure in the winner's city |
+| what moved a city-state's influence? | 5 | rig missions, per city-state |
+| how well was an empire defended? | 4 itself | where spies died |
+| could that drop have been made blind? | later, war logs | tenure adjacent to a plot |
 
-Every other civ pointed its spies at technology. India pointed all of its at
-city-states, and nobody else rigged a single election. The targets line up with
-the influence curve: Ljubljana rigged 8 times went 20 → 247, Montevideo 6 times
-56 → 206, Zurich 5 times 20 → 171, Tashkent 3 times 20 → 239.
+Building it inside feature 5 would bury the tenure reconstruction inside a
+city-state projection and leave the wonder-race join with nowhere to live.
+`WonderRaces` already carries `rival_observed: nil`, waiting for it
+(`app/projections/wonder_races.rb`).
 
-So in *this* game the diplomatic victory was **bought with spies, with caravans
-as a supporting flow** — not the other way round. A projection that reads
-city-state influence without reading `spy_mission_completed` beside it will show
-the influence climbing and have nothing to attribute it to.
+### The primitive: spy tenure
 
-### But election-rigging is the narrow case, not the usual one
+The log names every spy (`TXT_KEY_SPY_NAME_INDIA_7`) and the name is stable
+across events, so a spy is trackable. Two event types carry a location:
 
-Rigging is what India did because nobody stopped it. The ordinary uses of a spy
-are stealing technology and guarding against the theft, and the log distinguishes
-every one of them from the fields it already carries:
+- `spy_moved` — `{civ, spy, city, city_civ, state, x, y}`, 34 records, 32 of
+  them `travelling`. This is the **order to go**, not the arrival.
+- `spy_mission_completed` — the same fields, 53 records. This is **proof of
+  presence**, and of established surveillance (below).
 
-| use | how it reads | seen here |
+A tenure is a maximal run of sightings of one spy in one city. Reconstructed
+over india-diplo that gives **24 spies with a location and 39 tenures**, and
+they read cleanly — `IROQUOIS_6` sat in London from turn 118 to at least 173,
+completing four intel missions; `ENGLAND_1` toured Amsterdam, Lhasa and Mumbai
+before going home to London on counter-intelligence at 156.
+
+The run ends where the next sighting of that spy is in another city. An open
+run is held to the end of the log, or to `spy_killed` when one follows.
+
+### What surveillance actually grants — checked in the DLL, not assumed
+
+The whole feature rests on a spy in a city telling its owner what that city is
+building. That is a rule of the game, not a fact in the log, so it was checked
+against `LEKMOD_DLL/CvGameCoreDLL_Expansion2/`:
+
+- `CvPlot.cpp:1888` — a plot grants
+  `changeAdjacentSight(..., ESPIONAGE_SURVEILLANCE_SIGHT_RANGE, ...)` to every
+  major with `HasEstablishedSurveillanceInCity`. Sight of the city plot means
+  the city banner, and the banner carries what is being produced and the turns
+  left. It is also the vision that lets artillery and bombers fire without a
+  spotter, and a paradrop pick a target.
+- `CvEspionageClasses.cpp:1795` — surveillance counts as established when the
+  spy's state is `SURVEILLANCE` **and** the goal is reached, **or** whenever the
+  state is `GATHERING_INTEL`, `RIG_ELECTION` or `SCHMOOZE`.
+- `CvEspionageClasses.cpp:1702` — establishing it takes a base **3 turns** after
+  arrival, shortened by `GetInfluenceSurveillanceTime` against the target — the
+  same tourism mechanic that shortens occupation resistance in tranche 1.
+
+Two dating rules fall straight out of that, and the difference between them
+matters:
+
+- **Certain** — a `spy_mission_completed` in city C on turn T proves
+  surveillance was live in C on T, because the mission states imply it.
+- **Estimated** — a `spy_moved` to C on turn T grants sight no earlier than
+  `T + 3`, and travel time is on top of that.
+
+`visible_from_turn` is taken from the certain rule; the estimated one is
+carried beside it as `visible_from_turn_estimated` and never used to assert
+that somebody knew something.
+
+**The log never shows that a player looked.** It shows the opportunity to
+know. Every field here is named for opportunity — `observed_by`, not
+`known_by` — and both prompts must be told the difference, or the analysis will
+narrate a decision the player may have made with their eyes shut.
+
+### Join A: the wonder race, and the shape the data actually has
+
+This is the join the plan was missing, and running it changes what it should
+look for.
+
+Over india-diplo's ten contested wonders and thirteen contender rows, a
+contender held a spy in the winner's city **exactly once** — and it is the
+biggest wonder loss in the game:
+
+```
+t148  London starts the Louvre                    0 stored, 12 turns left
+t148  England creates spy ENGLAND_6
+t152  ENGLAND_6 completes a mission in AMSTERDAM  <- surveillance proven live
+t154  Amsterdam appears building the Louvre       0 stored, 4 turns left
+t157  Amsterdam 469 stored, 1 left | London 425 stored, 2 left
+t158  Netherlands completes the Louvre. England loses by one turn, 425 sunk.
+```
+
+England's spy was established in Amsterdam **two turns before Amsterdam
+started the wonder**, and watched it go from 0 to 469 hammers. London's rate
+over the whole build: 52, 44, 44, 46, 46, 46, 47, 47, 53. **Flat.** England had
+the intelligence, did not accelerate, did not stop, and lost by a turn.
+
+Three things follow for the design:
+
+1. **The naive window test is the wrong test.** "Did the contender hold a spy
+   at any point during the race" would also fire on a spy that arrived after
+   the race was decided. What matters is vision **while a decision was still
+   available** — while the contender was still building and the wonder was not
+   yet finished.
+2. **The decision the spy informs is usually not the start.** England committed
+   on 148 and its spy did not exist until 148. Vision cannot explain the start;
+   it can only explain continuing or quitting. So the field to carry is not one
+   boolean but the span: `observed_from_turn` and `observed_turns` — how many
+   turns of its own build the contender could see the winner's.
+3. **The response is measurable.** `production_stored` per turn gives a rate,
+   so the rate before `observed_from_turn` against the rate after is a direct
+   test of the two cases:
+
+| pattern | reading | seen in india-diplo |
 |---|---|---|
-| steal a technology | `spy_mission_completed`, `state: gathering_intel`, in a major's city | 30, every civ but India |
-| rig an election | same event, `state: rigging_election`, in a city-state | 23, India only |
-| guard your own cities | `spy_moved` where `city_civ == civ`; `state: counter_intel` | 6 sent home, 1 explicit |
-| watch before acting | `state: surveillance` | 1 |
+| observed, rate rises, still lost | tried to outrun it | 0 |
+| observed, rate rises, won | the spy paid for itself | 0 |
+| observed, `:abandoned` soon after | read the board, cut the losses | 0 |
+| **observed, rate flat, lost** | **had the intelligence and pressed on** | **1 — the Louvre** |
+| not observed, lost | lost a race it could not see | 12 |
 
-`city_civ` against `game.players` splits target types in one line, and the split
-per civ is stark: India 23/23 on city-states, every other civ 100% on majors.
-**Which technology was stolen is not readable** — no API exposes it. The
-logger's suggested reconstruction (a `tech_researched` that does not match the
-thief's `researching` on the turn a `gathering_intel` mission completed) is
-recorded in the plan as a possibility and is **untested**; it must not ship as a
-fact.
+Four of five rows are empty. **The classifier ships with one real instance and
+four unexercised branches**, and the doc says so — the same footing as
+`winner_finish`'s `:ahead_of_estimate` in `docs/wonder-race.md`. It is worth
+shipping anyway because the one instance is the sharpest sentence available
+about the largest wonder loss in the log, and because the empty branches are
+the ones a game between humans will fill.
 
-### Two links worth building that this game could not show
+One nuance to encode rather than smooth over: a **third party** can hold the
+spy. Tibet had a spy in Amsterdam through the Alhambra race that Zimbabwe lost.
+That is not the same fact and must not be scored as one — `observed_by` is a
+list of civs with the contender flagged, not a boolean on the contender.
 
-**A spy in a capital is intelligence about production, and that ties back to the
-wonder race.** The log is omniscient — `city_snapshot.producing` shows what
-every city builds — but the *players* were not, and the difference is analysable.
-Whether a civ had a spy sitting in the capital that beat it to a wonder is the
-difference between losing a race it could see and losing one it could not. That
-join costs nothing: `spy_moved` gives the city and the turn, `WonderRaces` gives
-the contenders and the window. It is the sharpest available answer to "did they
-know?", and it belongs in tranche 1's wonder feature as a field that tranche 2
-fills in.
+### Join B: what actually moved city-state influence
 
-**A spy also gives vision, and vision is a weapon.** A spy in a city reveals it
-and the hexes around it, which is what lets artillery, bombers and missiles fire
-without a spotter, and what makes a paradrop or an XCOM drop possible. `paradrop`
-is its own event type and carries a plot, so a drop into a city a spy occupied is
-a direct join. **India-diplo contains zero paradrops**, so this is specified and
-unverified — it waits for a war log, and the doc says so rather than pretending
-the mechanism was checked.
+Feature 5 depends on this and the measurement is in the next section, because
+the finding belongs to the influence curve rather than to the spies.
 
-**5. Diplomatic ties.** `friendship_*`, `defensive_pact_*`, `open_borders_*`,
-`embassy_*`, `trade_agreement_*` are exact, cheap and read by nothing; the
-analysis has no diplomacy beyond `war_declared` / `peace_made`. Precedes deals
-because it is fact rather than inference.
+### Join C: where spies die, and what that says about a defence
 
-**6. Trade routes.** 118 established, both sides' gold, science, food,
-production, tourism and religious pressure.
+The first draft says counter-intelligence "reads off `spy_moved`". Measured,
+that is wrong for this game, and wrong in an instructive way.
 
-**The first question is where the caravan went, and the log answers it cleanly.**
-Measured on india-diplo, the split is exact and three-way:
+**All nine spy kills in india-diplo happened in Delhi** — England lost four
+there, Tibet three, the Netherlands and the Iroquois one each. India never
+posted a single counter-intelligence spy; all 23 of its missions were rigging
+elections in city-states. So the defence was entirely **passive** — constabulary,
+police station, and a large tech lead over every thief — and it is visible in
+the log with no counter-intel record involved.
+
+That is the detector to build, and it is a count per **host city**, not per
+posting:
+
+- `spy_killed` carries `{civ, spy, turn}` and **no city**. The location is the
+  spy's last known tenure, which is an inference; carry it with the staleness
+  (`turns_since_last_seen`, 4 to 13 here) so a reader can discount it.
+- The per-civ ledger that falls out is stark and cheap: India ran 23 missions
+  and lost 0 spies; England ran 10 and lost 4; Tibet ran 6 and lost 3.
+
+An explicit `counter_intel` posting stays worth detecting — it fired once,
+England recalling `ENGLAND_1` to London on turn 156 — but it is the rare case,
+not the mechanism.
+
+### Join D: vision as a weapon
+
+Specified, **unverified**, and it waits for a war log: a `paradrop` carries a
+plot, and a drop onto a plot a spy's surveillance revealed is a direct join.
+**India-diplo contains zero paradrops.** Build the join, ship it inapplicable,
+say so — do not calibrate it against nothing.
+
+### Design
+
+- `Espionage` (`app/projections/espionage.rb`), `extend Projection`.
+  `applicable?` false when the log carries no `spy_*` record at all — the two
+  older example logs must be checked before this ships.
+  - `tenures(civ = nil)` → `{civ, spy, city, city_civ, from_turn, to_turn,
+    visible_from_turn, states, ended_by: :moved | :killed | :log_end}`.
+  - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
+    overlaps the window, which is the whole of joins A and D.
+  - `missions(civ)` → `spy_mission_completed` split on `city_civ` against
+    `game.players`: `:tech_theft` in a major's city, `:election_rigging` in a
+    city-state's. Never a stolen technology — no API exposes it, and the
+    logger's suggested reconstruction is untested and must not ship as fact.
+  - `losses` → one record per `spy_killed` with the inferred host city, the
+    host's civ, and `turns_since_last_seen`.
+  - `capacity(civ)` → created / revived / killed / promoted counts, which is
+    the cheapest honest measure of how much a civ invested in the game at all.
+- `WonderRaces` fills its `rival_observed` from `observers_of`, and each
+  contender gains `observed_from_turn`, `observed_turns`, `observed_by`, and
+  `rate_before` / `rate_after` from `production_stored` deltas.
+- `KeyMomentDetector#wonder_race_lost_while_watching` — the Louvre case, and
+  the only new moment this feature adds. `ChronicleSpine` does **not** get a
+  new weight: it modifies an existing `wonder_race_lost`, it does not anchor
+  a second entry on the same event.
+- Digest: `espionage` per civ — capacity, the mission split, losses, and
+  tenures at conclusion only, never per turn. Thirty-nine tenures is small
+  enough to carry whole; the cross-cutting rule still applies if a longer game
+  produces hundreds.
+
+### Iterations
+
+1. `Espionage#tenures` — the run reconstruction, `visible_from_turn` from the
+   certain rule, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
+2. `#missions`, `#losses`, `#capacity` — the splits, the inferred host city and
+   its staleness.
+3. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
+   five-way classification with four branches declared unexercised.
+4. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
+   the opportunity-not-knowledge rule and the passive-defence reading;
+   `chronicle_game.md` gets how to write a race lost in full view.
+
+## 5. City-state influence and the vote
+
+India ended allied to **10 of 11** city-states and won on diplomacy. The first
+draft of this plan concluded that the victory was *"bought with spies, with
+caravans as a supporting flow."* **Measured, that is not what happened**, and
+the correction is the reason to build the feature the way the next paragraphs
+describe.
+
+### The residual is the finding
+
+Influence decays toward a resting point at a logged `per_turn` rate, so the
+gain a civ actually bought is `final - initial - Σ(per_turn × elapsed)`. Rigging
+an election moves Ljubljana about **+45** each time, measured off eight rigs
+ten turns apart against a decay of −1.25. Applying that figure across India's
+eleven city-states:
+
+| city_state | rigs | gain | decay | explained by rigs | unexplained |
+|---|---|---|---|---|---|
+| Ljubljana | 8 | 241 | −91 | 360 | −28 |
+| Zurich | 5 | 160 | −48 | 225 | −17 |
+| Montevideo | 6 | 198 | −121 | 270 | 49 |
+| Tashkent | 3 | 229 | −11 | 135 | 105 |
+| La Venta | 1 | 108 | −1 | 45 | 64 |
+| Lusaka | 0 | 12 | 10 | 0 | 2 |
+| **Harappa** | 0 | 205 | 27 | 0 | **178** |
+| **Santo Domingo** | 0 | 163 | −38 | 0 | **201** |
+| **Panama City** | 0 | 123 | −80 | 0 | **203** |
+| **Mohenjo-Daro** | 0 | 146 | −88 | 0 | **234** |
+| **Reykjavik** | 0 | 266 | −111 | 0 | **377** |
+
+**Six of the ten alliances were won with no spy at all**, and about half the
+total influence India bought has nothing in the log to explain it. Reykjavik
+went 45 → 311 on a permanently negative `per_turn` and never saw a spy.
+
+So the projection's job is not to attribute the climb. It is to **split it into
+what the log explains and what it does not**, and to say so in that order. That
+residual is the vocabulary the first draft said was missing for the normal case:
+it is where gold gifts and quests live, and both are unloggable —
+`CvDeal` is unreachable from Lua and `MinorCivQuestTypes` is a C++ enum with no
+database table.
+
+The residual also names the bridge to feature 7. India ran **15 CS-bound trade
+routes** and adopted `POLICY_MERCHANT_CONFEDERACY` on turn 81 (+1 influence per
+turn from routes to city-states, and nobody else took it). The three
+city-states with two routes each — Santo Domingo, Panama City, Harappa — carry
+residuals of 201, 203 and 178. That is a **hypothesis with arithmetic behind
+it**, not a logged fact, and it must reach the digest labelled as one. It is
+also why 5 and 7 belong in the same tranche.
+
+### What else an alliance is worth
+
+Allies are not only a victory condition, and the plan should not treat them as
+one:
+
+- **Votes, exactly.** `congress_snapshot` carries `votes` and `core_votes` per
+  civ. At turn 167 India held **28 votes of which 4 were core** — 24 bought —
+  against everyone else's 0 to 2. `CongressTimeline#delegate_votes` already
+  reads the record and drops `core_votes` on the floor; splitting it is nearly
+  free and is the single clearest number in the game. Votes also elect the host
+  and carry ordinary resolutions, long before anyone is near a diplomatic win.
+- **Bonuses**, from `trait` in `session_started.city_states[]`, at two
+  strengths — `level` in `city_state_snapshot.relations[]` separates friend
+  from ally.
+- **A buffer.** This adds no geometry: `CapitalProximity#city_state_capitals`
+  already holds every city-state's plot and `BufferCities`' corridor test
+  already decides whether a city sits between two capitals. Run it with a
+  city-state capital as the corridor city, weighted by whether the alliance
+  was held at the time.
+
+### The counters this game never showed
+
+Among humans a diplomatic victory is rare because it is answerable. Of the four
+answers, the log sees two:
+
+| counter | visible? | fired here |
+|---|---|---|
+| counter-intelligence in your own city-states | yes, via feature 4 | never |
+| conquer a city-state to shrink the vote pool | yes — `city_captured` with `old_owner` in `game.city_state_civs`, and `votes_needed_for_diplo_victory` moving | never; the threshold sat at 34 from turn 101 to the end |
+| outbid with gold | **no** — `CvDeal` unreachable | — |
+| run the quests | **no** — not logged | — |
+
+Both visible detectors ship **unexercised**, and the digest must state the two
+blind spots beside the influence curve. Without that the analysis will credit
+every aggressor and never see a defence.
+
+### Design
+
+- `CityStateStanding` (`app/projections/city_state_standing.rb`).
+  `applicable?` false with no `city_state_snapshot`.
+  - `series(city_state, civ)` → the sparse points, deduplicated per turn the
+    way `InfluenceTimeline` and `CityCensus` already do. 238 records over 87
+    turns; the curve between two points is read back from `per_turn`, never
+    interpolated into fake points.
+  - `attribution(city_state, civ)` → `{gain, decay, rigs, explained,
+    unexplained, cs_routes, merchant_confederacy}`. `unexplained` is the
+    headline field and is never labelled with a cause.
+  - `alliances(civ)` → held spans, from `ally` plus `city_state_ally_changed`.
+  - `traits` from `session_started.city_states[]`.
+- `CongressTimeline#delegate_votes` returns `{votes, core_votes}`; the
+  difference is the bought vote count. This changes an existing return shape,
+  so it is its own cycle with the digest and its test moving together.
+- `KeyMomentDetector#city_state_conquered` — the vote-pool counter, unexercised.
+- `BufferCities` gains city-state capitals as corridor cities, alliance-weighted.
+- `ChronicleSpine`: no new anchor. An alliance flipping is texture; the vote
+  count crossing the threshold already has `diplomatic_victory_imminent`.
+
+### Iterations
+
+1. `CityStateStanding#series` + `#alliances` + `#traits`.
+2. `#attribution` — decay, rig steps, the residual. `docs/city-state-influence.md`
+   carries the +45 per rig as the user's calibration off eight instances, in the
+   style `docs/buffer-city.md` uses for its 17 and 6.
+3. `CongressTimeline` core/bought vote split.
+4. `KeyMomentDetector#city_state_conquered`; `BufferCities` city-state corridors.
+5. Digest section + both prompts, including the two blind spots stated as blind
+   spots.
+
+## 6. Diplomatic ties
+
+`friendship_*`, `defensive_pact_*`, `open_borders_*`, `embassy_*` and
+`trade_agreement_*` are 54 records, exact, cheap and read by nothing; the
+analysis has no diplomacy beyond `war_declared` / `peace_made`. It precedes
+deals because it is fact rather than inference, and it is small enough to be
+one projection with paired open/close spans and no calibration to argue about.
+
+`DiplomaticTies#spans(civ, other)` → one record per tie with `type`,
+`from_turn`, `to_turn`. A pact standing when a war is declared elsewhere is the
+join worth having, and `PlayerTimeline#wars` already carries the other side of it.
+
+## 7. Trade routes
+
+118 established, both sides' gold, science, food, production, tourism and
+religious pressure. **The first question is where the caravan went, and the log
+answers it with no inference:**
 
 | destination | n | `type` | what it is |
 |---|---|---|---|
-| own empire | 16 | `food` (14), `production` (2) | no gold at all; feeds a city's growth or its hammers, and stays inside your borders where a barbarian cannot reach it |
-| a city-state | 54 | `international` | gold, plus influence and (with `POLICY_MERCHANT_CONFEDERACY`) food and production; the exposed one |
+| own empire | 16 | `food` (14), `production` (2) | no gold at all; feeds a city's growth or its hammers, and stays where a barbarian cannot reach it |
+| a city-state | 54 | `international` | gold, plus influence and — with `POLICY_MERCHANT_CONFEDERACY` — food and production; the exposed one |
 | another major | 48 | `international` | gold both ways, and science, tourism and religious pressure in both directions |
 
-`type` and `to_civ` decide it with no inference: `food`/`production` always have
-`to_civ == civ`, `international` never does. A civ running internal caravans is
-buying development and safety; one running them abroad is buying gold and
-accepting risk — and that is a strategic posture the analysis cannot currently
-see at all.
+`type` and `to_civ` decide it: `food`/`production` always have `to_civ == civ`,
+`international` never does. A civ running internal caravans is buying
+development and safety; one running them abroad is buying gold and accepting
+risk, and that is a posture the analysis cannot currently see at all.
 
-**The city-state route is worth more than its gold.** India adopted
-`POLICY_MERCHANT_CONFEDERACY` on turn 81 (LEKMOD: *"+2 production, +2 food and
-+1 Influence per turn from trade routes to City States"*) and nobody else took
-it. Cross-referencing `policy_adopted` against CS-bound routes costs a lookup
-and changes what a caravan means for that civ.
+**Count live routes, never establishments.** India established 22 routes and
+never ran anything like that many: 4–5 concurrently from turn 100 to 176, then
+eight opened in the last six turns — seven of them to city-states — peaking at
+**12 on turn 183, the winning turn**. The establishment count and the
+concurrency curve are different facts and only the second describes the empire.
 
-**Count live routes, never establishments.** India established 22 routes over
-the game and never ran anything like that many: concurrently it held **4–5 from
-turn 100 to turn 176**, then opened eight in the last six turns — seven of them
-to city-states — peaking at **12 on turn 183, the winning turn**. The
-establishment count and the concurrency curve are different facts and only the
-second one describes the empire.
+### Counting a live route is the hard part
 
-### Counting a live route is the hard part of this feature
-
-A route has no id in the log, so its lifetime must be reconstructed, and the
-reconstruction is lossy in two measured ways:
+A route has no id, so its lifetime is reconstructed, and the reconstruction is
+lossy in two measured ways:
 
 - **38 of 118 routes have no recorded end** (81 `trade_route_ended` against 118
-  established, and the join consumes one end per start). Those fall back to
-  `turn + turns_left`, which is the expiry the record itself states.
+  established, one end consumed per start). Those fall back to
+  `turn + turns_left`, the expiry the record itself states.
 - **The `(civ, from_city, to_city, to_civ)` join is wrong sometimes.** A greedy
-  first-end-after-start match paired India's Mumbai→Delhi food route established
-  on turn 47 with an end on turn 183 — a 136-turn route whose own `turns_left`
-  said 17. Re-established pairs are common and the key cannot tell two
-  instances apart.
+  first-end-after-start match paired India's Mumbai→Delhi food route from turn
+  47 with an end on turn 183 — a 136-turn route whose own `turns_left` said 17.
+  Re-established pairs are common and the key cannot tell two instances apart.
 
-Rule for the projection: a route is live from `turn` to
-`min(matched_end, turn + turns_left)`, and the concurrency series carries a
-flag when the matched end was discarded in favour of the stated expiry. The
-numbers above use that rule; they still carry error bars and the doc says so.
+**Rule:** a route is live from `turn` to `min(matched_end, turn + turns_left)`,
+and the concurrency series carries a flag on each point where a matched end was
+discarded for the stated expiry. The numbers above use that rule; they still
+carry error bars and the digest says so.
 
-Caveats to document:
+Further caveats to carry:
 
-- **The influence a CS route grants is not in the route record.** It arrives
-  only as movement in `city_state_snapshot.per_turn`, so the link is stated and
-  the effect is read from the influence curve, never added up from the routes.
-- **Quests are not logged at all** (`MinorCivQuestTypes` is a C++ enum with no
-  database table — the one item the logger deliberately left open), so a caravan
-  sent to fulfil a quest is indistinguishable from any other. Say so rather than
-  guessing.
-- `trade_route_ended` carries no reason and no values; joins on
-  `(civ, from_city, to_city, to_civ)` are ambiguous when a pair is
-  re-established, which happens.
+- **The influence a city-state route grants is not in the route record.** It
+  shows only as movement in `city_state_snapshot.per_turn`, so feature 5 reads
+  it from the curve and this feature never adds it up from routes.
+- **Quests are not logged at all**, so a caravan sent to fulfil one is
+  indistinguishable from any other.
+- `trade_route_ended` carries no reason and no values.
 - `trade_route_plundered` names only the plunderer (2 of 3 were barbarians) —
-  no victim, no route, no gold. It can be tied to an ending only by sharing a turn.
-- 118 established against 81 ended: 37 routes were still live at the end.
+  no victim, no route, no gold. Tied to an ending only by sharing a turn.
 
-It also shows a civ *feeding a rival's science* — Delhi→Amsterdam gave the
+It also shows a civ **feeding a rival's science** — Delhi→Amsterdam gave the
 Netherlands 13 beakers a turn and India none — and carries the tourism and
 pressure vectors the cultural and religious stories need.
 
-**7. Research beelines, and the rush they add up to.** `researching` +
-`research_turns_left` on every snapshot, dropped today by `SNAPSHOT_METRICS`.
-The one field in the log that shows *intent* rather than outcome.
+`TradeRoutes#concurrency(civ)` at checkpoints, `#by_destination(civ)` as the
+three-way split, `#one_sided` for the routes whose two yields are lopsided.
 
-On its own it says what a civ was aiming at this turn. Joined with the tech
-count it says what it was aiming at for the last thirty — a **rush**, which is
-a marker technology reached with suspiciously few techs behind it:
+---
+
+# Tranche 3
+
+Further out, and specified more lightly on purpose: each of these should be
+re-measured against a second real log before it is designed in full, because
+india-diplo is one game with one human in it.
+
+## 8. Research beelines, and the rush they add up to
+
+`researching` + `research_turns_left` are on every snapshot and dropped today by
+`DigestBuilder::SNAPSHOT_METRICS`. It is the one field in the log that shows
+**intent** rather than outcome. On its own it says what a civ was aiming at this
+turn; joined with the tech count it says what it was aiming at for the last
+thirty — a **rush**, a marker technology reached with suspiciously few techs
+behind it:
 
 | target | techs, marker included | marker |
 |---|---|---|
@@ -623,74 +849,83 @@ a marker technology reached with suspiciously few techs behind it:
 | the Internet | 57–61 | The Internet |
 | stealth bombers | 63–65 | Stealth |
 
-**Checked against india-diplo, and it discriminates** — which is the property
-that makes a heuristic worth shipping. Only two fire:
-
-- **India, Education as tech #18 on turn 74** — inside the 16–19 band while
-  England took it at #24, Tibet #21, the Netherlands #29. India was the runaway
-  science civ and this is the turn it committed.
-- **England, Navigation as tech #27 on turn 118** — inside 26–29, against the
-  Netherlands' #31 and India's #47. England built the Great Lighthouse and the
-  Arsenal of Venice; the frigate read fits.
-
-Nothing else lands in a band. Machinery came at #19/#26 (no crossbow rush),
-Dynamite at #54 for India alone (ordinary progression, not a rush).
+**Checked against india-diplo, and it discriminates** — the property that makes
+a heuristic worth shipping. Only two fire: **India, Education as tech #18 on
+turn 74** (band 16–19; England took it at #24, Tibet #21, the Netherlands #29)
+and **England, Navigation as tech #27 on turn 118** (band 26–29; the Netherlands
+#31, India #47 — England built the Great Lighthouse and the Arsenal of Venice,
+so the frigate read fits). Nothing else lands in a band.
 
 Three things to settle before implementing:
 
-1. **The two tech counts disagree by one or two.** Counting `tech_researched`
-   plus `tech_from_ruins` gives India 18 at Education; `snapshot.techs` on turn
-   74 gives 19. Snapshots are stamped at the player's turn start, so a tech
-   taken during that turn may or may not be in the count. Report both; pick one
-   as the band's basis and say which in the doc. India sits at the very top of
-   16–19 under one and inside it under the other, so it is not academic.
-2. **City-states appear in `tech_researched.civs`.** Harappa, Zurich,
-   Montevideo and the rest all "research" the same tech on the same turn. Every
-   civ loop here must be restricted to `game.players`, or every rush fires
-   eleven extra times.
-3. **The marker ids need checking against the ruleset, not guessed.**
-   `TECH_PLASTIC` exists in this log, `TECH_PLASTICS` does not; `TECH_STEALTH`
-   appears nowhere in the 70 techs the game reached. Resolve all eleven through
-   `LekmodIdsExtractor` over the `Technologies` table — the same pass that
-   tranche 1 adds for `Buildings`.
+1. **The two tech counts disagree by one or two.** `tech_researched` plus
+   `tech_from_ruins` gives India 18 at Education; `snapshot.techs` on turn 74
+   gives 19. Snapshots are stamped at the player's turn start, so a tech taken
+   during that turn may or may not be counted. Report both, pick one as the
+   band's basis, say which. India sits at the very top of 16–19 under one and
+   inside it under the other, so it is not academic.
+2. **City-states appear in `tech_researched.civs`** — Harappa, Zurich,
+   Montevideo and the rest "research" the same tech on the same turn. Every civ
+   loop must be restricted to `game.players` or every rush fires eleven extra
+   times.
+3. **The marker ids need resolving, not guessing.** `TECH_PLASTIC` exists in
+   this log, `TECH_PLASTICS` does not; `TECH_STEALTH` appears nowhere in the 70
+   techs the game reached. Resolve all eleven through `LekmodIdsExtractor` over
+   the `Technologies` table — the pass tranche 1 already added for `Buildings`.
 
-The bands are the user's own calibration from play, not a measurement, and the
-doc says so — the same footing as `docs/buffer-city.md`'s 17 and 6. A rush is a
-`KeyMomentDetector` moment carrying the target, the marker turn, the tech count
-and the distance to the band, so a near-miss reads as a near-miss.
+The bands are the user's calibration from play, not a measurement, and
+`docs/research-beelines.md` says so. A rush is a `KeyMomentDetector` moment
+carrying the target, the marker turn, the tech count and the distance to the
+band, so a near-miss reads as a near-miss.
 
-**8. Yield attribution.** `yield_sources` splits science, faith, culture and
-tourism into cities / city-states / happiness / religion / research agreements /
-deficit. Turns a curve into a mechanism. Cheap — it rides the snapshot read that
-already happens. Note the two DLL paths disagree on vocabulary (`city_states` in
-science is `minor_civs` in culture, `other_players` means research agreements)
-and the parts do not sum to the total under golden age, anarchy, or a science
-deficit.
+## 9. Yield attribution
 
-**9. Religion and conversion.** 644 `city_converted`, plus `from_pressure` /
-`to_pressure` on trade routes, plus `religion` and `religion_followers` per
-city. A whole axis of the game that is currently invisible.
+`snapshot.yield_sources` splits science, faith, culture and tourism into
+cities / city-states / happiness / religion / research agreements / deficit.
+Turns a curve into a mechanism, and it is cheap — it rides a snapshot read that
+already happens. Two caveats, both from the DLL: the two paths disagree on
+vocabulary (`city_states` in science is `minor_civs` in culture; `other_players`
+means research agreements), and **the parts do not sum to the total** under a
+golden age, anarchy, or a science deficit. Report the parts and the shortfall,
+never a normalised percentage that hides it.
 
-**10. Deal reconstruction, labelled as inference.** `CvDeal` is unreachable from
-Lua, so gold, gold-per-turn and city trades cannot be logged at all. What can:
-`snapshot.resources[]` gives `total`/`used`/`import`/`export` per strategic and
-luxury resource, and *a luxury appearing in one player's imports and another's
-exports on the same turn is a deal*. The projection matches import/export pairs
-between majors; an import with no major exporter is a city-state ally's gift,
-which is itself a useful signal. The digest and the prompt must both say this is
-reconstructed, and must say what stays invisible — the price, the gold, the
-duration.
+This is also the second, independent check on feature 5: if city-states are
+paying India's science, `yield_sources` says how much, and that number can be
+held against the influence the alliances cost.
+
+## 10. Religion and conversion
+
+644 `city_converted`, plus `from_pressure` / `to_pressure` on trade routes, plus
+`religion` and `religion_followers` per city snapshot. A whole axis of the game
+that is currently invisible. The pressure fields make this the third consumer of
+feature 7's route reconstruction, which is an argument for doing 7 properly
+rather than cheaply.
+
+## 11. Deal reconstruction, labelled as inference
+
+`CvDeal` is unreachable from Lua, so gold, gold-per-turn and city trades cannot
+be logged at all. What can: `snapshot.resources[]` gives `total` / `used` /
+`import` / `export` per strategic and luxury resource, and **a luxury appearing
+in one player's imports and another's exports on the same turn is a deal**. The
+projection matches import/export pairs between majors; an import with no major
+exporter is a city-state ally's gift, which is itself a useful signal — and the
+one piece of evidence that would put a number on feature 5's residual.
+
+The digest and both prompts must say this is reconstructed, and must say what
+stays invisible: the price, the gold, the duration.
 
 ---
 
 ## Cross-cutting
 
-**Digest size is now unguarded and about to be pressed.** The digest is ~55k
-input tokens today; timelines, key moments and resolutions are unbounded full
-lists, and this plan adds six sections. `test/services/digest_builder_cost_test.rb`
-bounds *work* (two log passes, one construction per projection) but nothing
-bounds *size*. Add a size assertion to that test in tranche 1, before the growth
-arrives rather than after.
+**Digest size is still unguarded, and tranche 1 did not fix it.** The digest is
+~55k input tokens today; timelines, key moments and resolutions are unbounded
+full lists. `test/services/digest_builder_cost_test.rb` bounds *work* (two log
+passes, one construction per projection) and nothing bounds *size* — tranche 1
+added `wonder_races` and the capture valuations without it, and tranche 2 adds
+espionage, city-state standings, diplomatic ties and trade routes on top.
+**The size assertion is now the first cycle of tranche 2, before feature 4**,
+not a cross-cutting note to be picked up later.
 
 **Every new projection must be added to `DigestBuilderCostTest::PROJECTIONS`**
 and must read through `game.event_log`, never its own query — the two-pass
