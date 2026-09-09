@@ -809,11 +809,15 @@ Iterations (each: failing tests → review → implementation):
    capture turn). Nil entirely with no `city_snapshot`. `CityValue` joins
    the digest cost test.
 3. **`ChronicleSpine`** — the `city_captured` moment gains a `scale`:
-   `:major` (weight 4, anchors) when the payload has `capital: true` or
-   the city's `population_share` the turn before was ≥ `0.20`
-   (`MAJOR_POPULATION_SHARE`), `:minor` (weight 2, texture) otherwise,
-   absent when no `city_snapshot` places the city and then the weight
-   stays flat at 4.
+   `:major` (weight 4) when the payload has `capital: true` or the city's
+   `population_share` the turn before was ≥ `0.20`
+   (`MAJOR_POPULATION_SHARE`), `:minor` (weight 3, `ANCHOR_WEIGHT` — the
+   lightest entry, a sentence) otherwise, absent when no `city_snapshot`
+   places the city and then the weight stays flat at 4. Every capture
+   still anchors: a small city changing hands is a shorter passage, never
+   a dropped one. (First shipped with `:minor` at 2, below the anchor
+   line, which let small captures fall into `background`; corrected on
+   user feedback.)
 4. Digest + both prompts + docs. The `valuation` reaches the digest for
    free through `timelines.<civ>.cities`; captures are one of the
    checkpoints the cross-cutting rule allows per-city detail at.

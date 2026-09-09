@@ -65,7 +65,32 @@ class ChronicleDigestTest < ActiveSupport::TestCase
     assert_equal [ "1480 BC", "1600 AD" ], [ span[:from_year], span[:to_year] ]
   end
 
+  test "carries the souls behind a captured city's size, before and after the sacking" do
+    with_players("Greece", "Rome")
+    city_snapshot("Greece", 41, "Athens", 12)
+    city_snapshot("Rome", 43, "Athens", 6)
+
+    valuation = digest[:timelines]["Greece"][:cities].find { |c| c[:city] == "Athens" }[:valuation]
+
+    assert_equal Demographics.new(city_sizes: [ 12 ]).souls, valuation[:before][:souls]
+    assert_equal Demographics.new(city_sizes: [ 6 ]).souls, valuation[:after][:souls]
+  end
+
+  test "a captured city the log never snapshotted carries a valuation without sizes or souls" do
+    with_players("Greece", "Rome")
+    city_snapshot("Greece", 41, "Athens", 12)
+
+    ostia = digest[:timelines]["Rome"][:cities].find { |c| c[:city] == "Ostia" }
+
+    assert_nil ostia[:valuation][:before]
+    assert_nil ostia[:valuation][:after]
+  end
+
   private
+
+  def with_players(*civs)
+    civs.each { |civ| @game.players.create!(civ: civ, leader_name: "#{civ} Leader", human: false) }
+  end
 
   def digest = ChronicleDigest.new(@game).call
 

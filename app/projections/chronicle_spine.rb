@@ -38,11 +38,13 @@ class ChronicleSpine
   WONDER_RACE_LOST_WEIGHTS = { close: 4, distant: 2 }.freeze
 
   # A capture is worth what the city was worth. A capital or a city that
-  # carried a fifth of its owner's people keeps the heavy weight; a border
-  # town drops below the anchor. The share it falls to `city_snapshot`,
-  # so a log without one leaves the weight flat. Break points uncalibrated
-  # - see docs/city-value.md.
-  CITY_CAPTURED_WEIGHTS = { major: 4, minor: 2 }.freeze
+  # carried a fifth of its owner's people keeps the heavy weight and
+  # earns paragraphs; a border town still anchors an entry, but the
+  # lightest one - a sentence acknowledging the loss. Every capture stays
+  # in the chronicle; only its prominence scales. The share it takes from
+  # `city_snapshot`, so a log without one leaves the weight flat. Break
+  # points uncalibrated - see docs/city-value.md.
+  CITY_CAPTURED_WEIGHTS = { major: 4, minor: ANCHOR_WEIGHT }.freeze
   MAJOR_POPULATION_SHARE = 0.2
 
   FIRST_OF_ITS_KIND_BONUS = 1

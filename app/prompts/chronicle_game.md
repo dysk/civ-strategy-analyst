@@ -278,26 +278,30 @@ craftsman, a windfall of timber, a patron's gift - so write it carried off
 
 ## When a city changes hands
 
-A `city_captured` moment is a city passing from one people to another.
-`scale` sets its weight: `major` is a capital or a city that carried a
-fifth or more of its owner's people - a loss that anchors its entry and
-is written as one. `minor` is a border town, a clause where the entry is
-already about the war. When `scale` is absent the log had no city
-snapshot to size the place by; write the change of hands and leave its
-weight to the surrounding events.
+A `city_captured` moment is a city passing from one people to another,
+and every one of them earns a passage - `scale` sets how long. `major` is
+a capital or a city that held a fifth or more of its owner's people: a
+heavy loss, written as one, several paragraphs where the war around it
+warrants. `minor` is a border town changing hands - a sentence or two,
+the fact of it and whose banner now flies there, no more. When `scale` is
+absent the log had no city snapshot to size the place by; write the
+change of hands plainly and let the surrounding events set its length.
 
 The detail is in `timelines.<from>.cities`, the entry whose `city` and
 `turn` match the moment. Its `valuation.value` is the share the city was
 of its owner - `population_share`, `science_share` and the rest against
-that owner's other cities - so a capital taken can be written as a people
-losing a third of its learning in a day, not merely a city. `before` and
-`after` give population and buildings on the last day under the old owner
-and the first under the new: a stormed city comes out with about half its
-people and two-thirds of its buildings, and the passage should show the
-smoke, not just the flag. Weigh the loss by `before` - what was destroyed
-in the taking is not what the victor now holds. A `conquest: false` entry
-is a cession, already covered above: no sack, `before` and `after` alike,
-and none of this applies.
+that owner's other cities - so a capital taken is a people losing a third
+of its learning in a day, not merely a city, while a border town is a
+frontier redrawn and little else. `before` and `after` give the city's
+size on the last day under the old owner and the first under the new,
+each with a `souls` count in the chronicle's own units alongside the
+population and building figures: a stormed city comes out with about half
+its people and two-thirds of its buildings, so write "eighty thousand in
+the spring, nine by the autumn" and let the figures carry the horror.
+Weigh the loss by `before` - what was destroyed in the taking is not what
+the victor now holds. A `conquest: false` entry is a cession, already
+covered above: no sack, `before` and `after` alike, and none of this
+applies.
 
 `valuation.resistance` is the years the new ruler spent holding the city
 down, `resistance_turns` counting to zero. A larger city seethes longer;

@@ -12,7 +12,8 @@ class ChronicleDigest
     digest = analysis_digest
 
     digest.merge(
-      metrics: with_souls(digest[:metrics]), calendar: calendar.series(last_turn), chronicle: chronicle
+      metrics: with_souls(digest[:metrics]), timelines: with_capture_souls(digest[:timelines]),
+      calendar: calendar.series(last_turn), chronicle: chronicle
     )
   end
 
@@ -48,6 +49,31 @@ class ChronicleDigest
   end
 
   def census = @census ||= CityCensus.for(@game)
+
+  # A chronicler counts people, not population points. Every captured or
+  # lost city on the timelines carries its size before and after the
+  # transfer; this puts the souls behind those sizes beside them, the
+  # same curve `with_souls` runs over the checkpoints.
+  def with_capture_souls(timelines)
+    timelines.to_h do |civ, sections|
+      [ civ, sections.merge(cities: sections[:cities].map { |city| souls_into(city) }) ]
+    end
+  end
+
+  def souls_into(city)
+    return city unless city[:valuation]
+
+    valued = city[:valuation]
+    city.merge(valuation: valued.merge(
+      before: sized_with_souls(valued[:before]), after: sized_with_souls(valued[:after])
+    ))
+  end
+
+  def sized_with_souls(size)
+    return size unless size
+
+    size.merge(souls: Demographics.new(city_sizes: [ size[:population] ]).souls)
+  end
 
   def chronicle
     { entries: entries, background: dated(spine.background), quiet_spans: quiet_spans }

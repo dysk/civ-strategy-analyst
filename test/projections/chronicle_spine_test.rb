@@ -186,7 +186,7 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
   end
 
-  test "a border town falling is lighter than a heartland city and drops below the anchor" do
+  test "a border town falling is lighter than a heartland city but still anchors an entry" do
     city_snapshot("Iroquois", 39, "Onondaga", population: 18)
     city_snapshot("Iroquois", 39, "Buffalo Creek", population: 3)
     event(nil, "city_captured", 40, city: "Onondaga", old_owner: "Iroquois", new_owner: "India")
@@ -197,7 +197,15 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_equal :major, captured["Onondaga"][:scale]
     assert_equal :minor, captured["Buffalo Creek"][:scale]
     assert_operator captured["Onondaga"][:weight], :>, captured["Buffalo Creek"][:weight]
-    assert_operator captured["Buffalo Creek"][:weight], :<, ChronicleSpine::ANCHOR_WEIGHT
+    assert_operator captured["Buffalo Creek"][:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
+  test "even a border town changing hands far from any other moment earns its own entry" do
+    city_snapshot("Iroquois", 39, "Onondaga", population: 18)
+    city_snapshot("Iroquois", 39, "Buffalo Creek", population: 3)
+    event(nil, "city_captured", 60, city: "Buffalo Creek", old_owner: "Iroquois", new_owner: "India")
+
+    assert_includes spine.entries.map { |entry| entry[:turn] }, 60
   end
 
   test "a capture keeps the flat weight when no city snapshot places it" do

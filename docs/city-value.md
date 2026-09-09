@@ -69,16 +69,30 @@ rule `CityCensus` and `WonderRaces` already use.
 The whole `valuation` is nil where the log has no `city_snapshot` at all,
 degrading like `BufferCities` rather than reporting a wrong number.
 
+`ChronicleDigest` adds a `souls` figure to `before` and `after` — the
+`Demographics` curve over that single city's population, the same one it
+runs over the checkpoints — so the chronicle can put a human cost on the
+sacking. The analysis digest keeps the raw population and buildings only;
+souls are a chronicler's unit.
+
 ## The chronicle weight — uncalibrated
 
-`ChronicleSpine` scales the `city_captured` moment:
+`ChronicleSpine` scales the `city_captured` moment. Every capture still
+anchors an entry — a city changing hands is always in the chronicle —
+only the prominence moves:
 
-- **`:major`** — weight 4, anchors an entry. Fires when the
-  `city_captured` payload has `capital: true`, **or** the city's
-  `population_share` the turn before was **≥ 0.20**.
-- **`:minor`** — weight 2, stays as texture below the anchor threshold.
+- **`:major`** — weight 4, several paragraphs where the war warrants.
+  Fires when the `city_captured` payload has `capital: true`, **or** the
+  city's `population_share` the turn before was **≥ 0.20**.
+- **`:minor`** — weight 3 (`ANCHOR_WEIGHT`), the lightest entry: a
+  sentence or two recording the loss and who now holds the place.
 - **absent `scale`** — no `city_snapshot` placed the city; the weight
   stays at the flat 4.
+
+An earlier cut put `:minor` at weight 2, below the anchor threshold,
+which let a small capture fall out of the chronicle entirely into
+`background`. That was wrong: a border town changing hands is a smaller
+story than a capital falling, not a non-story.
 
 **`MAJOR_POPULATION_SHARE = 0.20` is the user's calibration from play, not
 a measurement.** The evidence is two captures (Onondaga at 0.25, Buffalo
