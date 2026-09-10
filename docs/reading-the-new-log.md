@@ -714,8 +714,16 @@ say so — do not calibrate it against nothing.
     ended_by: :moved | :killed | :log_end}`. `visible_from_turn` is **read
     from `spy_surveillance_established`** where the log carries one; on a
     pre-fix log it is **computed** — `posting + 1 + (3, or 1 at
-    INFLUENCE_LEVEL_FAMILIAR or better over the target)`, both DLL constants —
-    and falls back to a bounded floor only where the posting was lost.
+    INFLUENCE_LEVEL_FAMILIAR or better over the target)`, both DLL constants,
+    measured at exactly +4 in 15 of 15 postings in `espionage-test.jsonl` —
+    and falls back to a bounded floor only where the posting was lost. A
+    `counter_intel` tenure is the exception at **+1**: a garrison needs no
+    surveillance and never emits the event.
+    Keyed on `(civ, spy)` **knowing the key is wrong**: the DLL renames a spy
+    on revival, so a `spy_revived` naming an unknown spy opens a new tenure
+    rather than continuing the dead one. Reported upstream as *"A stable spy
+    identity"*; until `AgentID` reaches the record no reading can do better,
+    and `docs/espionage.md` says so where the count is published.
   - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
     overlaps the window, which is the whole of joins A and D.
   - `missions(civ)` → `spy_mission_completed` split on `city_civ` against
@@ -734,15 +742,28 @@ say so — do not calibrate it against nothing.
   - `losses` → one record per `spy_killed` with the host city (on the record
     in a post-fix log, the last known tenure in india-diplo), the host's civ,
     and `turns_since_last_seen`.
-  - `counterspies(civ)` → the garrisons: `{city, spy, confidence, kills}`. Read
-    from a `spy_moved` into `counter_intel` where the log carries one; in
+  - `counterspies(civ)` → the garrisons: `{city, spy, from_turn, to_turn,
+    confidence, kills}`. Read from a `spy_moved` into `counter_intel` where the
+    log carries one — five in `espionage-test.jsonl`, none followed by a
+    surveillance event or a completion. A garrison is a **span, not a
+    standing state**: the Sioux moved one spy between two of their own cities
+    four times in ten turns, so the record has to end when the spy leaves. In
     india-diplo inferred from the three agreeing signals and labelled inferred
     everywhere it surfaces.
   - `coups` → `{civ, city_state, turn, outcome: :failed | :succeeded}` from the
-    two signatures. Unexercised here; ships that way.
+    two signatures. The **failure** signature is measured — Arabia at Valletta,
+    turn 181 — and the test is against the *decayed* penalty, not a literal
+    −10: `influence + per_turn × (snapshot_turn − kill_turn)` near −10, since
+    the next snapshot has already recovered a turn. A coup is also the one way
+    a spy dies with no counterspy present, so `counterspies` must not read a
+    kill in a city-state as evidence of a garrison. The **success** signature
+    is unexercised in both logs and ships that way.
   - `capacity(civ)` → created / revived / killed / promoted counts, and the
     count of spies **never located**, which is the cheapest honest measure of
     both how much a civ invested and how much of that investment sat at home.
+    Revivals are reported **beside** creations, never summed into them: while
+    the name changes on revival the two cannot be reconciled, and a sum would
+    double-count one spy.
 - `WonderRaces` fills its `rival_observed` from `observers_of`, and each
   contender gains `observed_from_turn`, `observed_turns`, `observed_by`, and
   `rate_before` / `rate_after` from `production_stored` deltas.
