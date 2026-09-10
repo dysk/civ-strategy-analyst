@@ -5,9 +5,13 @@ iteration history and `docs/reading-the-new-log.md` the ordering; this file
 holds the game rules the projection rests on, the inferences it is forced
 into, and the honest limits on both.
 
-Everything measured here comes from `examples/india-diplo.jsonl` — one game,
-one human against five bots. Where a mechanism is specified but that game
-never exercised it, the text says so.
+Two games are measured here. `examples/india-diplo.jsonl` predates every
+logger fix and is what the fallbacks are calibrated on.
+`examples/espionage-test.jsonl` was played to
+`civ-narrative-logger/docs/capture-protocol.md` against the fixed logger,
+with espionage used deliberately — turns 82–189, five sessions, a
+counterspy, four rigging cycles and a failed coup. Where a mechanism is
+specified but neither game exercised it, the text says so.
 
 ## Why this is a projection of its own
 
@@ -81,9 +85,18 @@ target — and for a city-state, over that city-state's *ally*. `InfluenceTimeli
 already carries the level per pair, so the projection picks the branch rather
 than assuming one.
 
-**The old log corroborates the constant.** See the next section: in india-diplo
-the first `spy_mission_completed` after a posting lands at **+3 or +4 in 14 of
-18 postings**, which is that formula and not a mission.
+**The constant is measured, not just derived.** In `espionage-test.jsonl`
+fifteen postings reach a `spy_surveillance_established`, and **every one of
+them lands on posting + 4** — no spread, no exceptions. Nobody in that game
+held Familiar+ influence over a target, so the 2-turn branch stays
+unexercised and the projection must still read the level rather than assume
+the 4. The old log corroborates from the other side: in india-diplo the first
+`spy_mission_completed` after a posting lands at **+3 or +4 in 14 of 18
+postings**, which is that formula surfacing as a false completion.
+
+A **counterspy is the exception**: it needs no surveillance, so its posting
+takes effect at **+1**, the travel turn alone. Five `counter_intel` postings
+in `espionage-test.jsonl`, none of them followed by a surveillance event.
 
 So four dating rules, in descending order of what they may be used for:
 
@@ -104,9 +117,25 @@ None of the four says the player looked.
 
 ## Tenure, and what the log loses
 
-A spy is named (`TXT_KEY_SPY_NAME_INDIA_7`) and the name is stable, so a
-tenure is a maximal run of sightings of one spy in one city. Over india-diplo
-that is 24 spies with a location and 39 tenures.
+A tenure is a maximal run of sightings of one spy in one city. Over
+india-diplo that is 24 spies with a location and 39 tenures.
+
+**The spy's name is not its identity.** The DLL draws a fresh name when a spy
+revives, and the logger's record carries `spy = row.Name` rather than the
+`AgentID` it keys on internally. Arabia's `ARABIA_0` died at Valletta on turn
+181 and came back on 186 as `ARABIA_8`; in india-diplo **all eight** revivals
+name a spy that was never created — `ENGLAND_0`, `ENGLAND_1`, `ENGLAND_4`,
+`CHINA_0`, `CHINA_5`, `CHINA_9`, `IROQUOIS_6`, `NETHERLANDS_2`.
+
+So `(civ, spy)` is the wrong key. A death orphans a tenure and the revival
+opens a new one for a spy that appears from nowhere, and two live spies of one
+civ can in principle collide on a recycled name. Until the logger emits
+`AgentID` (reported upstream as *"A stable spy identity"*), `Espionage` keys
+on `(civ, spy)` **and treats a `spy_revived` naming an unknown spy as a new
+spy**, which is wrong but is the only reading the log supports — `capacity`
+must therefore report revivals separately from creations rather than netting
+them. It also disposes of a puzzle: several of india-diplo's "spies that were
+never located" are revivals of spies it knew under other names.
 
 **The logger loses postings**, and the projection is built knowing it:
 
@@ -196,15 +225,24 @@ there; this section applies only to logs written before that commit.
 
 ## The counterspy — read in a post-fix log, inferred in india-diplo
 
-**Post-fix logs record the garrison.** *"Give a revived or homebound spy back
-its posting"* made `spy_moved` fire on the transition into `counter_intel` with
-a city present, even when the coordinates did not change — the one case a
-counterspy could previously produce no event at all. So in a log written after
-that commit, a counterspy is a `spy_moved` with `state: "counter_intel"` into
-one of its own owner's cities, and `Espionage#counterspies` reads the garrison
-city and the spy name straight off it. The three-signal inference below is the
-fallback for india-diplo, which predates the fix and still mentions no
-counterspy anywhere.
+**Post-fix logs record the garrison, and this is measured.** *"Give a revived
+or homebound spy back its posting"* made `spy_moved` fire on the transition
+into `counter_intel` with a city present, even when the coordinates did not
+change — the one case a counterspy could previously produce no event at all.
+`espionage-test.jsonl` carries five such records, each in one of its owner's
+own cities and none followed by a surveillance event or a completion. So in a
+post-fix log a counterspy is a `spy_moved` with `state: "counter_intel"`, and
+`Espionage#counterspies` reads the garrison city and the spy straight off it.
+
+Two things that reading has to allow for. A counterspy is **not** silent
+forever, only while it stays put: the Sioux oscillated one spy between
+Ihankthunwanna and Isanyathi four times in ten turns, and each leg is a real
+posting, so a garrison is a *span* like any other tenure and a civ can hold
+none for stretches in between. And a garrison spy's progress is always nil, so
+it can never produce a completion — `state` is the only discriminator.
+
+The three-signal inference below is the fallback for india-diplo, which
+predates the fix and mentions no counterspy anywhere.
 
 `CvEspionageClasses.cpp:538-582`, under `ESPIONAGE_SYSTEM_REWORK` (defined at
 `_Defines.h:1441`, so this is the live branch), resolves a completed mission
@@ -281,8 +319,19 @@ mission, so nothing fires. Both outcomes must be inferred:
   between consecutive snapshots, with a `city_state_ally_changed` on the same
   turn and no `rigging_election` mission to explain it.
 
-**Zero coups in india-diplo** — all nine kills were in Delhi, a major's city,
-and no influence pair ever swapped. Both detectors ship unexercised. They also
+**The failure detector is now measured, and the penalty is exactly −10.**
+Arabia posted `ARABIA_0` to Valletta on turn 177 and it died on 181 with no
+counterspy near it — the exception to the rank table above, since the kill
+happens inside `AttemptCoup` and not in the mission resolution. Arabia's
+influence at Valletta, absent from the turn-178 snapshot, reads **−8 at turn
+182 with `per_turn` +1.25**, which is −10 on the turn of the kill with one
+turn of recovery already applied. No `city_state_ally_changed`. The detector
+must therefore compare against the **decayed** value, not a literal −10:
+`influence + per_turn × (snapshot_turn − kill_turn)` at or near −10.
+
+**Zero *successful* coups in either game**, so that half ships unexercised.
+In india-diplo there were no coups at all — all nine kills were in Delhi, a
+major's city, and no influence pair ever swapped. They also
 matter to city-state influence: a successful coup moves an alliance with no
 logged cause, so it is a candidate explanation for part of that feature's
 residual and must be named there as one.
@@ -382,3 +431,35 @@ have **three** confirmable tech thefts, plus whatever hides behind the nine
 deaths and the nine unanchored completions. The honest sentence is that the
 other five civs *tried* repeatedly against Delhi and were caught; not that they
 succeeded thirty times.
+
+### The same ledger from a post-fix log
+
+`espionage-test.jsonl` needs no artifact filter and no counterspy inference,
+which is the whole point of the fixes. Twenty-four completions over turns
+132–189, all of them real:
+
+| civ | completions | kind | postings | counterspy | spies lost |
+|---|---|---|---|---|---|
+| Jerusalem | 8 | intel, all in Mecca | 2 | — | 0 |
+| Arabia (human) | 4 | rigging, all in Reykjavik | 4 | — | 1 (coup) |
+| Sioux | 4 | intel, all in Mecca | 9 | yes, 3 spans | 0 |
+| Belgium | 3 | intel, all in Mecca | 5 | — | 0 |
+| Yugoslavia | 4 | intel | 4 | — | 0 |
+| Mysore | 1 | intel | 5 | yes, 2 spans | 0 |
+
+Every AI pointed its spies at Mecca, the human's capital, and only the human
+rigged an election. The rigging cadence is the clearest signal in either log:
+turns 151, 161, 171, 181 — ten turns apart to the turn, four cycles, which is
+what a genuine repeat looks like once the transition artifact is gone.
+
+Two cautions carried forward. Jerusalem's `GREECE_4` appears only as a
+surveillance event on turn 186, with no creation and no posting: it came into
+existence inside a reload seam, and the first poll of a session is silent by
+design. And the Sioux's nine postings are mostly one spy oscillating between
+two of its own cities, so a posting count is a count of orders, not of
+distinct operations.
+
+`espionage-test.jsonl` also carries 1957 `city_snapshot` records with
+`producing` on 1852 of them, which makes it the **second** log
+`WonderRaces` and `CityValue` are applicable to, and the first that is not
+india-diplo.
