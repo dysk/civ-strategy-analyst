@@ -377,13 +377,11 @@ Three rules follow:
 | observed, rate rises, still lost | tried to outrun it | 0 | 0 |
 | observed, rate rises, won | the spy paid for itself | 0 | 0 |
 | observed, `:abandoned` soon after | read the board, cut the losses | 0 | 0 |
-| **observed, rate flat, lost** | **had the intelligence and pressed on** | **1 — the Louvre** | **1 — Pisa** |
+| **observed, rate flat, lost** | see below — **not** a decision when the contender is an AI | **1 — the Louvre** | **1 — Pisa** |
 | not observed, lost | lost a race it could not see | 12 | 9 |
 
-**Three of five branches are unexercised across two games.** Both live
-instances are the same branch, which is itself worth saying: in twenty-two
-contender rows nobody who could see a race they were losing ever changed what
-they were doing about it.
+**Three of five branches are unexercised across two games**, and the two that
+fired are both held by an AI, which is the whole of the next section.
 
 A **third party** can hold the spy: Tibet watched Amsterdam through the
 Alhambra race that Zimbabwe lost, and in `espionage-test.jsonl` four other
@@ -419,6 +417,64 @@ a decision was still available. The Sistine Chapel repeats it — Mysore's
 Two near-misses in one game, both produced by the four-turn delay alone. That
 is the argument for `visible_from_turn` over `from_turn`, and it is no longer
 theoretical.
+
+### An AI contender is not making a decision
+
+"Had the intelligence and pressed on" is a sentence about a choice, and an AI
+contender did not make one. Three findings in the DLL, and they agree:
+
+- **No AI code reads surveillance.** `HasEstablishedSurveillanceInCity` and
+  `HasEstablishedSurveillance` appear in `CvPlot.cpp` (vision),
+  `CvEspionageClasses.cpp` (the system itself), one diplomacy check in
+  `CvGame.cpp:5270`, and the Lua bindings the human UI is built on. Not once
+  in `CvCityStrategyAI`, `CvBuildingProductionAI`, `CvWonderProductionAI` or
+  `CvPlayerAI`.
+- **Nothing reports a rival's build to anyone.** `getBuildingClassMaking`
+  sums only over one's own team (`CvTeam.cpp:2455-2469`), and the game-level
+  `isBuildingClassMaxedOut` counts *completed* wonders. A rival's wonder in
+  progress reaches a player through vision alone — which is exactly why the
+  spy matters, and exactly why it matters only to someone who can look.
+- **The AI is told not to interrupt a wonder.** Every one of the four call
+  sites passes `AI_chooseProduction(false /*bInterruptWonders*/)`
+  (`CvCity.cpp:2227, 12211, 16491, 18246`). Once a wonder is in the queue the
+  AI does not reconsider it.
+
+The corpus says the same thing without the source. Across both games, 23
+contender rows:
+
+| | lost | abandoned |
+|---|---|---|
+| AI contenders | **22** | **0** |
+| human contenders | 0 | **1** |
+
+Every AI that started a losing wonder built it to the end. The only wonder
+anyone walked away from was walked away from by the human — India dropping
+Machu Picchu at 90 hammers with four turns left, on turn 110, and it was
+**uninformed**: India's spies were all in city-states and it held no vision of
+Great Zimbabwe.
+
+So both live instances of the observed-and-lost branch — the Louvre held by
+England, Pisa by Belgium — are AI, and neither is evidence about anything a
+player did. **The branch that carries meaning is unexercised for humans across
+both logs.**
+
+Three consequences the design has to carry:
+
+1. **`Espionage` and `WonderRaces` report the opportunity; they never label
+   the response.** A contender record carries `contender_human` beside
+   `observed_from_turn`, and the classification above is a reader's tool, not
+   a field.
+2. **`KeyMomentDetector#wonder_race_lost_while_watching` fires only for a
+   human contender.** On an AI it would manufacture a decision out of an
+   engine default, which is the worst failure available to this feature.
+3. **This is a multiplayer feature.** In a log with one human it can only ever
+   describe that human. LEKMOD games between humans are where it earns its
+   place, and until one is captured the join ships with its live branch
+   declared AI-only.
+
+Both prompts get the rule in one sentence: *an AI that kept building a wonder
+it could see it was losing was not being stubborn — it cannot see, and it
+cannot stop.*
 
 ## What the log will not say, whatever is built
 

@@ -765,12 +765,22 @@ say so — do not calibrate it against nothing.
     the name changes on revival the two cannot be reconciled, and a sum would
     double-count one spy.
 - `WonderRaces` fills its `rival_observed` from `observers_of`, and each
-  contender gains `observed_from_turn`, `observed_turns`, `observed_by`, and
-  `rate_before` / `rate_after` from `production_stored` deltas.
+  contender gains `observed_from_turn`, `observed_turns`, `observed_by`,
+  `contender_human`, and `rate_before` / `rate_after` from `production_stored`
+  deltas. It reports the **opportunity** and never labels the response: an AI
+  contender made no decision to label. No AI code reads surveillance, nothing
+  in the engine reports a rival's in-progress wonder to anyone, and the AI is
+  passed `bInterruptWonders = false` at all four call sites, so it structurally
+  cannot abandon. The corpus agrees — 22 AI contenders lost, 0 abandoned; the
+  single abandonment in either game is the human's, and was uninformed
+  (`docs/espionage.md`).
 - `KeyMomentDetector#wonder_race_lost_while_watching` — the Louvre case, and
-  the only new moment this feature adds. `ChronicleSpine` does **not** get a
-  new weight: it modifies an existing `wonder_race_lost`, it does not anchor
-  a second entry on the same event.
+  the only new moment this feature adds. **Fires only for a human contender**;
+  on an AI it would manufacture a decision out of an engine default. Both live
+  instances across the two logs are AI, so the moment ships with **no**
+  exercised instance and earns its place in a game between humans.
+  `ChronicleSpine` does **not** get a new weight: it modifies an existing
+  `wonder_race_lost`, it does not anchor a second entry on the same event.
 - Digest: `espionage` per civ — capacity, the mission split, losses, and
   tenures at conclusion only, never per turn. Thirty-nine tenures is small
   enough to carry whole; the cross-cutting rule still applies if a longer game
