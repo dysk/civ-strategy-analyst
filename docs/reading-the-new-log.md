@@ -1099,8 +1099,12 @@ full lists. `test/services/digest_builder_cost_test.rb` bounds *work* (two log
 passes, one construction per projection) and nothing bounds *size* — tranche 1
 added `wonder_races` and the capture valuations without it, and tranche 2 adds
 espionage, city-state standings, diplomatic ties and trade routes on top.
-**The size assertion is now the first cycle of tranche 2, before feature 4**,
-not a cross-cutting note to be picked up later.
+**Landed** as `DigestBuilderCostTest#"keeps the digest within its size budget
+as a game grows"`: 250 bytes per turn per civ, calibrated on the fixture at 187
+and verified against a minimal per-city-per-turn section, which takes it to 318.
+Five games between 20 and 203 turns sit between 86 and 187, so the bound is on
+the measure that separates a section scaling with the product from one scaling
+with wars or races.
 
 **Every new projection must be added to `DigestBuilderCostTest::PROJECTIONS`**
 and must read through `game.event_log`, never its own query — the two-pass
