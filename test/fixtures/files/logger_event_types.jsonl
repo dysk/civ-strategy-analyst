@@ -13,7 +13,6 @@
 {"event":"city_state_protected","turn":1}
 {"event":"city_state_protection_ended","turn":1}
 {"event":"city_state_snapshot","turn":1}
-{"event":"congress_founded","turn":1}
 {"event":"congress_host_changed","turn":1}
 {"event":"congress_snapshot","turn":1}
 {"event":"defensive_pact_ended","turn":1}

@@ -31,7 +31,7 @@ class ImportGame
     city_state_protected city_state_protection_ended
     spy_created spy_moved spy_promoted spy_killed spy_revived
     spy_mission_completed spy_surveillance_established
-    congress_snapshot congress_founded congress_host_changed
+    congress_snapshot congress_host_changed
     resolution_proposed resolution_passed resolution_failed
     resolution_undetermined resolution_repealed
     mp_vote mp_proposal_result united_nations_formed
