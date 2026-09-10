@@ -372,23 +372,53 @@ Three rules follow:
    so the rate before `observed_from_turn` against the rate after is a direct
    test:
 
-| pattern | reading | instances |
-|---|---|---|
-| observed, rate rises, still lost | tried to outrun it | 0 |
-| observed, rate rises, won | the spy paid for itself | 0 |
-| observed, `:abandoned` soon after | read the board, cut the losses | 0 |
-| **observed, rate flat, lost** | **had the intelligence and pressed on** | **1 — the Louvre** |
-| not observed, lost | lost a race it could not see | 12 |
+| pattern | reading | india-diplo | espionage-test |
+|---|---|---|---|
+| observed, rate rises, still lost | tried to outrun it | 0 | 0 |
+| observed, rate rises, won | the spy paid for itself | 0 | 0 |
+| observed, `:abandoned` soon after | read the board, cut the losses | 0 | 0 |
+| **observed, rate flat, lost** | **had the intelligence and pressed on** | **1 — the Louvre** | **1 — Pisa** |
+| not observed, lost | lost a race it could not see | 12 | 9 |
 
-**Four of five branches are unexercised** — the same footing as
-`winner_finish`'s `:ahead_of_estimate` in `docs/wonder-race.md`. Worth
-shipping because the one instance is the sharpest sentence available about the
-largest wonder loss in the log, and because a game between humans fills the
-rest.
+**Three of five branches are unexercised across two games.** Both live
+instances are the same branch, which is itself worth saying: in twenty-two
+contender rows nobody who could see a race they were losing ever changed what
+they were doing about it.
 
 A **third party** can hold the spy: Tibet watched Amsterdam through the
-Alhambra race that Zimbabwe lost. Not the same fact — `observed_by` is a list
-of civs with the contender flagged, never a boolean on the contender.
+Alhambra race that Zimbabwe lost, and in `espionage-test.jsonl` four other
+civs watched Mecca build Pisa. Not the same fact — `observed_by` is a list of
+civs with the contender flagged, never a boolean on the contender.
+
+### Pisa, and the two near-misses that vindicate the dating
+
+`espionage-test.jsonl` repeats the Louvre with the events logged rather than
+reconstructed:
+
+```
+t143  spy_surveillance_established — Belgium's FRANCE_3 in MECCA
+t156  Brussels starts Pisa                    0 stored, 6 turns left
+t157  Mecca appears building Pisa           111 stored, 2 turns left
+      Brussels                                65 stored, 5 turns left
+t158  Mecca 214 stored, 1 left | Brussels 109 stored, 4 left
+t159  Arabia completes Pisa. Belgium loses, 155 sunk.
+```
+
+Belgium's rate: 65, 44, 46 — **flat**, again. The start is not the informed
+decision here (Mecca had nothing queued on 156); the three turns of continuing
+are, and Mecca showed *two turns left* against Brussels' five from 157 on.
+
+The same race carries the case the naive test would get wrong. **Mysore also
+lost Pisa**, and Mysore had a spy in Mecca: `MUGHAL_5` was posted there on
+t155. Its surveillance completed on **t159** — the turn Pisa was finished.
+"Held a spy in the winner's city during the race" answers *yes* for Mysore and
+is wrong: Mysore sank 89 hammers blind and could not have seen a thing while
+a decision was still available. The Sistine Chapel repeats it — Mysore's
+`MUGHAL_0` got vision of Brussels on t160, the completion turn.
+
+Two near-misses in one game, both produced by the four-turn delay alone. That
+is the argument for `visible_from_turn` over `from_turn`, and it is no longer
+theoretical.
 
 ## What the log will not say, whatever is built
 
