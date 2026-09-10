@@ -11,6 +11,26 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
   CIVS = %w[Rome Greece Egypt].freeze
   TURNS = (1..20).freeze
   MAX_EVENT_LOG_PASSES = 2
+
+  # A digest is read by an LLM with a finite window, so its size is a budget
+  # like the two above, and bytes per turn per civ is the measure that moves
+  # least: five games between 20 and 203 turns and 3 and 6 civs land between
+  # 86 and 187 - espionage-test at 86, chile-vs-vietnam at 140, india-diplo
+  # at 145, babylon-domination at 153, this fixture at 187. Counting events
+  # instead spreads twice as wide.
+  #
+  # The fixture sits at the top of that band because it is short. Most of a
+  # digest is per civ rather than per turn, and `CHECKPOINT_INTERVAL` means
+  # twenty turns pay for a whole checkpoint against very few turns to divide
+  # it by: grown to forty turns the same fixture costs only 34 more bytes per
+  # turn per civ at the margin. So the constant is calibrated on the fixture,
+  # not on the real logs, and 250 is that 187 with room to grow into.
+  #
+  # What this catches is the mistake the checkpoint sampling exists to
+  # prevent: a section carrying a row per city per turn scales with the
+  # product and crosses this immediately, while one carrying a row per war,
+  # per race or per capture does not move it at all.
+  MAX_DIGEST_BYTES_PER_TURN_PER_CIV = 250
   PROJECTIONS = [
     MetricSeries, PlayerTimeline, SpaceshipTimeline, MapBounds, EarlyGame,
     CapitalsTimeline, CapitalProximity, BufferCities, InfluenceTimeline,
@@ -38,6 +58,15 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
 
     assert_operator rows, :<=, budget,
       "materialized #{rows} rows from a #{@game.game_events.count}-event game (budget #{budget})"
+  end
+
+  test "keeps the digest within its size budget as a game grows" do
+    digest = JSON.generate(DigestBuilder.new(@game).call)
+    budget = TURNS.size * CIVS.size * MAX_DIGEST_BYTES_PER_TURN_PER_CIV
+
+    assert_operator digest.bytesize, :<=, budget,
+      "digest is #{digest.bytesize} bytes over #{TURNS.size} turns and #{CIVS.size} civs " \
+      "(#{digest.bytesize / (TURNS.size * CIVS.size)} per turn per civ, budget #{budget})"
   end
 
   test "builds each projection once over a full digest build" do
