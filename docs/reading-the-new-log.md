@@ -735,9 +735,11 @@ say so — do not calibrate it against nothing.
     included.
   - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
     overlaps the window, which is the whole of joins A and D.
-  - `missions(civ)` → `spy_mission_completed` split on `city_civ` against
-    `game.players`: `:tech_theft` in a major's city, `:election_rigging` in a
-    city-state's. **On a pre-fix log, filtered first**: a completion 3–6 turns
+  - `missions(civ = nil)` → `spy_mission_completed` split on the record's own
+    `state`, which names the kind outright — `gathering_intel` is
+    `:tech_theft`, `rigging_election` is `:election_rigging`. Every completion
+    in both logs carries one, so nothing is inferred from whose city it was and
+    no city-state list is needed. **On a pre-fix log, filtered first**: a completion 3–6 turns
     after that spy's posting or creation in the same city is the surveillance
     transition, not a mission — 23 of india-diplo's 53 are, and the per-civ
     split is mostly artifact without the filter (`docs/espionage.md`).
@@ -748,9 +750,10 @@ say so — do not calibrate it against nothing.
     stolen technology — no API exposes it, and the logger's suggested
     reconstruction is untested, built on the same corrupted event, and must not
     ship as fact.
-  - `losses` → one record per `spy_killed` with the host city (on the record
-    in a post-fix log, the last known tenure in india-diplo), the host's civ,
-    and `turns_since_last_seen`.
+  - `losses(civ = nil)` → one record per `spy_killed` with the host city (on
+    the record in a post-fix log, the last sighting in india-diplo), the host's
+    civ, `city_inferred` and `turns_since_last_seen`. A spy that was never
+    located anywhere dies with no city rather than a guess.
   - `counterspies(civ)` → the garrisons: `{city, spy, from_turn, to_turn,
     confidence, kills}`. Read from a `spy_moved` into `counter_intel` where the
     log carries one — five in `espionage-test.jsonl`, none followed by a

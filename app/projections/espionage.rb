@@ -17,6 +17,15 @@ class Espionage
   # captor's own included, and the DLL leaves the spy unassigned rather
   # than anywhere (CvPlayer.cpp:2775-2829, CvCity.cpp:2069-2073).
   ENDINGS = { "spy_killed" => :killed, "spy_evicted" => :evicted }.freeze
+
+  # The mission state names its kind outright, so nothing is inferred from
+  # whose city it was. A stolen technology is never named: no API exposes it.
+  MISSION_KINDS = { "gathering_intel" => :tech_theft, "rigging_election" => :election_rigging }.freeze
+
+  # Travel plus surveillance, at either branch of the wait, plus the slack a
+  # missed poll adds. A completion landing in this window after the posting is
+  # the shared progress counter restarting, not a mission.
+  TRANSITION_WINDOW = (3..6).freeze
   POSTINGS = %w[spy_moved spy_created].freeze
   COUNTER_INTEL = "counter_intel"
 
@@ -45,20 +54,51 @@ class Espionage
     all_tenures.select { |tenure| tenure[:civ] == civ }
   end
 
+  # A completed mission, minus the ones that never happened. Counts from a
+  # pre-fix log are upper bounds from this side and lower bounds from the
+  # other: a kill hides the completion that provoked it in every log, because
+  # the DLL takes the death branch before it writes the completion.
+  def missions(civ = nil)
+    return all_missions unless civ
+
+    all_missions.select { |mission| mission[:civ] == civ }
+  end
+
+  def losses(civ = nil)
+    return all_losses unless civ
+
+    all_losses.select { |loss| loss[:civ] == civ }
+  end
+
+  # What a civ spent on espionage and how much of it sat at home. Revivals are
+  # reported beside creations and never summed into them: the DLL redraws the
+  # name, so a sum would count one spy twice.
+  def capacity(civ)
+    events = spy_events.select { |event| event.civ == civ }
+
+    { created: count(events, "spy_created"), revived: count(events, "spy_revived"),
+      killed: count(events, "spy_killed"), promoted: count(events, "spy_promoted"),
+      never_located: never_located(events) }
+  end
+
   private
 
   def spy_events = @spy_events ||= SPY_EVENTS.flat_map { |type| @log.of_type(type) }.sort_by(&:seq)
 
   def all_tenures
-    @all_tenures ||= spy_events.group_by { |event| [ event.civ, identity(event) ] }
+    @all_tenures ||= events_by_spy
       .flat_map { |_key, events| tenures_of_one_spy(events) }
       .sort_by.with_index { |tenure, index| [ tenure[:from_turn], index ] }
   end
 
+  def events_by_spy = @events_by_spy ||= spy_events.group_by { |event| identity(event) }
+
   # The DLL redraws a spy's name when it revives, so the agent slot is the
   # identity wherever the logger writes one. An older log has only the name,
   # and there a revival reads as a spy that never existed.
-  def identity(event) = event.payload["agent"] || event.payload["spy"]
+  def identity(event) = [ event.civ, event.payload["agent"] || event.payload["spy"] ]
+
+  def career(event) = events_by_spy.fetch(identity(event), [])
 
   def tenures_of_one_spy(events)
     spans = runs(events.select { |event| event.payload["city"] })
@@ -161,4 +201,81 @@ class Espionage
   end
 
   def influence = @influence ||= InfluenceTimeline.for(@game)
+
+  def all_missions
+    @all_missions ||= @log.of_type("spy_mission_completed").filter_map { |event| mission(event) }
+  end
+
+  def mission(event)
+    anchor = posting_before(event)
+    return if artifact?(event, anchor)
+
+    { civ: event.civ, spy: event.payload["spy"], agent: event.payload["agent"],
+      city: event.payload["city"], city_civ: event.payload["city_civ"], turn: event.turn,
+      kind: MISSION_KINDS[event.payload["state"]], anchored: post_fix? || !anchor.nil? }
+  end
+
+  # Travelling, surveillance and gathering intel share one progress counter and
+  # each new state restarts it, so surveillance finishing used to read as a
+  # mission finishing - 23 of india-diplo's 53 completions are that transition.
+  # A log that reports surveillance in its own right has had them split off
+  # upstream and is counted straight.
+  def artifact?(event, anchor)
+    return false if post_fix? || anchor.nil?
+
+    TRANSITION_WINDOW.cover?(event.turn - anchor.turn)
+  end
+
+  def post_fix? = @post_fix ||= @log.of_type("spy_surveillance_established").any?
+
+  # The nearest preceding order, and only if it can be about this city. A
+  # creation the logger could not place still anchors, because a spy granted
+  # and sent the same turn is most of india-diplo's lost postings; a posting to
+  # somewhere else does not, because the return that followed it went unlogged
+  # and nothing dates the completion.
+  def posting_before(completion)
+    posting = career(completion)
+      .select { |event| POSTINGS.include?(event.event_type) && event.turn <= completion.turn }.last
+    return unless posting
+
+    city = posting.payload["city"]
+    posting if city.nil? || city == completion.payload["city"]
+  end
+
+  def all_losses = @all_losses ||= @log.of_type("spy_killed").map { |event| loss(event) }
+
+  def loss(event)
+    { civ: event.civ, spy: event.payload["spy"], agent: event.payload["agent"],
+      turn: event.turn }.merge(death_site(event))
+  end
+
+  # A post-fix log carries the death site, read off the last live poll before
+  # the DLL empties it. An older one carries none at all, so the site is the
+  # last place the spy was seen and the record says how stale that is.
+  def death_site(event)
+    return site(event, inferred: false, stale: 0) if event.payload["city"]
+
+    seen = last_sighting_before(event)
+    return { city: nil, city_civ: nil, city_inferred: nil, turns_since_last_seen: nil } unless seen
+
+    site(seen, inferred: true, stale: event.turn - seen.turn)
+  end
+
+  def site(event, inferred:, stale:)
+    { city: event.payload["city"], city_civ: event.payload["city_civ"],
+      city_inferred: inferred, turns_since_last_seen: stale }
+  end
+
+  def last_sighting_before(kill)
+    career(kill).select { |event| event.payload["city"] && event.turn <= kill.turn }.last
+  end
+
+  def count(events, type) = events.count { |event| event.event_type == type }
+
+  # The cheapest honest measure of how much of a civ's investment never left
+  # home: a spy that appears in the log but never with a city.
+  def never_located(events)
+    events.group_by { |event| identity(event) }
+      .count { |_spy, career| career.none? { |event| event.payload["city"] } }
+  end
 end

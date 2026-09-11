@@ -274,10 +274,21 @@ not always produce a fall. The defect's footprint follows the progress formula
 exactly.
 
 **What the projection must do about it, for a pre-fix log.** Filter a
-completion that lands 3 to 6 turns after that spy's last posting or creation in
-the same city, and count it as the surveillance moment instead of a mission.
+completion that lands 3 to 6 turns after that spy's nearest preceding posting
+or creation, and count it as the surveillance moment instead of a mission.
 Where no anchor survived, carry the completion with `anchored: false` — it may
 be either — and never let an unanchored count reach a prompt as a bare number.
+
+Two details decide whether the numbers come out right, and both were settled by
+running the filter against the table above. A **creation the logger could not
+place still anchors**: `spy_created` carries no city in india-diplo, and a spy
+granted and sent the same turn is five of the lost postings, so requiring the
+cities to match leaves those five looking unanchored. A **posting to somewhere
+else does not anchor**: the nearest order is the only one that can date a
+completion, and if it names another city then the spy's return went unlogged
+and nothing dates it. With both rules the projection reproduces the hand-built
+ledger below exactly — 23 artifacts, 21 real, 9 unanchored, and the same split
+across all six civs.
 A `spy_surveillance_established` on the same spy and turn makes the filter
 exact rather than a window; its absence is how the projection knows it is
 reading a pre-fix log at all.
@@ -565,7 +576,9 @@ cannot stop.*
 ## The per-civ ledger
 
 The cheapest honest measure of who played this game at all, and the shape it
-takes here:
+takes here. Both tables were built by hand before the projection existed;
+`Espionage#missions`, `#losses` and `#capacity` now reproduce every cell of
+both:
 
 Logged completions against what survives the artifact filter:
 

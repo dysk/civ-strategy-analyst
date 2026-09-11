@@ -207,6 +207,120 @@ class EspionageTest < ActiveSupport::TestCase
     assert_equal [ 112 ], Espionage.new(@game).tenures("India").map { |t| t[:until_turn] }
   end
 
+  test "a completed mission against a city-state is an election rigging" do
+    moved("Arabia", 140, spy: "ARABIA_0", agent: 0, city: "Valletta", city_civ: "Valletta", state: "travelling")
+    mission("Arabia", 151, spy: "ARABIA_0", agent: 0, city: "Valletta", city_civ: "Valletta", state: "rigging_election")
+
+    assert_equal [ :election_rigging ], Espionage.new(@game).missions("Arabia").map { |m| m[:kind] }
+  end
+
+  test "a completed mission in another major's city is a tech theft" do
+    moved("England", 100, spy: "ENGLAND_1", agent: 1, city: "Delhi", city_civ: "India", state: "travelling")
+    mission("England", 110, spy: "ENGLAND_1", agent: 1, city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_equal [ :tech_theft ], Espionage.new(@game).missions("England").map { |m| m[:kind] }
+  end
+
+  test "a completion soon after the posting is the surveillance transition, not a mission" do
+    moved("England", 100, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "travelling")
+    mission("England", 104, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_empty Espionage.new(@game).missions("England")
+  end
+
+  test "a completion outside the transition window survives the filter" do
+    moved("England", 100, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "travelling")
+    mission("England", 110, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_equal [ true ], Espionage.new(@game).missions("England").map { |m| m[:anchored] }
+  end
+
+  test "a creation the logger could not place still anchors a completion" do
+    created("India", 94, spy: "INDIA_7")
+    mission("India", 98, spy: "INDIA_7", city: "Ljubljana", city_civ: "Ljubljana", state: "rigging_election")
+
+    assert_empty Espionage.new(@game).missions("India")
+  end
+
+  test "a posting to somewhere else does not anchor a completion back where the spy came from" do
+    moved("England", 100, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "travelling")
+    moved("England", 110, spy: "ENGLAND_1", city: "Lhasa", city_civ: "Tibet", state: "travelling")
+    mission("England", 114, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_equal [ false ], Espionage.new(@game).missions("England").map { |m| m[:anchored] }
+  end
+
+  test "a completion with no posting behind it is carried as unanchored" do
+    mission("England", 110, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_equal [ false ], Espionage.new(@game).missions("England").map { |m| m[:anchored] }
+  end
+
+  test "a log that reports surveillance is counted straight, transition window and all" do
+    surveillance("India", 98, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan")
+    moved("England", 100, spy: "ENGLAND_1", agent: 1, city: "Delhi", city_civ: "India", state: "travelling")
+    mission("England", 104, spy: "ENGLAND_1", agent: 1, city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_equal [ true ], Espionage.new(@game).missions("England").map { |m| m[:anchored] }
+  end
+
+  test "missions asked for one civ leaves the other civs out" do
+    mission("England", 110, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "gathering_intel")
+    mission("Tibet", 112, spy: "TIBET_1", city: "Delhi", city_civ: "India", state: "gathering_intel")
+
+    assert_equal %w[England], Espionage.new(@game).missions("England").map { |m| m[:civ] }
+  end
+
+  test "a loss reads the city it died in off the kill record" do
+    moved("Arabia", 140, spy: "ARABIA_0", agent: 0, city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0", agent: 0, city: "Valletta", city_civ: "Valletta")
+
+    assert_equal [ { civ: "Arabia", spy: "ARABIA_0", agent: 0, turn: 181, city: "Valletta",
+                     city_civ: "Valletta", city_inferred: false, turns_since_last_seen: 0 } ],
+      Espionage.new(@game).losses("Arabia")
+  end
+
+  test "a loss with no city on the record falls back to the last sighting and says how stale it is" do
+    moved("England", 100, spy: "ENGLAND_1", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 120, spy: "ENGLAND_1")
+
+    assert_equal [ [ "Delhi", true, 20 ] ],
+      Espionage.new(@game).losses("England").map { |l| l.values_at(:city, :city_inferred, :turns_since_last_seen) }
+  end
+
+  test "a loss of a spy that was never located carries no city" do
+    created("England", 90, spy: "ENGLAND_1")
+    killed("England", 120, spy: "ENGLAND_1")
+
+    assert_equal [ [ nil, nil ] ],
+      Espionage.new(@game).losses("England").map { |l| l.values_at(:city, :turns_since_last_seen) }
+  end
+
+  test "capacity counts what a civ spent and what it lost" do
+    created("England", 90, spy: "ENGLAND_1", agent: 1)
+    created("England", 94, spy: "ENGLAND_2", agent: 2)
+    promoted("England", 100, spy: "ENGLAND_1", agent: 1)
+    killed("England", 120, spy: "ENGLAND_1", agent: 1)
+    revived("England", 126, spy: "ENGLAND_7", agent: 1)
+
+    assert_equal({ created: 2, revived: 1, killed: 1, promoted: 1, never_located: 2 },
+                 Espionage.new(@game).capacity("England"))
+  end
+
+  test "capacity counts a spy that reached a city as located" do
+    created("England", 90, spy: "ENGLAND_1", agent: 1)
+    moved("England", 100, spy: "ENGLAND_1", agent: 1, city: "Delhi", city_civ: "India", state: "travelling")
+
+    assert_equal 0, Espionage.new(@game).capacity("England")[:never_located]
+  end
+
+  test "capacity isolates one civ from another" do
+    created("England", 90, spy: "ENGLAND_1", agent: 1)
+    created("Tibet", 90, spy: "TIBET_1", agent: 1)
+
+    assert_equal 1, Espionage.new(@game).capacity("England")[:created]
+  end
+
   private
 
   def moved(civ, turn, **fields) = spy_event("spy_moved", civ, turn, **fields)

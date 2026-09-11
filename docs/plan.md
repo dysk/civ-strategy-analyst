@@ -836,15 +836,15 @@ captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
 
-## Plan: espionage — the primitive four features share (iteration 1 of 6)
+## Plan: espionage — the primitive four features share (iterations 1-2 of 6)
 
-Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iteration 1
-implemented 2026-09-11** — `Espionage#tenures` and `applicable?` in
-`app/projections/espionage.rb`, 18 tests, measured against `india-diplo`
-(game 32, 24 located spies, 46 tenures) and `espionage-test` (game 37, 13
-spies, 37 tenures). Iterations 2–6 are not built: `#missions`, `#losses`,
-`#capacity`, `#counterspies`, `#coups`, the `WonderRaces` join and the
-digest section. `WonderRaces#rival_observed` still carries nil and still
+Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iterations 1
+and 2 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
+`#losses` and `#capacity` in `app/projections/espionage.rb`, 40 tests,
+measured against `india-diplo` (game 32, 24 located spies, 46 tenures) and
+`espionage-test` (game 37, 13 spies, 37 tenures). Iterations 3–6 are not
+built: `#counterspies`, `#coups`, the `WonderRaces` join and the digest
+section. `WonderRaces#rival_observed` still carries nil and still
 waits for `observers_of`. The design is in `docs/espionage.md` (the game
 rules and the honest limits) and `docs/reading-the-new-log.md` (§4).
 
@@ -929,7 +929,17 @@ of them was a hole in the log rather than in the reading:
   95–136 and watched for 48 more turns nothing records. `observers_of` will
   join against `until_turn`; the digest reports `to_turn`.
 
-When iterations 2–6 land, this becomes an `(implemented)` section with the
+Iteration 2 is the ledger in `docs/espionage.md`, and it reproduces both
+tables cell for cell: 23 artifacts, 21 real completions and 9 unanchored in
+india-diplo with the same split across all six civs, 24 real completions and
+no filtering at all in espionage-test, nine deaths in Delhi and Arabia's one
+at Valletta. Two anchoring rules decide those numbers and both are written
+down where the tables are. A completion's kind comes off the record's own
+`state` rather than from whose city it was, which the design had proposed —
+every completion in both logs carries one, so the join and the city-state
+list it needed are unnecessary.
+
+When iterations 3–6 land, this becomes an `(implemented)` section with the
 commit range and the per-iteration notes, like the tranche-1 features above.
 
 ## Plan: great people — appearance, use, and death (planned)
