@@ -836,14 +836,17 @@ captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
 
-## Plan: espionage — the primitive four features share (planned)
+## Plan: espionage — the primitive four features share (iteration 1 of 6)
 
-Status: tranche 1 point 4 of `docs/reading-the-new-log.md`. **Not
-implemented** — there is no `app/projections/espionage.rb` yet. The design
-is in `docs/espionage.md` (the game rules and the honest limits) and
-`docs/reading-the-new-log.md` (§4, the joins and the six iterations). The
-one piece of code that exists is `WonderRaces#rival_observed`, carried nil
-and waiting for `observers_of`.
+Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iteration 1
+implemented 2026-09-11** — `Espionage#tenures` and `applicable?` in
+`app/projections/espionage.rb`, 18 tests, measured against `india-diplo`
+(game 32, 24 located spies, 46 tenures) and `espionage-test` (game 37, 13
+spies, 37 tenures). Iterations 2–6 are not built: `#missions`, `#losses`,
+`#capacity`, `#counterspies`, `#coups`, the `WonderRaces` join and the
+digest section. `WonderRaces#rival_observed` still carries nil and still
+waits for `observers_of`. The design is in `docs/espionage.md` (the game
+rules and the honest limits) and `docs/reading-the-new-log.md` (§4).
 
 Context: a spy is a position held over a span of turns, and four questions
 join against it — did a wonder-race loser see the winner's build, what
@@ -887,9 +890,22 @@ the tenure-inferred death site, the counterspy inference — and the
 event-reading paths stay unexercised until a post-fix log is imported,
 declared unexercised the way `winner_finish`'s `:ahead_of_estimate` is.
 
-Not done: the whole projection. When it is built, this becomes a
-`(implemented)` section with the commit range and the per-iteration notes,
-like the tranche-1 features above.
+Iteration 1 shipped both paths, and a post-fix log exercises the
+event-reading half: 16 of `espionage-test.jsonl`'s 37 tenures are dated off
+`spy_surveillance_established`, 15 of those at exactly +4 and one at +0
+where the event was itself the first sighting. India-diplo carries no such
+event and falls back to the arithmetic for 33 tenures and to the bounded
+floor for 12. The `agent` key is the one path still unexercised at volume — only
+`run-b-test.jsonl` carries the field, and it logs no `spy_created` at all.
+
+The run measured one correction to the design. A counterspy's state arrives
+a turn behind its order, in a second `spy_moved` in the same city, so the
+garrison has to be read off the whole tenure; reading only the posting dated
+4 of `espionage-test`'s 5 garrisons at +4, as if they were waiting for a
+city screen to open. Recorded in `docs/espionage.md`.
+
+When iterations 2–6 land, this becomes an `(implemented)` section with the
+commit range and the per-iteration notes, like the tranche-1 features above.
 
 ## Plan: great people — appearance, use, and death (planned)
 

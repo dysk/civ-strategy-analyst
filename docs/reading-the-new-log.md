@@ -456,7 +456,7 @@ across events, so a spy is trackable. The event types that carry a location:
   9), given `city`/`city_civ` by that same upstream commit.
 
 A tenure is a maximal run of sightings of one spy in one city. Reconstructed
-over india-diplo that gives **24 spies with a location and 39 tenures**, and
+over india-diplo that gives **24 spies with a location and 46 tenures**, and
 they read cleanly — `IROQUOIS_6` sat in London from turn 118 to at least 173,
 completing four intel missions; `ENGLAND_1` toured Amsterdam, Lhasa and Mumbai
 before going home to London on counter-intelligence at 156.
@@ -709,21 +709,24 @@ say so — do not calibrate it against nothing.
 - `Espionage` (`app/projections/espionage.rb`), `extend Projection`.
   `applicable?` false when the log carries no `spy_*` record at all — the two
   older example logs must be checked before this ships.
-  - `tenures(civ = nil)` → `{civ, spy, city, city_civ, from_turn, to_turn,
-    visible_from_turn, visible_from_turn_bounded, states,
+  - `tenures(civ = nil)` → `{civ, spy, agent, city, city_civ, from_turn,
+    to_turn, visible_from_turn, visible_from_turn_bounded, states,
     ended_by: :moved | :killed | :log_end}`. `visible_from_turn` is **read
     from `spy_surveillance_established`** where the log carries one; on a
     pre-fix log it is **computed** — `posting + 1 + (3, or 1 at
     INFLUENCE_LEVEL_FAMILIAR or better over the target)`, both DLL constants,
     measured at exactly +4 in 15 of 15 postings in `espionage-test.jsonl` —
     and falls back to a bounded floor only where the posting was lost. A
-    `counter_intel` tenure is the exception at **+1**: a garrison needs no
-    surveillance and never emits the event.
-    Keyed on `(civ, spy)` **knowing the key is wrong**: the DLL renames a spy
-    on revival, so a `spy_revived` naming an unknown spy opens a new tenure
-    rather than continuing the dead one. Reported upstream as *"A stable spy
-    identity"*; until `AgentID` reaches the record no reading can do better,
-    and `docs/espionage.md` says so where the count is published.
+    `counter_intel` tenure is the exception at **+1** — a garrison needs no
+    surveillance and never emits the event — and the state is read off the
+    whole run, since it usually arrives a turn behind the order in a second
+    `spy_moved` in the same city.
+    Keyed on `(civ, agent)` where the logger writes an `agent`, and on
+    `(civ, spy)` where it does not. The name is not an identity: the DLL
+    redraws it on revival, so in an older log a `spy_revived` names a spy that
+    never existed and opens a new tenure rather than continuing the dead one.
+    A death ends a run wherever the agent turns up next, the city it died in
+    included.
   - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
     overlaps the window, which is the whole of joins A and D.
   - `missions(civ)` → `spy_mission_completed` split on `city_civ` against

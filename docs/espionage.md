@@ -101,6 +101,13 @@ A **counterspy is the exception**: it needs no surveillance, so its posting
 takes effect at **+1**, the travel turn alone. Five `counter_intel` postings
 in `espionage-test.jsonl`, none of them followed by a surveillance event.
 
+The state arrives a turn *behind* the order and in its own record: four of the
+five are a `spy_moved` into the city as `travelling` and then a second
+`spy_moved`, same city, next turn, as `counter_intel`. Both land in one tenure,
+so a garrison is read off the whole run rather than off the posting that opened
+it — reading only the posting dates those four at +4, as if they were spies
+waiting for a city screen to open.
+
 So four dating rules, in descending order of what they may be used for:
 
 - **Logged** — `spy_surveillance_established` in city C on turn T.
@@ -121,7 +128,12 @@ None of the four says the player looked.
 ## Tenure, and what the log loses
 
 A tenure is a maximal run of sightings of one spy in one city. Over
-india-diplo that is 24 spies with a location and 39 tenures.
+india-diplo that is 24 spies with a location and **46 tenures** — 40
+distinct spy-and-city pairs, six of which are a spy returning to a city it
+had left, which the maximal-run rule counts twice on purpose. (The 39 quoted
+here before the projection existed was the distinct-pair count, taken by
+hand.) `espionage-test.jsonl` gives 13 located spies and 37 tenures over a
+shorter game, because that one's spies were moved far more often.
 
 **The spy's name is not its identity.** The DLL draws a fresh name when a spy
 revives, and the logger's record carries `spy = row.Name` rather than the
