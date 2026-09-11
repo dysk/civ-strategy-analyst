@@ -107,6 +107,50 @@ class CityStateStandingTest < ActiveSupport::TestCase
     )
   end
 
+  test "attribution splits the observed change into decay, rig-explained gain and a residual" do
+    city_state("Ljubljana", 10, relations: [ { civ: "India", influence: 20, per_turn: 2.0 } ])
+    city_state("Ljubljana", 60, relations: [ { civ: "India", influence: 100, per_turn: -1.0 } ])
+    mission("India", 30, spy: "INDIA_1", city: "Ljubljana", city_civ: "Ljubljana", state: "rigging_election")
+
+    assert_equal(
+      { gain: 80, decay: 100.0, rigs: 1, explained: 45, unexplained: -65.0, cs_routes: 0, merchant_confederacy: false },
+      CityStateStanding.new(@game).attribution("Ljubljana", "India")
+    )
+  end
+
+  test "attribution counts only rigging_election missions completed against this city-state by this civ" do
+    mission("India", 30, spy: "INDIA_1", city: "Ljubljana", city_civ: "Ljubljana", state: "rigging_election")
+    mission("India", 40, spy: "INDIA_1", city: "Ljubljana", city_civ: "Ljubljana", state: "gathering_intel")
+    mission("India", 50, spy: "INDIA_2", city: "Zurich", city_civ: "Zurich", state: "rigging_election")
+    mission("England", 60, spy: "ENGLAND_1", city: "Ljubljana", city_civ: "Ljubljana", state: "rigging_election")
+
+    assert_equal 1, CityStateStanding.new(@game).attribution("Ljubljana", "India")[:rigs]
+  end
+
+  test "attribution counts trade routes established from this civ to this city-state" do
+    trade_route("India", 47, to_civ: "Ljubljana")
+    trade_route("India", 59, to_civ: "Ljubljana")
+    trade_route("India", 84, to_civ: "Zurich")
+    trade_route("England", 90, to_civ: "Ljubljana")
+
+    assert_equal 2, CityStateStanding.new(@game).attribution("Ljubljana", "India")[:cs_routes]
+  end
+
+  test "attribution reports merchant_confederacy true only for the civ that adopted the policy" do
+    policy_adopted("India", 81, policy: "POLICY_MERCHANT_CONFEDERACY")
+
+    assert CityStateStanding.new(@game).attribution("Ljubljana", "India")[:merchant_confederacy]
+    assert_not CityStateStanding.new(@game).attribution("Ljubljana", "England")[:merchant_confederacy]
+  end
+
+  test "attribution reports zero gain and decay when the pair has fewer than two snapshot points" do
+    city_state("Ljubljana", 10, relations: [ { civ: "India", influence: 20, per_turn: 2.0 } ])
+
+    result = CityStateStanding.new(@game).attribution("Ljubljana", "India")
+    assert_equal 0, result[:gain]
+    assert_equal 0, result[:decay]
+  end
+
   private
 
   def city_state(name, turn, ally: nil, relations: [])
@@ -126,6 +170,22 @@ class CityStateStandingTest < ActiveSupport::TestCase
   def session_started(city_states:)
     payload = { "event" => "session_started", "turn" => 0, "players" => [], "city_states" => city_states.map(&:stringify_keys) }
     event("session_started", nil, 0, payload)
+  end
+
+  def mission(civ, turn, spy:, city:, city_civ:, state:)
+    payload = { "event" => "spy_mission_completed", "turn" => turn, "civ" => civ, "spy" => spy,
+                "city" => city, "city_civ" => city_civ, "state" => state }
+    event("spy_mission_completed", civ, turn, payload)
+  end
+
+  def trade_route(civ, turn, to_civ:)
+    payload = { "event" => "trade_route_established", "turn" => turn, "civ" => civ, "to_civ" => to_civ }
+    event("trade_route_established", civ, turn, payload)
+  end
+
+  def policy_adopted(civ, turn, policy:)
+    payload = { "event" => "policy_adopted", "turn" => turn, "civ" => civ, "policy" => policy }
+    event("policy_adopted", civ, turn, payload)
   end
 
   def event(type, civ, turn, payload)

@@ -5,7 +5,14 @@
 class CityStateStanding
   extend Projection
 
+  # Measured off eight Ljubljana rigs ten turns apart against a decay of
+  # −1.25 - see docs/city-state-influence.md. Rigs are the only cause the
+  # residual is ever credited with; the rest is named, not explained.
+  RIG_GAIN = 45
+  MERCHANT_CONFEDERACY = "POLICY_MERCHANT_CONFEDERACY"
+
   def initialize(game)
+    @game = game
     @log = game.event_log
   end
 
@@ -27,6 +34,20 @@ class CityStateStanding
     ally_changes_by_city_state.flat_map { |city_state, changes| spans_for(city_state, civ, changes) }
   end
 
+  # The influence a civ bought at a city-state, split into what the log
+  # explains and what it does not. `unexplained` is the headline field and is
+  # never labelled with a cause - it is where gold gifts, quests and
+  # successful coups live, none of them logged.
+  def attribution(city_state, civ)
+    points = series(city_state, civ).sort_by { |p| p[:turn] }
+    gain, decay = points.size >= 2 ? [ points.last[:influence] - points.first[:influence], decay_across(points) ] : [ 0, 0 ]
+    rigs = rig_count(city_state, civ)
+    explained = rigs * RIG_GAIN
+
+    { gain: gain, decay: decay, rigs: rigs, explained: explained, unexplained: (gain - decay) - explained,
+      cs_routes: cs_routes(city_state, civ), merchant_confederacy: merchant_confederacy?(civ) }
+  end
+
   def traits
     Array(session_started&.payload&.[]("city_states")).map { |cs|
       { city_state: cs["civ"], trait: cs["trait"], personality: cs["personality"], unique_unit: cs["unique_unit"] }
@@ -34,6 +55,22 @@ class CityStateStanding
   end
 
   private
+
+  def decay_across(points) = points.each_cons(2).sum { |a, b| a[:per_turn] * (b[:turn] - a[:turn]) }
+
+  def rig_count(city_state, civ)
+    espionage.missions(civ).count { |m| m[:kind] == :election_rigging && m[:city_civ] == city_state }
+  end
+
+  def espionage = @espionage ||= Espionage.for(@game)
+
+  def cs_routes(city_state, civ)
+    @log.of_type("trade_route_established").count { |e| e.civ == civ && e.payload["to_civ"] == city_state }
+  end
+
+  def merchant_confederacy?(civ)
+    @log.of_type("policy_adopted").any? { |e| e.civ == civ && e.payload["policy"] == MERCHANT_CONFEDERACY }
+  end
 
   def spans_for(city_state, civ, changes)
     changes = changes.sort_by(&:turn)
