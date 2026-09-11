@@ -36,6 +36,7 @@ class DigestBuilder
       key_moments: key_moments,
       wonder_races: wonder_races,
       espionage: espionage,
+      diplomatic_ties: diplomatic_ties,
       unit_names: unit_names,
       spy_names: spy_names,
       cultural: cultural_by_civ,
@@ -263,6 +264,21 @@ class DigestBuilder
 
   def civs
     @game.players.order(:id).pluck(:civ)
+  end
+
+  # Fact rather than inference - embassies, open borders, friendship, pacts
+  # and trade agreements. One entry per pair that ever held a tie; a pair
+  # that never did is omitted rather than listed with nothing in it.
+  def diplomatic_ties
+    ties = DiplomaticTies.for(@game)
+    return { applicable: false, reason: :no_tie_events } unless ties.applicable?
+
+    { applicable: true, pairs: civs.combination(2).filter_map { |a, b| pair_ties(ties, a, b) } }
+  end
+
+  def pair_ties(ties, a, b)
+    spans = ties.spans(a, b)
+    { civs: [ a, b ], spans: spans } unless spans.empty?
   end
 
   def lekmod

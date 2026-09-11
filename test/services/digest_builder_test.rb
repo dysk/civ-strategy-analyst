@@ -411,6 +411,23 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ applicable: false, reason: :no_city_state_snapshots }, DigestBuilder.new(@game).call[:city_states])
   end
 
+  test "includes the diplomatic ties standing between a pair of civs, omitting pairs with none" do
+    event("Rome", "embassy_established", 6, other_civ: "Greece")
+    event("Greece", "embassy_established", 6, other_civ: "Rome")
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal true, digest[:diplomatic_ties][:applicable]
+    assert_equal(
+      [ { civs: [ "Rome", "Greece" ], spans: [ { type: "embassy", from_turn: 6, to_turn: nil } ] } ],
+      digest[:diplomatic_ties][:pairs]
+    )
+  end
+
+  test "diplomatic_ties degrades to inapplicable when the log carries no tie events" do
+    assert_equal({ applicable: false, reason: :no_tie_events }, DigestBuilder.new(@game).call[:diplomatic_ties])
+  end
+
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do
     event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
     event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")
