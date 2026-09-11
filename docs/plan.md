@@ -1393,3 +1393,41 @@ none. Not built: a UI column. `games#show`'s capital-distances table
 shows only civs and hex count today, bearing included nowhere on the
 page, so `met_turn` stays digest/chronicle-only rather than breaking that
 precedent unasked.
+
+## Plan: trade routes (implemented)
+
+Status: **Implemented 2026-09-11.** `docs/reading-the-new-log.md` §7 as
+written, with one number corrected against the real log - see that
+section's status note.
+
+`TradeRoutes` (`app/projections/trade_routes.rb`) reads
+`trade_route_established`/`trade_route_ended`. A route carries no id, so
+its lifetime is reconstructed by pairing each establishment with the next
+end sharing its `(civ, from_city, to_city, to_civ)` key, chronologically,
+one end consumed per start - a greedy match the spec already names as
+sometimes wrong, since a re-established pair can steal another instance's
+end. The reconstruction never trusts a matched end past the route's own
+`turns_left` estimate: live-until is `min(matched_end, turn + turns_left)`,
+and `#concurrency(civ)` emits a point at every turn a route starts or
+stops being live, each one flagged where any contributing route fell back
+to the estimate rather than a trusted match.
+
+`#by_destination(civ)` splits established routes into `own` (food or
+production, grouped by type), `city_state` and `major`, reading
+`Game#city_state_civs` rather than re-deriving the roster split.
+`#one_sided` is whole-game rather than per-civ: every established
+major-to-major route where one side's `gold`/`science`/`tourism` is zero
+and the other's is not - the shipped example is Delhi feeding Amsterdam
+13 science a turn for nothing back, which reproduces exactly against
+india-diplo.
+
+`DigestBuilder#trade_routes` degrades to
+`{ applicable: false, reason: :no_trade_route_events }` on a log with
+none, otherwise carries `by_civ.<civ>.{by_destination, concurrency}` (the
+last downsampled through `sample_checkpoints`, the same ~25-turn grid
+every other per-turn series uses) and a whole-game `one_sided` list.
+`analyze_game.md` gains the digest paragraph; `chronicle_game.md` gains a
+short section treating the destination split as characterisation, a
+one-sided route as a clause worth naming outright, and the concurrency
+curve as backdrop the chronicler mostly leaves unnarrated - the same
+texture-not-entry treatment feature 6 established for diplomatic ties.

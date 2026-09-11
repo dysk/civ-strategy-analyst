@@ -1036,6 +1036,16 @@ that construct them by hand.
 
 ## 7. Trade routes
 
+**Implemented 2026-09-11.** As written below, plus one correction found
+against the real log: the written peak of "12 concurrent on turn 183" does
+not reproduce under the stated reconstruction rule, applied precisely -
+`TradeRoutes#concurrency("India")` against india-diplo gives 11 live at
+turn 183, and a plain `turn + turns_left` count with no route matching at
+all agrees with 11. The 22-route total, the destination split and the
+Delhi→Amsterdam one-sided science example all reproduce exactly, so the
+peak figure below is left as the one number in this section not to trust
+to the digit.
+
 118 established, both sides' gold, science, food, production, tourism and
 religious pressure. **The first question is where the caravan went, and the log
 answers it with no inference:**
