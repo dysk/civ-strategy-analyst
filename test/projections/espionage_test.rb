@@ -321,6 +321,159 @@ class EspionageTest < ActiveSupport::TestCase
     assert_equal 1, Espionage.new(@game).capacity("England")[:created]
   end
 
+  test "a spy posted to counter-intelligence in its own city is a garrison" do
+    moved("Mysore", 151, spy: "MUGHAL_0", agent: 0, city: "Mysuru", city_civ: "Mysore", state: "travelling")
+    moved("Mysore", 152, spy: "MUGHAL_0", agent: 0, city: "Mysuru", city_civ: "Mysore", state: "counter_intel")
+
+    assert_equal(
+      [ { civ: "Mysore", city: "Mysuru", spy: "MUGHAL_0", agent: 0,
+          from_turn: 151, to_turn: 152, until_turn: 152, kills: 0,
+          inferred: false, confidence: nil } ],
+      Espionage.new(@game).counterspies("Mysore")
+    )
+  end
+
+  test "a garrison first seen at a reload seam is read like any other" do
+    created("Mysore", 151, spy: "MUGHAL_0", agent: 0, city: "Mysuru", city_civ: "Mysore",
+            state: "counter_intel")
+
+    assert_equal [ [ "Mysuru", false ] ],
+      Espionage.new(@game).counterspies("Mysore").map { |g| g.values_at(:city, :inferred) }
+  end
+
+  test "a garrison ends when the spy is ordered to another city" do
+    moved("Sioux", 170, spy: "IROQUOIS_5", city: "Isanyathi", city_civ: "Sioux", state: "travelling")
+    moved("Sioux", 171, spy: "IROQUOIS_5", city: "Isanyathi", city_civ: "Sioux", state: "counter_intel")
+    moved("Sioux", 172, spy: "IROQUOIS_5", city: "Ihankthunwanna", city_civ: "Sioux", state: "travelling")
+    moved("Sioux", 177, spy: "IROQUOIS_5", city: "Ihankthunwanna", city_civ: "Sioux", state: "counter_intel")
+
+    assert_equal [ [ "Isanyathi", 170, 171, 172 ], [ "Ihankthunwanna", 172, 177, 177 ] ],
+      Espionage.new(@game).counterspies("Sioux").map { |g| g.values_at(:city, :from_turn, :to_turn, :until_turn) }
+  end
+
+  test "a spy ordered home is no garrison until the state says it arrived" do
+    moved("Sioux", 178, spy: "IROQUOIS_5", city: "Isanyathi", city_civ: "Sioux", state: "travelling")
+    moved("Sioux", 179, spy: "IROQUOIS_5", city: "Ihankthunwanna", city_civ: "Sioux", state: "travelling")
+
+    assert_empty Espionage.new(@game).counterspies("Sioux")
+  end
+
+  test "a garrison counts the spies that died in its city while it stood" do
+    moved("India", 100, spy: "INDIA_7", city: "Delhi", city_civ: "India", state: "counter_intel")
+    killed("England", 109, spy: "ENGLAND_5", city: "Delhi", city_civ: "India")
+    killed("Tibet", 120, spy: "CHINA_3", city: "Delhi", city_civ: "India")
+
+    assert_equal 2, Espionage.new(@game).counterspies("India").first[:kills]
+  end
+
+  test "a death before the garrison arrived is not its kill" do
+    killed("England", 90, spy: "ENGLAND_5", city: "Delhi", city_civ: "India")
+    moved("India", 100, spy: "INDIA_7", city: "Delhi", city_civ: "India", state: "counter_intel")
+    killed("Tibet", 120, spy: "CHINA_3", city: "Delhi", city_civ: "India")
+
+    assert_equal 1, Espionage.new(@game).counterspies("India").first[:kills]
+  end
+
+  test "a civ whose garrison the log records is never inferred at" do
+    created("India", 94, spy: "INDIA_9", agent: 9)
+    moved("India", 100, spy: "INDIA_7", agent: 7, city: "Delhi", city_civ: "India", state: "counter_intel")
+    killed("England", 109, spy: "ENGLAND_5", city: "Delhi", city_civ: "India")
+
+    assert_equal [ false ], Espionage.new(@game).counterspies("India").map { |g| g[:inferred] }
+  end
+
+  test "a never-located spy alone is a garrison nobody can place" do
+    created("Netherlands", 183, spy: "NETHERLANDS_1", agent: 1)
+
+    assert_equal(
+      [ { civ: "Netherlands", city: nil, spy: "NETHERLANDS_1", agent: 1,
+          from_turn: 183, to_turn: 183, until_turn: 183, kills: 0,
+          inferred: true, confidence: 1 } ],
+      Espionage.new(@game).counterspies("Netherlands")
+    )
+  end
+
+  test "spies dying in a civ's cities locate a garrison the log never mentions" do
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5")
+    moved("Tibet", 115, spy: "CHINA_3", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("Tibet", 120, spy: "CHINA_3")
+
+    assert_equal(
+      [ { civ: "India", city: "Delhi", spy: nil, agent: nil,
+          from_turn: 109, to_turn: 120, until_turn: 120, kills: 2,
+          inferred: true, confidence: 1 } ],
+      Espionage.new(@game).counterspies("India")
+    )
+  end
+
+  test "a never-located spy and deaths at home agree to confidence two" do
+    created("India", 94, spy: "INDIA_7", agent: 7)
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5")
+
+    assert_equal [ [ "Delhi", "INDIA_7", 94, 109, 2 ] ],
+      Espionage.new(@game).counterspies("India")
+        .map { |g| g.values_at(:city, :spy, :from_turn, :to_turn, :confidence) }
+  end
+
+  test "a promotion on the turn of a death at home is the third signal" do
+    created("India", 94, spy: "INDIA_7", agent: 7)
+    promoted("India", 108, spy: "INDIA_7", agent: 7)
+    promoted("India", 109, spy: "INDIA_7", agent: 7)
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5")
+
+    assert_equal 3, Espionage.new(@game).counterspies("India").first[:confidence]
+  end
+
+  test "a promotion on a turn nothing died at home is no signal" do
+    created("India", 94, spy: "INDIA_7", agent: 7)
+    promoted("India", 108, spy: "INDIA_7", agent: 7)
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5")
+
+    assert_equal 2, Espionage.new(@game).counterspies("India").first[:confidence]
+  end
+
+  test "the city a garrison is placed in is where most of the deaths were" do
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5")
+    moved("Tibet", 112, spy: "CHINA_3", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("Tibet", 120, spy: "CHINA_3")
+    moved("Tibet", 130, spy: "CHINA_5", city: "Mumbai", city_civ: "India", state: "travelling")
+    killed("Tibet", 140, spy: "CHINA_5")
+
+    assert_equal [ [ "Delhi", 2 ] ],
+      Espionage.new(@game).counterspies("India").map { |g| g.values_at(:city, :kills) }
+  end
+
+  test "a spy dying at a city-state is a coup, not a garrison" do
+    city_state("Valletta", 170)
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0")
+
+    assert_empty Espionage.new(@game).counterspies("Valletta")
+  end
+
+  test "a garrison inferred from a named spy ends when that spy dies" do
+    created("India", 94, spy: "INDIA_7", agent: 7)
+    killed("India", 150, spy: "INDIA_7", agent: 7)
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5")
+
+    assert_equal [ [ 94, 109, 150 ] ],
+      Espionage.new(@game).counterspies("India")
+        .map { |g| g.values_at(:from_turn, :to_turn, :until_turn) }
+  end
+
+  test "counterspies isolates one civ from another" do
+    created("India", 94, spy: "INDIA_7", agent: 7)
+    created("England", 94, spy: "ENGLAND_1", agent: 1)
+
+    assert_equal [ "INDIA_7" ], Espionage.new(@game).counterspies("India").map { |g| g[:spy] }
+  end
+
   private
 
   def moved(civ, turn, **fields) = spy_event("spy_moved", civ, turn, **fields)
@@ -330,6 +483,11 @@ class EspionageTest < ActiveSupport::TestCase
   def revived(civ, turn, **fields) = spy_event("spy_revived", civ, turn, **fields)
   def evicted(civ, turn, **fields) = spy_event("spy_evicted", civ, turn, **fields)
   def mission(civ, turn, **fields) = spy_event("spy_mission_completed", civ, turn, **fields)
+
+  def city_state(name, turn)
+    event("city_state_snapshot", nil, turn,
+          { "event" => "city_state_snapshot", "turn" => turn, "city_state" => name })
+  end
 
   def surveillance(civ, turn, **fields)
     spy_event("spy_surveillance_established", civ, turn, **fields)

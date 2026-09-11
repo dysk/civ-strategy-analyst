@@ -626,12 +626,18 @@ every other civ's espionage, and the logger has no record of it.
 
 Why india-diplo missed it: the logger emitted `spy_moved` only on a coordinate
 change and `spy_mission_completed` only on a mission, and a counterspy placed
-once and left alone did neither. **Reported upstream and fixed** in *"Give a
-revived or homebound spy back its posting"*: `spy_moved` now also fires on the
-transition into `counter_intel` with a city present, so a post-fix log records
-the garrison as a `spy_moved` with `state: "counter_intel"` and
-`Espionage#counterspies` reads it directly. india-diplo predates the fix, so
-for that game the projection still infers the garrison.
+once and left alone did neither. **Reported upstream and fixed twice.** *"Give
+a revived or homebound spy back its posting"* made `spy_moved` fire on the
+transition into `counter_intel` with a city present; *"Say what a spy first
+seen in a city is doing there"* put `state` on `spy_created`, so a garrison
+that settled in before the session started is legible across a reload seam.
+A garrison is now a tenure whose states include `counter_intel`, and
+`Espionage#counterspies` reads it directly.
+
+The read and the inference are chosen **per civ, not per log**. India-diplo
+carries one counter-intelligence posting after all — England pulling
+`ENGLAND_1` home to London on turn 156, which moved and so fired the ordinary
+branch — while India's own garrison in the same log is invisible and inferred.
 
 `Espionage#counterspies(civ)` — read from a `counter_intel` `spy_moved` where
 one is present, otherwise inferred, never asserted, from three independent
@@ -650,7 +656,13 @@ still worth having.
 
 `Netherlands` has its own never-located spy (`NETHERLANDS_1`) with no deaths to
 corroborate it — signal 1 alone, and the record must say so rather than promote
-a guess to a garrison.
+a guess to a garrison. `espionage-test.jsonl` produces one more of those,
+Arabia's `ARABIA_8` on turn 186.
+
+Signal 3 implies signal 2, so no separate signal list is needed on the record:
+a `city` means deaths fired, a `spy` means the unplaced spy did, and confidence
+3 means all three. India is the only civ in either game whose promotions fall
+in a death turn.
 
 **`spy_killed` carries no city**, so the death site is the spy's last known
 tenure. Carry `turns_since_last_seen` (4 to 13 here) so a reader can discount
@@ -754,8 +766,9 @@ say so — do not calibrate it against nothing.
     the record in a post-fix log, the last sighting in india-diplo), the host's
     civ, `city_inferred` and `turns_since_last_seen`. A spy that was never
     located anywhere dies with no city rather than a guess.
-  - `counterspies(civ)` → the garrisons: `{city, spy, from_turn, to_turn,
-    confidence, kills}`. Read from a `spy_moved` into `counter_intel` where the
+  - `counterspies(civ)` → the garrisons: `{civ, city, spy, agent, from_turn,
+    to_turn, until_turn, kills, inferred, confidence}`, the three turn fields
+    meaning what they mean on a tenure. Read from a `spy_moved` into `counter_intel` where the
     log carries one — five in `espionage-test.jsonl`, none followed by a
     surveillance event or a completion. A garrison is a **span, not a
     standing state**: the Sioux moved one spy between two of their own cities
@@ -794,7 +807,7 @@ say so — do not calibrate it against nothing.
   `ChronicleSpine` does **not** get a new weight: it modifies an existing
   `wonder_race_lost`, it does not anchor a second entry on the same event.
 - Digest: `espionage` per civ — capacity, the mission split, losses, and
-  tenures at conclusion only, never per turn. Thirty-nine tenures is small
+  tenures at conclusion only, never per turn. Forty-six tenures is small
   enough to carry whole; the cross-cutting rule still applies if a longer game
   produces hundreds.
 
@@ -806,10 +819,11 @@ say so — do not calibrate it against nothing.
    fallback, `ended_by`. Joins `DigestBuilderCostTest::PROJECTIONS`.
 2. `#missions`, `#losses`, `#capacity` — the splits, the inferred host city and
    its staleness.
-3. `#counterspies` — the `counter_intel` `spy_moved` where present, else the
-   three signals and the confidence they combine to. `docs/espionage.md`
-   carries the DLL rank table the inference rests on, since a reader has no
-   other way to know why a kill implies a garrison.
+3. `#counterspies` — a tenure whose states include `counter_intel` where the
+   log carries one, else the three signals and the confidence they combine to,
+   decided per civ. `docs/espionage.md` carries the DLL rank table the inference
+   rests on, since a reader has no other way to know why a kill implies a
+   garrison.
 4. `#coups` — both signatures, both unexercised.
 5. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
    five-way classification with four branches declared unexercised.

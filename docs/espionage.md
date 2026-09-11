@@ -306,26 +306,40 @@ Two consequences worth stating plainly:
 Reported upstream as *"Report the completions that never happened"* and fixed
 there; this section applies only to logs written before that commit.
 
-## The counterspy — read in a post-fix log, inferred in india-diplo
+## The counterspy — read where the log says so, inferred where it does not
 
-**Post-fix logs record the garrison, and this is measured.** *"Give a revived
-or homebound spy back its posting"* made `spy_moved` fire on the transition
-into `counter_intel` with a city present, even when the coordinates did not
-change — the one case a counterspy could previously produce no event at all.
-`espionage-test.jsonl` carries five such records, each in one of its owner's
-own cities and none followed by a surveillance event or a completion. So in a
-post-fix log a counterspy is a `spy_moved` with `state: "counter_intel"`, and
-`Espionage#counterspies` reads the garrison city and the spy straight off it.
+**A garrison is a tenure whose states include `counter_intel`, and
+`Espionage#counterspies(civ)` reads the city, the spy and the span straight
+off it.** The state, not the city's owner, is what proves the spy arrived.
+`espionage-test.jsonl` carries five such records and india-diplo one, and the
+projection reads six garrisons from the two logs.
 
-Two things that reading has to allow for. A counterspy is **not** silent
-forever, only while it stays put: the Sioux oscillated one spy between
-Ihankthunwanna and Isanyathi four times in ten turns, and each leg is a real
-posting, so a garrison is a *span* like any other tenure and a civ can hold
-none for stretches in between. And a garrison spy's progress is always nil, so
-it can never produce a completion — `state` is the only discriminator.
+Which civ gets read and which gets inferred is decided **per civ, not per
+log**. India-diplo carries England pulling `ENGLAND_1` home to London on turn
+156 — a coordinate change, so the ordinary move branch fired and carried the
+state with it — while India's own garrison in the same log is invisible and
+has to be inferred. A log can hold both.
 
-The three-signal inference below is the fallback for india-diplo, which
-predates the fix and mentions no counterspy anywhere.
+Two closed gaps, both from the postings a counterspy makes without moving.
+*"Give a revived or homebound spy back its posting"* made `spy_moved` fire on
+the transition into `counter_intel` with a city present, so a spy already
+standing in the city it is told to defend now produces a record. *"Say what a
+spy first seen in a city is doing there"* put `state` on `spy_created`, so a
+garrison that settled in before the session started is legible too — that
+transition happens once, and a counterspy polled after it never makes it
+again. Mysore's `MC_MUGHAL_0` is the near miss: announced in Mysuru on turn
+151 with no state, and visible only because the player re-ordered it on 152.
+
+Two things the reading has to allow for. A counterspy is **not** silent
+forever, only while it stays put: the Sioux ran one spy between
+Ihankthunwanna and Isanyathi over seven legs in eleven turns, of which three
+settled into `counter_intel` and four were interrupted in transit. A garrison
+is a *span* like any other tenure and a civ can hold none in between. And a
+garrison spy's progress is always nil, so it can never produce a completion —
+`state` is the only discriminator.
+
+The three-signal inference below is the fallback wherever no such record
+exists, which in these two logs is India, the Netherlands and Arabia.
 
 `CvEspionageClasses.cpp:538-582`, under `ESPIONAGE_SYSTEM_REWORK` (defined at
 `_Defines.h:1441`, so this is the live branch), resolves a completed mission
@@ -355,26 +369,60 @@ spy is nameable: India created six spies, five appear in a city, and
 sixth. `bCounterSpyUpgrade` is set on `SPOTTED` and `KILLED`, and the first
 kill in the game is turn 109.
 
-`Espionage#counterspies(civ)`, where no `counter_intel` `spy_moved` is present,
-infers a garrison from three independent signals that agree:
+Where a civ has no such record, `Espionage#counterspies(civ)` infers a garrison
+from three signals that agree:
 
 1. **a spy with no location** — created, sometimes promoted, never in a city;
 2. **enemy spies dying in one of the civ's cities**, which the rank table says
    is impossible without a garrison there;
-3. **promotions clustering with those deaths**, since the defender levels up
-   on a kill.
+3. **a promotion in the turn of one of those deaths**, since the defender is
+   what levels up on a kill.
 
-The record carries `city` (the modal death site), `confidence` (how many
-signals fired) and `spy` when a never-located spy can be named. Signal 2 alone
-locates a garrison without naming it, which is the common case and still worth
-having. The Netherlands has a never-located spy (`NETHERLANDS_1`) with no
-deaths to corroborate it — signal 1 alone, and the record says so rather than
-promoting a guess to a garrison.
+The third implies the second, so the record's own fields say which signals
+fired: a `city` means deaths, a `spy` means the unplaced spy, and `confidence`
+3 means all three. India comes out at confidence 3 — Delhi, `INDIA_7`, nine
+kills — and it is the only civ in either game whose promotions fall in a death
+turn. The six other promotions in india-diplo land on turns 134, 136, 137,
+155, 156 and 180, and no spy died on any of them.
+
+Signal 2 alone locates a garrison without naming it. Signal 1 alone names one
+without placing it, which is what the Netherlands (`NETHERLANDS_1`, turn 183)
+and Arabia (`ARABIA_8`, turn 186) get, and confidence 1 with no city is the
+record refusing to promote a guess to a garrison.
+
+A death at a **city-state** is left out of signal 2 entirely. That is a failed
+coup, the one way a spy dies with no counterspy anywhere near it, and Arabia at
+Valletta is the measured instance. The city-state names come from
+`city_state_snapshot`, not from guessing at `city_civ`.
 
 In india-diplo `spy_killed` carries no city, so the death site is the last
 known tenure; carry `turns_since_last_seen` (4 to 13 here) so a reader can
 discount it. Post-fix logs put `city`/`city_civ` on the kill directly, taken
 from the last live poll, and `turns_since_last_seen` is then 0.
+
+### Six garrisons read, three inferred
+
+| civ | city | spy | span | kills | read |
+|---|---|---|---|---|---|
+| India | Delhi | `INDIA_7` | 94–182 | 9 | inferred, confidence 3 |
+| England | London | `ENGLAND_1` | 156–156 | 0 | logged |
+| Netherlands | — | `NETHERLANDS_1` | 183–183 | 0 | inferred, confidence 1 |
+| Mysore | Mysuru | `MC_MUGHAL_0` | 151–152 | 0 | logged |
+| Mysore | Mysuru | `MC_MUGHAL_5` | 173–173 | 0 | logged |
+| Sioux | Isanyathi | `IROQUOIS_5` | 170–171 | 0 | logged |
+| Sioux | Ihankthunwanna | `IROQUOIS_5` | 176–177 | 0 | logged |
+| Sioux | Ihankthunwanna | `IROQUOIS_5` | 179–180 | 0 | logged |
+| Arabia | — | `ARABIA_8` | 186–186 | 0 | inferred, confidence 1 |
+
+Every kill in either game is India's. Five civs garrisoned something and only
+one of them ever caught anybody, which is the shape of the finding: the
+defence that mattered was not distributed, it was India's capital.
+
+The record carries `from_turn`, `to_turn` and `until_turn` with the same
+meanings they have on a tenure — the first sighting, the last turn the log
+proves it stood, and the turn the spy left or the log ended. For an inferred
+garrison `to_turn` is the last turn any signal placed it there, and the named
+spy's own death ends the span rather than extending it.
 
 ## The coup, which has no event at all
 
@@ -605,14 +653,14 @@ succeeded thirty times.
 
 ### The same ledger from a post-fix log
 
-`espionage-test.jsonl` needs no artifact filter and no counterspy inference,
-which is the whole point of the fixes. Twenty-four completions over turns
+`espionage-test.jsonl` needs no artifact filter, and its five garrisons are
+read off the log rather than inferred, which is the whole point of the fixes. Twenty-four completions over turns
 132–189, all of them real:
 
 | civ | completions | kind | postings | counterspy | spies lost |
 |---|---|---|---|---|---|
 | Jerusalem | 8 | intel, all in Mecca | 2 | — | 0 |
-| Arabia (human) | 4 | rigging, all in Reykjavik | 4 | — | 1 (coup) |
+| Arabia (human) | 4 | rigging, all in Reykjavik | 4 | signal 1 only | 1 (coup) |
 | Sioux | 4 | intel, all in Mecca | 9 | yes, 3 spans | 0 |
 | Belgium | 3 | intel, all in Mecca | 5 | — | 0 |
 | Yugoslavia | 4 | intel | 4 | — | 0 |

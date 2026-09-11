@@ -836,15 +836,15 @@ captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
 
-## Plan: espionage — the primitive four features share (iterations 1-2 of 6)
+## Plan: espionage — the primitive four features share (iterations 1-3 of 6)
 
 Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iterations 1
-and 2 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
-`#losses` and `#capacity` in `app/projections/espionage.rb`, 40 tests,
-measured against `india-diplo` (game 32, 24 located spies, 46 tenures) and
-`espionage-test` (game 37, 13 spies, 37 tenures). Iterations 3–6 are not
-built: `#counterspies`, `#coups`, the `WonderRaces` join and the digest
-section. `WonderRaces#rival_observed` still carries nil and still
+to 3 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
+`#losses`, `#capacity` and `#counterspies` in
+`app/projections/espionage.rb`, 56 tests, measured against `india-diplo`
+(game 32, 24 located spies, 46 tenures) and `espionage-test` (game 37, 13
+spies, 37 tenures). Iterations 4–6 are not built: `#coups`, the
+`WonderRaces` join and the digest section. `WonderRaces#rival_observed` still carries nil and still
 waits for `observers_of`. The design is in `docs/espionage.md` (the game
 rules and the honest limits) and `docs/reading-the-new-log.md` (§4).
 
@@ -867,9 +867,11 @@ fixes has since turned much of it into fact.** As of those commits:
   reads the death site off the record rather than the last known tenure.
 - `spy_moved` fires after a revival into a city — the revival half of the
   missed-posting gap is closed.
-- `spy_moved` fires on the transition into `counter_intel` — a counterspy
-  garrison is read from the event, and `#counterspies`' three-signal
-  inference drops to a fallback.
+- `spy_moved` fires on the transition into `counter_intel`, and
+  `spy_created` now carries `state` — a garrison is read from the log both
+  when the spy is posted in place and when it settled in before the session
+  started, and `#counterspies`' three-signal inference drops to a fallback
+  chosen per civ.
 - every spy record carries `agent`, the `AgentID` a revival cannot change —
   `tenures` keys on `(civ, agent)` where the field exists, and only older
   logs need the "a revival names a spy that never existed" fallback.
@@ -897,6 +899,24 @@ where the event was itself the first sighting. India-diplo carries no such
 event and falls back to the arithmetic for 33 tenures and to the bounded
 floor for 12. The `agent` key is the one path still unexercised at volume — only
 `run-b-test.jsonl` carries the field, and it logs no `spy_created` at all.
+
+Iteration 3 found the "india-diplo mentions no counterspy" claim wrong.
+England pulled `ENGLAND_1` home to London on turn 156, and because that
+spy moved to get there the ordinary branch fired and carried the state,
+so the log records it. The read and the inference are therefore chosen
+per civ: India's garrison in the same log is invisible and inferred at
+confidence 3. Six garrisons are read across the two logs and three
+inferred, and `#counterspies` leaves a death at a city-state out of its
+evidence, since a failed coup is the one way a spy dies with no
+counterspy near it.
+
+The `spy_created` gap came out of the same iteration and was fixed
+upstream first, the way the eviction gap was. A counterspy that settled
+in before a session reload makes its `counter_intel` transition once and
+never again, so the creation record was the only thing that could carry
+it. Mysore's `MC_MUGHAL_0` on turn 151 is the near miss — announced in
+Mysuru with no state, and visible only because the player re-ordered it
+on 152.
 
 The run measured one correction to the design. A counterspy's state arrives
 a turn behind its order, in a second `spy_moved` in the same city, so the

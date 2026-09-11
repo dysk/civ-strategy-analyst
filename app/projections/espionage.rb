@@ -70,6 +70,15 @@ class Espionage
     all_losses.select { |loss| loss[:civ] == civ }
   end
 
+  # A garrison, read off the log where it says so and inferred where it does not.
+  # A counterspy is the only spy posted to one of its owner's own cities, and
+  # the `counter_intel` state is what proves it arrived: the Sioux ordered one
+  # spy home five times without it ever settling, and those legs are transits.
+  def counterspies(civ)
+    logged = logged_garrisons(civ)
+    logged.any? ? logged : inferred_garrisons(civ)
+  end
+
   # What a civ spent on espionage and how much of it sat at home. Revivals are
   # reported beside creations and never summed into them: the DLL redraws the
   # name, so a sum would count one spy twice.
@@ -240,6 +249,86 @@ class Espionage
 
     city = posting.payload["city"]
     posting if city.nil? || city == completion.payload["city"]
+  end
+
+  def logged_garrisons(civ)
+    tenures(civ).select { |tenure| tenure[:states].include?(COUNTER_INTEL) }.map { |tenure| garrison(tenure) }
+  end
+
+  def garrison(tenure)
+    { civ: tenure[:civ], city: tenure[:city], spy: tenure[:spy], agent: tenure[:agent],
+      from_turn: tenure[:from_turn], to_turn: tenure[:to_turn], until_turn: tenure[:until_turn],
+      kills: kills_at(tenure[:civ], tenure[:city], tenure[:from_turn]..tenure[:until_turn]),
+      inferred: false, confidence: nil }
+  end
+
+  def kills_at(civ, city, span)
+    all_losses.count { |loss| loss[:civ] != civ && loss[:city] == city && span.cover?(loss[:turn]) }
+  end
+
+  # Three signals that agree, and a record that says how many did. A kill is
+  # impossible in a city its owner has not garrisoned - the KILLED branch sits
+  # inside HasCounterSpy (CvEspionageClasses.cpp:538-582) - a spy that never
+  # appears in a city is the garrison the log failed to place, and the defender
+  # is what levels up on a kill. A spy dying at a city-state is a failed coup
+  # and proves nothing, so those deaths are left out.
+  def inferred_garrisons(civ)
+    deaths, career = deaths_at_home(civ), unlocated_spy(civ)
+    return [] if deaths.empty? && career.nil?
+
+    [ inferred_garrison(civ, deaths, career) ]
+  end
+
+  def inferred_garrison(civ, deaths, career)
+    city = modal_city(deaths)
+    first = career&.first
+
+    { civ: civ, city: city, spy: first&.payload&.dig("spy"), agent: first&.payload&.dig("agent"),
+      from_turn: evidence(deaths, career).min, to_turn: evidence(deaths, career).max,
+      until_turn: departure(career),
+      kills: deaths.count { |loss| loss[:city] == city },
+      inferred: true, confidence: confidence(civ, deaths, career) }
+  end
+
+  # Every turn something placed the garrison there. The named spy's own death
+  # is not one of them - it ends the garrison rather than proving it stood.
+  def evidence(deaths, career)
+    deaths.map { |loss| loss[:turn] } +
+      Array(career).reject { |event| ENDINGS.key?(event.event_type) }.map(&:turn)
+  end
+
+  def departure(career)
+    end_of_it = Array(career).find { |event| ENDINGS.key?(event.event_type) }
+
+    end_of_it ? end_of_it.turn : last_logged_turn
+  end
+
+  def confidence(civ, deaths, career)
+    [ !career.nil?, deaths.any?, promoted_on_a_death?(civ, deaths) ].count { |signal| signal }
+  end
+
+  def promoted_on_a_death?(civ, deaths)
+    turns = deaths.map { |loss| loss[:turn] }
+    @log.of_type("spy_promoted").any? { |event| event.civ == civ && turns.include?(event.turn) }
+  end
+
+  def deaths_at_home(civ)
+    return [] if city_states.include?(civ)
+
+    all_losses.select { |loss| loss[:civ] != civ && loss[:city_civ] == civ }
+  end
+
+  def city_states
+    @city_states ||= @log.of_type("city_state_snapshot").map { |event| event.payload["city_state"] }.uniq
+  end
+
+  def unlocated_spy(civ)
+    events_by_spy.filter_map { |(owner, _), career| career if owner == civ }
+      .find { |career| career.none? { |event| event.payload["city"] } }
+  end
+
+  def modal_city(deaths)
+    deaths.group_by { |loss| loss[:city] }.max_by { |_city, group| group.size }&.first
   end
 
   def all_losses = @all_losses ||= @log.of_type("spy_killed").map { |event| loss(event) }
