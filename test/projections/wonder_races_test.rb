@@ -271,49 +271,87 @@ class WonderRacesTest < ActiveSupport::TestCase
       WonderRaces.new(@game).races.first[:contenders].first.values_at(:outcome, :response)
   end
 
-  # Turns left falls by exactly one per turn while a city builds at a steady
-  # rate, so a steeper fall is a Great Engineer, a chopped forest or a city
-  # re-arranged for hammers. No threshold is involved.
-  test "a contender whose estimate fell faster than the clock accelerated" do
+  # A Great Engineer, a chopped forest or a production overflow arrives as one
+  # turn's stored production standing well clear of the build's other turns.
+  test "a turn that produced far more than the build's usual is an acceleration" do
     player("England", human: true)
-    london_estimating(148 => 10, 149 => 9, 150 => 8, 151 => 7, 152 => 6,
-                      153 => 3, 154 => 2, 155 => 2, 156 => 2, 157 => 2)
-    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
-    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    london_storing(148 => 0, 149 => 47, 150 => 94, 151 => 141, 152 => 188,
+                   153 => 338, 154 => 385, 155 => 432, 156 => 479, 157 => 526)
+    amsterdam_finishing
     watching("England", "Amsterdam", "Netherlands", from: 152)
 
-    assert_equal [ 153, :accelerated ],
-      WonderRaces.new(@game).races.first[:contenders].first.values_at(:accelerated_on_turn, :response)
+    england = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal [ { turn: 153, production_gained: 150, times_typical: 3.2 } ],
+                 england[:accelerated_on_turns]
   end
 
-  test "an estimate that fell before the spy saw anything is no response to it" do
+  # A wonder under construction shows on the map and its unfinished form names
+  # it, so pouring hammers into a race is a decision available to anyone with
+  # line of sight. The spy only says how close the other city is.
+  test "an acceleration with no spy anywhere is recorded all the same" do
     player("England", human: true)
-    london_estimating(148 => 10, 149 => 6, 150 => 5, 151 => 4, 152 => 3,
-                      153 => 2, 154 => 2, 155 => 2, 156 => 2, 157 => 2)
-    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
-    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
-    watching("England", "Amsterdam", "Netherlands", from: 152)
+    london_storing(148 => 0, 149 => 47, 150 => 94, 151 => 141, 152 => 188,
+                   153 => 338, 154 => 385, 155 => 432, 156 => 479, 157 => 526)
+    amsterdam_finishing
 
-    assert_equal [ nil, :pressed_on ],
-      WonderRaces.new(@game).races.first[:contenders].first.values_at(:accelerated_on_turn, :response)
+    england = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal [ [ 153 ], nil, :accelerated ],
+                 [ england[:accelerated_on_turns].map { |a| a[:turn] },
+                   england[:observed_from_turn], england[:response] ]
   end
 
-  test "an estimate that kept pace with a gap in the snapshots did not accelerate" do
+  test "every turn that stood clear of the build is recorded, not just the first" do
     player("England", human: true)
-    london_estimating(148 => 10, 152 => 6, 155 => 3, 157 => 1)
-    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
-    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
-    watching("England", "Amsterdam", "Netherlands", from: 152)
+    london_storing(148 => 0, 149 => 47, 150 => 197, 151 => 244, 152 => 291,
+                   153 => 441, 154 => 488, 155 => 535, 156 => 582, 157 => 629)
+    amsterdam_finishing
 
-    assert_nil WonderRaces.new(@game).races.first[:contenders].first[:accelerated_on_turn]
+    assert_equal [ 150, 153 ],
+      WonderRaces.new(@game).races.first[:contenders].first[:accelerated_on_turns].map { |a| a[:turn] }
   end
 
-  test "a human contender that never saw the winner's city is unobserved" do
+  # London's real Louvre numbers. The game's own estimate fell from 10 turns to
+  # 8 between t150 and t151 while the city produced 44 hammers, its usual turn -
+  # the ceiling re-basing on a slightly higher rate, not production arriving.
+  test "an estimate that fell on no extra production is not an acceleration" do
+    player("England", human: true)
+    { 148 => [ 0, 12 ], 149 => [ 52, 11 ], 150 => [ 96, 10 ], 151 => [ 140, 8 ], 152 => [ 186, 7 ],
+      153 => [ 232, 6 ], 154 => [ 278, 5 ], 155 => [ 325, 4 ], 156 => [ 372, 3 ], 157 => [ 425, 2 ] }
+      .each { |turn, (stored, left)| building(turn, "England", "London", "BUILDING_LOUVRE", stored: stored, turns_left: left) }
+    amsterdam_finishing
+
+    assert_empty WonderRaces.new(@game).races.first[:contenders].first[:accelerated_on_turns]
+  end
+
+  test "a build with no production of its own to compare against claims nothing" do
+    player("England", human: true)
+    london_storing(148 => 0, 149 => 0, 150 => 0, 151 => 0, 152 => 60,
+                   153 => 60, 154 => 60, 155 => 60, 156 => 60, 157 => 60)
+    amsterdam_finishing
+
+    assert_empty WonderRaces.new(@game).races.first[:contenders].first[:accelerated_on_turns]
+  end
+
+  test "the winner's own acceleration is recorded on the race" do
+    (148..157).each { |t| building(t, "England", "London", "BUILDING_LOUVRE", stored: (t - 148) * 47) }
+    { 154 => 0, 155 => 120, 156 => 480, 157 => 600 }.each do |turn, stored|
+      building(turn, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: stored)
+    end
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+
+    assert_equal [ 156 ],
+      WonderRaces.new(@game).races.first[:winner_accelerated_on_turns].map { |a| a[:turn] }
+  end
+
+  # The response says what the contender did; whether a spy told it how close
+  # the race was is a separate field and never folded into the label.
+  test "a human contender that saw nothing is still labelled by what it did" do
     player("England", human: true)
     watching("Tibet", "Amsterdam", "Netherlands", from: 152)
     louvre_race
 
-    assert_equal :unobserved, WonderRaces.new(@game).races.first[:contenders].first[:response]
+    assert_equal [ nil, :pressed_on ],
+      WonderRaces.new(@game).races.first[:contenders].first.values_at(:observed_from_turn, :response)
   end
 
   test "rival_observed is true when a contender could see the winner's city" do
@@ -331,10 +369,13 @@ class WonderRacesTest < ActiveSupport::TestCase
 
   private
 
-  def london_estimating(turns_left_by_turn)
-    turns_left_by_turn.each do |turn, left|
-      building(turn, "England", "London", "BUILDING_LOUVRE", stored: (turn - 148) * 47, turns_left: left)
-    end
+  def amsterdam_finishing
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+  end
+
+  def london_storing(stored_by_turn)
+    stored_by_turn.each { |turn, stored| building(turn, "England", "London", "BUILDING_LOUVRE", stored: stored) }
   end
 
   def louvre_race

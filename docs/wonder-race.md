@@ -49,6 +49,19 @@ turn:
   overflow, a chopped forest or a granted building, and the log cannot say
   which. **All 42 india-diplo wonders finished from `turns_left: 1`**, so
   the `:ahead_of_estimate` branch ships specified and unverified.
+- **A lump of production is visible, its cause is not.**
+  `accelerated_on_turns` names every turn a builder's `production_stored`
+  gained at least twice its typical turn, which is a Great Engineer, a
+  chopped forest or the overflow from the city's previous build — the same
+  three causes `:ahead_of_estimate` cannot separate, read mid-build instead
+  of at the finish. Three turns across both example logs: Stonehenge /
+  Iroquois t49, Machu Picchu / Zimbabwe t109, Great Wall / Belgium t92.
+  `production_turns_left` is not used for this. It falls faster than the
+  clock on any small rise in the city's current rate, and 20 of the 23
+  such falls in the two logs brought no extra production with them.
+- **A city gradually re-arranged onto hammers is not detected.** It raises
+  the build's typical turn along with the rest, so no turn stands clear.
+  It shows only as a difference between `rate_before` and `rate_after`.
 - **A same-turn tie reads as an ordinary loss.** LEKMOD picks one winner
   at random when two civs complete the same wonder on one turn; only that
   civ gets a `building_constructed`. The tied loser looks like any `:lost`
@@ -71,6 +84,11 @@ The user's own numbers from play, not a measurement — the same footing as
   This drops two india-diplo losses (Great Library / Zimbabwe, Colossus /
   Netherlands, both 0 hammers) and keeps everything else. It is a floor,
   not a judgement of closeness.
+- **`ACCELERATION_FACTOR = 2.0`** (`WonderRaces`) — how far clear of the
+  build's own typical turn a gain must stand. Calibrated on the 23 turns in
+  the two logs where the game's estimate fell faster than the clock: three
+  sit at 2.09, 2.28 and 2.29 and the next highest is 1.50, so the factor
+  falls in a gap the data has rather than one chosen for it.
 - **`:close` vs `:distant`** (`KeyMomentDetector#race_loss_scale`) — a loss
   is `:close` when `turns_left_when_last_seen ≤ 4` **or**
   `production_invested ≥ 200`, else `:distant`. On india-diplo this splits

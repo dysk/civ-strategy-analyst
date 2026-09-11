@@ -931,11 +931,25 @@ expectation, and two of the 68 ally changes in the two logs reach the swap
 test with snapshots on both sides and are rejected on their numbers rather
 than for want of data.
 
-Iteration 5 replaced the planned rate threshold with the production
-estimate, on the reasoning that `production_turns_left` falls by exactly
-one a turn under a steady build, so a steeper fall is a Great Engineer, a
-chop or a city re-arranged for hammers and needs no calibration. The mean
-rates are still carried, as description rather than as the test.
+Iteration 5 replaced the planned rate threshold twice. The estimate looked
+like the threshold-free answer - `production_turns_left` falls by one a
+turn under a steady build - and measurement killed it: across both logs it
+fell faster than the clock on 23 turns, 20 of which brought no extra
+production and four of which came with less. The ceiling amplifies a small
+rate rise at distance, and London's Louvre gained two turns on its estimate
+while producing an ordinary 44 hammers.
+
+The test is the production gain instead. A turn standing at least twice
+clear of the build's own typical turn is a Great Engineer, a chop or an
+overflow, which is the same trio `:ahead_of_estimate` cannot separate. The
+factor sits in a gap the data has - three survivors at 2.09, 2.28 and 2.29
+against a next-highest of 1.50.
+
+Acceleration is recorded for every builder with or without a spy, because a
+wonder under construction shows on the map and its unfinished form names it.
+Line of sight tells a player *what* a rival is building; the spy tells it
+*how close*. So `response` says what a contender did and `observed_from_turn`
+says what it knew, and the two are never folded together.
 
 Running the join over both games found three errors no fixture showed. The
 decision window must end at `completed_turn − 1`, or Mysore reads as having
@@ -946,8 +960,10 @@ And a civ sitting in its own city is not an observer of it, which was
 putting Arabia in the list of civs watching Mecca.
 
 The one human contender row in either game is India abandoning Machu Picchu
-on turn 110 with no vision of Great Zimbabwe, which comes out `:unobserved`.
-Every branch that needs a human to have seen something is unexercised.
+on turn 110 with no vision of Great Zimbabwe, which comes out `:cut_losses`.
+Zimbabwe put 57 hammers into the same wonder the turn before, which is an
+adjacency and not a cause - India could not see a hammer of it. Every other
+contender row is an AI and ships unlabelled.
 
 The run measured one correction to the design. A counterspy's state arrives
 a turn behind its order, in a second `spy_moved` in the same city, so the

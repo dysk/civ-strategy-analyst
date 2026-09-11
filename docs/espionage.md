@@ -521,32 +521,49 @@ Three rules follow:
 2. **Vision usually cannot explain the start.** England committed on 148 and
    its spy did not exist until 148. Carry the span — `observed_from_turn` and
    `observed_turns` — not a boolean.
-3. **The response is measurable, and the sharper measure is the estimate, not
-   the rate.** `production_turns_left` falls by exactly one a turn while a city
-   builds steadily, because the stored production climbs by exactly the rate
-   the estimate divides by. So a fall steeper than the clock is a lump of
-   production — a Great Engineer, a chopped forest, a city re-arranged onto
-   hammers — and `accelerated_on_turn` names the turn it happened with no
-   threshold involved. It is the same observable `winner_finish` uses for
-   `:ahead_of_estimate`, read on the loser's side instead of the winner's.
+3. **The response is measurable, and the measure is production, not the
+   estimate.** A Great Engineer, a chopped forest or the overflow from whatever
+   the city built before all arrive as one turn's `production_stored` standing
+   clear of the build's other turns. `accelerated_on_turns` carries each such
+   turn with what arrived and how many times the build's typical turn it was.
 
-   The mean rates before and after are carried too, from `production_stored`
-   deltas, but they describe rather than decide. A chop that shortens the build
-   by three turns barely moves a mean.
+   **Recorded for every builder, with or without a spy.** A wonder under
+   construction shows on the map and its unfinished form names it, so knowing
+   *what* a rival is building takes line of sight, not espionage. What the spy
+   adds is *how close* — the stored hammers and the turns left. That is the
+   distinction the join now rests on, and it is why acceleration is never
+   gated on vision.
+
+   The game's own `production_turns_left` looked like the better test and is
+   not. It falls faster than the clock on any small rise in the city's current
+   rate, because the ceiling amplifies one at distance. Across both logs it
+   fell faster than the clock on **23** turns; **20** of those brought no extra
+   production with them and **four** came with *less* than the build's usual.
+   London's Louvre is the clean example — the estimate went from 10 turns to 8
+   between t150 and t151 while the city produced 44 hammers, its ordinary turn.
 
 | pattern | reading | india-diplo | espionage-test |
 |---|---|---|---|
-| observed, estimate falls faster than the clock | put its foot down | 0 | 0 |
-| observed, `:abandoned` after | read the board, cut the losses | 0 | 0 |
-| **observed, estimate keeps pace, lost** | pressed on — **only if the contender is human** | **1 — the Louvre (AI)** | **1 — Pisa (AI)** |
-| not observed, lost | lost a race it could not see | 11 | 9 |
-| not observed, `:abandoned` | walked away uninformed | **1 — Machu Picchu** | 0 |
+| production arrives out of line, still lost | put its foot down | 1 — Stonehenge (AI) | 0 |
+| `:abandoned` after | read the board, cut the losses | **1 — Machu Picchu** | 0 |
+| built on steadily, lost | pressed on | 11 | 10 |
 
-Both observed-and-lost rows are held by an AI, so `response` is nil on both and
-the only labelled row in either game is India walking away from Machu Picchu on
-turn 110 without vision of Great Zimbabwe — `:unobserved`, which is the
-classifier declining to call it an informed decision. **Every branch that
-requires a human to have seen something is unexercised.**
+`response` is filled for a **human** contender only, and it says what the
+contender did, never what it knew — `observed_from_turn` carries that
+separately. The single human contender row across both games is India
+abandoning Machu Picchu on turn 110, which comes out `:cut_losses`. **Every
+other branch is held by an AI and ships unlabelled.**
+
+Three accelerations in the two logs, all by an AI: the Iroquois put 23 hammers
+into Stonehenge on turn 49 (2.1× their usual turn), Zimbabwe 57 into Machu
+Picchu on 109 (2.3×) and Belgium 32 into the Great Wall on 92 (2.3×). Zimbabwe's
+landed the turn before India walked away from the same wonder, which is an
+adjacency and not a cause: India held no spy at Great Zimbabwe and could not
+see a hammer of it.
+
+A city **gradually** re-arranged onto production is not an event and is not
+found here. It lifts the build's typical turn along with the rest, and shows
+only in `rate_before` against `rate_after`.
 
 ### Three things the join gets wrong until it is measured
 

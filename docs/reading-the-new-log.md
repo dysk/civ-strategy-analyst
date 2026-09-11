@@ -800,12 +800,20 @@ say so — do not calibrate it against nothing.
   `response` for a human contender only. The window runs from the contender's
   first snapshot to its last or `completed_turn − 1`, whichever is earlier: the
   completion turn is not a turn on which anything was decidable.
-  `accelerated_on_turn` is the first turn after vision where
-  `production_turns_left` fell by more than the turns elapsed, which is a
-  Great Engineer, a chop or a city re-arranged for hammers and needs no
-  threshold — the estimate falls by exactly one a turn under a steady build.
-  It reports the **opportunity** and never labels the response for an AI: an AI
-  contender made no decision to label. No AI code reads surveillance, nothing
+  `accelerated_on_turns` lists every turn whose `production_stored` gain stood
+  at least twice clear of the build's own typical turn — a Great Engineer, a
+  chop or a production overflow — with what arrived and how far clear it stood.
+  It is recorded for every builder, winner included, **with or without a spy**:
+  a wonder under construction shows on the map and its unfinished form names
+  it, so what a rival is building takes line of sight, and only how close it is
+  takes a spy. `production_turns_left` is deliberately not the test; it falls
+  faster than the clock on any small rate rise, and 20 of the 23 such falls in
+  the two logs brought no extra production with them.
+
+  The projection reports the **opportunity** and never labels the response for
+  an AI: an AI contender made no decision to label. `response` says what a
+  human contender did — `:cut_losses`, `:accelerated`, `:pressed_on` — and
+  never what it knew, which `observed_from_turn` carries separately. No AI code reads surveillance, nothing
   in the engine reports a rival's in-progress wonder to anyone, and the AI is
   passed `bInterruptWonders = false` at all four call sites, so it structurally
   cannot abandon. The corpus agrees — 22 AI contenders lost, 0 abandoned; the
@@ -839,9 +847,9 @@ say so — do not calibrate it against nothing.
 4. `#coups` — both signatures. The failure is measured once; the success
    fires on none of the 68 ally changes in the two logs, two of which carry
    snapshots on both sides and are rejected on the swap test itself.
-5. `WonderRaces` — `observers_of` join, the observed span, the estimate-drop
-   test in place of a rate threshold, and a classification that labels a human
-   contender only. Two contender rows out of 23 had vision of their own, three
+5. `WonderRaces` — `observers_of` join, the observed span, acceleration from
+   the production gain for every builder whether or not it held a spy, and a
+   classification that labels a human contender only. Two contender rows out of 23 had vision of their own, three
    more were watched by a third party, and every branch needing a human to
    have seen something is unexercised.
 6. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets

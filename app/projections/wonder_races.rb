@@ -16,6 +16,13 @@ class WonderRaces
 
   LOST_WINDOW = 1
 
+  # A turn is an acceleration when its stored production stands this far clear
+  # of the build's own typical turn. Calibrated on the 23 turns in the two
+  # example logs where the game's estimate fell faster than the clock: three
+  # sit at 2.09, 2.28 and 2.29 and the next highest is 1.50, so the factor
+  # falls in a gap the data has rather than one chosen for it.
+  ACCELERATION_FACTOR = 2.0
+
   def initialize(game)
     @game = game
     @log = game.event_log
@@ -45,6 +52,7 @@ class WonderRaces
     { wonder: wonder, wonder_name: @wonders.name(wonder), completed_turn: completion.turn,
       contended_from_turn: contended_from(builders), winner: winner,
       winner_finish: winner_finish(builders, winner), contenders: contenders,
+      winner_accelerated_on_turns: accelerated_on(own_build(builders, winner)),
       rival_observed: rival_observed(contenders) }
   end
 
@@ -63,10 +71,14 @@ class WonderRaces
   # the log cannot tell them apart. Nil of india-diplo's 42 wonders fired
   # this, so the :ahead_of_estimate branch is unverified.
   def winner_finish(builders, winner)
-    own = builders.find { |b| b[:civ] == winner[:civ] && b[:city] == winner[:city] }
+    own = own_build(builders, winner)
     return :unobserved unless own
 
-    own[:snapshots].last.payload["production_turns_left"].to_i <= LOST_WINDOW ? :hard_built : :ahead_of_estimate
+    own.last.payload["production_turns_left"].to_i <= LOST_WINDOW ? :hard_built : :ahead_of_estimate
+  end
+
+  def own_build(builders, winner)
+    builders.find { |b| b[:civ] == winner[:civ] && b[:city] == winner[:city] }&.fetch(:snapshots)
   end
 
   # Every city seen building `wonder` on or before its completion, one entry
@@ -109,12 +121,12 @@ class WonderRaces
     window = decidable(row, completed_turn)
     watchers = window ? observers_of(watched, window.first, window.last) : []
     from = observed_from(watchers, row)
-    accelerated = accelerated_on(snapshots, from)
+    accelerated = accelerated_on(snapshots)
 
     { observed_from_turn: from, observed_turns: observed_turns(watchers, row, window, from),
       observed_by: watchers.map { |tenure| tenure[:civ] }.uniq,
-      contender_human: human?(row[:civ]), accelerated_on_turn: accelerated,
-      response: response(row, from, accelerated) }.merge(rates(snapshots, from))
+      contender_human: human?(row[:civ]), accelerated_on_turns: accelerated,
+      response: response(row, accelerated) }.merge(rates(snapshots, from))
   end
 
   # The turns the contender was still building and the wonder was not yet
@@ -162,34 +174,56 @@ class WonderRaces
 
   def stored(snapshot) = snapshot.payload["production_stored"].to_i
 
-  # `production_turns_left` falls by exactly one a turn while a city builds at
-  # a steady rate, because the stored production climbs by exactly the rate the
-  # estimate divides by. A steeper fall is a lump the log has no other name for
-  # - a Great Engineer, a chopped forest, a city re-arranged for hammers - and
-  # needs no threshold to recognise.
-  def accelerated_on(snapshots, from)
-    return unless from
+  # A turn whose stored production stands clear of the build's own turns: a
+  # Great Engineer, a chopped forest or the overflow from whatever the city
+  # built before. What the log cannot do is name which, the same limit
+  # `winner_finish` runs into.
+  #
+  # Recorded for every builder whether or not it held a spy. A wonder under
+  # construction shows on the map and its unfinished form names it, so pouring
+  # hammers into a race is a decision available to anyone with line of sight;
+  # the spy only says how close the other city is.
+  #
+  # The game's own `production_turns_left` is not the test. It falls faster
+  # than the clock on any small rise in the city's current rate, because the
+  # ceiling amplifies one at distance - 20 of the 23 such falls in the two logs
+  # brought no extra production with them, and four of those came with less.
+  #
+  # A city gradually re-arranged onto hammers is not an event and is not found
+  # here. It raises the typical turn along with the rest and shows in
+  # `rate_before` against `rate_after`.
+  def accelerated_on(snapshots)
+    gains = turn_gains(Array(snapshots))
+    typical = median(gains.map(&:last))
+    return [] unless typical&.positive?
 
-    pair = snapshots.each_cons(2).find do |earlier, later|
-      later.turn > from && estimate_drop(earlier, later) > later.turn - earlier.turn
-    end
-    pair&.last&.turn
+    gains.filter_map { |turn, gained| acceleration(turn, gained, typical) if gained >= typical * ACCELERATION_FACTOR }
   end
 
-  def estimate_drop(earlier, later)
-    earlier.payload["production_turns_left"].to_i - later.payload["production_turns_left"].to_i
+  def acceleration(turn, gained, typical)
+    { turn: turn, production_gained: gained, times_typical: (gained / typical).round(1) }
   end
 
-  # Only a human made a decision worth naming. No AI code reads surveillance,
-  # the engine reports no rival's build to anyone, and AI_chooseProduction is
-  # passed bInterruptWonders = false at all four call sites, so an AI that
-  # started a losing wonder was never going to reconsider it.
-  def response(row, from, accelerated)
+  def turn_gains(snapshots)
+    snapshots.each_cons(2).map { |earlier, later| [ later.turn, stored(later) - stored(earlier) ] }
+  end
+
+  def median(values)
+    return if values.empty?
+
+    values.sort[values.size / 2].to_f
+  end
+
+  # What the contender did, never what it knew - `observed_from_turn` carries
+  # that separately. Only a human made a decision worth naming: no AI code
+  # reads surveillance, and AI_chooseProduction is passed
+  # bInterruptWonders = false at all four call sites, so an AI that started a
+  # losing wonder was never going to reconsider it.
+  def response(row, accelerated)
     return unless human?(row[:civ])
-    return :unobserved unless from
     return :cut_losses if row[:outcome] == :abandoned
 
-    accelerated ? :accelerated : :pressed_on
+    accelerated.any? ? :accelerated : :pressed_on
   end
 
   # Nil rather than false where the log carries no spy record at all: not
