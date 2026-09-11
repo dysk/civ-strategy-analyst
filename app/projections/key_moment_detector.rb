@@ -399,13 +399,25 @@ class KeyMomentDetector
     WonderRaces.for(@game).races.flat_map do |race|
       race[:contenders]
         .select { |c| c[:outcome] == :lost && c[:production_invested] >= WONDER_RACE_MIN_INVESTED }
-        .map do |c|
-          { type: :wonder_race_lost, turn: race[:completed_turn], civ: c[:civ], city: c[:city],
-            wonder: race[:wonder], wonder_name: race[:wonder_name], scale: race_loss_scale(c),
-            production_invested: c[:production_invested], turns_left: c[:turns_left_when_last_seen],
-            winner: race[:winner][:civ], winner_city: race[:winner][:city], winner_finish: race[:winner_finish] }
-        end
+        .map { |c| wonder_race_lost(race, c) }
     end.sort_by { |moment| moment[:turn] }
+  end
+
+  # A race lost in full view of the winner's city is the sharpest version of
+  # this moment, so the observation travels with it. `response` is filled for a
+  # human contender only and says what the contender did; what it knew stays in
+  # `observed_from_turn`, and neither may be written as the cause of the other.
+  def wonder_race_lost(race, contender)
+    observed = contender.slice(:observed_from_turn, :observed_turns, :observed_by,
+                               :contender_human, :accelerated_on_turns, :response)
+
+    { type: :wonder_race_lost, turn: race[:completed_turn], civ: contender[:civ], city: contender[:city],
+      wonder: race[:wonder], wonder_name: race[:wonder_name], scale: race_loss_scale(contender),
+      production_invested: contender[:production_invested],
+      turns_left: contender[:turns_left_when_last_seen],
+      winner: race[:winner][:civ], winner_city: race[:winner][:city],
+      winner_finish: race[:winner_finish],
+      winner_accelerated_on_turns: race[:winner_accelerated_on_turns] }.merge(observed)
   end
 
   # The moment a wonder became a contest. Light on its own - a game has many

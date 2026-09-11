@@ -35,6 +35,7 @@ class DigestBuilder
       buffer_cities: BufferCities.for(@game).call,
       key_moments: key_moments,
       wonder_races: wonder_races,
+      espionage: espionage,
       unit_names: unit_names,
       cultural: cultural_by_civ,
       congress: congress,
@@ -228,6 +229,23 @@ class DigestBuilder
     return { applicable: false, reason: :no_city_snapshots } unless races.applicable?
 
     races.races
+  end
+
+  # Tenures and coups are whole-game facts and are carried once; everything
+  # else splits per civ. Tenures land at conclusion only, never per turn - a
+  # game the size of these produces tens of them, and the cross-cutting rule
+  # applies if a longer one produces hundreds.
+  def espionage
+    spies = Espionage.for(@game)
+    return { applicable: false, reason: :no_spy_events } unless spies.applicable?
+
+    { by_civ: civs.index_with { |civ| espionage_for(spies, civ) },
+      tenures: spies.tenures, coups: spies.coups }
+  end
+
+  def espionage_for(spies, civ)
+    { capacity: spies.capacity(civ), missions: spies.missions(civ),
+      losses: spies.losses(civ), counterspies: spies.counterspies(civ) }
   end
 
   def civs

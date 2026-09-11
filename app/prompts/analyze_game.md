@@ -249,6 +249,64 @@ completed may have finished it the same turn and lost the tie the game
 breaks at random. The `wonder_race_lost` key moments carry a `scale` of
 `close` or `distant` marking which losses were genuine races.
 
+The `espionage` field is where the log says who ran spies and what came of
+it. Read every part of it as **opportunity, never knowledge**. A spy with
+surveillance in a city opens that city's full screen to its owner,
+read-only - every yield and the whole production queue, not a banner saying
+a wonder is being built - so `city_snapshot.producing` is the floor of what
+a watcher could have seen and never the ceiling. What the log does not
+carry is whether anybody looked. Say a civilization *could see* a rival's
+plan; never that it knew, and never that it acted on it.
+
+`tenures` is one record per spy per city: `from_turn` is the first sighting,
+`until_turn` is when the spy left or the log ended, and
+`visible_from_turn` is the turn vision opened - later than the posting by
+the travel and surveillance time, which is the whole point. A spy sent to a
+city and recalled before that turn saw nothing at all.
+`visible_from_turn_bounded` marks a date the log could only floor rather
+than state; treat it as "no later than", not as exact. `ended_by` says
+whether the spy moved on, was killed, was thrown out of a city that changed
+hands, or was still there when the log stopped.
+
+`missions` splits completions by kind. A `tech_theft` never names the
+technology - no interface exposes it - so never guess at one. `anchored:
+false` means the log could not tie the completion to a posting, which
+happens on older logs where a posting fell into a session reload; report
+those as a count that is uncertain, never as a bare addition to the total.
+
+`counterspies` is the defence, and the digest distinguishes two ways of
+knowing about it. `inferred: false` means the log recorded the garrison
+outright. `inferred: true` means it was reconstructed, and `confidence`
+says from how many agreeing signals out of three: a spy that never appears
+in any city, enemy spies dying in the civilization's own cities - which the
+ruleset makes impossible without a garrison there - and a promotion in the
+turn of one of those deaths. Confidence 3 with a named spy and a city is a
+strong reading; confidence 1 with no city is a civilization that had a spy
+nobody can place, and must be reported as exactly that. `kills` counts the
+rival spies that died there.
+
+`coups` carries the alternative to rigging elections: a spy sent to seize a
+city-state's alliance outright. Both outcomes are reconstructed rather than
+logged, so name them as inferences. A `failed` coup is a spy dying at a
+city-state with its owner's influence there driven to the ruleset's flat
+penalty; `influence` carries the reconstructed figure. A `succeeded` coup
+is an alliance changing hands while two civilizations' influence trades
+places with no rigged election to account for it.
+
+A `wonder_race_lost` moment carries the same observation on the loser's
+side: `observed_from_turn` and `observed_turns` for what it could see of
+the winner's city, `observed_by` for every civilization that could -
+watching a race is not the same fact as running in it. `response` is filled
+**only** for a human contender, because no AI in this ruleset reads
+surveillance and none reconsiders a wonder already in its queue; where it
+is absent, describe what happened and do not attribute a decision.
+`accelerated_on_turns` marks turns a builder's stored production stood well
+clear of its own typical turn - a Great Engineer, a chopped forest or an
+overflow, and the log cannot say which. It is recorded for every builder
+whether or not it held a spy, because a wonder under construction stands on
+the map, and it is a fact about the build and never evidence that anyone
+responded to anything.
+
 Where the timelines record an ideology, say which one each civilization
 took and whether it suited the empire it had - `lekmod.policies` gives
 the tenets and their effects in this ruleset, and `tenet_adoptions` shows

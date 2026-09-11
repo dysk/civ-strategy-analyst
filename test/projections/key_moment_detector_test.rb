@@ -872,6 +872,46 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal "Netherlands", moment[:winner]
   end
 
+  test "a race lost carries what the loser could see of the winner's city" do
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    moment = detector.wonder_races_lost.sole
+
+    assert_equal [ 152, 6, %w[England] ],
+                 moment.values_at(:observed_from_turn, :observed_turns, :observed_by)
+  end
+
+  # On an AI the label would manufacture a decision out of an engine default:
+  # no AI code reads surveillance and none reconsiders a wonder in its queue.
+  test "a race lost by an AI is not labelled with a response" do
+    @game.players.create!(civ: "England", human: false)
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    assert_equal [ false, nil ], detector.wonder_races_lost.sole.values_at(:contender_human, :response)
+  end
+
+  test "a race lost by a human watching the winner's city is the moment this feature adds" do
+    @game.players.create!(civ: "England", human: true)
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    assert_equal [ true, :pressed_on ], detector.wonder_races_lost.sole.values_at(:contender_human, :response)
+  end
+
+  test "a race lost carries what the winner poured in to take it" do
+    lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
+              loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2,
+              winner_lump_on: 154)
+
+    assert_equal [ 154 ],
+      detector.wonder_races_lost.sole[:winner_accelerated_on_turns].map { |a| a[:turn] }
+  end
+
   # Losing a race and walking away from one are different facts; only the
   # loss is a moment.
   test "wonder_races_lost ignores a race a civ abandoned before it was decided" do
@@ -922,13 +962,16 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
 
   private
 
-  def lost_race(wonder, winner:, completed:, winner_from:, loser:, first:, last:, invested:, turns_left:)
+  def lost_race(wonder, winner:, completed:, winner_from:, loser:, first:, last:, invested:, turns_left:,
+                winner_lump_on: nil)
     winner_civ, winner_city = winner
     loser_civ, loser_city = loser
 
     (winner_from..completed - 1).each do |turn|
+      steps = turn - winner_from + 1
+      steps += 3 if winner_lump_on && turn >= winner_lump_on
       event(winner_civ, "city_snapshot", turn, city: winner_city, producing: wonder,
-            producing_kind: "wonder", production_stored: 50 * (turn - winner_from + 1), production_turns_left: 1)
+            producing_kind: "wonder", production_stored: 50 * steps, production_turns_left: 1)
     end
 
     (first..last).each do |turn|
@@ -937,6 +980,11 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     end
 
     event(winner_civ, "building_constructed", completed, building: wonder, city: winner_city, wonder: "world")
+  end
+
+  def watching(civ, city, city_civ, from:)
+    event(civ, "spy_moved", from - 4, spy: "#{civ}_SPY", city: city, city_civ: city_civ, state: "travelling")
+    event(civ, "spy_surveillance_established", from, spy: "#{civ}_SPY", city: city, city_civ: city_civ)
   end
 
   # Rome and Greece 17 hexes apart with Ostia standing in the corridor.

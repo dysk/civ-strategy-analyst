@@ -836,16 +836,18 @@ captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
 
-## Plan: espionage — the primitive four features share (iterations 1-5 of 6)
+## Plan: espionage — the primitive four features share (complete)
 
-Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iterations 1
-to 5 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
-`#losses`, `#capacity`, `#counterspies`, `#coups` and `#observers_of` in
-`app/projections/espionage.rb`, plus the observation fields on every
-`WonderRaces` contender, measured against `india-diplo` (game 32, 24
-located spies, 46 tenures) and `espionage-test` (game 37, 13 spies, 37
-tenures). Iteration 6 is not built: the `KeyMomentDetector` moment, the
-digest section and both prompts. `WonderRaces#rival_observed` is filled, and carries nil only where the log
+Status: tranche 2 point 4 of `docs/reading-the-new-log.md`, **finished
+2026-09-11**. `applicable?`, `#tenures`, `#missions`, `#losses`,
+`#capacity`, `#counterspies`, `#coups` and `#observers_of` in
+`app/projections/espionage.rb`; the observation fields on every
+`WonderRaces` contender and the acceleration on every builder; the
+observation carried onto `wonder_race_lost`; an `espionage` digest section;
+and both prompts. Measured against `india-diplo` (game 32, 24 located
+spies, 46 tenures, 30 missions after filtering, 9 losses, 3 garrisons, 0
+coups) and `espionage-test` (game 37, 13 spies, 37 tenures, 24 missions, 1
+loss, 6 garrisons, 1 failed coup). `WonderRaces#rival_observed` is filled, and carries nil only where the log
 holds no spy record at all. The design is in `docs/espionage.md` (the game
 rules and the honest limits) and `docs/reading-the-new-log.md` (§4).
 
@@ -964,6 +966,20 @@ on turn 110 with no vision of Great Zimbabwe, which comes out `:cut_losses`.
 Zimbabwe put 57 hammers into the same wonder the turn before, which is an
 adjacency and not a cause - India could not see a hammer of it. Every other
 contender row is an AI and ships unlabelled.
+
+Iteration 6 added no new moment type. The design called for
+`wonder_race_lost_while_watching` and the honest form of it is the
+observation travelling on the existing `wonder_race_lost`, since
+`ChronicleSpine` must not anchor a second entry on one event. One race in
+each log is lost in full view - England's Louvre from turn 152, Belgium's
+Pisa from 156 - and both contenders are an AI, so `response` is nil on both
+and the moment ships with no exercised instance of the sentence it exists
+for.
+
+The digest section runs 19KB of india-diplo's 184KB and 15KB of
+espionage-test's 119KB, roughly a tenth in both. Tenures are carried whole
+at 46 and 37; the cross-cutting rule applies if a longer game produces
+hundreds.
 
 The run measured one correction to the design. A counterspy's state arrives
 a turn behind its order, in a second `spy_moved` in the same city, so the

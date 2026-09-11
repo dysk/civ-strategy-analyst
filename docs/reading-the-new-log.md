@@ -855,7 +855,9 @@ say so — do not calibrate it against nothing.
    classification that labels a human contender only. Two contender rows out of 23 had vision of their own, three
    more were watched by a third party, and every branch needing a human to
    have seen something is unexercised.
-6. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
+6. The observation carried onto the existing `wonder_race_lost` rather than a
+   second moment type, since `ChronicleSpine` must not anchor two entries on
+   one event; the `espionage` digest section; both prompts. `analyze_game.md` gets
    the opportunity-not-knowledge rule, the read-only-city-screen scope of what
    an observer saw, and the counterspy — read from the log where present, its
    inference and confidence where not; `chronicle_game.md` gets how to write a

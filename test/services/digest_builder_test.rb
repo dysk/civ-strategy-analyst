@@ -297,6 +297,27 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal "Greece", races.first[:contenders].sole[:civ]
   end
 
+  test "carries espionage per civ" do
+    event("Rome", "spy_created", 5, spy: "ROME_1", agent: 1)
+    event("Rome", "spy_moved", 6, spy: "ROME_1", agent: 1, city: "Athenai", city_civ: "Greece",
+          state: "travelling")
+    event("Rome", "spy_mission_completed", 14, spy: "ROME_1", agent: 1, city: "Athenai",
+          city_civ: "Greece", state: "gathering_intel")
+
+    espionage = DigestBuilder.new(@game).call[:espionage]
+
+    assert_equal %w[Rome Greece], espionage[:by_civ].keys
+    assert_equal 1, espionage[:by_civ]["Rome"][:capacity][:created]
+    assert_equal [ :tech_theft ], espionage[:by_civ]["Rome"][:missions].map { |m| m[:kind] }
+    assert_equal [ "Athenai" ], espionage[:tenures].map { |t| t[:city] }
+    assert_empty espionage[:coups]
+  end
+
+  test "espionage degrades to inapplicable when the log carries no spy record" do
+    assert_equal({ applicable: false, reason: :no_spy_events },
+                 DigestBuilder.new(@game).call[:espionage])
+  end
+
   test "wonder_races degrades to inapplicable when the log carries no city snapshots" do
     assert_equal({ applicable: false, reason: :no_city_snapshots },
                  DigestBuilder.new(@game).call[:wonder_races])

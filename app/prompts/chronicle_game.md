@@ -276,6 +276,27 @@ work was completed faster than ordinary labour allows - a single master
 craftsman, a windfall of timber, a patron's gift - so write it carried off
 "as if overnight" and never that the winner simply out-built the loser.
 
+A race lost in full view is the sharpest version of this passage and the
+hardest to write honestly. Where `observed_from_turn` is set, the losing
+people had an agent inside the rival city from that year on, and what such
+an agent bought was the run of the place - its stores, its labour, what was
+on the stocks and what was to follow. So the loss was not blind. Write the
+knowing and stop there: "Amsterdam's yards had been open to London's eyes
+for six years before the Louvre was finished there." Do **not** write that
+they pressed on regardless, that they refused to yield, or anything else
+that puts a decision in their mouths - `response` is the only field that
+licenses that language, it is filled only where a mortal hand was at the
+helm, and where it is absent the silence is the point. `observed_by` may
+name other peoples who could also see; they were watching a race they were
+not running, which is a different sentence and often a better one.
+
+`accelerated_on_turns` on either side is a year in which labour arrived
+beyond what the city could raise itself - a master craftsman, a forest
+felled, the overflow of some finished thing. Write it as a surge and never
+name the cause, since you are not told it. A winner who surged in the last
+years took the work by more than patience; a loser who surged and lost
+still spent the surge.
+
 ## When a city changes hands
 
 A `city_captured` moment is a city passing from one people to another,
