@@ -37,6 +37,7 @@ class DigestBuilder
       wonder_races: wonder_races,
       espionage: espionage,
       diplomatic_ties: diplomatic_ties,
+      trade_routes: trade_routes,
       unit_names: unit_names,
       spy_names: spy_names,
       cultural: cultural_by_civ,
@@ -279,6 +280,20 @@ class DigestBuilder
   def pair_ties(ties, a, b)
     spans = ties.spans(a, b)
     { civs: [ a, b ], spans: spans } unless spans.empty?
+  end
+
+  # `one_sided` is a whole-game fact list, carried once rather than per civ -
+  # same rule as espionage's tenures and coups.
+  def trade_routes
+    routes = TradeRoutes.for(@game)
+    return { applicable: false, reason: :no_trade_route_events } unless routes.applicable?
+
+    { applicable: true, by_civ: civs.index_with { |civ| trade_routes_for(routes, civ) }, one_sided: routes.one_sided }
+  end
+
+  def trade_routes_for(routes, civ)
+    concurrency = routes.concurrency(civ).to_h { |point| [ point[:turn], point.slice(:count, :flagged) ] }
+    { by_destination: routes.by_destination(civ), concurrency: sample_checkpoints(concurrency) }
   end
 
   def lekmod

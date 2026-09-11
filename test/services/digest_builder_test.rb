@@ -428,6 +428,32 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ applicable: false, reason: :no_tie_events }, DigestBuilder.new(@game).call[:diplomatic_ties])
   end
 
+  test "includes each civ's trade routes split by destination, and the game's one-sided routes" do
+    event("Rome", "trade_route_established", 10,
+      from_city: "Rome", to_city: "Ostia", to_civ: "Rome", type: "food", turns_left: 15)
+    event("Rome", "trade_route_established", 20,
+      from_city: "Rome", to_city: "Athens", to_civ: "Greece", type: "international",
+      turns_left: 15, from_gold: 3, to_gold: 1, to_science: 5)
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal true, digest[:trade_routes][:applicable]
+    assert_equal({ own: { food: 1 }, city_state: 0, major: 1 }, digest[:trade_routes][:by_civ]["Rome"][:by_destination])
+    assert_equal(
+      { 25 => { count: 1, flagged: true }, 35 => { count: 0, flagged: false } },
+      digest[:trade_routes][:by_civ]["Rome"][:concurrency]
+    )
+    assert_equal(
+      [ { civ: "Rome", other_civ: "Greece", from_city: "Rome", to_city: "Athens",
+          turn: 20, yield: "science", civ_value: 0, other_civ_value: 5 } ],
+      digest[:trade_routes][:one_sided]
+    )
+  end
+
+  test "trade_routes degrades to inapplicable when the log carries no trade route events" do
+    assert_equal({ applicable: false, reason: :no_trade_route_events }, DigestBuilder.new(@game).call[:trade_routes])
+  end
+
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do
     event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
     event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")
