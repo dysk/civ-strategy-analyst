@@ -1,5 +1,11 @@
 class DigestBuilder
   CHECKPOINT_INTERVAL = 25
+
+  # The action families PlayerTimeline classifies an expend into: a planted
+  # improvement keeps paying out for the turns left in the game, an instant
+  # use pays out once.
+  INFRASTRUCTURE_ACTIONS = PlayerTimeline::TARGETED_ACTIONS.values.map { |v| v[:action] }.freeze
+  CONSUMPTION_ACTIONS = PlayerTimeline::UNTARGETED_ACTIONS.values.uniq.freeze
   SNAPSHOT_METRICS = %w[
     score science culture gold gold_per_turn faith happiness
     military_might military_units population cities techs
@@ -134,6 +140,7 @@ class DigestBuilder
   def timelines_by_civ
     timeline = PlayerTimeline.for(@game)
     geometry = EmpireGeometry.for(@game)
+    midpoint = game_midpoint
 
     civs.each_with_object({}) do |civ, result|
       result[civ] = {
@@ -145,6 +152,7 @@ class DigestBuilder
         irrelevance: timeline.irrelevance(civ),
         great_people: timeline.great_people(civ),
         great_people_born: timeline.great_people_born(civ),
+        great_people_profile: great_people_profile(timeline, civ, midpoint),
         eras: timeline.eras(civ),
         golden_ages: timeline.golden_ages(civ),
         wonders: timeline.wonders(civ),
@@ -153,6 +161,41 @@ class DigestBuilder
         city_count_mismatches: geometry.discrepancies(civ)
       }
     end
+  end
+
+  # Volume by kind (who specialized in what), and how each expend split
+  # against the midpoint of the game as actually played - infrastructure
+  # before it still had turns to pay for itself, consumption after is the
+  # ordinary late-game use. EarlyGame's own boundary (Education/Metal
+  # Casting) is the wrong reference here: a great person is typically the
+  # product of policies and culture that arrive well past that milestone,
+  # so almost every expend would land in "late" regardless of when it
+  # actually happened - confirmed on india-diplo, where all six civs' early
+  # game ends by turn 100 but expends run turns 61-183. The played-length
+  # midpoint has no such gap, self-scales across game speeds, and needs no
+  # per-civ join - every civ shares the same clock, unlike the boundary in
+  # buffer-city, which was deliberately kept shared for the same reason.
+  # Never a verdict on whether the split was the right call, only the facts
+  # a report can weigh one against. Splitting the game itself in half is a
+  # first hypothesis, not calibrated against a spread of real game lengths.
+  def great_people_profile(timeline, civ, midpoint)
+    expends = timeline.great_people(civ).select { |g| g[:fate] == :expended }
+
+    {
+      by_kind: expends.group_by { |g| PlayerTimeline::GREAT_PERSON_UNITS[g[:great_person]] }.transform_values(&:size),
+      infrastructure: phase_split(expends, midpoint) { |g| INFRASTRUCTURE_ACTIONS.include?(g[:action]) },
+      consumption: phase_split(expends, midpoint) { |g| CONSUMPTION_ACTIONS.include?(g[:action]) }
+    }
+  end
+
+  def game_midpoint
+    last_turn = @game.event_log.all.map(&:turn).max
+    last_turn ? last_turn / 2.0 : 0
+  end
+
+  def phase_split(expends, midpoint)
+    matches = expends.select { |g| yield(g) }
+    { early: matches.count { |g| g[:turn] <= midpoint }, late: matches.count { |g| g[:turn] > midpoint } }
   end
 
   def cultural_by_civ
