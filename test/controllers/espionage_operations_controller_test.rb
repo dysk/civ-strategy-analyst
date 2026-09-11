@@ -31,6 +31,28 @@ class EspionageOperationsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "lists a loss whose death site the log names directly" do
+    killed("England", 5, spy: "ENGLAND_1", agent: 9, city: "London", city_civ: "England")
+
+    get game_espionage_url(@game)
+
+    assert_response :success
+    assert_select "table.espionage-losses tbody tr" do
+      assert_select "td", "England"
+      assert_select "td", "London"
+    end
+    assert_select "table.espionage-losses td.reconstructed", false
+  end
+
+  test "marks a loss whose death site is reconstructed from the last sighting" do
+    moved("England", 1, spy: "ENGLAND_1", agent: 9, city: "London", city_civ: "England", state: "travelling")
+    killed("England", 5, spy: "ENGLAND_1", agent: 9)
+
+    get game_espionage_url(@game)
+
+    assert_select "table.espionage-losses td.reconstructed"
+  end
+
   test "folds each civilization's spy tenures into its own table" do
     moved("India", 100, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan", state: "travelling")
     surveillance("India", 104, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan")

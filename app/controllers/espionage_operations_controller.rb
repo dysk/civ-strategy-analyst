@@ -7,6 +7,7 @@ class EspionageOperationsController < ApplicationController
     return unless @espionage.applicable?
 
     @capacity_rows = capacity_rows
+    @loss_rows = @espionage.losses
     @tenure_histories = tenure_histories
     @mission_groups = mission_groups
     @garrison_rows = garrison_rows

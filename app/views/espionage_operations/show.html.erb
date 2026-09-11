@@ -35,6 +35,42 @@
     </tbody>
   </table>
 
+  <% if @loss_rows.any? %>
+    <h2>Losses</h2>
+    <table class="espionage-losses">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>Spy</th>
+          <th>Turn</th>
+          <th>City</th>
+          <th>Host</th>
+          <th>Site</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @loss_rows.each do |loss| %>
+          <tr>
+            <td><%= loss[:civ] %></td>
+            <td><%= loss[:spy] %></td>
+            <td><%= loss[:turn] %></td>
+            <td><%= loss[:city] || "&mdash;".html_safe %></td>
+            <td><%= loss[:city_civ] || "&mdash;".html_safe %></td>
+            <td class="<%= "reconstructed" if loss[:city_inferred] %>">
+              <% if loss[:city].nil? %>
+                unknown
+              <% elsif loss[:city_inferred] %>
+                reconstructed, <%= loss[:turns_since_last_seen] %> turns stale
+              <% else %>
+                logged
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
   <% @tenure_histories.each do |history| %>
     <h2><%= history[:civ] %></h2>
 
