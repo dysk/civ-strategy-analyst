@@ -1309,3 +1309,43 @@ none of these events changed in the recent logger work (that was
 espionage and congress only). The regression signal is the classification
 split: how many great people bulbed versus planted, how many Great
 Generals died to raids.
+
+## Plan: diplomatic ties (implemented)
+
+Status: **Implemented 2026-09-11.** `docs/reading-the-new-log.md` §6 as
+written, plus a correction found by inspecting the real output: a span
+open when war is declared between the same pair is cut to the declaration
+turn, never to whatever turn its own close event happens to log.
+
+`DiplomaticTies` (`app/projections/diplomatic_ties.rb`) reads the five
+tie types the log records as fact - embassy, open borders, friendship,
+defensive pact, trade agreement - and pairs each type's own open/close
+events into spans. `friendship_*` fires once per pair as a `civs` array;
+the other four fire once per side, both directions the same turn, and
+matching by the unordered pair rather than direction collapses the
+mirrored record into the one span it is instead of two.
+
+India's embassy with the Iroquois (open since turn 86) is still standing
+when India declares war on them turn 144, and the pair's own
+`embassy_ended` does not fire until 145 - the engine's bookkeeping
+catching up, not a second turn of real diplomatic contact, since
+declaring war cancels every standing agreement with the target
+immediately. `spans_for` checks every open span against `war_declared`
+records naming that exact pair and cuts `to_turn` to the earliest such
+declaration inside it, ahead of whatever the type's own close event says.
+`defensive_pact` and `trade_agreement` never fire in any of the five
+example logs and ship exercised only by hand-built fixtures.
+
+`PlayerTimeline#wars` gains `ties_at_declaration` - the join the plan
+named by hand, needing no new data since a war record already carries its
+opponents: `DiplomaticTies#spans(civ, opponent)` filtered to what stood on
+`turn_declared`. The one exercised instance in either example log is the
+India-Iroquois pair above. `DigestBuilder#diplomatic_ties` adds one entry
+per roster pair that ever held a tie, omitting the rest rather than
+listing them empty, and reaches the chronicle digest for free through
+`ChronicleDigest` wrapping `DigestBuilder#call`. `analyze_game.md` gains
+the digest paragraph and corrects a buffer-city paragraph that claimed
+`war_declared`/`peace_made` were the only diplomatic events logged - no
+longer true, though a logged tie still cannot confirm or rule out the
+unspoken settling agreement between neighbours that paragraph is actually
+about.

@@ -999,6 +999,11 @@ game's data invites, since the one defence that did happen left no record.
 
 ## 6. Diplomatic ties
 
+**Implemented 2026-09-11** — `docs/plan.md`, *"diplomatic ties"*. One deviation
+found while implementing, from a user correction against the real evidence: war
+cancels a standing agreement immediately, not on whatever turn its own close
+event happens to log.
+
 `friendship_*`, `defensive_pact_*`, `open_borders_*`, `embassy_*` and
 `trade_agreement_*` are 54 records, exact, cheap and read by nothing; the
 analysis has no diplomacy beyond `war_declared` / `peace_made`. It precedes
@@ -1007,7 +1012,27 @@ one projection with paired open/close spans and no calibration to argue about.
 
 `DiplomaticTies#spans(civ, other)` → one record per tie with `type`,
 `from_turn`, `to_turn`. A pact standing when a war is declared elsewhere is the
-join worth having, and `PlayerTimeline#wars` already carries the other side of it.
+join worth having, and `PlayerTimeline#wars` already carries the other side of
+it — shipped as `ties_at_declaration` on each war period, the spans standing
+between that civ and its opponent on `turn_declared`.
+
+**A span's own close event lags the fact.** India's embassy with the Iroquois
+opened turn 86 and India declared war on them turn 144; the log's own
+`embassy_ended` for that pair does not fire until 145. Declaring war voids
+every agreement with the target the instant it is declared - a rule of the
+game, not a reading of the log - so treating the embassy as standing through
+144 and ending at 145 would be reading the engine's bookkeeping delay as a
+second turn of real diplomatic contact. `spans_for` now checks every open span
+against `war_declared` records naming that exact pair and cuts `to_turn` to the
+earliest such declaration inside the span, overriding whatever the type's own
+close event says or whether it ever fires one. `ties_at_declaration` therefore
+always reads `to_turn == turn_declared` for the war that triggered it - the
+one exercised instance in either example log is exactly this India-Iroquois
+pair.
+
+Not measured: `defensive_pact_*` and `trade_agreement_*` never fire in any of
+the five example logs, so both types ship exercised only by the fixture tests
+that construct them by hand.
 
 ## 7. Trade routes
 
