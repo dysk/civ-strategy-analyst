@@ -423,6 +423,27 @@ absence, the way an unbuffered capital does elsewhere; two that started
 far apart and met early travelled further than the map's plain distance
 suggests.
 
+## Trade routes, as texture, not an entry
+
+`trade_routes` never anchors an entry of its own - hundreds of caravans
+can run over a long game, and the chronicle is not a ledger of them.
+`by_civ.<civ>.by_destination` characterises a realm rather than narrating
+it: one running most of its caravans within its own borders is inward and
+cautious, building its own cities' growth and industry rather than
+reaching for gold abroad; one sending most abroad is trading that safety
+for gold instead. Either is worth a clause where a passage is already
+describing that realm's character.
+
+`trade_routes.one_sided` is the one part worth naming outright, sparingly:
+a realm feeding a rival's science or renown for turns on end while
+getting nothing back is a real relationship, not an accounting footnote -
+write it as one realm quietly building another's strength, in the
+passage already covering the two of them, never as a scene of its own.
+`concurrency` is backdrop only, the rhythm of a realm's trade rising and
+falling with its wars and its roads; it earns a sentence at most, at a
+telling reversal - a curve that collapses with a war's opening, say - and
+no sentence at all otherwise.
+
 ## Vocabulary: no game words
 
 The chronicle is written from inside the world, so the vocabulary of the
