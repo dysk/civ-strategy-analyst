@@ -175,10 +175,9 @@ class WonderRacesTest < ActiveSupport::TestCase
     assert_equal :unobserved, WonderRaces.new(@game).races.first[:winner_finish]
   end
 
-  # Whether the loser had a spy in the winner's city is what separates
-  # losing a race you could see from losing one you could not; tranche 2
-  # fills this in from spy_moved.
-  test "the race record leaves room for a spy observation not yet filled in" do
+  # A log with no spy record at all cannot answer the question, which is not
+  # the same as answering no.
+  test "rival_observed is nil when the log knows nothing about spies" do
     building(20, "A", "Ac", "BUILDING_STONEHENGE", stored: 1)
     building(20, "B", "Bc", "BUILDING_STONEHENGE", stored: 1)
     completed(21, "A", "Ac", "BUILDING_STONEHENGE")
@@ -198,7 +197,174 @@ class WonderRacesTest < ActiveSupport::TestCase
     assert WonderRaces.new(@game).applicable?
   end
 
+  test "a contender that could see the winner's city carries the span it saw" do
+    (148..157).each { |t| building(t, "England", "London", "BUILDING_LOUVRE", stored: (t - 148) * 47) }
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    england = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal [ 152, 6, %w[England] ],
+                 england.values_at(:observed_from_turn, :observed_turns, :observed_by)
+  end
+
+  # Mysore still had Mysuru on the wonder the turn Mecca finished it, and its
+  # surveillance went live that same turn. "Held a spy during the race" answers
+  # yes; nothing was decidable by then.
+  test "a contender whose spy arrived after the race was decided saw nothing" do
+    (156..159).each { |t| building(t, "Mysore", "Mysuru", "BUILDING_PISA", stored: (t - 156) * 45) }
+    (157..159).each { |t| building(t, "Arabia", "Mecca", "BUILDING_PISA", stored: (t - 157) * 110) }
+    completed(159, "Arabia", "Mecca", "BUILDING_PISA")
+    watching("Mysore", "Mecca", "Arabia", from: 159)
+
+    mysore = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal [ nil, 0, [] ],
+                 mysore.values_at(:observed_from_turn, :observed_turns, :observed_by)
+  end
+
+  test "a third party watching the winner's city is named without being the contender" do
+    (148..157).each { |t| building(t, "Zimbabwe", "Harare", "BUILDING_ALHAMBRA", stored: (t - 148) * 47) }
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_ALHAMBRA", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_ALHAMBRA")
+    watching("Tibet", "Amsterdam", "Netherlands", from: 152)
+
+    zimbabwe = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal [ nil, %w[Tibet] ], zimbabwe.values_at(:observed_from_turn, :observed_by)
+  end
+
+  test "the rate before and after the vision come from production_stored" do
+    stored = { 148 => 0, 149 => 40, 150 => 80, 151 => 120, 152 => 160,
+               153 => 220, 154 => 280, 155 => 340, 156 => 400, 157 => 460 }
+    stored.each { |turn, amount| building(turn, "England", "London", "BUILDING_LOUVRE", stored: amount) }
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    england = WonderRaces.new(@game).races.first[:contenders].first
+    assert_equal [ 40.0, 60.0 ], england.values_at(:rate_before, :rate_after)
+  end
+
+  test "an AI contender's response is not labelled" do
+    player("England", human: false)
+    louvre_race_england_watching
+
+    assert_equal [ false, nil ],
+      WonderRaces.new(@game).races.first[:contenders].first.values_at(:contender_human, :response)
+  end
+
+  test "a human contender that kept building after seeing pressed on" do
+    player("England", human: true)
+    louvre_race_england_watching
+
+    assert_equal [ true, :pressed_on ],
+      WonderRaces.new(@game).races.first[:contenders].first.values_at(:contender_human, :response)
+  end
+
+  test "a human contender that walked away after seeing cut its losses" do
+    player("England", human: true)
+    (148..153).each { |t| building(t, "England", "London", "BUILDING_LOUVRE", stored: (t - 148) * 47) }
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    assert_equal [ :abandoned, :cut_losses ],
+      WonderRaces.new(@game).races.first[:contenders].first.values_at(:outcome, :response)
+  end
+
+  # Turns left falls by exactly one per turn while a city builds at a steady
+  # rate, so a steeper fall is a Great Engineer, a chopped forest or a city
+  # re-arranged for hammers. No threshold is involved.
+  test "a contender whose estimate fell faster than the clock accelerated" do
+    player("England", human: true)
+    london_estimating(148 => 10, 149 => 9, 150 => 8, 151 => 7, 152 => 6,
+                      153 => 3, 154 => 2, 155 => 2, 156 => 2, 157 => 2)
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    assert_equal [ 153, :accelerated ],
+      WonderRaces.new(@game).races.first[:contenders].first.values_at(:accelerated_on_turn, :response)
+  end
+
+  test "an estimate that fell before the spy saw anything is no response to it" do
+    player("England", human: true)
+    london_estimating(148 => 10, 149 => 6, 150 => 5, 151 => 4, 152 => 3,
+                      153 => 2, 154 => 2, 155 => 2, 156 => 2, 157 => 2)
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    assert_equal [ nil, :pressed_on ],
+      WonderRaces.new(@game).races.first[:contenders].first.values_at(:accelerated_on_turn, :response)
+  end
+
+  test "an estimate that kept pace with a gap in the snapshots did not accelerate" do
+    player("England", human: true)
+    london_estimating(148 => 10, 152 => 6, 155 => 3, 157 => 1)
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+
+    assert_nil WonderRaces.new(@game).races.first[:contenders].first[:accelerated_on_turn]
+  end
+
+  test "a human contender that never saw the winner's city is unobserved" do
+    player("England", human: true)
+    watching("Tibet", "Amsterdam", "Netherlands", from: 152)
+    louvre_race
+
+    assert_equal :unobserved, WonderRaces.new(@game).races.first[:contenders].first[:response]
+  end
+
+  test "rival_observed is true when a contender could see the winner's city" do
+    louvre_race_england_watching
+
+    assert WonderRaces.new(@game).races.first[:rival_observed]
+  end
+
+  test "rival_observed is false when the log has spies and none of them watched" do
+    watching("Tibet", "Lhasa", "Tibet", from: 152)
+    louvre_race
+
+    assert_not WonderRaces.new(@game).races.first[:rival_observed]
+  end
+
   private
+
+  def london_estimating(turns_left_by_turn)
+    turns_left_by_turn.each do |turn, left|
+      building(turn, "England", "London", "BUILDING_LOUVRE", stored: (turn - 148) * 47, turns_left: left)
+    end
+  end
+
+  def louvre_race
+    (148..157).each { |t| building(t, "England", "London", "BUILDING_LOUVRE", stored: (t - 148) * 47) }
+    (154..157).each { |t| building(t, "Netherlands", "Amsterdam", "BUILDING_LOUVRE", stored: (t - 154) * 120) }
+    completed(158, "Netherlands", "Amsterdam", "BUILDING_LOUVRE")
+  end
+
+  def louvre_race_england_watching
+    louvre_race
+    watching("England", "Amsterdam", "Netherlands", from: 152)
+  end
+
+  # A spy posted four turns before its surveillance goes live, which is what
+  # the DLL's travel plus surveillance time comes to.
+  def watching(civ, city, city_civ, from:)
+    spy_event("spy_moved", civ, from - 4, city, city_civ, "travelling")
+    spy_event("spy_surveillance_established", civ, from, city, city_civ, nil)
+  end
+
+  def spy_event(type, civ, turn, city, city_civ, state)
+    @seq += 1
+    payload = { "event" => type, "turn" => turn, "civ" => civ, "spy" => "#{civ}_SPY",
+                "city" => city, "city_civ" => city_civ }
+    payload["state"] = state if state
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn,
+                              event_type: type, civ: civ, payload: payload)
+  end
+
+  def player(civ, human:) = @game.players.create!(civ: civ, human: human)
 
   def building(turn, civ, city, producing, stored:, turns_left: 1)
     city_snapshot(turn, civ, city, "producing" => producing, "producing_kind" => "wonder",

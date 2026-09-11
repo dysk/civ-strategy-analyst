@@ -745,8 +745,11 @@ say so — do not calibrate it against nothing.
     never existed and opens a new tenure rather than continuing the dead one.
     A death ends a run wherever the agent turns up next, the city it died in
     included.
-  - `observers_of(city, from_turn, to_turn)` → the tenures whose visible span
-    overlaps the window, which is the whole of joins A and D.
+  - `observers_of(city, from_turn, to_turn)` → the tenures that granted a rival
+    vision of the city over the window, which is the whole of joins A and D.
+    Three kinds are excluded whatever the window says: one the log never dated,
+    one whose spy left before its surveillance would have gone live
+    (`visible_from_turn > until_turn`), and one a civ holds in its own city.
   - `missions(civ = nil)` → `spy_mission_completed` split on the record's own
     `state`, which names the kind outright — `gathering_intel` is
     `:tech_theft`, `rigging_election` is `:election_rigging`. Every completion
@@ -789,10 +792,19 @@ say so — do not calibrate it against nothing.
     Revivals are reported **beside** creations, never summed into them: while
     the name changes on revival the two cannot be reconciled, and a sum would
     double-count one spy.
-- `WonderRaces` fills its `rival_observed` from `observers_of`, and each
-  contender gains `observed_from_turn`, `observed_turns`, `observed_by`,
-  `contender_human`, and `rate_before` / `rate_after` from `production_stored`
-  deltas. It reports the **opportunity** and never labels the response: an AI
+- `WonderRaces` fills its `rival_observed` from `observers_of` — nil where the
+  log carries no spy record at all, since not knowing is not the same as
+  knowing nobody watched — and each contender gains `observed_from_turn`,
+  `observed_turns`, `observed_by`, `contender_human`, `rate_before` /
+  `rate_after` from `production_stored` deltas, `accelerated_on_turn`, and
+  `response` for a human contender only. The window runs from the contender's
+  first snapshot to its last or `completed_turn − 1`, whichever is earlier: the
+  completion turn is not a turn on which anything was decidable.
+  `accelerated_on_turn` is the first turn after vision where
+  `production_turns_left` fell by more than the turns elapsed, which is a
+  Great Engineer, a chop or a city re-arranged for hammers and needs no
+  threshold — the estimate falls by exactly one a turn under a steady build.
+  It reports the **opportunity** and never labels the response for an AI: an AI
   contender made no decision to label. No AI code reads surveillance, nothing
   in the engine reports a rival's in-progress wonder to anyone, and the AI is
   passed `bInterruptWonders = false` at all four call sites, so it structurally
@@ -827,8 +839,11 @@ say so — do not calibrate it against nothing.
 4. `#coups` — both signatures. The failure is measured once; the success
    fires on none of the 68 ally changes in the two logs, two of which carry
    snapshots on both sides and are rejected on the swap test itself.
-5. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
-   five-way classification with four branches declared unexercised.
+5. `WonderRaces` — `observers_of` join, the observed span, the estimate-drop
+   test in place of a rate threshold, and a classification that labels a human
+   contender only. Two contender rows out of 23 had vision of their own, three
+   more were watched by a third party, and every branch needing a human to
+   have seen something is unexercised.
 6. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
    the opportunity-not-knowledge rule, the read-only-city-screen scope of what
    an observer saw, and the counterspy — read from the log where present, its

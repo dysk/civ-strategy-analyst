@@ -836,16 +836,17 @@ captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
 
-## Plan: espionage — the primitive four features share (iterations 1-4 of 6)
+## Plan: espionage — the primitive four features share (iterations 1-5 of 6)
 
 Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iterations 1
-to 4 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
-`#losses`, `#capacity`, `#counterspies` and `#coups` in
-`app/projections/espionage.rb`, 68 tests, measured against `india-diplo`
-(game 32, 24 located spies, 46 tenures) and `espionage-test` (game 37, 13
-spies, 37 tenures). Iterations 5 and 6 are not built: the `WonderRaces`
-join and the digest section. `WonderRaces#rival_observed` still carries nil and still
-waits for `observers_of`. The design is in `docs/espionage.md` (the game
+to 5 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
+`#losses`, `#capacity`, `#counterspies`, `#coups` and `#observers_of` in
+`app/projections/espionage.rb`, plus the observation fields on every
+`WonderRaces` contender, measured against `india-diplo` (game 32, 24
+located spies, 46 tenures) and `espionage-test` (game 37, 13 spies, 37
+tenures). Iteration 6 is not built: the `KeyMomentDetector` moment, the
+digest section and both prompts. `WonderRaces#rival_observed` is filled, and carries nil only where the log
+holds no spy record at all. The design is in `docs/espionage.md` (the game
 rules and the honest limits) and `docs/reading-the-new-log.md` (§4).
 
 Context: a spy is a position held over a span of turns, and four questions
@@ -929,6 +930,24 @@ The successful-coup branch fires on nothing, which is the documented
 expectation, and two of the 68 ally changes in the two logs reach the swap
 test with snapshots on both sides and are rejected on their numbers rather
 than for want of data.
+
+Iteration 5 replaced the planned rate threshold with the production
+estimate, on the reasoning that `production_turns_left` falls by exactly
+one a turn under a steady build, so a steeper fall is a Great Engineer, a
+chop or a city re-arranged for hammers and needs no calibration. The mean
+rates are still carried, as description rather than as the test.
+
+Running the join over both games found three errors no fixture showed. The
+decision window must end at `completed_turn − 1`, or Mysore reads as having
+seen Mecca finish Pisa on the turn its own surveillance went live. A tenure
+whose `visible_from_turn` falls after its `until_turn` granted nothing —
+`MUGHAL_5` was sent to Brussels on 152 and pulled home on 155, a turn short.
+And a civ sitting in its own city is not an observer of it, which was
+putting Arabia in the list of civs watching Mecca.
+
+The one human contender row in either game is India abandoning Machu Picchu
+on turn 110 with no vision of Great Zimbabwe, which comes out `:unobserved`.
+Every branch that needs a human to have seen something is unexercised.
 
 The run measured one correction to the design. A counterspy's state arrives
 a turn behind its order, in a second `spy_moved` in the same city, so the

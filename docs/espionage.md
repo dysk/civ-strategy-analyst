@@ -521,25 +521,60 @@ Three rules follow:
 2. **Vision usually cannot explain the start.** England committed on 148 and
    its spy did not exist until 148. Carry the span — `observed_from_turn` and
    `observed_turns` — not a boolean.
-3. **The response is measurable.** `production_stored` per turn gives a rate,
-   so the rate before `observed_from_turn` against the rate after is a direct
-   test:
+3. **The response is measurable, and the sharper measure is the estimate, not
+   the rate.** `production_turns_left` falls by exactly one a turn while a city
+   builds steadily, because the stored production climbs by exactly the rate
+   the estimate divides by. So a fall steeper than the clock is a lump of
+   production — a Great Engineer, a chopped forest, a city re-arranged onto
+   hammers — and `accelerated_on_turn` names the turn it happened with no
+   threshold involved. It is the same observable `winner_finish` uses for
+   `:ahead_of_estimate`, read on the loser's side instead of the winner's.
+
+   The mean rates before and after are carried too, from `production_stored`
+   deltas, but they describe rather than decide. A chop that shortens the build
+   by three turns barely moves a mean.
 
 | pattern | reading | india-diplo | espionage-test |
 |---|---|---|---|
-| observed, rate rises, still lost | tried to outrun it | 0 | 0 |
-| observed, rate rises, won | the spy paid for itself | 0 | 0 |
-| observed, `:abandoned` soon after | read the board, cut the losses | 0 | 0 |
-| **observed, rate flat, lost** | see below — **not** a decision when the contender is an AI | **1 — the Louvre** | **1 — Pisa** |
-| not observed, lost | lost a race it could not see | 12 | 9 |
+| observed, estimate falls faster than the clock | put its foot down | 0 | 0 |
+| observed, `:abandoned` after | read the board, cut the losses | 0 | 0 |
+| **observed, estimate keeps pace, lost** | pressed on — **only if the contender is human** | **1 — the Louvre (AI)** | **1 — Pisa (AI)** |
+| not observed, lost | lost a race it could not see | 11 | 9 |
+| not observed, `:abandoned` | walked away uninformed | **1 — Machu Picchu** | 0 |
 
-**Three of five branches are unexercised across two games**, and the two that
-fired are both held by an AI, which is the whole of the next section.
+Both observed-and-lost rows are held by an AI, so `response` is nil on both and
+the only labelled row in either game is India walking away from Machu Picchu on
+turn 110 without vision of Great Zimbabwe — `:unobserved`, which is the
+classifier declining to call it an informed decision. **Every branch that
+requires a human to have seen something is unexercised.**
+
+### Three things the join gets wrong until it is measured
+
+All three were found by running the projection over both games, and none of
+them is visible in a fixture.
+
+- **The completion turn is not a turn a decision was available.** Mysore still
+  had Mysuru on Pisa the turn Mecca finished it, and `MUGHAL_5`'s surveillance
+  went live on that same turn. Ending the window at `completed_turn − 1` is
+  what makes the documented near-miss come out as a near-miss.
+- **A spy that left before its surveillance completed saw nothing.** Mysore
+  sent `MUGHAL_5` to Brussels on turn 152 and pulled it home on 155, a turn
+  before vision would have gone live. The tenure overlaps the Sistine Chapel
+  window at both ends and granted nothing, so `observers_of` requires
+  `visible_from_turn ≤ until_turn` before anything else.
+- **A civ watching its own city is not an observer.** `ARABIA_2` sat in Mecca,
+  which is Arabia's, through the Pisa race. Nobody needs a spy to watch
+  themselves build.
 
 A **third party** can hold the spy: Tibet watched Amsterdam through the
-Alhambra race that Zimbabwe lost, and in `espionage-test.jsonl` four other
-civs watched Mecca build Pisa. Not the same fact — `observed_by` is a list of
-civs with the contender flagged, never a boolean on the contender.
+Alhambra race that Zimbabwe lost, and Jerusalem and the Sioux watched Mecca
+build Pisa alongside Belgium, who was racing it. Not the same fact —
+`observed_by` lists the civs that could see, and the contender's own vision is
+its `observed_from_turn`, never a boolean folded in with the rest.
+
+Measured across both games: 23 contender rows, **2** with vision of their own
+(the Louvre and Pisa), **3** more watched only by a third party, and 18 that
+lost or left a race nobody could see for them.
 
 ### Pisa, and the two near-misses that vindicate the dating
 

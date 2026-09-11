@@ -78,6 +78,18 @@ class Espionage
     all_losses.select { |loss| loss[:civ] == civ }
   end
 
+  # The tenures that granted a rival vision of `city` over the window, which is
+  # the whole of the wonder-race join. Three kinds observe nothing whatever the
+  # window says: one the log never dated, one the spy left before its
+  # surveillance would have gone live, and one a civ holds in its own city -
+  # nobody needs a spy to watch themselves build.
+  def observers_of(city, from_turn, to_turn)
+    tenures.select do |tenure|
+      tenure[:city] == city && tenure[:civ] != tenure[:city_civ] &&
+        saw?(tenure) && overlaps?(tenure, from_turn, to_turn)
+    end
+  end
+
   # A garrison, read off the log where it says so and inferred where it does not.
   # A counterspy is the only spy posted to one of its owner's own cities, and
   # the `counter_intel` state is what proves it arrived: the Sioux ordered one
@@ -113,6 +125,14 @@ class Espionage
   private
 
   def spy_events = @spy_events ||= SPY_EVENTS.flat_map { |type| @log.of_type(type) }.sort_by(&:seq)
+
+  def saw?(tenure)
+    tenure[:visible_from_turn] && tenure[:visible_from_turn] <= tenure[:until_turn]
+  end
+
+  def overlaps?(tenure, from_turn, to_turn)
+    tenure[:visible_from_turn] <= to_turn && tenure[:until_turn] >= from_turn
+  end
 
   def all_tenures
     @all_tenures ||= events_by_spy

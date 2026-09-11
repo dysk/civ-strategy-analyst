@@ -587,6 +587,61 @@ class EspionageTest < ActiveSupport::TestCase
     assert_empty Espionage.new(@game).coups("Yugoslavia")
   end
 
+  test "a tenure whose vision overlaps the window is an observer" do
+    moved("England", 148, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands", state: "travelling")
+    surveillance("England", 152, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands")
+
+    assert_equal [ [ "England", 152 ] ],
+      Espionage.new(@game).observers_of("Amsterdam", 148, 157).map { |t| t.values_at(:civ, :visible_from_turn) }
+  end
+
+  test "a tenure whose vision begins after the window closed is not an observer" do
+    moved("Mysore", 155, spy: "MUGHAL_5", city: "Mecca", city_civ: "Arabia", state: "travelling")
+    surveillance("Mysore", 159, spy: "MUGHAL_5", city: "Mecca", city_civ: "Arabia")
+
+    assert_empty Espionage.new(@game).observers_of("Mecca", 156, 158)
+  end
+
+  test "a tenure that left before the window opened is not an observer" do
+    moved("England", 100, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands", state: "travelling")
+    surveillance("England", 104, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands")
+    moved("England", 120, spy: "ENGLAND_6", city: "Lhasa", city_civ: "Tibet", state: "travelling")
+
+    assert_empty Espionage.new(@game).observers_of("Amsterdam", 148, 157)
+  end
+
+  test "a tenure the log never dated observes nothing" do
+    killed("England", 150, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands")
+
+    assert_empty Espionage.new(@game).observers_of("Amsterdam", 148, 157)
+  end
+
+  # MUGHAL_5 was sent to Brussels on t152 and pulled home on t155, a turn
+  # before its surveillance would have gone live.
+  test "a spy re-posted before its surveillance completed observed nothing" do
+    moved("Mysore", 152, spy: "MUGHAL_5", city: "Brussels", city_civ: "Belgium", state: "travelling")
+    moved("Mysore", 155, spy: "MUGHAL_5", city: "Mysuru", city_civ: "Mysore", state: "counter_intel")
+
+    assert_empty Espionage.new(@game).observers_of("Brussels", 154, 159)
+  end
+
+  test "a civ needs no spy to see its own city" do
+    moved("Arabia", 153, spy: "ARABIA_2", city: "Mecca", city_civ: "Arabia", state: "travelling")
+    surveillance("Arabia", 157, spy: "ARABIA_2", city: "Mecca", city_civ: "Arabia")
+
+    assert_empty Espionage.new(@game).observers_of("Mecca", 156, 158)
+  end
+
+  test "observers_of names every civ that watched the city" do
+    moved("England", 148, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands", state: "travelling")
+    surveillance("England", 152, spy: "ENGLAND_6", city: "Amsterdam", city_civ: "Netherlands")
+    moved("Tibet", 130, spy: "CHINA_3", city: "Amsterdam", city_civ: "Netherlands", state: "travelling")
+    surveillance("Tibet", 134, spy: "CHINA_3", city: "Amsterdam", city_civ: "Netherlands")
+
+    assert_equal %w[England Tibet],
+      Espionage.new(@game).observers_of("Amsterdam", 148, 157).map { |t| t[:civ] }.sort
+  end
+
   private
 
   def moved(civ, turn, **fields) = spy_event("spy_moved", civ, turn, **fields)
