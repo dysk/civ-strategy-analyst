@@ -803,10 +803,13 @@ say so — do not calibrate it against nothing.
   `accelerated_on_turns` lists every turn whose `production_stored` gain stood
   at least twice clear of the build's own typical turn — a Great Engineer, a
   chop or a production overflow — with what arrived and how far clear it stood.
-  It is recorded for every builder, winner included, **with or without a spy**:
-  a wonder under construction shows on the map and its unfinished form names
-  it, so what a rival is building takes line of sight, and only how close it is
-  takes a spy. `production_turns_left` is deliberately not the test; it falls
+  It is recorded for every builder, winner included, **with or without a spy**,
+  because a spy is not the only channel a rival build can reach a player
+  through — a wonder under construction stands on the map in a form particular
+  to that wonder. The map channel is weaker evidence than a spy and not a
+  substitute: it needs the tile revealed, the player looking and the model
+  recognised, and the log records none of the three. The field is a fact about
+  the build, never about anybody's knowledge. `production_turns_left` is deliberately not the test; it falls
   faster than the clock on any small rate rise, and 20 of the 23 such falls in
   the two logs brought no extra production with them.
 

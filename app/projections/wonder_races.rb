@@ -179,10 +179,13 @@ class WonderRaces
   # built before. What the log cannot do is name which, the same limit
   # `winner_finish` runs into.
   #
-  # Recorded for every builder whether or not it held a spy. A wonder under
-  # construction shows on the map and its unfinished form names it, so pouring
-  # hammers into a race is a decision available to anyone with line of sight;
-  # the spy only says how close the other city is.
+  # Recorded for every builder whether or not it held a spy, because a spy is
+  # not the only way a rival build can be known about: a wonder under
+  # construction stands on the map and its unfinished form is particular to the
+  # wonder. That channel is an opportunity and nothing more - the log never
+  # says the tile was ever revealed, never says anybody looked at it, and never
+  # says the model was recognised. So this field is a fact about the build and
+  # not about anyone's knowledge, and no reading may turn it into a response.
   #
   # The game's own `production_turns_left` is not the test. It falls faster
   # than the clock on any small rise in the city's current rate, because the

@@ -527,12 +527,20 @@ Three rules follow:
    clear of the build's other turns. `accelerated_on_turns` carries each such
    turn with what arrived and how many times the build's typical turn it was.
 
-   **Recorded for every builder, with or without a spy.** A wonder under
-   construction shows on the map and its unfinished form names it, so knowing
-   *what* a rival is building takes line of sight, not espionage. What the spy
-   adds is *how close* — the stored hammers and the turns left. That is the
-   distinction the join now rests on, and it is why acceleration is never
-   gated on vision.
+   **Recorded for every builder, with or without a spy.** A spy is not the
+   only channel a rival's build can reach a player through: a wonder under
+   construction stands on the map and its unfinished form is particular to the
+   wonder. So gating acceleration on surveillance would hide every instance of
+   it, which is what the first draft did.
+
+   That second channel carries the same caveat as the first, only weaker.
+   **Line of sight is an opportunity and the log cannot even establish that
+   much.** A player sees the site only if the tile was revealed, only if they
+   looked at it, and only if they recognised the model — and the log records
+   none of the three. Where a spy at least proves a city screen was *openable*,
+   the map channel proves nothing at all. `accelerated_on_turns` is therefore a
+   fact about the build and never about anybody's knowledge, and the two must
+   not be joined into a sentence about responding to what was seen.
 
    The game's own `production_turns_left` looked like the better test and is
    not. It falls faster than the clock on any small rise in the city's current
@@ -690,6 +698,11 @@ cannot stop.*
   the section above shows is mostly artifact, so it would fire against turns on
   which nothing was stolen.
 - **Whether a player looked at the city screen a spy opened.**
+- **Whether a rival's wonder site was ever seen at all.** The construction
+  site is on the map and its unfinished form names the wonder, but that needs
+  the tile revealed, the player looking, and the model recognised. The log
+  carries no tile visibility, no camera and no recognition, so the map channel
+  is weaker evidence than a spy rather than a substitute for one.
 - **Gold gifts to city-states** (`CvDeal` unreachable) and **quests**
   (`MinorCivQuestTypes` is a C++ enum with no database table).
 - **Paradrops joined to spy vision** — specified, and india-diplo contains

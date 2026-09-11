@@ -59,6 +59,13 @@ turn:
   `production_turns_left` is not used for this. It falls faster than the
   clock on any small rise in the city's current rate, and 20 of the 23
   such falls in the two logs brought no extra production with them.
+- **Nothing says a rival's build was ever seen.** The construction site
+  stands on the map in a form particular to the wonder, which is why
+  `accelerated_on_turns` is recorded for every builder rather than only for
+  one holding a spy. But the log has no tile visibility, no record of where
+  a player looked and none of what they recognised, so that channel is an
+  opportunity the log cannot even establish. An acceleration is a fact
+  about the build; it is never evidence of responding to anything.
 - **A city gradually re-arranged onto hammers is not detected.** It raises
   the build's typical turn along with the rest, so no turn stands clear.
   It shows only as a difference between `rate_before` and `rate_after`.
