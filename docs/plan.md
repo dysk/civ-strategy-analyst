@@ -867,12 +867,18 @@ fixes has since turned much of it into fact.** As of those commits:
 - `spy_moved` fires on the transition into `counter_intel` — a counterspy
   garrison is read from the event, and `#counterspies`' three-signal
   inference drops to a fallback.
+- every spy record carries `agent`, the `AgentID` a revival cannot change —
+  `tenures` keys on `(civ, agent)` where the field exists, and only older
+  logs need the "a revival names a spy that never existed" fallback.
+- the `CityX == -1` half of the missed-`spy_moved` gap turned out not to
+  exist: run B (`examples/run-b-test.jsonl`) logged every spy every poll
+  across 26 reassignments and all 26 were announced.
 
-Still owed upstream, so the projection keeps every fallback for now: the
-rest of the missed-`spy_moved` gap (re-postings, and a move lost when a
-poll catches `CityX == -1` mid-`MoveSpyTo`), `known` persisting across a
-session reload, and the successful coup (needs its own `CanStageCoup`
-read). Tracked in `civ-narrative-logger/docs/planned-changes.md`.
+Still owed upstream, so the projection keeps the older logs' fallbacks:
+`known` persisting across a session reload — which is all that is left of
+the missed-`spy_moved` gap, and the reason `ENGLAND_6`'s re-posting is
+absent — and the successful coup (needs its own `CanStageCoup` read).
+Tracked in `civ-narrative-logger/docs/planned-changes.md`.
 
 `examples/india-diplo.jsonl` (game 32), the log every number in the design
 docs is measured against, **predates all of these fixes**. So iteration 1

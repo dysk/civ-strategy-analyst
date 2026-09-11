@@ -5,13 +5,16 @@ iteration history and `docs/reading-the-new-log.md` the ordering; this file
 holds the game rules the projection rests on, the inferences it is forced
 into, and the honest limits on both.
 
-Two games are measured here. `examples/india-diplo.jsonl` predates every
+Three games are measured here. `examples/india-diplo.jsonl` predates every
 logger fix and is what the fallbacks are calibrated on.
 `examples/espionage-test.jsonl` was played to
 `civ-narrative-logger/docs/capture-protocol.md` against the fixed logger,
 with espionage used deliberately — turns 82–189, five sessions, a
-counterspy, four rigging cycles and a failed coup. Where a mechanism is
-specified but neither game exercised it, the text says so.
+counterspy, four rigging cycles and a failed coup.
+`examples/run-b-test.jsonl` is that protocol's run B, short and
+diagnostic — turns 122–140, two sessions, six spies, 26 reassignments,
+and the first log whose spy records carry `agent`. Where a mechanism is
+specified but no game exercised it, the text says so.
 
 ## Why this is a projection of its own
 
@@ -129,18 +132,27 @@ name a spy that was never created — `ENGLAND_0`, `ENGLAND_1`, `ENGLAND_4`,
 
 So `(civ, spy)` is the wrong key. A death orphans a tenure and the revival
 opens a new one for a spy that appears from nowhere, and two live spies of one
-civ can in principle collide on a recycled name. Until the logger emits
-`AgentID` (reported upstream as *"A stable spy identity"*), `Espionage` keys
-on `(civ, spy)` **and treats a `spy_revived` naming an unknown spy as a new
-spy**, which is wrong but is the only reading the log supports — `capacity`
-must therefore report revivals separately from creations rather than netting
-them. It also disposes of a puzzle: several of india-diplo's "spies that were
-never located" are revivals of spies it knew under other names.
+civ can in principle collide on a recycled name.
+
+**The logger now emits it.** *"Give a spy an identity its own death cannot
+break"* puts `AgentID` in every spy record as `agent`, with `spy` left as the
+display name — present on all 38 spy events in `run-b-test.jsonl` and on none
+of the 100 in `espionage-test.jsonl`, which predates the fix. So the key is
+`(civ, agent)` where the field exists and `(civ, spy)` where it does not, and
+the fallback reading — **a `spy_revived` naming an unknown spy is a new spy**,
+which is wrong but is all an older log supports — stays for the two older
+games, with `capacity` reporting revivals separately from creations rather
+than netting them. It also disposes of a puzzle: several of india-diplo's
+"spies that were never located" are revivals of spies it knew under other
+names.
 
 **The logger loses postings**, and the projection is built knowing it:
 
 - 11 of those 24 spies are first located by a `spy_mission_completed`, not by
-  a `spy_moved` — their arrival was never written.
+  a `spy_moved` — their arrival was never written. Dated by the `+4`
+  arithmetic below, six of the eleven were posted on or just after a
+  `spy_revived` and five on the turn of their own unlocated `spy_created`,
+  which is the whole of the eleven and both causes are now fixed.
 - `ENGLAND_6` moved Amsterdam (t152) → Osininka (t168) with no `spy_moved`
   between, so re-postings are lost too.
 - `spy_created` carries no location (0 of 18) and `spy_killed` carries none
@@ -156,13 +168,24 @@ counterspy leave a trace"*. **Mostly fixed:**
 - *"Give a revived or homebound spy back its posting"* closed the **revival**
   half of the `spy_moved` gap: `diffSpy` no longer returns straight after
   `spy_revived`, so a spy that revives already in a city now emits its posting.
+- *"Settle the extraction poll against a real reassignment"* closed the other
+  half by measurement rather than by a change: run B logged every spy every
+  poll across 26 reassignments and **all 26** emitted `spy_moved`. A poll
+  never catches a spy mid-`MoveSpyTo` — a record is positionless only while
+  the spy is unassigned — so that cause is not real, and `moved()` stands.
 
-Still open is the rest of the `spy_moved` gap — **re-postings** (`ENGLAND_6`
-above) and a `spy_moved` lost mid-`MoveSpyTo` when a poll catches `CityX == -1`
-— which needs upstream instrumentation first. india-diplo predates all of it,
-so for that game a tenure's `from_turn` is the first sighting, **not** the
-arrival, and every span is a lower bound on how long the spy was actually
-there.
+What is left of the gap is the **reload seam**: the first poll of a session
+only rebaselines, so a posting that arrives on it is never written.
+`ENGLAND_6` is that case — turn 164, the first poll of the session that
+resumed at 163 — and run B reproduces it on purpose, a reassignment ordered
+before a reload and arriving after it, visible only as the
+`spy_surveillance_established` four turns later. Tracked upstream as
+*"Sessions"*, and it is the last open espionage item.
+
+So a tenure's `from_turn` is the first sighting, **not** the arrival, whenever
+the arrival fell in a seam or the log predates the fixes, and every such span
+is a lower bound on how long the spy was actually there. india-diplo predates
+all of it and is a lower bound throughout.
 
 ## Most logged missions did not happen — in logs written before the fix
 
