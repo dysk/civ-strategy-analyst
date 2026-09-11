@@ -1111,6 +1111,76 @@ answer is a method on the projection with its own test, not arithmetic in a
 controller. `DigestBuilderCostTest::PROJECTIONS` needs nothing: it covers
 `DigestBuilder.new.call` and these pages are not on that path.
 
+## Plan: spy names (planned)
+
+Status: **Not implemented.** Every spy reaches the UI and the digest as its
+raw id — `TXT_KEY_SPY_NAME_INDIA_7` in a table cell, the same string in the
+`espionage` section an LLM reads. Raised by the user while reviewing the
+espionage page just shipped.
+
+Context: checked against the mod's own XML in `/Users/dysk/projects/Lekmod`.
+A spy's id is not an indirect reference the way a policy's is — it is
+**already** the `Language_en_US` text key, with no `Type` table in between:
+`CIV5Units.xml`'s `Civilization_SpyNames` table lists `TXT_KEY_SPY_NAME_*`
+per civilization, and `CIV5Units_Mongol.xml` carries the flavour name
+directly against that same key —
+`<Replace Tag="TXT_KEY_SPY_NAME_INDIA_7"><Text>Mukta</Text></Replace>`,
+`TXT_KEY_SPY_NAME_ARABIA_4` → "Abyadh". `LekmodIdsExtractor` already builds
+the whole `TXT_KEY → Text` map internally (`texts`, from every
+`Language_en_US Row`/`Replace` in the source tree) to resolve
+policies/beliefs/resolutions/units; it is just never exposed for this
+prefix. So resolving a spy name costs one filter over data the extractor
+already parses — cheaper than every other entry in `ids.yml`, which all
+pay for the `Type → TXT_KEY` step this one skips entirely.
+
+The bridge is the same one `unit_names` already is: the digest speaks in
+ids, `lekmod.*` and the report speak in names, and `UnitNames` /
+`DigestBuilder#unit_names` are the existing pattern to copy rather than
+invent — a glossary keyed to only the ids this game actually logged,
+version-resolved the loose way (`exact → newest snapshot that names any`),
+falling back to a legible reading of the id itself rather than nothing.
+
+Iterations (each: failing tests → review → implementation → commit):
+
+1. **`LekmodIdsExtractor#spy_names`** — `texts.select` filtered to the
+   `TXT_KEY_SPY_NAME_` prefix. No new XML table to parse; `Civilization_SpyNames`
+   itself is not read, since the log's `spy` field already is the text key
+   `Civilization_SpyNames` merely enumerates. Fixture rows added to
+   `test/support/lekmod_source/text.xml` / `text_override.xml` covering the
+   same two cases every other entity in that fixture covers: a plain `Row`,
+   and a `Replace` that wins over the `Row` it overrides.
+2. **`script/extract_lekmod_spy_names`** — same shape as
+   `script/extract_lekmod_unit_names`, writing `db/lekmod/<version>/spy_names.yml`.
+   `db/lekmod/README.md` gains a section beside "Unit names".
+3. **`SpyNames`** (`app/services/spy_names.rb`) — `UnitNames` with the
+   fallback changed: a spy's flavour name is never guessable from its id
+   the way a unit's usually is (a unit id is mostly English with the odd
+   LEKMOD rename; a spy id is a civ code and an ordinal), so the fallback
+   only makes the id legible — `TXT_KEY_SPY_NAME_MC_MUGHAL_5` → "Mc Mughal
+   5" — never invents a name. `.for(version, root:)`, `#call(spy)`,
+   `#glossary(spies)`, same version-resolution test shape as
+   `test/services/unit_names_test.rb`.
+4. **`DigestBuilder#spy_names`** — a glossary key beside `unit_names`, over
+   every id `Espionage#tenures` returns (a tenure exists for every spy that
+   was ever located, so it is the whole roster; `applicable?` false yields
+   an empty glossary rather than skipping the key). Reaches both prompts for
+   free through `ChronicleDigest`, which wraps `DigestBuilder#call`. A
+   paragraph in `analyze_game.md` beside the existing `espionage` paragraph,
+   and in `chronicle_game.md` beside its `unit_names` paragraph, both saying
+   what the `unit_names` paragraphs already say for units: resolve the id
+   through the glossary, never read a name out of the id itself.
+5. **The espionage page** — `spy`/`agent`'s owner in the tenures, losses,
+   missions, garrisons and coups tables reads as the resolved name, id
+   still present as a title/tooltip attribute so a reader cross-referencing
+   the raw log is not blocked. `EspionageOperationsController` gains
+   `SpyNames.for(@game.lekmod_version)` alongside `Espionage.for(@game)`,
+   the same way `key_moments_helper` already holds a `UnitNames` instance.
+
+Not in scope: the games#show espionage summary is civ-level counts, no
+spy identity in it, so it needs no change. Non-English name text does not
+exist for spies any more than it does for units — `db/lekmod/README.md`'s
+"Only English is available" note already covers this.
+
 ## Plan: great people — appearance, use, and death (planned)
 
 Status: **Not implemented as its own reading.** `PlayerTimeline#great_people`
