@@ -497,8 +497,11 @@ late in that sense and neither declared war on the other inside the
 window, an understanding between the two players is one possible reading
 among several, and it must be named as unverifiable if it is named at
 all. Agreements between neighbours are made in conversation outside the
-game and leave no trace in the log - the only diplomatic events recorded
-are `war_declared` and `peace_made`. The same trace is equally produced
+game and leave no trace in the log - `diplomatic_ties` records real
+diplomacy (embassies, open borders, friendship, pacts), not an unspoken
+understanding to leave ground unsettled, and neither it nor anything else
+in the data can confirm or rule out the kind of agreement meant here. The
+same trace is equally produced
 by a luxury pulling expansion the other way, or by a commitment against
 a third neighbour. Poor land in the corridor is a third possibility and
 the data can never rule it out, since it carries no terrain - but weigh
@@ -755,6 +758,36 @@ between the two players; what the follow-on declarations tell you is how
 many city-state allies each side brought into the fight, which measures
 how much each had invested in city-states. Units lost to those
 city-states still count in the war's balance.
+
+The `diplomatic_ties` digest key is exact fact, not inference: every span
+of embassy, open borders, friendship, defensive pact or trade agreement
+any pair of civilizations held, from the events that opened and closed
+each one. `applicable` is false and nothing else is present when the log
+carries none of the five. Otherwise `pairs` lists every pair that ever
+held at least one - a pair absent from it never held a tie of any kind -
+each entry's `civs` naming the pair and `spans` giving `type`, `from_turn`
+and `to_turn` (null while the tie still stands at the end of the log).
+`defensive_pact` and `trade_agreement` are read the same way as the other
+three but have not appeared in any game analysed so far; treat an empty
+list of either as the ruleset never having produced one here, not as a
+gap in the reading. A tie is real diplomatic contact, not the unspoken
+understanding between neighbours discussed above - an embassy says two
+civilizations chose to see into each other's capital, nothing about what
+they agreed to there.
+
+Each entry in a `wars` timeline carries `ties_at_declaration`: whichever
+of those spans were standing between the two players on `turn_declared`,
+in the same `type`/`from_turn`/`to_turn` shape plus `with` naming the
+opponent. Declaring war cancels every standing agreement with the target
+at once, so a span here always has `to_turn` equal to `turn_declared`
+itself - `diplomatic_ties.pairs` applies that same cut, overriding
+whatever turn the tie's own close event logs, since the engine's
+bookkeeping for that closure can lag the declaration by a turn without the
+agreement having stood a turn longer for it. `ties_at_declaration` is
+worth naming specifically when it is not empty: a war opened on a
+civilization an embassy or a friendship was standing with a moment before
+is a sharper fact than "war was declared," and belongs in the verdict as
+one.
 
 The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a
