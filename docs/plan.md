@@ -1302,6 +1302,56 @@ Not done, left for later: the tile→city lookup above; relabelling a
 case in either example log); pairing a specific birth to a specific fate
 when the log someday carries per-unit identity.
 
+## Plan: great people in ChronicleSpine and KeyMomentDetector (implemented)
+
+Status: **Implemented 2026-09-12.** Raised by the user after the section
+above shipped, with a specific shape in mind: who started producing a kind
+earliest, who produced the most of it, how it was used (infrastructure vs.
+consumption), and losses — generals especially. The first and the last have
+a turn to anchor on and became `KeyMomentDetector` moments; volume and the
+infrastructure/consumption split have no turn and went into the digest
+directly instead.
+
+`KeyMomentDetector#great_people_first_of_kind` mirrors `era_leads` exactly —
+grouped straight off `unit_created`, not through a per-civ roster join —
+and reports the earliest civ (ties included) to produce each kind.
+`ChronicleSpine::WEIGHTS[:great_person_first_of_kind] = 1` keeps it as light
+texture that only ever joins a nearby entry, the same tier as `wonder_race`.
+`KeyMomentDetector#great_people_lost` reads the `:killed` fate `PlayerTimeline#great_people`
+already classifies (an expended or disbanded great person is not a loss to
+weigh) and carries `kind`. `ChronicleSpine::GREAT_PERSON_LOST_WEIGHTS` gives
+a general `ANCHOR_WEIGHT` (3) — a battle loss and a spent investment at
+once — and every other kind `1`, level with `spy_killed`. Verified on
+india-diplo: nine `great_person_first_of_kind` moments (one per kind, turns
+61–151) and the same single Iroquois `UNIT_PROPHET` kill the section above
+already found, correctly at weight 1 (a prophet, not a general).
+
+`DigestBuilder#great_people_profile(civ)` carries `by_kind` (expend counts)
+and an `infrastructure`/`consumption` split, each further split `early`/`late`
+at a boundary — the piece that took two iterations to land right. The first
+attempt reused `EarlyGame#end_turn` (Education/Metal Casting), on the
+reasoning the user gave directly: infrastructure pays out over the turns
+left in the game, so it matters when in the game it was planted. That
+reasoning is right but the reference was wrong — checked against
+india-diplo before it shipped: every civ's early-game boundary sits at
+turn 81–100, while expends run turns 61–183, so all but three of ~130
+expends across the roster would have landed in "late" regardless of when
+they actually happened. A great person is the product of policies and
+culture that arrive well past the opening, so the opening's own boundary
+carries no signal here. The fix, chosen over dropping the split entirely:
+the midpoint of the game's own last logged turn, computed once per game
+(not per civ — every civ shares the same clock, the reason buffer-city
+keeps its own window shared rather than per-civ). Self-scales across game
+speeds and games that end early via a victory condition, at the cost of
+being a flat 50/50 split with no calibration behind it yet — a first
+hypothesis, per docs/plan.md's usual practice for an unchecked threshold.
+On india-diplo (midpoint turn 92) the split reads `India: infrastructure
+{early: 2, late: 8}, consumption {early: 2, late: 27}` down to `Zimbabwe:
+infrastructure {early: 0, late: 1}, consumption {early: 0, late: 7}` — still
+late-heavy across the board, which matches the same fact that broke the
+first attempt (great people arrive late), just no longer swamping the
+signal entirely.
+
 ## Plan: great people — appearance, use, and death (original plan text)
 
 `PlayerTimeline#great_people`
