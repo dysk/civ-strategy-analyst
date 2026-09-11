@@ -258,6 +258,12 @@ a watcher could have seen and never the ceiling. What the log does not
 carry is whether anybody looked. Say a civilization *could see* a rival's
 plan; never that it knew, and never that it acted on it.
 
+Every spy reaches you as a bare id, `TXT_KEY_SPY_NAME_INDIA_7` - the same
+split as `unit_names`. `spy_names` maps every spy this game ever located to
+the name LEKMOD gave it, so name a spy from there when the report names one
+at all. Do not read a name out of the id: it is a civilization code and an
+ordinal, not a word.
+
 `tenures` is one record per spy per city: `from_turn` is the first sighting,
 `until_turn` is when the spy left or the log ended, and
 `visible_from_turn` is the turn vision opened - later than the posting by

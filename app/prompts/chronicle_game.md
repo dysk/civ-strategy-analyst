@@ -379,14 +379,16 @@ game does not exist in it. Translate as you write:
 Civilizations and leaders are named as the digest names them. Cities,
 wonders, religions and city-states keep their names too. Internal
 identifiers - anything shaped like `POLICY_*`, `BUILDING_*`, `ERA_*`,
-`RELIGION_*`, `UNIT_*` - are never printed; write what the thing is called.
+`RELIGION_*`, `UNIT_*`, `TXT_KEY_SPY_NAME_*` - are never printed; write what
+the thing is called.
 
-A name out of `unit_names` is a label of the ruleset, not a phrase built
-of words. Writing in a language other than English, say what the thing
-was as that language would have said it - riflemen, horsemen, siege guns
-- and never translate the label piece by piece. A Great War Bomber is the
-aircraft of that war and not a bomber that was great, and a Landship is
-an armoured engine crawling across a field.
+A name out of `unit_names` or `spy_names` is a label of the ruleset, not a
+phrase built of words. Writing in a language other than English, say what
+the thing was as that language would have said it - riflemen, horsemen,
+siege guns - and never translate the label piece by piece. A Great War
+Bomber is the aircraft of that war and not a bomber that was great, a
+Landship is an armoured engine crawling across a field, and a spy named
+from `spy_names` keeps that name rather than one translated from it.
 
 ## Ruleset
 

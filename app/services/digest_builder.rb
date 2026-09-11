@@ -37,6 +37,7 @@ class DigestBuilder
       wonder_races: wonder_races,
       espionage: espionage,
       unit_names: unit_names,
+      spy_names: spy_names,
       cultural: cultural_by_civ,
       congress: congress,
       victory_progress: victory_progress,
@@ -173,6 +174,16 @@ class DigestBuilder
     @game.game_events
          .pluck(Arel.sql("payload->>'unit'"), Arel.sql("payload->>'from'"), Arel.sql("payload->>'to'"))
          .flatten.compact.grep(/\AUNIT_/)
+  end
+
+  # Same bridge, for spies: a tenure exists for every spy the log ever
+  # located, so it is the whole roster this game names.
+  def spy_names
+    SpyNames.for(@lekmod_version, root: @lekmod_root).glossary(logged_spy_ids)
+  end
+
+  def logged_spy_ids
+    Espionage.for(@game).tenures.filter_map { |tenure| tenure[:spy] }
   end
 
   def key_moments

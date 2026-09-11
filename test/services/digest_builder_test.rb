@@ -482,6 +482,21 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_empty lekmod_digest[:unit_names]
   end
 
+  # Same bridge as unit_names, for the id a spy_* event carries.
+  test "names every spy the log ever located" do
+    event("Rome", "spy_created", 5, spy: "TXT_KEY_SPY_NAME_INDIA_7", agent: 1)
+    event("Rome", "spy_moved", 6, spy: "TXT_KEY_SPY_NAME_INDIA_7", agent: 1, city: "Athenai",
+          city_civ: "Greece", state: "travelling")
+
+    assert_equal({ "TXT_KEY_SPY_NAME_INDIA_7" => "Mukta" }, lekmod_digest[:spy_names])
+  end
+
+  test "names nothing for a game with no spy activity" do
+    snapshot("Rome", 10, score: 100)
+
+    assert_empty lekmod_digest[:spy_names]
+  end
+
   private
 
   def lekmod_digest
