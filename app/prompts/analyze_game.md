@@ -840,6 +840,36 @@ victim and no amount attached - `trade_route_ended` and
 `trade_route_plundered` cannot say why a route stopped or who lost what,
 only that one did, on a given turn.
 
+The `yield_attribution` digest key breaks a civilization's science,
+culture, faith and tourism into where each point came from, at ~25-turn
+checkpoints. `applicable` is false and nothing else is present when the
+log carries no yield-source data at all. Otherwise `by_civ.<civ>` lists
+only the yields that civilization has source data for, each a checkpoint
+series of `{total, sources, shortfall}` - `sources` is the named parts
+(`cities`, plus whichever of `city_states`/`minor_civs`, `happiness`,
+`religion` or `deficit` applied that turn), and `shortfall` is `total`
+minus the sum of those parts. A nonzero `shortfall` is not noise: a
+golden age's flat culture bonus and similar flat modifiers are not
+attributed to any named source, so report the gap alongside the parts
+rather than folding it into `cities` or smoothing it out of a percentage.
+
+The vocabulary is not consistent across yields: the LEKMOD engine calls
+the same city-state contribution `city_states` under `science` and
+`minor_civs` under `culture`/`faith` - both mean income bought from
+allied or friendly city-states, read them as the same concept under
+different names, not as two different mechanisms. `deficit` under
+`science` is a shortfall the engine itself names (running behind on
+research upkeep), and it already closes the gap to `total` on its own -
+a science point with both a `deficit` source and a nonzero `shortfall`
+would mean something is still unaccounted for beyond it.
+
+`sources.city_states` / `sources.minor_civs` is worth cross-referencing
+against `city_states.by_civ.<civ>.attribution`: if a civilization's
+science or culture is running noticeably high on city-state income, that
+corroborates - independently of the influence curve itself - how much of
+its city-state standing was actually paying for something rather than
+sitting on the scoreboard.
+
 The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a
 diplomatic victory), `delegates_by_civ` (each civilization's delegate
