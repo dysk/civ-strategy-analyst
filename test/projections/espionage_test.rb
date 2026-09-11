@@ -474,6 +474,119 @@ class EspionageTest < ActiveSupport::TestCase
     assert_equal [ "INDIA_7" ], Espionage.new(@game).counterspies("India").map { |g| g[:spy] }
   end
 
+  test "a spy dying at a city-state whose influence sits at the coup penalty is a failed coup" do
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta")
+    city_state("Valletta", 181, relations: { "Arabia" => [ -10, 1.25 ] })
+
+    assert_equal [ [ "Arabia", "Valletta", 181, :failed ] ],
+      Espionage.new(@game).coups.map { |c| c.values_at(:civ, :city_state, :turn, :outcome) }
+  end
+
+  test "the coup penalty is read back through the decay the next snapshot already applied" do
+    city_state("Valletta", 178, ally: "Yugoslavia", relations: { "Yugoslavia" => [ 74, -1.25 ] })
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta")
+    city_state("Valletta", 182, ally: "Yugoslavia",
+               relations: { "Arabia" => [ -8, 1.25 ], "Yugoslavia" => [ 69, -1.25 ] })
+
+    assert_equal(
+      [ { civ: "Arabia", city_state: "Valletta", spy: "ARABIA_0", turn: 181,
+          outcome: :failed, influence: -9.25 } ],
+      Espionage.new(@game).coups
+    )
+  end
+
+  test "a coup is found when only the last posting says where the spy died" do
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0")
+    city_state("Valletta", 182, relations: { "Arabia" => [ -8, 1.25 ] })
+
+    assert_equal [ :failed ], Espionage.new(@game).coups.map { |c| c[:outcome] }
+  end
+
+  test "a spy dying at a city-state whose influence says nothing is not a coup" do
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta")
+    city_state("Valletta", 182, relations: { "Arabia" => [ 40, -1.25 ] })
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "a spy dying in a major's city is not a coup" do
+    city_state("Valletta", 100)
+    moved("England", 100, spy: "ENGLAND_5", city: "Delhi", city_civ: "India", state: "travelling")
+    killed("England", 109, spy: "ENGLAND_5", city: "Delhi", city_civ: "India")
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "influence at the coup penalty with nobody dying is not a coup" do
+    city_state("Harappa", 35, relations: { "India" => [ -10, 1.25 ] })
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "a death at a city-state no later snapshot reports on is not a coup" do
+    city_state("Valletta", 170, relations: { "Arabia" => [ 5, 1.25 ] })
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta")
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "two civs trading influence when a city-state's ally changed is a successful coup" do
+    city_state("Valletta", 180, ally: "Yugoslavia",
+               relations: { "Yugoslavia" => [ 80, 0 ], "Arabia" => [ 20, 0 ] })
+    ally_changed("Valletta", 181, new_ally: "Arabia", old_ally: "Yugoslavia")
+    city_state("Valletta", 182, ally: "Arabia",
+               relations: { "Yugoslavia" => [ 20, 0 ], "Arabia" => [ 80, 0 ] })
+
+    assert_equal(
+      [ { civ: "Arabia", city_state: "Valletta", spy: nil, turn: 181,
+          outcome: :succeeded, influence: 80.0 } ],
+      Espionage.new(@game).coups
+    )
+  end
+
+  test "an alliance bought with a rigged election is not a coup" do
+    city_state("Valletta", 180, ally: "Yugoslavia",
+               relations: { "Yugoslavia" => [ 80, 0 ], "Arabia" => [ 20, 0 ] })
+    mission("Arabia", 181, spy: "ARABIA_2", city: "Valletta", city_civ: "Valletta",
+            state: "rigging_election")
+    ally_changed("Valletta", 181, new_ally: "Arabia", old_ally: "Yugoslavia")
+    city_state("Valletta", 182, ally: "Arabia",
+               relations: { "Yugoslavia" => [ 20, 0 ], "Arabia" => [ 80, 0 ] })
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "an alliance that changed without the influence trading hands is not a coup" do
+    city_state("Valletta", 180, ally: "Yugoslavia",
+               relations: { "Yugoslavia" => [ 80, 0 ], "Arabia" => [ 20, 0 ] })
+    ally_changed("Valletta", 181, new_ally: "Arabia", old_ally: "Yugoslavia")
+    city_state("Valletta", 182, ally: "Arabia",
+               relations: { "Yugoslavia" => [ 78, 0 ], "Arabia" => [ 90, 0 ] })
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "an alliance that lapsed with nobody taking it is not a coup" do
+    city_state("Valletta", 180, ally: "Yugoslavia", relations: { "Yugoslavia" => [ 80, 0 ] })
+    ally_changed("Valletta", 181, new_ally: nil, old_ally: "Yugoslavia")
+    city_state("Valletta", 182, relations: { "Yugoslavia" => [ 20, 0 ] })
+
+    assert_empty Espionage.new(@game).coups
+  end
+
+  test "coups isolates one civ from another" do
+    moved("Arabia", 177, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta", state: "travelling")
+    killed("Arabia", 181, spy: "ARABIA_0", city: "Valletta", city_civ: "Valletta")
+    city_state("Valletta", 181, relations: { "Arabia" => [ -10, 1.25 ] })
+
+    assert_empty Espionage.new(@game).coups("Yugoslavia")
+  end
+
   private
 
   def moved(civ, turn, **fields) = spy_event("spy_moved", civ, turn, **fields)
@@ -484,9 +597,18 @@ class EspionageTest < ActiveSupport::TestCase
   def evicted(civ, turn, **fields) = spy_event("spy_evicted", civ, turn, **fields)
   def mission(civ, turn, **fields) = spy_event("spy_mission_completed", civ, turn, **fields)
 
-  def city_state(name, turn)
-    event("city_state_snapshot", nil, turn,
-          { "event" => "city_state_snapshot", "turn" => turn, "city_state" => name })
+  def city_state(name, turn, ally: nil, relations: {})
+    payload = { "event" => "city_state_snapshot", "turn" => turn, "city_state" => name,
+                "relations" => relations.map { |civ, (influence, per_turn)|
+                  { "civ" => civ, "influence" => influence, "per_turn" => per_turn } } }
+    payload["ally"] = ally if ally
+    event("city_state_snapshot", nil, turn, payload)
+  end
+
+  def ally_changed(city_state, turn, new_ally:, old_ally: nil)
+    event("city_state_ally_changed", nil, turn,
+          { "event" => "city_state_ally_changed", "turn" => turn, "city_state" => city_state,
+            "new_ally" => new_ally, "old_ally" => old_ally })
   end
 
   def surveillance(civ, turn, **fields)

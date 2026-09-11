@@ -450,17 +450,39 @@ mission, so nothing fires. Both outcomes must be inferred:
   between consecutive snapshots, with a `city_state_ally_changed` on the same
   turn and no `rigging_election` mission to explain it.
 
-**The failure detector is now measured, and the penalty is exactly −10.**
-Arabia posted `ARABIA_0` to Valletta on turn 177 and it died on 181 with no
-counterspy near it — the exception to the rank table above, since the kill
-happens inside `AttemptCoup` and not in the mission resolution. Arabia's
-influence at Valletta, absent from the turn-178 snapshot, reads **−8 at turn
-182 with `per_turn` +1.25**, which is −10 on the turn of the kill with one
-turn of recovery already applied. No `city_state_ally_changed`. The detector
-must therefore compare against the **decayed** value, not a literal −10:
-`influence + per_turn × (snapshot_turn − kill_turn)` at or near −10.
+**The failure detector is now measured.** Arabia posted `ARABIA_0` to Valletta
+on turn 177 and it died on 181 with no counterspy near it — the exception to
+the rank table above, since the kill happens inside `AttemptCoup` and not in
+the mission resolution. Arabia's influence at Valletta is absent from every
+snapshot before the kill and reads **−8 at turn 182 with `per_turn` +1.25**.
+No `city_state_ally_changed`.
 
-**Zero *successful* coups in either game**, so that half ships unexercised.
+So the detector reconstructs the value at the turn of the kill by **undoing**
+the recovery the snapshot has already applied, `influence − per_turn ×
+(snapshot_turn − kill_turn)`, which puts Arabia at **−9.25**. An earlier draft
+of this document added the term instead of subtracting it and landed on −6.75;
+that is the wrong direction.
+
+The remaining 0.75 is unexplained. The DLL sets exactly −10 and one turn of
+recovery gives −8.75, while the log reports the integer −8, so truncation
+accounts for it arithmetically and nothing measured confirms that. The test is
+therefore **near** −10 with a margin of 2, not equality, and the record carries
+the reconstructed figure so a reader can judge it.
+
+**Zero *successful* coups in either game**, so that half ships unexercised —
+but not untested against real data. The success branch anchors on
+`city_state_ally_changed`, because `CanStageCoup` requires an existing ally and
+a coup therefore transfers an alliance rather than creating one. Across the 68
+ally changes in the two logs it fires on none. Two of them carry snapshots on
+both sides and were actually put to the swap test: Reykjavik on turn 173, where
+the Sioux rose to 97.9 while Arabia still held 68.1, and Reykjavik again on
+188, where Arabia reached 93.4 against the Sioux's 64.8. Neither is a trade of
+places, and both are rejected for the right reason rather than for want of
+data.
+
+An alliance that lapses with nobody taking it is excluded outright, and so is
+one a rigged election explains within a turn either way.
+
 In india-diplo there were no coups at all — all nine kills were in Delhi, a
 major's city, and no influence pair ever swapped. They also
 matter to city-state influence: a successful coup moves an alliance with no

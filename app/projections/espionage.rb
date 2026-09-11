@@ -32,6 +32,14 @@ class Espionage
   # CvEspionageClasses.cpp:23 and CvCultureClasses.cpp:2919. The wait is cut to
   # one turn at Familiar or better over the target, and a counterspy skips it
   # entirely - a garrison needs no surveillance.
+  # CvEspionageClasses.cpp:2110. A failed coup kills the spy and sets its
+  # owner's influence at the target to a flat -10. The margin absorbs the turn
+  # of recovery the next snapshot has already applied and the integer the log
+  # rounds it to, and it is the same margin the swap test uses.
+  COUP_PENALTY = -10
+  COUP_MARGIN = 2.0
+  RIGGING_WINDOW = 1
+
   TRAVEL_TURNS = 1
   SURVEILLANCE_TURNS = 3
   SURVEILLANCE_TURNS_WITH_TOURISM_LEAD = 1
@@ -77,6 +85,18 @@ class Espionage
   def counterspies(civ)
     logged = logged_garrisons(civ)
     logged.any? ? logged : inferred_garrisons(civ)
+  end
+
+  # Neither outcome of a coup fires an event, so both are read from what they
+  # leave behind. A failure is a spy dying at a city-state with its owner's
+  # influence there driven to the penalty; a success is an alliance changing
+  # hands while two civs' influence trades places, with no rigged election to
+  # account for it. Both halves of each signature are required - a death alone
+  # is a garrison's work and a -10 alone has other causes.
+  def coups(civ = nil)
+    return all_coups unless civ
+
+    all_coups.select { |coup| coup[:civ] == civ }
   end
 
   # What a civ spent on espionage and how much of it sat at home. Revivals are
@@ -318,8 +338,10 @@ class Espionage
     all_losses.select { |loss| loss[:civ] != civ && loss[:city_civ] == civ }
   end
 
-  def city_states
-    @city_states ||= @log.of_type("city_state_snapshot").map { |event| event.payload["city_state"] }.uniq
+  def city_states = snapshots.keys
+
+  def snapshots
+    @snapshots ||= @log.of_type("city_state_snapshot").group_by { |event| event.payload["city_state"] }
   end
 
   def unlocated_spy(civ)
@@ -357,6 +379,84 @@ class Espionage
 
   def last_sighting_before(kill)
     career(kill).select { |event| event.payload["city"] && event.turn <= kill.turn }.last
+  end
+
+  def all_coups = @all_coups ||= (failed_coups + succeeded_coups).sort_by { |coup| coup[:turn] }
+
+  def failed_coups
+    all_losses.select { |loss| city_states.include?(loss[:city_civ]) }.filter_map { |loss| failed_coup(loss) }
+  end
+
+  def failed_coup(loss)
+    penalty = influence_at(loss[:city_civ], loss[:civ], loss[:turn])
+    return unless penalty && near?(penalty, COUP_PENALTY)
+
+    coup(loss[:civ], loss[:city_civ], loss[:turn], :failed, spy: loss[:spy], influence: penalty)
+  end
+
+  # CanStageCoup requires the city-state to already have an ally, so a coup
+  # transfers an alliance and can never create one. That makes the ally change
+  # the anchor, and the influence swap around it the discriminator.
+  def succeeded_coups
+    @log.of_type("city_state_ally_changed").filter_map { |event| succeeded_coup(event) }
+  end
+
+  def succeeded_coup(event)
+    city_state, winner, loser = event.payload.values_at("city_state", "new_ally", "old_ally")
+    return unless winner.present? && loser.present?
+    return if rigged?(city_state, winner, event.turn)
+    return unless traded_places?(city_state, winner, loser, event.turn)
+
+    coup(winner, city_state, event.turn, :succeeded,
+         spy: nil, influence: influence_at(city_state, winner, event.turn))
+  end
+
+  def traded_places?(city_state, winner, loser, turn)
+    gained, lost = influence_at(city_state, winner, turn), influence_at(city_state, loser, turn)
+    held, held_by_loser = influence_before(city_state, winner, turn), influence_before(city_state, loser, turn)
+    return false if [ gained, lost, held, held_by_loser ].any?(&:nil?)
+
+    near?(gained, held_by_loser) && near?(lost, held)
+  end
+
+  def rigged?(city_state, civ, turn)
+    @log.of_type("spy_mission_completed").any? do |event|
+      event.civ == civ && event.payload["city"] == city_state &&
+        event.payload["state"] == "rigging_election" && (event.turn - turn).abs <= RIGGING_WINDOW
+    end
+  end
+
+  # Influence on a turn no snapshot covers, walked back from the nearest one
+  # that reports the civ at all. A city-state names only the civs it has a
+  # standing with, so the snapshot on the turn itself is often silent about the
+  # one that matters.
+  def influence_at(city_state, civ, turn)
+    reported = standings(city_state, civ).find { |snapshot, _| snapshot.turn >= turn }
+
+    reported && projected(reported, turn)
+  end
+
+  def influence_before(city_state, civ, turn)
+    reported = standings(city_state, civ).reverse.find { |snapshot, _| snapshot.turn < turn }
+
+    reported && projected(reported, turn)
+  end
+
+  def projected((snapshot, standing), turn)
+    standing["influence"] - standing["per_turn"].to_f * (snapshot.turn - turn)
+  end
+
+  def standings(city_state, civ)
+    snapshots.fetch(city_state, []).filter_map do |snapshot|
+      standing = Array(snapshot.payload["relations"]).find { |relation| relation["civ"] == civ }
+      [ snapshot, standing ] if standing
+    end
+  end
+
+  def near?(value, target) = (value - target).abs <= COUP_MARGIN
+
+  def coup(civ, city_state, turn, outcome, spy:, influence:)
+    { civ: civ, city_state: city_state, spy: spy, turn: turn, outcome: outcome, influence: influence }
   end
 
   def count(events, type) = events.count { |event| event.event_type == type }

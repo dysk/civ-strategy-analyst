@@ -836,15 +836,15 @@ captures carry no `city_snapshot` and exercise only the flat fallback.
 `rival_observed`-style "did the captor have a spy in the city" is a
 tranche 2 join, not attempted here.
 
-## Plan: espionage — the primitive four features share (iterations 1-3 of 6)
+## Plan: espionage — the primitive four features share (iterations 1-4 of 6)
 
 Status: tranche 2 point 4 of `docs/reading-the-new-log.md`. **Iterations 1
-to 3 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
-`#losses`, `#capacity` and `#counterspies` in
-`app/projections/espionage.rb`, 56 tests, measured against `india-diplo`
+to 4 implemented 2026-09-11** — `applicable?`, `#tenures`, `#missions`,
+`#losses`, `#capacity`, `#counterspies` and `#coups` in
+`app/projections/espionage.rb`, 68 tests, measured against `india-diplo`
 (game 32, 24 located spies, 46 tenures) and `espionage-test` (game 37, 13
-spies, 37 tenures). Iterations 4–6 are not built: `#coups`, the
-`WonderRaces` join and the digest section. `WonderRaces#rival_observed` still carries nil and still
+spies, 37 tenures). Iterations 5 and 6 are not built: the `WonderRaces`
+join and the digest section. `WonderRaces#rival_observed` still carries nil and still
 waits for `observers_of`. The design is in `docs/espionage.md` (the game
 rules and the honest limits) and `docs/reading-the-new-log.md` (§4).
 
@@ -917,6 +917,18 @@ never again, so the creation record was the only thing that could carry
 it. Mysore's `MC_MUGHAL_0` on turn 151 is the near miss — announced in
 Mysuru with no state, and visible only because the player re-ordered it
 on 152.
+
+Iteration 4 found the documented coup formula pointing the wrong way. It
+added the decay instead of undoing it, which put Arabia at Valletta on
+−6.75 rather than −9.25. The detector reconstructs the penalty at the turn
+of the kill and tests it near −10 with a margin of 2, since the DLL's flat
+−10 reaches the log as the integer −8 after one turn of recovery and the
+0.75 that leaves over is unexplained.
+
+The successful-coup branch fires on nothing, which is the documented
+expectation, and two of the 68 ally changes in the two logs reach the swap
+test with snapshots on both sides and are rejected on their numbers rather
+than for want of data.
 
 The run measured one correction to the design. A counterspy's state arrives
 a turn behind its order, in a second `spy_moved` in the same city, so the

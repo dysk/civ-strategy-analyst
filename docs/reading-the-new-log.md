@@ -775,11 +775,11 @@ say so — do not calibrate it against nothing.
     four times in ten turns, so the record has to end when the spy leaves. In
     india-diplo inferred from the three agreeing signals and labelled inferred
     everywhere it surfaces.
-  - `coups` → `{civ, city_state, turn, outcome: :failed | :succeeded}` from the
-    two signatures. The **failure** signature is measured — Arabia at Valletta,
-    turn 181 — and the test is against the *decayed* penalty, not a literal
-    −10: `influence + per_turn × (snapshot_turn − kill_turn)` near −10, since
-    the next snapshot has already recovered a turn. A coup is also the one way
+  - `coups(civ = nil)` → `{civ, city_state, spy, turn, outcome, influence}`
+    from the two signatures. The **failure** signature is measured — Arabia at
+    Valletta, turn 181 — and the test undoes the recovery the next snapshot
+    already applied, `influence − per_turn × (snapshot_turn − kill_turn)`, which
+    reads −9.25 against a flat −10 and so is tested near rather than equal. A coup is also the one way
     a spy dies with no counterspy present, so `counterspies` must not read a
     kill in a city-state as evidence of a garrison. The **success** signature
     is unexercised in both logs and ships that way.
@@ -824,7 +824,9 @@ say so — do not calibrate it against nothing.
    decided per civ. `docs/espionage.md` carries the DLL rank table the inference
    rests on, since a reader has no other way to know why a kill implies a
    garrison.
-4. `#coups` — both signatures, both unexercised.
+4. `#coups` — both signatures. The failure is measured once; the success
+   fires on none of the 68 ally changes in the two logs, two of which carry
+   snapshots on both sides and are rejected on the swap test itself.
 5. `WonderRaces` — `observers_of` join, the observed span, the rate test, the
    five-way classification with four branches declared unexercised.
 6. `KeyMomentDetector` + digest section + both prompts. `analyze_game.md` gets
