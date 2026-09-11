@@ -270,6 +270,37 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal 0, war[:cities_lost]
   end
 
+  test "wars carries the diplomatic ties still standing with the opponent when war was declared" do
+    event("Rome", "embassy_established", 86, other_civ: "Greece")
+    event("Greece", "embassy_established", 86, other_civ: "Rome")
+    event(nil, "war_declared", 144, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event("Rome", "embassy_ended", 145, other_civ: "Greece")
+    event("Greece", "embassy_ended", 145, other_civ: "Rome")
+
+    war = timeline.wars("Rome").first
+
+    assert_equal(
+      [ { type: "embassy", from_turn: 86, to_turn: 145, with: "Greece" } ],
+      war[:ties_at_declaration]
+    )
+  end
+
+  test "wars carries no ties at declaration when none were standing" do
+    event(nil, "war_declared", 30, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+
+    assert_equal [], timeline.wars("Rome").first[:ties_at_declaration]
+  end
+
+  test "wars excludes a tie that had already ended before the war was declared" do
+    event("Rome", "embassy_established", 10, other_civ: "Greece")
+    event("Greece", "embassy_established", 10, other_civ: "Rome")
+    event("Rome", "embassy_ended", 20, other_civ: "Greece")
+    event("Greece", "embassy_ended", 20, other_civ: "Rome")
+    event(nil, "war_declared", 30, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+
+    assert_equal [], timeline.wars("Rome").first[:ties_at_declaration]
+  end
+
   test "irrelevance returns the vote that removed the civ from contention" do
     event(nil, "mp_proposal_result", 120, type: "irrelevance", status: "passed",
       owner: "India", subject: "Rome", yes_votes: 4, no_votes: 1)

@@ -240,10 +240,25 @@ class PlayerTimeline
         role: role,
         opponents: opponents,
         turn_declared: war_declared.turn,
-        turn_peace: peace&.turn
+        turn_peace: peace&.turn,
+        ties_at_declaration: ties_at_declaration(civ, opponents, war_declared.turn)
       }.merge(balance(civ, opponents, war_declared.turn, peace&.turn))
     end
   end
+
+  # Diplomacy standing with an opponent at the moment war opened on them -
+  # docs/reading-the-new-log.md §6's join, the one the plan called out by
+  # name. An embassy or a pact does not prevent a war; it can outlive the
+  # declaration that breaks it.
+  def ties_at_declaration(civ, opponents, turn)
+    opponents.flat_map { |opponent|
+      diplomatic_ties.spans(civ, opponent)
+        .select { |span| span[:from_turn] <= turn && (span[:to_turn].nil? || span[:to_turn] >= turn) }
+        .map { |span| span.merge(with: opponent) }
+    }
+  end
+
+  def diplomatic_ties = @diplomatic_ties ||= DiplomaticTies.for(@game)
 
   def balance(civ, opponents, turn_declared, turn_peace)
     in_window = ->(turn) { turn >= turn_declared && (turn_peace.nil? || turn <= turn_peace) }
