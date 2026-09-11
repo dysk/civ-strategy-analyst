@@ -199,6 +199,43 @@ the arrival fell in a seam or the log predates the fixes, and every such span
 is a lower bound on how long the spy was actually there. india-diplo predates
 all of it and is a lower bound throughout.
 
+### A tenure ends where the log ends it, and a spy is thrown out of a city
+
+The other end of the span is two facts, not one, so the record carries both.
+`to_turn` is the last turn the log **proves** the spy stood there. `until_turn`
+is when it left, by the best evidence available — the turn it died or was
+evicted, the order that sent it elsewhere, and for a tenure nothing ever
+closed, the last turn the game logged. The `observers_of` join runs against
+`until_turn`; a digest reports `to_turn`. Zimbabwe's spy in London is why:
+sighted from turn 95 to 136 and never mentioned again, it watched the city for
+another 48 turns that no record states and the two fields keep apart.
+
+Three things close a tenure, and one of them had to be fixed upstream first.
+
+- **A kill, located or not.** A `spy_killed` with no city closes the tenure it
+  falls in without extending `to_turn` — the record does not say the spy was
+  still in that city, only that it died. All nine of india-diplo's deaths are
+  this shape, and all nine are in Delhi; without the rule those nine spies read
+  as watching India's capital to the end of the game.
+- **An eviction.** Taking a city or razing one throws out every major's spy
+  that sat in it, the captor's own included: `CvPlayer::acquireCity` walks the
+  city's spy assignments and extracts each (`CvPlayer.cpp:2775-2829`),
+  `CvCity::kill` does the same (`CvCity.cpp:2069-2073`), and
+  `ExtractSpyFromCity` empties the position, leaves the spy unassigned and
+  turns its city vision back off (`CvEspionageClasses.cpp:1449`). **The logger
+  said nothing at all about it** — no diff branch could see an unassigned spy,
+  since the move check needs a destination and an unassigned spy answers -1 for
+  progress — so the posting simply stopped being mentioned, which reads exactly
+  like a spy still sitting there. Fixed upstream as *"Say when a spy is thrown
+  out of a city it was watching"*; `spy_evicted` carries the last held city the
+  way `spy_killed` does. No log carries an instance yet: in all five example
+  games no city changed hands while a spy was in it, the nearest miss being
+  England's spy leaving Onondaga 35 turns before India took it.
+- **The city changing hands between two sightings.** The second signal for the
+  one case the eviction event misses — a spy sent back into the city on the
+  turn it was thrown out, where the poll sees one position and the same one.
+  A human's move, not an AI's.
+
 ## Most logged missions did not happen — in logs written before the fix
 
 `completed()` in the logger used to read any fall in `PercentComplete` as a

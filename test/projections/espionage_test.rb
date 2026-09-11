@@ -13,8 +13,9 @@ class EspionageTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { civ: "India", spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan",
-          from_turn: 100, to_turn: 110, visible_from_turn: 104, visible_from_turn_bounded: false,
-          states: %w[travelling gathering_intel], ended_by: :log_end } ],
+          from_turn: 100, to_turn: 110, until_turn: 110, visible_from_turn: 104,
+          visible_from_turn_bounded: false, states: %w[travelling gathering_intel],
+          ended_by: :log_end } ],
       Espionage.new(@game).tenures("India")
     )
   end
@@ -149,12 +150,71 @@ class EspionageTest < ActiveSupport::TestCase
     assert Espionage.new(@game).applicable?
   end
 
+  test "a spy thrown out of a captured city holds the city until the eviction" do
+    moved("England", 100, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "England", state: "travelling")
+    surveillance("England", 104, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "England")
+    evicted("England", 130, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "England")
+
+    assert_equal [ [ 130, 130, :evicted ] ],
+      Espionage.new(@game).tenures("England").map { |t| t.values_at(:to_turn, :until_turn, :ended_by) }
+  end
+
+  test "an eviction ends the run even when the spy is sent back to the same city" do
+    moved("England", 100, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "England", state: "travelling")
+    evicted("England", 130, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "England")
+    moved("England", 140, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "France", state: "travelling")
+
+    assert_equal 2, Espionage.new(@game).tenures("England").size
+  end
+
+  test "a city changing hands between two sightings ends the run" do
+    moved("England", 100, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "England", state: "travelling")
+    mission("England", 140, spy: "ENGLAND_1", agent: 1, city: "London", city_civ: "France", state: "gathering_intel")
+
+    assert_equal [ "England", "France" ], Espionage.new(@game).tenures("England").map { |t| t[:city_civ] }
+  end
+
+  test "a kill the logger could not locate still closes the tenure it falls in" do
+    moved("Iroquois", 95, spy: "IROQUOIS_3", city: "Delhi", city_civ: "India", state: "travelling")
+    mission("Iroquois", 99, spy: "IROQUOIS_3", city: "Delhi", city_civ: "India", state: "gathering_intel")
+    killed("Iroquois", 109, spy: "IROQUOIS_3")
+    event("snapshot", "India", 150, { "event" => "snapshot", "turn" => 150, "civ" => "India" })
+
+    assert_equal [ [ 99, 109, :killed ] ],
+      Espionage.new(@game).tenures("Iroquois").map { |t| t.values_at(:to_turn, :until_turn, :ended_by) }
+  end
+
+  test "a tenure the log never closes is held to the last turn it logged" do
+    moved("India", 100, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan", state: "travelling")
+    surveillance("India", 104, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan")
+    event("snapshot", "India", 183, { "event" => "snapshot", "turn" => 183, "civ" => "India" })
+
+    assert_equal [ [ 104, 183 ] ],
+      Espionage.new(@game).tenures("India").map { |t| t.values_at(:to_turn, :until_turn) }
+  end
+
+  test "a tenure the spy moved out of is held to the turn it was sent away" do
+    moved("India", 100, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan", state: "travelling")
+    moved("India", 120, spy: "INDIA_7", agent: 7, city: "Osaka", city_civ: "Japan", state: "travelling")
+
+    assert_equal [ 120 ], Espionage.new(@game).tenures("India").first.values_at(:until_turn)
+  end
+
+  test "a killed spy's tenure ends the turn it died" do
+    moved("India", 100, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan", state: "travelling")
+    killed("India", 112, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan")
+
+    assert_equal [ 112 ], Espionage.new(@game).tenures("India").map { |t| t[:until_turn] }
+  end
+
   private
 
   def moved(civ, turn, **fields) = spy_event("spy_moved", civ, turn, **fields)
   def created(civ, turn, **fields) = spy_event("spy_created", civ, turn, **fields)
   def killed(civ, turn, **fields) = spy_event("spy_killed", civ, turn, **fields)
   def promoted(civ, turn, **fields) = spy_event("spy_promoted", civ, turn, **fields)
+  def revived(civ, turn, **fields) = spy_event("spy_revived", civ, turn, **fields)
+  def evicted(civ, turn, **fields) = spy_event("spy_evicted", civ, turn, **fields)
   def mission(civ, turn, **fields) = spy_event("spy_mission_completed", civ, turn, **fields)
 
   def surveillance(civ, turn, **fields)

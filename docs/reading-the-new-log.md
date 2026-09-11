@@ -461,8 +461,10 @@ they read cleanly — `IROQUOIS_6` sat in London from turn 118 to at least 173,
 completing four intel missions; `ENGLAND_1` toured Amsterdam, Lhasa and Mumbai
 before going home to London on counter-intelligence at 156.
 
-The run ends where the next sighting of that spy is in another city. An open
-run is held to the end of the log, or to `spy_killed` when one follows.
+The run ends where the next sighting of that spy is in another city, where the
+spy dies, and where a city taken or razed throws it out (`spy_evicted`, added
+upstream once this projection was built — see `docs/espionage.md`). An open run
+is held to the end of the log.
 
 ### What surveillance actually grants — checked in the DLL, not assumed
 
@@ -710,8 +712,12 @@ say so — do not calibrate it against nothing.
   `applicable?` false when the log carries no `spy_*` record at all — the two
   older example logs must be checked before this ships.
   - `tenures(civ = nil)` → `{civ, spy, agent, city, city_civ, from_turn,
-    to_turn, visible_from_turn, visible_from_turn_bounded, states,
-    ended_by: :moved | :killed | :log_end}`. `visible_from_turn` is **read
+    to_turn, until_turn, visible_from_turn, visible_from_turn_bounded, states,
+    ended_by: :moved | :killed | :evicted | :log_end}`. `to_turn` is the last
+    turn the log proves the spy stood there and `until_turn` is when it left,
+    by the best evidence the log offers; `observers_of` joins against the
+    second. A kill closes a tenure even when the record carries no city, and
+    `spy_evicted` closes one at a city taken or razed. `visible_from_turn` is **read
     from `spy_surveillance_established`** where the log carries one; on a
     pre-fix log it is **computed** — `posting + 1 + (3, or 1 at
     INFLUENCE_LEVEL_FAMILIAR or better over the target)`, both DLL constants,

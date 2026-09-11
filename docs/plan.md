@@ -904,6 +904,31 @@ garrison has to be read off the whole tenure; reading only the posting dated
 4 of `espionage-test`'s 5 garrisons at +4, as if they were waiting for a
 city screen to open. Recorded in `docs/espionage.md`.
 
+Building it turned up three more, all about where a tenure **ends**, and one
+of them was a hole in the log rather than in the reading:
+
+- **A spy thrown out of a captured city was invisible.** Taking a city or
+  razing one evicts every major's spy that sat in it, the captor's own
+  included, and no branch of the logger's diff could see it — an unassigned
+  spy has no destination and no progress. The posting just stopped being
+  mentioned, which reads as a spy still watching. Fixed in the logger
+  (`spy_evicted`, commit `8bd4804`) rather than inferred here from
+  `city_captured`: the logged fact covers conquest, razing, liberation and a
+  gifted city in one branch, and no example log carries an instance for an
+  inference to be exercised against. The analyst also breaks a run when the
+  city's owner changes between two sightings, which is the one case the
+  event misses — a spy sent back in on the turn it was thrown out.
+- **A kill the logger could not place left a tenure open to the end of the
+  game.** All nine of india-diplo's deaths carry no city, so none of them
+  was a sighting and none closed anything: nine spies read as watching
+  Delhi through turn 184. A kill now closes the tenure it falls in without
+  extending `to_turn`, and the nine land where the ledger says they should.
+- **A span has two ends worth reporting.** `to_turn` is what the log proves
+  and `until_turn` is when the spy left by the best evidence, which for a
+  quiet tenure is the last turn logged. Zimbabwe's spy in London was sighted
+  95–136 and watched for 48 more turns nothing records. `observers_of` will
+  join against `until_turn`; the digest reports `to_turn`.
+
 When iterations 2–6 land, this becomes an `(implemented)` section with the
 commit range and the per-iteration notes, like the tranche-1 features above.
 

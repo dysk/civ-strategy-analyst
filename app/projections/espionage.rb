@@ -10,7 +10,13 @@ class Espionage
   extend Projection
 
   SPY_EVENTS = %w[spy_created spy_moved spy_promoted spy_killed spy_revived
-                  spy_mission_completed spy_surveillance_established].freeze
+                  spy_evicted spy_mission_completed spy_surveillance_established].freeze
+
+  # The two events that take a spy out of a city where it stood. Taking a
+  # city or razing one throws out every major's spy that sat in it, the
+  # captor's own included, and the DLL leaves the spy unassigned rather
+  # than anywhere (CvPlayer.cpp:2775-2829, CvCity.cpp:2069-2073).
+  ENDINGS = { "spy_killed" => :killed, "spy_evicted" => :evicted }.freeze
   POSTINGS = %w[spy_moved spy_created].freeze
   COUNTER_INTEL = "counter_intel"
 
@@ -44,12 +50,10 @@ class Espionage
   def spy_events = @spy_events ||= SPY_EVENTS.flat_map { |type| @log.of_type(type) }.sort_by(&:seq)
 
   def all_tenures
-    @all_tenures ||= sightings.group_by { |event| [ event.civ, identity(event) ] }
+    @all_tenures ||= spy_events.group_by { |event| [ event.civ, identity(event) ] }
       .flat_map { |_key, events| tenures_of_one_spy(events) }
       .sort_by.with_index { |tenure, index| [ tenure[:from_turn], index ] }
   end
-
-  def sightings = spy_events.select { |event| event.payload["city"] }
 
   # The DLL redraws a spy's name when it revives, so the agent slot is the
   # identity wherever the logger writes one. An older log has only the name,
@@ -57,8 +61,9 @@ class Espionage
   def identity(event) = event.payload["agent"] || event.payload["spy"]
 
   def tenures_of_one_spy(events)
-    spans = runs(events)
-    spans.map.with_index { |run, index| tenure(run, ended_by(run, last: index == spans.size - 1)) }
+    spans = runs(events.select { |event| event.payload["city"] })
+    unlocated = events.reject { |event| event.payload["city"] }.select { |event| ENDINGS.key?(event.event_type) }
+    spans.map.with_index { |run, index| tenure(run, exit_of(run, spans[index + 1], unlocated)) }
   end
 
   def runs(events)
@@ -68,25 +73,47 @@ class Espionage
     end
   end
 
-  # A death ends the run wherever the agent turns up next, including the city
-  # it died in - otherwise a revival on the same spot would read as one
-  # unbroken posting.
+  # A death or an eviction ends the run wherever the agent turns up next,
+  # including the city it left - otherwise a revival or a re-posting on the
+  # same spot would read as one unbroken tenure. The city changing hands ends
+  # it too: that is an eviction the log failed to record, which happens when
+  # the spy is sent back on the turn it was thrown out.
   def run_ends?(run, event)
-    run.last.event_type == "spy_killed" || run.last.payload["city"] != event.payload["city"]
+    ENDINGS.key?(run.last.event_type) ||
+      run.last.payload["city"] != event.payload["city"] ||
+      run.last.payload["city_civ"] != event.payload["city_civ"]
   end
 
-  def ended_by(run, last:)
-    return :killed if run.last.event_type == "spy_killed"
+  # `to_turn` is the last turn the log proves the spy stood there. This is
+  # when it left, by the best evidence the log offers: the turn it died or was
+  # thrown out, the order that sent it elsewhere, and for a tenure nothing ever
+  # closed, the last turn the game logged. The `observers_of` join runs against
+  # this; a digest reports `to_turn`.
+  #
+  # A death the logger could not place still closes the tenure it falls in.
+  # India-diplo's nine kills in Delhi carry no city, and without this those
+  # nine spies would read as watching to the end of the game.
+  def exit_of(run, next_run, unlocated)
+    return [ run.last.turn, ENDINGS.fetch(run.last.event_type) ] if ENDINGS.key?(run.last.event_type)
 
-    last ? :log_end : :moved
+    ending = unlocated.find { |event| ends_the_run?(event, run, next_run) }
+    return [ ending.turn, ENDINGS.fetch(ending.event_type) ] if ending
+
+    next_run ? [ next_run.first.turn, :moved ] : [ last_logged_turn, :log_end ]
   end
 
-  def tenure(run, ended_by)
+  def ends_the_run?(event, run, next_run)
+    event.turn >= run.last.turn && (next_run.nil? || event.turn <= next_run.first.turn)
+  end
+
+  def last_logged_turn = @last_logged_turn ||= @log.all.map(&:turn).max
+
+  def tenure(run, (until_turn, ended_by))
     first, vision = run.first, vision(run)
 
     { civ: first.civ, spy: first.payload["spy"], agent: first.payload["agent"],
       city: first.payload["city"], city_civ: first.payload["city_civ"],
-      from_turn: first.turn, to_turn: run.last.turn,
+      from_turn: first.turn, to_turn: run.last.turn, until_turn: until_turn,
       visible_from_turn: vision[:turn], visible_from_turn_bounded: vision[:bounded],
       states: states(run), ended_by: ended_by }
   end

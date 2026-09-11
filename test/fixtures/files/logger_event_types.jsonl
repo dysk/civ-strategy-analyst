@@ -58,6 +58,7 @@
 {"event":"resolution_undetermined","turn":1}
 {"event":"snapshot","turn":1}
 {"event":"spy_created","turn":1}
+{"event":"spy_evicted","turn":1}
 {"event":"spy_killed","turn":1}
 {"event":"spy_mission_completed","turn":1}
 {"event":"spy_moved","turn":1}
