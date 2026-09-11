@@ -1349,3 +1349,10 @@ the digest paragraph and corrects a buffer-city paragraph that claimed
 longer true, though a logged tie still cannot confirm or rule out the
 unspoken settling agreement between neighbours that paragraph is actually
 about.
+
+Raised by the user after the first pass shipped: `chronicle_game.md` had
+no mention of ties at all, the same gap espionage once had there. Since a
+war already anchors its own entry, a tie broken by one needs no spine
+wiring of its own - `chronicle_game.md` gained a short section instructing
+the chronicler to fold both a standing tie and a `ties_at_declaration`
+clause into a passage that already exists, never a scene of its own.
