@@ -802,6 +802,44 @@ civilization an embassy or a friendship was standing with a moment before
 is a sharper fact than "war was declared," and belongs in the verdict as
 one.
 
+The `trade_routes` digest key answers where a civilization's caravans went
+and how many ran at once. `applicable` is false and nothing else is
+present when the log carries no trade route events at all. Otherwise
+`by_civ.<civ>.by_destination` splits every route that civilization ever
+established into `own` (food or production, always feeding its own
+empire, broken down by type), `city_state`, and `major` - the last two
+always `international` and always paying gold, plus science, tourism and
+religious pressure in both directions when the destination is a major. A
+civilization running routes abroad is buying gold and accepting the risk
+of plunder; one running them at home is buying growth or hammers and
+staying where nothing but its own borders can reach it.
+
+A trade route carries no id, so `by_civ.<civ>.concurrency` - how many of
+that civilization's routes were live at once, at ~25-turn checkpoints -
+is reconstructed rather than read, by pairing each establishment with the
+next end sharing its city pair, capped at the route's own stated
+`turns_left` whenever a matched end runs longer than that. Both a route
+whose end simply never logged and one whose greedy-matched end turned out
+to belong to a different, re-established instance of the same pair fall
+back to `turns_left` this way, and either kind sets that checkpoint's
+`flagged` true - treat a flagged point as a good estimate with a wider
+error bar, not as a fact of the same weight as one that is not flagged.
+The influence a city-state route buys is not in the route record at all;
+read it from `city_states.by_civ.<civ>.attribution` instead, which is
+built from the city-state's own snapshots, not from routes.
+
+`trade_routes.one_sided` is a whole-game list, not per civilization: every
+established route between two majors where one side received none of a
+yield - gold, science or tourism - that the other side did. A
+civilization feeding a rival's science or tourism for free without a
+route flowing the other way is exactly the situation this surfaces, each
+entry naming `civ` (the route's owner), `other_civ`, the two cities, the
+turn established, which `yield` was one-sided, and both sides' values.
+Trade routes ending or being plundered are logged with no reason, no
+victim and no amount attached - `trade_route_ended` and
+`trade_route_plundered` cannot say why a route stopped or who lost what,
+only that one did, on a given turn.
+
 The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a
 diplomatic victory), `delegates_by_civ` (each civilization's delegate
