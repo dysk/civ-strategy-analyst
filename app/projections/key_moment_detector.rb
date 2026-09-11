@@ -381,6 +381,20 @@ class KeyMomentDetector
     }.sort_by { |moment| moment[:turn] }
   end
 
+  # The one counter to a diplomatic victory the log reads straight from an
+  # event: conquering a city-state removes its votes from the pool outright.
+  # `votes_needed_before`/`after` read the nearest congress_snapshot on each
+  # side, since the threshold itself can move for reasons other than this.
+  def city_state_conquered
+    of_type("city_captured")
+      .select { |e| @game.city_state_civs.include?(e.payload["old_owner"]) }
+      .map do |e|
+        { type: :city_state_conquered, turn: e.turn, city_state: e.payload["old_owner"],
+          city: e.payload["city"], conquered_by: e.payload["new_owner"],
+          votes_needed_before: votes_needed_before(e.turn), votes_needed_after: votes_needed_after(e.turn) }
+      end.sort_by { |moment| moment[:turn] }
+  end
+
   def wars
     war_declarations.map do |war_declared, peace|
       war = declared_war(war_declared, peace)
@@ -498,6 +512,18 @@ class KeyMomentDetector
 
   def capture_turn(captures, side, civ, prev_turn, curr_turn)
     captures.find { |e| e.turn.between?(prev_turn, curr_turn) && e.payload[side] == civ }&.turn || curr_turn
+  end
+
+  def votes_needed_before(turn)
+    congress_snapshots.select { |e| e.turn < turn }.max_by(&:turn)&.payload&.[]("votes_needed_for_diplo_victory")
+  end
+
+  def votes_needed_after(turn)
+    congress_snapshots.select { |e| e.turn >= turn }.min_by(&:turn)&.payload&.[]("votes_needed_for_diplo_victory")
+  end
+
+  def congress_snapshots
+    of_type("congress_snapshot")
   end
 
   def plot_of(event)

@@ -66,7 +66,8 @@ class BufferCities
 
     {
       civs: pair[:civs], distance: pair[:distance], settled_first: settled_first(buffers),
-      buffers: buffers, without_buffer: buffers.select { |_civ, entry| entry.nil? }.keys
+      buffers: buffers, without_buffer: buffers.select { |_civ, entry| entry.nil? }.keys,
+      city_state_buffers: city_state_buffers(pair)
     }
   end
 
@@ -95,19 +96,55 @@ class BufferCities
   # for texture - 0 means squarely on a shortest path - but does not filter.
   def entry(event, own, rival, distance)
     plot = plot_of(event)
-    from_own = @grid.distance(own, plot)
-    from_rival = @grid.distance(plot, rival)
-    detour = from_own + from_rival - distance
-    return unless @grid.offset_from_line(own, rival, plot) <= LATERAL_TOLERANCE &&
-                  from_own < distance && from_rival < distance
+    fit = corridor_fit(own, rival, plot, distance)
+    return unless fit
 
     {
-      city: event.payload["city"], turn: event.turn, x: plot.first, y: plot.last, detour: detour,
-      bearing: @grid.bearing(own, plot), from_own_capital: from_own,
-      from_rival_capital: from_rival, order: order[[ event.civ, plot ]],
+      city: event.payload["city"], turn: event.turn, x: plot.first, y: plot.last, detour: fit[:detour],
+      bearing: @grid.bearing(own, plot), from_own_capital: fit[:from_own],
+      from_rival_capital: fit[:from_rival], order: order[[ event.civ, plot ]],
       capital_population: capital_population(event.civ, event.turn),
       reach_before: reach_before(event.civ, event.turn)
     }
+  end
+
+  # A city-state already stands where a founded buffer would - it has no
+  # founding turn to race, so it carries no order/capital_population/
+  # reach_before, only whether it currently shields either side. `ally` is
+  # read as of window_turn, the same clock the founded-buffer race uses.
+  def city_state_buffers(pair)
+    own, rival = pair[:civs].map { |civ| capital(civ) }
+    return [] unless own && rival
+
+    city_state_capitals.filter_map { |city_state, plot| city_state_entry(city_state, plot, own, rival, pair[:distance]) }
+  end
+
+  def city_state_entry(city_state, plot, own, rival, distance)
+    fit = corridor_fit(own, rival, plot, distance)
+    return unless fit
+
+    { city_state: city_state, x: plot.first, y: plot.last, detour: fit[:detour], ally: ally_at_window(city_state) }
+  end
+
+  # A buffer stands on the road between the two capitals - close to the
+  # line between them, and strictly between them rather than behind either.
+  def corridor_fit(own, rival, plot, distance)
+    from_own = @grid.distance(own, plot)
+    from_rival = @grid.distance(plot, rival)
+    return unless @grid.offset_from_line(own, rival, plot) <= LATERAL_TOLERANCE &&
+                  from_own < distance && from_rival < distance
+
+    { from_own: from_own, from_rival: from_rival, detour: from_own + from_rival - distance }
+  end
+
+  def ally_at_window(city_state)
+    events("city_state_snapshot")
+      .select { |event| event.payload["city_state"] == city_state && event.turn <= window_turn }
+      .max_by(&:turn)&.payload&.[]("ally")
+  end
+
+  def city_state_capitals
+    @city_state_capitals ||= proximity.city_state_capitals.transform_values { |city| [ city[:x], city[:y] ] }
   end
 
   # Only a race both sides ran has a winner. Where one side never settled the

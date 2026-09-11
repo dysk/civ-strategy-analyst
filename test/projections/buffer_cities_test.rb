@@ -281,6 +281,44 @@ class BufferCitiesTest < ActiveSupport::TestCase
     assert_equal({ "Rome" => %w[Greece] }, buffer_cities.call[:priority])
   end
 
+  test "call includes a city-state sitting in the corridor between two capitals" do
+    capitals
+    city_states("Ljubljana")
+    founded("Ljubljana", "Ljubljana", 0, 18, 20)
+
+    assert_equal(
+      [ { city_state: "Ljubljana", x: 18, y: 20, detour: 0, ally: nil } ],
+      pair[:city_state_buffers]
+    )
+  end
+
+  test "call reports the city-state's ally as of the window turn" do
+    capitals
+    city_states("Ljubljana")
+    founded("Ljubljana", "Ljubljana", 0, 18, 20)
+    city_state_snapshot("Ljubljana", 40, ally: "Rome")
+
+    assert_equal "Rome", pair[:city_state_buffers].first[:ally]
+  end
+
+  test "call ignores an ally recorded after the window turn" do
+    capitals
+    city_states("Ljubljana")
+    founded("Ljubljana", "Ljubljana", 0, 18, 20)
+    city_state_snapshot("Ljubljana", 40, ally: "Rome")
+    city_state_snapshot("Ljubljana", 150, ally: "Greece")
+
+    assert_equal "Rome", pair[:city_state_buffers].first[:ally]
+  end
+
+  test "call excludes a city-state that does not sit in the corridor" do
+    capitals
+    city_states("Ljubljana")
+    founded("Ljubljana", "Ljubljana", 0, 18, 26)
+
+    assert_empty pair[:city_state_buffers]
+  end
+
   test "by_plot is empty when the map is not Pangaea" do
     @game.update!(map_script: "Continents")
     capitals
@@ -316,6 +354,12 @@ class BufferCitiesTest < ActiveSupport::TestCase
 
   def founded(civ, city, turn, x, y)
     event(civ, "city_founded", turn, city: city, x: x, y: y)
+  end
+
+  def city_state_snapshot(name, turn, ally: nil)
+    payload = { "event" => "city_state_snapshot", "turn" => turn, "city_state" => name, "relations" => [] }
+    payload["ally"] = ally if ally
+    event(nil, "city_state_snapshot", turn, payload)
   end
 
   def captured(city, turn, from:, to:, x:, y:)

@@ -856,6 +856,48 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_empty detector.buffer_city_losses
   end
 
+  test "city_state_conquered reports the conquest of a city-state with its captor" do
+    city_states("Ljubljana")
+    event(nil, "city_captured", 120, city: "Ljubljana", old_owner: "Ljubljana", new_owner: "India")
+
+    moment = detector.city_state_conquered.sole
+
+    assert_equal :city_state_conquered, moment[:type]
+    assert_equal 120, moment[:turn]
+    assert_equal "Ljubljana", moment[:city_state]
+    assert_equal "Ljubljana", moment[:city]
+    assert_equal "India", moment[:conquered_by]
+  end
+
+  test "city_state_conquered ignores a capture where the old owner is a major civ" do
+    city_states("Ljubljana")
+    event(nil, "city_captured", 80, city: "Athens", old_owner: "Greece", new_owner: "Rome")
+
+    assert_empty detector.city_state_conquered
+  end
+
+  test "city_state_conquered reports how the vote threshold moved across the conquest" do
+    city_states("Ljubljana")
+    congress_snapshot(90, host: "India", delegates: [], votes_needed: 34)
+    event(nil, "city_captured", 120, city: "Ljubljana", old_owner: "Ljubljana", new_owner: "India")
+    congress_snapshot(140, host: "India", delegates: [], votes_needed: 32)
+
+    moment = detector.city_state_conquered.sole
+
+    assert_equal 34, moment[:votes_needed_before]
+    assert_equal 32, moment[:votes_needed_after]
+  end
+
+  test "city_state_conquered leaves the vote threshold nil when the log carries no congress data" do
+    city_states("Ljubljana")
+    event(nil, "city_captured", 120, city: "Ljubljana", old_owner: "Ljubljana", new_owner: "India")
+
+    moment = detector.city_state_conquered.sole
+
+    assert_nil moment[:votes_needed_before]
+    assert_nil moment[:votes_needed_after]
+  end
+
   test "wonder_races_lost reports each civ that lost a race it had invested in" do
     lost_race("BUILDING_LOUVRE", winner: %w[Netherlands Amsterdam], completed: 158, winner_from: 150,
               loser: %w[England London], first: 148, last: 157, invested: 425, turns_left: 2)
@@ -1017,6 +1059,10 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     @game.game_events.create!(
       seq: @seq, session_index: 0, turn: turn, event_type: "snapshot", civ: civ, payload: payload
     )
+  end
+
+  def city_states(*civs)
+    event(nil, "session_started", 0, city_states: civs.map { |civ| { "civ" => civ } })
   end
 
   def event(civ, event_type, turn, extra = {})
