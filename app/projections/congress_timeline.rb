@@ -28,7 +28,7 @@ class CongressTimeline
   end
 
   def delegate_votes(civ)
-    congress_snapshots.filter_map { |e| delegate_pair(e, civ) }.index_by(&:first).values
+    congress_snapshots.filter_map { |e| delegate_point(e, civ) }.index_by { |p| p[:turn] }.values
   end
 
   def votes_needed
@@ -72,11 +72,11 @@ class CongressTimeline
     }.sort_by { |e, _outcome| e.turn }
   end
 
-  def delegate_pair(snapshot, civ)
+  def delegate_point(snapshot, civ)
     delegate = Array(snapshot.payload["delegates"]).find { |d| d["civ"] == civ }
     return unless delegate
 
-    [ snapshot.turn, delegate["votes"] ]
+    { turn: snapshot.turn, votes: delegate["votes"], core_votes: delegate["core_votes"] }
   end
 
   def congress_snapshots

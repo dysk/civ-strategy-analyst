@@ -23,7 +23,7 @@ class CongressTimelineTest < ActiveSupport::TestCase
     assert_equal [ { turn: 10, host: "Greece" } ], CongressTimeline.new(@game).host_over_time
   end
 
-  test "delegate_votes returns turn/votes pairs for a civ, like a MetricSeries value series" do
+  test "delegate_votes returns turn/votes/core_votes points for a civ" do
     congress_snapshot(10, host: "Rome",
       delegates: [ { "civ" => "Rome", "votes" => 3, "core_votes" => 2 }, { "civ" => "Greece", "votes" => 2, "core_votes" => 2 } ],
       votes_needed: 12)
@@ -31,7 +31,17 @@ class CongressTimelineTest < ActiveSupport::TestCase
       delegates: [ { "civ" => "Rome", "votes" => 5, "core_votes" => 2 }, { "civ" => "Greece", "votes" => 2, "core_votes" => 2 } ],
       votes_needed: 12)
 
-    assert_equal [ [ 10, 3 ], [ 40, 5 ] ], CongressTimeline.new(@game).delegate_votes("Rome")
+    assert_equal(
+      [ { turn: 10, votes: 3, core_votes: 2 }, { turn: 40, votes: 5, core_votes: 2 } ],
+      CongressTimeline.new(@game).delegate_votes("Rome")
+    )
+  end
+
+  test "delegate_votes keeps one point per turn when a turn was snapshotted twice, the later payload winning" do
+    congress_snapshot(10, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 3, "core_votes" => 2 } ], votes_needed: 12)
+    congress_snapshot(10, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 4, "core_votes" => 2 } ], votes_needed: 12)
+
+    assert_equal [ { turn: 10, votes: 4, core_votes: 2 } ], CongressTimeline.new(@game).delegate_votes("Rome")
   end
 
   test "votes_needed reports the most recently known threshold" do

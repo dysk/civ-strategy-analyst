@@ -282,7 +282,7 @@ class DigestBuilder
     {
       host_history: congress_timeline.host_over_time,
       votes_needed: congress_timeline.votes_needed,
-      delegates_by_civ: civs.each_with_object({}) { |civ, result| result[civ] = sample_checkpoints(congress_timeline.delegate_votes(civ).to_h) },
+      delegates_by_civ: civs.each_with_object({}) { |civ, result| result[civ] = delegate_checkpoints(civ) },
       resolutions: congress_timeline.resolutions
     }
   end
@@ -297,6 +297,13 @@ class DigestBuilder
         spaceship: sample_checkpoints(spaceship.series(civ).to_h { |entry| [ entry[:turn], entry[:spaceship] ] })
       }
     end
+  end
+
+  def delegate_checkpoints(civ)
+    points = congress_timeline.delegate_votes(civ)
+
+    { votes: sample_checkpoints(points.to_h { |p| [ p[:turn], p[:votes] ] }),
+      core_votes: sample_checkpoints(points.to_h { |p| [ p[:turn], p[:core_votes] ] }) }
   end
 
   def sample_checkpoints(turns)

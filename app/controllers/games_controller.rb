@@ -247,7 +247,7 @@ class GamesController < ApplicationController
     timeline = CongressTimeline.for(@game)
 
     rows = @game.players.order(:id).filter_map do |player|
-      votes = timeline.delegate_votes(player.civ).last&.last
+      votes = timeline.delegate_votes(player.civ).last&.[](:votes)
       next unless votes
 
       { civ: player.civ, votes: votes }

@@ -354,13 +354,16 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal 14, digest[:congress][:votes_needed]
   end
 
-  test "samples each civ's delegate votes at ~25-turn checkpoints" do
-    congress_snapshot(10, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 3 } ], votes_needed: 12)
-    congress_snapshot(30, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 5 } ], votes_needed: 12)
+  test "samples each civ's delegate votes and core votes at ~25-turn checkpoints" do
+    congress_snapshot(10, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 3, "core_votes" => 2 } ], votes_needed: 12)
+    congress_snapshot(30, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 5, "core_votes" => 2 } ], votes_needed: 12)
 
     digest = DigestBuilder.new(@game).call
 
-    assert_equal({ 25 => 3, 30 => 5 }, digest[:congress][:delegates_by_civ]["Rome"])
+    assert_equal(
+      { votes: { 25 => 3, 30 => 5 }, core_votes: { 25 => 2, 30 => 2 } },
+      digest[:congress][:delegates_by_civ]["Rome"]
+    )
   end
 
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do

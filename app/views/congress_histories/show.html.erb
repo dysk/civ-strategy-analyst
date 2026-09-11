@@ -67,10 +67,10 @@
         </tr>
       </thead>
       <tbody>
-        <% history[:series].each do |turn, votes| %>
+        <% history[:series].each do |point| %>
           <tr>
-            <td><%= turn %></td>
-            <td><%= votes %></td>
+            <td><%= point[:turn] %></td>
+            <td><%= point[:votes] %></td>
           </tr>
         <% end %>
       </tbody>
