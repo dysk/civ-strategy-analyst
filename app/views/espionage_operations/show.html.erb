@@ -1,0 +1,168 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Espionage</h1>
+<p class="subtitle">
+  The log shows the opportunity to know, never that a player looked. Read a
+  tenure as vision available, not as a decision made from it.
+</p>
+
+<% if !@espionage.applicable? %>
+  <p class="empty-state">No espionage activity in this game's events.</p>
+<% else %>
+  <h2>Capacity</h2>
+  <table class="espionage-capacity">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Created</th>
+        <th>Revived</th>
+        <th>Lost</th>
+        <th>Promoted</th>
+        <th>Never Located</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @capacity_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:created] %></td>
+          <td><%= row[:revived] %></td>
+          <td><%= row[:killed] %></td>
+          <td><%= row[:promoted] %></td>
+          <td><%= row[:never_located] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% @tenure_histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <table class="espionage-tenures">
+      <thead>
+        <tr>
+          <th>Spy</th>
+          <th>City</th>
+          <th>From</th>
+          <th>Visible From</th>
+          <th>Until</th>
+          <th>Ended By</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% history[:tenures].each do |tenure| %>
+          <tr>
+            <td><%= tenure[:spy] %></td>
+            <td><%= tenure[:city] || "&mdash;".html_safe %></td>
+            <td><%= tenure[:from_turn] %></td>
+            <td class="<%= "bounded" if tenure[:visible_from_turn_bounded] %>">
+              <% if tenure[:visible_from_turn].nil? %>
+                &mdash;
+              <% elsif tenure[:visible_from_turn_bounded] %>
+                &ge;<%= tenure[:visible_from_turn] %>
+              <% else %>
+                <%= tenure[:visible_from_turn] %>
+              <% end %>
+            </td>
+            <td><%= tenure[:until_turn] %></td>
+            <td><%= tenure[:ended_by].to_s.tr("_", " ") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <h2>Missions</h2>
+  <% if @mission_groups.empty? %>
+    <p class="empty-state">No spy mission completed in this game's events.</p>
+  <% else %>
+    <% @mission_groups.each do |group| %>
+      <h3><%= group[:label] %></h3>
+
+      <table class="espionage-missions">
+        <thead>
+          <tr>
+            <th>Civ</th>
+            <th>Spy</th>
+            <th>City</th>
+            <th>Turn</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% group[:missions].each do |mission| %>
+            <tr>
+              <td><%= mission[:civ] %></td>
+              <td><%= mission[:spy] %></td>
+              <td><%= mission[:city] || "&mdash;".html_safe %></td>
+              <td><%= mission[:turn] %></td>
+              <td class="<%= "uncertain" unless mission[:anchored] %>">
+                <%= mission[:anchored] ? "&mdash;".html_safe : "uncertain" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+
+  <h2>Garrisons</h2>
+  <% if @garrison_rows.empty? %>
+    <p class="empty-state">No counter-intelligence posting read or inferred.</p>
+  <% else %>
+    <table class="espionage-garrisons">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>City</th>
+          <th>From</th>
+          <th>Until</th>
+          <th>Kills</th>
+          <th>How Known</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @garrison_rows.each do |garrison| %>
+          <tr>
+            <td><%= garrison[:civ] %></td>
+            <td><%= garrison[:city] || "&mdash;".html_safe %></td>
+            <td><%= garrison[:from_turn] %></td>
+            <td><%= garrison[:until_turn] %></td>
+            <td><%= garrison[:kills] %></td>
+            <td>
+              <%= garrison[:inferred] ? "Inferred (confidence #{garrison[:confidence]})" : "Read from log" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <h2>Coups</h2>
+  <% if @coup_rows.empty? %>
+    <p class="empty-state">No coup found or inferred.</p>
+  <% else %>
+    <table class="espionage-coups">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>City-State</th>
+          <th>Turn</th>
+          <th>Outcome</th>
+          <th>Influence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @coup_rows.each do |coup| %>
+          <tr>
+            <td><%= coup[:civ] %></td>
+            <td><%= coup[:city_state] %></td>
+            <td><%= coup[:turn] %></td>
+            <td><%= coup[:outcome] %></td>
+            <td><%= coup[:influence]&.round(2) || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>

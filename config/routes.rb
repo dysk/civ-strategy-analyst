@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     resource :cultural, only: [ :show ], controller: "cultural_standings"
     resource :congress, only: [ :show ], controller: "congress_histories"
     resource :victory_progress, only: [ :show ], controller: "victory_progress_histories"
+    resource :espionage, only: [ :show ], controller: "espionage_operations"
   end
 
   # Defines the root path route ("/")
