@@ -657,6 +657,47 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.victory-progress", false
   end
 
+  test "show summarises what each civilization spent on espionage" do
+    game = Game.create!(name: "Espionage Summary Game")
+    game.players.create!(civ: "Rome")
+    spy_event(game, "spy_created", "Rome", 10, spy: "ROME_1", agent: 1)
+    spy_event(game, "spy_killed", "Greece", 15, spy: "GREECE_1", agent: 9, city: "Roma", city_civ: "Rome")
+    spy_event(game, "spy_moved", "Rome", 5, spy: "ROME_2", agent: 2, city: "Roma", city_civ: "Rome",
+              state: "counter_intel")
+    spy_event(game, "spy_mission_completed", "Rome", 20, spy: "ROME_1", agent: 1, city: "Athens",
+              city_civ: "Greece", state: "gathering_intel")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "table.espionage" do
+      assert_select "td", "Rome"
+      assert_select "td", "1" # spies made
+      assert_select "td", "1" # missions
+      assert_select "td", "Yes" # garrisoned
+    end
+  end
+
+  test "show links to the history behind the espionage table" do
+    game = Game.create!(name: "Espionage Link Game")
+    game.players.create!(civ: "Rome")
+    spy_event(game, "spy_created", "Rome", 10, spy: "ROME_1", agent: 1)
+
+    get game_url(game)
+
+    assert_select "a[href=?]", game_espionage_path(game)
+  end
+
+  test "show omits the espionage table for a game with no spy activity" do
+    game = Game.create!(name: "No Espionage Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, score: 100)
+
+    get game_url(game)
+
+    assert_select "table.espionage", false
+  end
+
   test "show lists wonder races among the key moments" do
     game = wonder_race_game("Wonder Moments Game")
 
@@ -874,6 +915,14 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
       payload: { "event" => "congress_snapshot", "turn" => turn, "host" => host,
                  "delegates" => delegates, "votes_needed_for_diplo_victory" => votes_needed }
     )
+  end
+
+  def spy_event(game, type, civ, turn, spy:, agent: nil, city: nil, city_civ: nil, state: nil)
+    payload = { "spy" => spy }
+    payload["agent"] = agent if agent
+    payload.merge!("city" => city, "city_civ" => city_civ) if city
+    payload["state"] = state if state
+    event(game, civ, type, turn, payload)
   end
 
   def snapshot(game, civ, turn, metrics)

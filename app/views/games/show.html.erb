@@ -373,6 +373,35 @@
   <p><%= link_to "See capitals and spaceship assembly over time", game_victory_progress_path(@game) %></p>
 <% end %>
 
+<%= section_heading("Espionage", "espionage") %>
+<% if @espionage_rows.empty? %>
+  <p class="empty-state">No espionage activity in this game's events.</p>
+<% else %>
+  <table class="espionage">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>Spies Made</th>
+        <th>Spies Lost</th>
+        <th>Missions</th>
+        <th>Garrisoned</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @espionage_rows.each do |row| %>
+        <tr>
+          <td><%= row[:civ] %></td>
+          <td><%= row[:made] %></td>
+          <td><%= row[:lost] %></td>
+          <td><%= row[:missions] %></td>
+          <td><%= row[:garrisoned] ? "Yes" : "No" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p><%= link_to "See how the spies moved", game_espionage_path(@game) %></p>
+<% end %>
+
 <%= section_heading("Key Moments", "key-moments") %>
 
 <% if @key_moment_groups.empty? %>

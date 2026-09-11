@@ -30,6 +30,7 @@ class GamesController < ApplicationController
     @cultural_rows = cultural_rows
     @congress_summary = congress_summary
     @victory_progress_rows = victory_progress_rows
+    @espionage_rows = espionage_rows
     @latest_analysis = @game.analyses.order(created_at: :desc).first
   end
 
@@ -266,6 +267,17 @@ class GamesController < ApplicationController
       next if capitals_held.nil? && parts_assembled.nil?
 
       { civ: player.civ, capitals_held: capitals_held, parts_assembled: parts_assembled }
+    end
+  end
+
+  def espionage_rows
+    espionage = Espionage.for(@game)
+    return [] unless espionage.applicable?
+
+    @game.players.order(:id).map do |player|
+      capacity = espionage.capacity(player.civ)
+      { civ: player.civ, made: capacity[:created], lost: capacity[:killed],
+        missions: espionage.missions(player.civ).size, garrisoned: espionage.counterspies(player.civ).any? }
     end
   end
 
