@@ -248,8 +248,9 @@ class PlayerTimeline
 
   # Diplomacy standing with an opponent at the moment war opened on them -
   # docs/reading-the-new-log.md §6's join, the one the plan called out by
-  # name. An embassy or a pact does not prevent a war; it can outlive the
-  # declaration that breaks it.
+  # name. DiplomaticTies already cuts a span to the declaration turn, so a
+  # tie found here is one that stood right up to the moment war broke it,
+  # never past it.
   def ties_at_declaration(civ, opponents, turn)
     opponents.flat_map { |opponent|
       diplomatic_ties.spans(civ, opponent)

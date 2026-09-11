@@ -280,7 +280,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     war = timeline.wars("Rome").first
 
     assert_equal(
-      [ { type: "embassy", from_turn: 86, to_turn: 145, with: "Greece" } ],
+      [ { type: "embassy", from_turn: 86, to_turn: 144, with: "Greece" } ],
       war[:ties_at_declaration]
     )
   end

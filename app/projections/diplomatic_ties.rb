@@ -4,6 +4,14 @@
 # `civ`/`other_civ`, both directions on the same turn - matched by the
 # unordered pair, the mirrored pair collapses into the one span it is.
 # docs/reading-the-new-log.md §6.
+#
+# Declaring war cancels every standing agreement with the target immediately
+# - a rule of the game, not a reading of the log. India-Iroquois's embassy
+# logs its own `embassy_ended` a turn after `war_declared`, which is the
+# engine's bookkeeping catching up, not a second turn of real standing - a
+# span still open when a war opens between the same pair is cut to the
+# declaration turn regardless of what its own close event says, or whether
+# it ever fires one at all.
 class DiplomaticTies
   extend Projection
 
@@ -32,6 +40,7 @@ class DiplomaticTies
 
   def spans_for(type, open_type, close_type, civ, other)
     events = events_for(open_type, close_type, civ, other)
+    wars = war_declaration_turns(civ, other)
     spans = []
     from_turn = nil
 
@@ -39,13 +48,30 @@ class DiplomaticTies
       if action == :open
         from_turn ||= turn
       elsif from_turn
-        spans << { type: type, from_turn: from_turn, to_turn: turn }
+        spans << span(type, from_turn, turn, wars)
         from_turn = nil
       end
     end
 
-    spans << { type: type, from_turn: from_turn, to_turn: nil } if from_turn
+    spans << span(type, from_turn, nil, wars) if from_turn
     spans
+  end
+
+  # A war declared while the span was open outranks whatever its own close
+  # event (or lack of one) says - the earliest such war is when the
+  # agreement actually ended.
+  def span(type, from_turn, to_turn, wars)
+    war_turn = wars.select { |turn| turn >= from_turn && (to_turn.nil? || turn <= to_turn) }.min
+    { type: type, from_turn: from_turn, to_turn: war_turn || to_turn }
+  end
+
+  def war_declaration_turns(civ, other)
+    @log.of_type("war_declared").filter_map { |e|
+      attackers, defenders = e.payload.values_at("attacker_civs", "defender_civs").map { |c| Array(c) }
+      opposed = (attackers.include?(civ) && defenders.include?(other)) ||
+                (attackers.include?(other) && defenders.include?(civ))
+      e.turn if opposed
+    }
   end
 
   def events_for(open_type, close_type, civ, other)

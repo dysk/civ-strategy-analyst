@@ -94,6 +94,52 @@ class DiplomaticTiesTest < ActiveSupport::TestCase
     assert_equal [], DiplomaticTies.new(@game).spans("Rome", "Greece")
   end
 
+  test "spans cuts a tie open when war is declared to the declaration turn, overriding its own later close event" do
+    embassy("Rome", "Greece", 86, :established)
+    embassy("Greece", "Rome", 86, :established)
+    event("war_declared", nil, 144, attacker_civs: %w[Rome], defender_civs: %w[Greece])
+    embassy("Rome", "Greece", 145, :ended)
+    embassy("Greece", "Rome", 145, :ended)
+
+    assert_equal(
+      [ { type: "embassy", from_turn: 86, to_turn: 144 } ],
+      DiplomaticTies.new(@game).spans("Rome", "Greece")
+    )
+  end
+
+  test "spans cuts a tie with no close event of its own to the war declaration turn" do
+    embassy("Rome", "Greece", 86, :established)
+    embassy("Greece", "Rome", 86, :established)
+    event("war_declared", nil, 144, attacker_civs: %w[Rome], defender_civs: %w[Greece])
+
+    assert_equal(
+      [ { type: "embassy", from_turn: 86, to_turn: 144 } ],
+      DiplomaticTies.new(@game).spans("Rome", "Greece")
+    )
+  end
+
+  test "spans leaves a tie opened after an earlier war between the same pair alone" do
+    event("war_declared", nil, 100, attacker_civs: %w[Rome], defender_civs: %w[Greece])
+    embassy("Rome", "Greece", 150, :established)
+    embassy("Greece", "Rome", 150, :established)
+
+    assert_equal(
+      [ { type: "embassy", from_turn: 150, to_turn: nil } ],
+      DiplomaticTies.new(@game).spans("Rome", "Greece")
+    )
+  end
+
+  test "spans leaves a tie alone when war is declared between other civs" do
+    embassy("Rome", "Greece", 10, :established)
+    embassy("Greece", "Rome", 10, :established)
+    event("war_declared", nil, 50, attacker_civs: %w[Rome], defender_civs: %w[Carthage])
+
+    assert_equal(
+      [ { type: "embassy", from_turn: 10, to_turn: nil } ],
+      DiplomaticTies.new(@game).spans("Rome", "Greece")
+    )
+  end
+
   private
 
   def embassy(civ, other_civ, turn, action)
