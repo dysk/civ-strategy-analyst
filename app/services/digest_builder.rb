@@ -40,6 +40,7 @@ class DigestBuilder
       spy_names: spy_names,
       cultural: cultural_by_civ,
       congress: congress,
+      city_states: city_states,
       victory_progress: victory_progress,
       lekmod: lekmod
     }
@@ -228,7 +229,8 @@ class DigestBuilder
       science_victory_imminent: detector.science_victory_imminent,
       players_declared_irrelevant: detector.players_declared_irrelevant,
       wonder_races: detector.wonder_races,
-      wonder_races_lost: detector.wonder_races_lost
+      wonder_races_lost: detector.wonder_races_lost,
+      city_state_conquered: detector.city_state_conquered
     }
   end
 
@@ -317,6 +319,30 @@ class DigestBuilder
   end
 
   def congress_timeline = CongressTimeline.for(@game)
+
+  # `unexplained` is the headline field of every entry here - see
+  # CityStateStanding - and the prompt is taught to read it as a residual
+  # covering gold gifts, quests and coups, none of them logged, rather than
+  # crediting the whole of it to whichever cause happens to be visible.
+  def city_states
+    standing = CityStateStanding.for(@game)
+    return { applicable: false, reason: :no_city_state_snapshots } unless standing.applicable?
+
+    { applicable: true, traits: standing.traits, by_civ: civs.index_with { |civ| city_state_standing_for(standing, civ) } }
+  end
+
+  def city_state_standing_for(standing, civ)
+    { alliances: standing.alliances(civ), attribution: attribution_by_city_state(standing, civ) }
+  end
+
+  def attribution_by_city_state(standing, civ)
+    standing.traits.filter_map { |t|
+      city_state = t[:city_state]
+      next if standing.series(city_state, civ).empty?
+
+      [ city_state, standing.attribution(city_state, civ) ]
+    }.to_h
+  end
 
   def belief_ids
     log = @game.event_log

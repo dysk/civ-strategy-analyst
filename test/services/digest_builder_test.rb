@@ -279,6 +279,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :science_victory_imminent
     assert_includes digest[:key_moments].keys, :wonder_races
     assert_includes digest[:key_moments].keys, :wonder_races_lost
+    assert_includes digest[:key_moments].keys, :city_state_conquered
   end
 
   test "carries the contested wonder races in full" do
@@ -364,6 +365,50 @@ class DigestBuilderTest < ActiveSupport::TestCase
       { votes: { 25 => 3, 30 => 5 }, core_votes: { 25 => 2, 30 => 2 } },
       digest[:congress][:delegates_by_civ]["Rome"]
     )
+  end
+
+  test "includes city-state traits and, per civ, the attribution split behind its standing" do
+    event(nil, "session_started", 0, city_states: [ { "civ" => "Ljubljana", "trait" => "MINOR_TRAIT_CULTURED" } ])
+    event(nil, "city_state_snapshot", 10, city_state: "Ljubljana",
+          relations: [ { "civ" => "Rome", "influence" => 20, "per_turn" => 2.0 } ])
+    event(nil, "city_state_snapshot", 60, city_state: "Ljubljana",
+          relations: [ { "civ" => "Rome", "influence" => 100, "per_turn" => -1.0 } ])
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal true, digest[:city_states][:applicable]
+    assert_equal(
+      [ { city_state: "Ljubljana", trait: "MINOR_TRAIT_CULTURED", personality: nil, unique_unit: nil } ],
+      digest[:city_states][:traits]
+    )
+    assert_equal 80, digest[:city_states][:by_civ]["Rome"][:attribution]["Ljubljana"][:gain]
+  end
+
+  test "leaves a civ's city-state attribution empty for a city-state it has no relation with" do
+    event(nil, "session_started", 0, city_states: [ { "civ" => "Ljubljana" } ])
+    event(nil, "city_state_snapshot", 10, city_state: "Ljubljana",
+          relations: [ { "civ" => "Rome", "influence" => 20, "per_turn" => 2.0 } ])
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_empty digest[:city_states][:by_civ]["Greece"][:attribution]
+  end
+
+  test "reports the city-states a civ has held allied, as spans" do
+    event(nil, "session_started", 0, city_states: [ { "civ" => "Ljubljana" } ])
+    event(nil, "city_state_snapshot", 90, city_state: "Ljubljana", relations: [])
+    event(nil, "city_state_ally_changed", 98, city_state: "Ljubljana", new_ally: "Rome")
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      [ { city_state: "Ljubljana", from_turn: 98, until_turn: nil, origin: :event } ],
+      digest[:city_states][:by_civ]["Rome"][:alliances]
+    )
+  end
+
+  test "city_states degrades to inapplicable when the log carries no city-state snapshots" do
+    assert_equal({ applicable: false, reason: :no_city_state_snapshots }, DigestBuilder.new(@game).call[:city_states])
   end
 
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do

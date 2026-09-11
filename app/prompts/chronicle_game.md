@@ -359,6 +359,26 @@ sack and no ruler killed where this is all that happened - a people can
 fall out of contention with not a shot fired, or with a war that fired
 far too many and settled nothing.
 
+## City-states and their loyalty
+
+A free city's alliance is texture, never an entry of its own -
+`city_states.by_civ.<civ>.alliances` gives the years each realm held one,
+but no moment anchors the winning or losing of it the way a war or a
+captured city does. Fold it into a passage that already exists for other
+reasons: a realm loyal to a free city for the length of a war fought
+nearby, one that lost that loyalty in the years a rival grew strong.
+Never write `gain`, `decay` or `unexplained` as figures - they are the
+record's own arithmetic and fall under the same silence as every other
+number kept out of the chronicle. How a realm won or kept that loyalty
+is usually not told at all: the record shows the outcome and rarely the
+means, so write that a free city stood with one people and not why,
+unless the years around it - a war fought in its name, an agent sent to
+shake it loose - already say so.
+
+A free city taken by force is narrated the same as any other city
+changing hands, under `city_captured` above; write no distinction
+between a free city's fall and a great realm's.
+
 ## Espionage as texture, not an entry
 
 Two things happen quietly enough that the chronicle never stops for them

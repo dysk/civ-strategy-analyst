@@ -513,6 +513,24 @@ does not name an intended target: a civilization can close the gap
 against the neighbour it never fights first and attack a different one
 years later.
 
+A city-state already standing in the corridor does much of the work a
+founded buffer does, and `buffer_cities` reports it the same way: each
+pair's `city_state_buffers` lists every corridor city-state found by the
+identical test - within `lateral_tolerance` hexes of the line between
+the two capitals, strictly between them. It carries none of the race
+fields: a city-state was never founded by either side and has stood
+there since turn one, so `order`, `capital_population`, `reach_before`
+and `settled_first` do not apply to it. What it carries instead is
+`ally`, the civilization it stood allied to as of `window_turn`, the
+same clock the founded-buffer race is judged by. An unowned or
+third-party ally in the corridor is still an obstacle closing the gap;
+an ally to one of the two civilizations in the pair is closer to an
+owned city - a garrison, units that sortie, shared vision, and a partner
+that joins its patron's wars - and is worth reading as a real defensive
+base rather than mere terrain. A pair with neither a founded buffer nor
+an allied city-state in `city_state_buffers` is the more complete
+version of `without_buffer`, not a separate case.
+
 `military_might` is the game's own figure, and it does not measure the
 army alone. The game sums the power of every unit, counts naval units at
 half, and then multiplies the total by the owner's treasury - roughly
@@ -655,12 +673,72 @@ major-civilization names once it ran out of unique ones
 `city_state` name against that table before inferring its type from the
 name, since the renamed city-state can otherwise read as a major
 civilization or borrow a different vanilla city-state's reputation
-entirely. Where a `city_states` timeline shows a civilization holding
-several allies across many turns, credit that as real investment with
-real returns, and say what it plausibly cost. An entry in
+entirely. Where `timelines.<civ>.city_states` shows a civilization
+holding several allies across many turns, credit that as real investment
+with real returns, and say what it plausibly cost. An entry in
 `city_state_ally_takeovers` is a swing rather than a neutral event - one
 civilization had paid for that ally and another took it, so both
 positions moved.
+
+The top-level `city_states` digest key is where that investment is
+actually measured, distinct from the per-civ `timelines.<civ>.city_states`
+event log above - `applicable` is false and nothing else is present when
+the log carries no `city_state_snapshot` at all. `traits` names each
+city-state's `trait`, `personality` and `unique_unit` from the ruleset,
+LEKMOD's renaming included. `city_states.by_civ.<civ>.alliances` gives
+the same alliance history as `timelines.<civ>.city_states`'
+`ally_gained`/`ally_lost` entries, already coalesced into held spans -
+`from_turn`, `until_turn` (null while still held at the end of the log),
+and `origin` (`event` where a dated change opened the span, `observed`
+where the alliance was already in force at the very first snapshot and
+only its end is dated). Use the spans for a clean statement of how long
+an alliance held; use the raw timeline only where a turn-by-turn account
+of the courting - the friendship level rising before the alliance
+followed - is what the passage needs.
+
+`city_states.by_civ.<civ>.attribution`, one entry per city-state that
+civilization has any relation with, is this feature's central number:
+the influence it bought there, split into what the log explains and
+what it does not. `gain` is the raw change the snapshots record;
+`decay` is what that same span would have cost or earned from the
+logged `per_turn` rate alone, with no alliance bought at all;
+`explained` is a fixed gain per completed election-rigging spy mission
+(`rigs`) against that city-state; `unexplained` is everything left once
+`decay` and `explained` are both subtracted out of `gain`. Treat
+`unexplained` as the headline field, never as a remainder of the other
+three, and never assign it a single cause. The log cannot see two of
+the ways a civilization buys an alliance at all - gifting it gold and
+running its quests - so a large `unexplained` figure with `rigs: 0` is
+exactly what a bought-but-unlogged alliance looks like, not evidence
+that no spy was ever sent. `cs_routes` (trade routes run into that
+city-state) and `merchant_confederacy` (whether the civilization
+adopted `POLICY_MERCHANT_CONFEDERACY`, +1 influence per turn per such
+route) are the one contributor the data can support with arithmetic - a
+civilization running several routes into a city-state carrying a large
+`unexplained` figure has a real logged mechanism pulling it upward.
+Name that as a plausible contributor when the route count is not
+trivial, never as the settled explanation, and never let it stand in
+for the residual as a whole.
+
+A diplomatic lead built this way has four answers, and the log sees
+only two of them, and those two differently. Garrisoning a city-state
+against theft or a coup is never logged directly - only `counterspies`
+(see espionage above) reconstructs it by inference, so the absence of a
+reconstructed garrison is not evidence a city-state stood undefended. A
+coup succeeding or failing is likewise only ever inferred, from `coups`
+above, never read from an event built for it. Conquering a city-state
+is the one countermove the log states outright: `city_state_conquered`
+key moments name the city-state, the city, who took it, and
+`votes_needed_before`/`votes_needed_after` - the diplomatic-victory
+threshold immediately either side of the capture - so a report can say
+plainly whether the vote pool actually shrank rather than assume
+conquest always shrinks it. Outbidding a rival's gold gifts and
+outrunning them on a city-state's quests are invisible in full:
+`CvDeal` cannot be read from Lua and `MinorCivQuestTypes` carries no
+database table, so neither ever produces an event of any kind. Never
+conclude a civilization did not contest an alliance with gold or quests
+because neither shows up in the log - say the log cannot see whether it
+did, and let `unexplained` carry what might have happened there.
 
 War declarations pull in city-states automatically. When a player
 declares war on another player, every city-state allied to either side
@@ -894,7 +972,11 @@ whether it secured the corridor against that neighbour and whether it
 got there first. This is a fact about where the opening left it on the
 map, not about how fast it developed: a civilization can reach its
 boundary early and still have conceded the ground between itself and the
-rival who later marches over it.
+rival who later marches over it. A city-state already standing in that
+corridor, per `city_state_buffers`, closes the same gap without either
+side needing to settle it - note whether one is present and, if so,
+whose ally it was as of `window_turn`, rather than reading an empty
+`buffers` entry alone as ground either side conceded.
 
 Then, for each civilization, explain in a short paragraph why they were winning
 or losing, grounded in the metrics and timeline data provided. Where a
@@ -996,8 +1078,12 @@ the empire-wide `population` line and read the capture's cost from where
 it bends around that turn.
 
 A diplomatic lead rests on city-state allies, and allies change hands:
-`city_state_ally_takeovers` shows it happening, and every ally taken or
-besieged is votes removed from the count. A cultural lead can be answered
+`city_state_ally_takeovers` shows an alliance changing sides, and every
+ally taken or besieged is votes removed from the count.
+`city_state_conquered` is the more drastic version - the city-state
+itself falls, its votes leave the pool entirely rather than changing
+hands, and `votes_needed_before`/`votes_needed_after` say by how much
+the threshold moved. A cultural lead can be answered
 by accumulating a lot of culture, adopting a different ideology and
 pushing tourism back, and by denying the wonders that carry it. But
 elimination remains the only certain answer: a civilization removed from
