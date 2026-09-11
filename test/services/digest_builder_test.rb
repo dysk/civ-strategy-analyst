@@ -454,6 +454,34 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ applicable: false, reason: :no_trade_route_events }, DigestBuilder.new(@game).call[:trade_routes])
   end
 
+  test "includes each civ's yield attribution, sampled at checkpoints" do
+    snapshot("Rome", 10, science: 30, yield_sources: { "science" => { "cities" => 30 } })
+    snapshot("Rome", 30, science: 36, yield_sources: { "science" => { "cities" => 35 } })
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal true, digest[:yield_attribution][:applicable]
+    assert_equal(
+      {
+        25 => { total: 30, sources: { cities: 30 }, shortfall: 0 },
+        30 => { total: 36, sources: { cities: 35 }, shortfall: 1 }
+      },
+      digest[:yield_attribution][:by_civ]["Rome"]["science"]
+    )
+  end
+
+  test "omits a yield with no source data from a civ's yield attribution" do
+    snapshot("Rome", 10, science: 30, yield_sources: { "science" => { "cities" => 30 } })
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal %w[science], digest[:yield_attribution][:by_civ]["Rome"].keys
+  end
+
+  test "yield_attribution degrades to inapplicable when the log carries no yield source data" do
+    assert_equal({ applicable: false, reason: :no_yield_sources }, DigestBuilder.new(@game).call[:yield_attribution])
+  end
+
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do
     event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
     event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")

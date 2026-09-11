@@ -38,6 +38,7 @@ class DigestBuilder
       espionage: espionage,
       diplomatic_ties: diplomatic_ties,
       trade_routes: trade_routes,
+      yield_attribution: yield_attribution,
       unit_names: unit_names,
       spy_names: spy_names,
       cultural: cultural_by_civ,
@@ -294,6 +295,23 @@ class DigestBuilder
   def trade_routes_for(routes, civ)
     concurrency = routes.concurrency(civ).to_h { |point| [ point[:turn], point.slice(:count, :flagged) ] }
     { by_destination: routes.by_destination(civ), concurrency: sample_checkpoints(concurrency) }
+  end
+
+  # `applicable: false` when the log carries no yield_sources at all - two
+  # of the five example logs predate the field. Only the yields a civ has
+  # source data for are listed, each sampled at the same ~25-turn
+  # checkpoints every other per-turn digest section uses.
+  def yield_attribution
+    attribution = YieldAttribution.for(@game)
+    return { applicable: false, reason: :no_yield_sources } unless attribution.applicable?
+
+    { applicable: true, by_civ: civs.index_with { |civ| yield_attribution_for(attribution, civ) } }
+  end
+
+  def yield_attribution_for(attribution, civ)
+    attribution.yields(civ).index_with do |yield_name|
+      sample_checkpoints(attribution.series(civ, yield_name).to_h { |point| [ point[:turn], point.except(:turn) ] })
+    end
   end
 
   def lekmod
