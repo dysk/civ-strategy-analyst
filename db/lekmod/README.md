@@ -19,6 +19,8 @@ db/lekmod/<version>/
                      (optional; see below)
   buildings.yml      BUILDING_* -> { name, wonder }, extracted the same
                      way (optional; see below)
+  spy_names.yml      TXT_KEY_SPY_NAME_* -> flavour name, extracted the
+                     same way (optional; see below)
 ```
 
 There is no `resolutions.md`: LEKMOD leaves the base game's World
@@ -106,6 +108,29 @@ trailing `*` national-wonder marker. A handful of civ-unique regular
 buildings resolve to placeholder or non-English text in the mod source
 itself (`BUILDING_ARGENTINA_STABLE` -> "Ocupada estable"); none are
 wonders, so wonder detection is unaffected.
+
+## Spy names
+
+`spy_names.yml` maps every `TXT_KEY_SPY_NAME_*` id a game's `spy_*` events
+carry to the name LEKMOD gave it - `TXT_KEY_SPY_NAME_INDIA_7` is Mukta,
+`TXT_KEY_SPY_NAME_ARABIA_4` is Abyadh. Unlike a policy or belief, a spy's id
+is already the `Language_en_US` text key rather than a `Type` that resolves
+to one - `Civilization_SpyNames` in `CIV5Units.xml` only enumerates which
+keys exist per civilization, it does not sit between the id and the text
+the way `Beliefs`/`Policies`/`Resolutions` do. So there is no table to
+parse here, only the same text pass every other file in this directory
+already runs, filtered to the one prefix. Generate one with:
+
+```sh
+script/extract_lekmod_spy_names /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/spy_names.yml
+```
+
+`SpyNames` resolves a game's version against these files the same loose
+way `UnitNames` does. A spy's flavour name is not guessable from its id
+the way a unit's usually is - the id is a civ code and an ordinal, not
+English with the odd rename - so an id no snapshot names falls back to a
+legible reading of the id itself (civ and ordinal spelled out) rather
+than a guessed name.
 
 ## Version resolution
 

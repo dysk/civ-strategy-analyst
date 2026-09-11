@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/spy_names.yml: a spy's TXT_KEY_SPY_NAME_* id ->
+# flavour name extracted from a checkout of the mod's XML source. The game
+# logs a spy by that id directly - unlike a policy or belief, there is no
+# Type table indirection to resolve first - so this is a filter over the
+# same Language_en_US text LekmodIdsExtractor already parses for everything
+# else (see db/lekmod/README.md and LekmodIdsExtractor).
+#
+# Usage:
+#   script/extract_lekmod_spy_names SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_spy_names /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/spy_names.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+abort "Usage: script/extract_lekmod_spy_names SOURCE_DIR TARGET_YML" unless source_dir && target
+
+names = LekmodIdsExtractor.new(source_dir).spy_names
+abort "No spy names resolved from #{source_dir} - check the path points at LEKMOD/Override." if names.empty?
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, names.sort.to_h.to_yaml)
+
+puts "Wrote #{target} - #{names.size} spy names resolved."
