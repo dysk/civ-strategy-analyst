@@ -54,6 +54,38 @@ class KeyMomentDetector
       .sort_by { |moment| moment[:turn] }
   end
 
+  # The earliest civ to produce each kind of great person - a race the
+  # game itself never scores, unlike an era, but one PlayerTimeline's
+  # catalogue makes just as cheap to read off unit_created directly.
+  def great_people_first_of_kind
+    of_type("unit_created")
+      .select { |e| PlayerTimeline::GREAT_PERSON_UNITS.key?(e.payload["unit"]) }
+      .group_by { |e| PlayerTimeline::GREAT_PERSON_UNITS[e.payload["unit"]] }
+      .map do |kind, events|
+        first_turn = events.map(&:turn).min
+        civs = events.select { |e| e.turn == first_turn }.map(&:civ).uniq
+        { type: :great_person_first_of_kind, turn: first_turn, kind: kind, civs: civs }
+      end
+      .sort_by { |moment| moment[:turn] }
+  end
+
+  # PlayerTimeline already tells expended, killed and disbanded apart -
+  # only the killed fate is a moment; a great person spent on its intended
+  # use is not a loss, and a disbandment names no one to weigh it against.
+  def great_people_lost
+    timeline = PlayerTimeline.for(@game)
+    lost_by = of_type("unit_lost")
+      .select { |e| PlayerTimeline::GREAT_PERSON_UNITS.key?(e.payload["unit"]) }
+      .map(&:civ).uniq
+
+    lost_by.flat_map do |civ|
+      timeline.great_people(civ).select { |g| g[:fate] == :killed }.map do |g|
+        { type: :great_person_lost, turn: g[:turn], civ: civ, great_person: g[:great_person],
+          kind: PlayerTimeline::GREAT_PERSON_UNITS[g[:great_person]], killed_by: g[:killed_by] }
+      end
+    end.sort_by { |moment| moment[:turn] }
+  end
+
   def religion_foundings
     of_type("religion_founded")
       .sort_by(&:turn)

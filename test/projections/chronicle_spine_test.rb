@@ -339,6 +339,39 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_includes spine.background.map { |moment| moment[:type] }, :coup
   end
 
+  test "the first great person of a kind joins the entry it happened near, rather than starting one of its own" do
+    event(nil, "city_captured", 40, city: "Corinth", old_owner: "Greece", new_owner: "Rome")
+    event("Rome", "unit_created", 42, unit: "UNIT_SCIENTIST")
+
+    entry = spine.entries.sole
+
+    assert_includes entry[:moments].map { |moment| moment[:type] }, :great_person_first_of_kind
+  end
+
+  test "a first-of-its-kind great person far from any entry earns none of its own" do
+    event("Rome", "unit_created", 100, unit: "UNIT_SCIENTIST")
+
+    assert_empty spine.entries
+    assert_includes spine.background.map { |moment| moment[:type] }, :great_person_first_of_kind
+  end
+
+  test "losing a general to an enemy weighs enough to anchor an entry of its own" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece")
+
+    assert_includes spine.entries.map { |entry| entry[:turn] }, 60
+    moment = all_moments.find { |m| m[:type] == :great_person_lost }
+    assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
+  test "losing any other great person is lighter than losing a general" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece")
+    event("Greece", "unit_lost", 100, unit: "UNIT_SCIENTIST", killed_by: "Rome")
+
+    losses = all_moments.select { |m| m[:type] == :great_person_lost }.index_by { |m| m[:civ] }
+
+    assert_operator losses["Rome"][:weight], :>, losses["Greece"][:weight]
+  end
+
   test "a war names what each side had standing when it opened" do
     event("Rome", "unit_created", 5, unit: "UNIT_ARCHER")
     declare_war

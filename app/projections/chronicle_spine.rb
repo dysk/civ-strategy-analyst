@@ -24,8 +24,14 @@ class ChronicleSpine
     religion_founded: 3, world_wonder: 3, city_founded: 2, religion_enhanced: 2,
     reformation_added: 2, congress_host_change: 2, spaceship_part_assembled: 2,
     pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1,
-    player_declared_irrelevant: 3, wonder_race: 1, spy_killed: 1, coup: 2
+    player_declared_irrelevant: 3, wonder_race: 1, spy_killed: 1, coup: 2,
+    great_person_first_of_kind: 1
   }.freeze
+
+  # A general lost to an enemy is a battle loss and a spent investment at
+  # once, so it anchors an entry the way a border town falling does.
+  # Every other kind is texture, the same weight as a spy's death.
+  GREAT_PERSON_LOST_WEIGHTS = { general: ANCHOR_WEIGHT, other: 1 }.freeze
 
   # A war is worth what it cost. A declaration nobody acted on is an act of
   # diplomacy that the chronicle need not stop for, and a raid for a worker
@@ -129,6 +135,9 @@ class ChronicleSpine
     if moment[:type] == :city_captured
       return CITY_CAPTURED_WEIGHTS.fetch(moment[:scale], WEIGHTS[:city_captured])
     end
+    if moment[:type] == :great_person_lost
+      return GREAT_PERSON_LOST_WEIGHTS.fetch(moment[:kind], GREAT_PERSON_LOST_WEIGHTS[:other])
+    end
 
     WEIGHTS.fetch(moment[:type], 1)
   end
@@ -142,7 +151,8 @@ class ChronicleSpine
       detector.united_nations_formed + detector.congress_host_changes + detector.resolutions_passed +
       detector.leader_changes + detector.cultural_victory_imminent + detector.science_victory_imminent +
       detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies +
-      detector.players_declared_irrelevant + detector.wonder_races_lost + detector.wonder_races
+      detector.players_declared_irrelevant + detector.wonder_races_lost + detector.wonder_races +
+      detector.great_people_first_of_kind + detector.great_people_lost
   end
 
   # The chronicle is told the shape of a war's losses, never their size,

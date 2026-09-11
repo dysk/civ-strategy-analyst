@@ -197,6 +197,45 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
+  test "great_people_first_of_kind reports the earliest civ to produce each kind, ties included" do
+    event("Rome", "unit_created", 20, unit: "UNIT_SCIENTIST")
+    event("Greece", "unit_created", 25, unit: "UNIT_SCIENTIST")
+    event("Rome", "unit_created", 30, unit: "UNIT_WRITER")
+    event("Egypt", "unit_created", 30, unit: "UNIT_WRITER")
+
+    assert_equal(
+      [
+        { type: :great_person_first_of_kind, turn: 20, kind: :scientist, civs: %w[Rome] },
+        { type: :great_person_first_of_kind, turn: 30, kind: :writer, civs: %w[Rome Egypt] }
+      ],
+      detector.great_people_first_of_kind
+    )
+  end
+
+  test "great_people_first_of_kind ignores a unit that isn't a great person" do
+    event("Rome", "unit_created", 20, unit: "UNIT_WARRIOR")
+
+    assert_empty detector.great_people_first_of_kind
+  end
+
+  test "great_people_lost reports a great person killed by an enemy, with its kind" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece")
+
+    assert_equal(
+      [ { type: :great_person_lost, turn: 60, civ: "Rome", great_person: "UNIT_GREAT_GENERAL",
+          kind: :general, killed_by: "Greece" } ],
+      detector.great_people_lost
+    )
+  end
+
+  test "great_people_lost ignores an expend's own echo and a disbanded great person" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "unit_lost", 40, unit: "UNIT_SCIENTIST")
+    event("Rome", "unit_lost", 50, unit: "UNIT_ENGINEER")
+
+    assert_empty detector.great_people_lost
+  end
+
   test "religion_foundings reports each founding in order, tagged with how early it was and which beliefs were chosen" do
     event("Greece", "religion_founded", 50, holy_city: "Athens", religion: "RELIGION_POLYTHEISM", beliefs: %w[BELIEF_X])
     event("Rome", "religion_founded", 35, holy_city: "Roma", religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y BELIEF_Z])
