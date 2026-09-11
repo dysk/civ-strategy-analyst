@@ -147,6 +147,16 @@ instructions.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
+- **Tile→city resolution** — raised while reviewing great people: no projection
+  resolves a bare `x`/`y` (as `improvement_built`, `unit_lost`, `unit_created` carry)
+  to the city that owns the tile; the nearest precedent, `PlayerTimeline#valuation`,
+  matches by city *name* already present in the event payload, never by geometry.
+  A civ's founded/captured plots plus `HexGrid#distance` would give a
+  nearest-owned-city-to-a-tile lookup as a small, reusable primitive. Two known
+  users if it's ever built: naming the city for a targeted great-person expend
+  (`PlayerTimeline#great_people`, currently left nil), and giving `ChronicleSpine`
+  a place name for a battle death (`unit_killed`/`unit_lost` carry `x`/`y` but no
+  city) instead of narrating combat with no location at all.
 
 ## Plan: injecting LEKMOD data into the digest (fully realized)
 
