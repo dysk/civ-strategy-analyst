@@ -1198,6 +1198,40 @@ spy identity in it, so it needs no change. Non-English name text does not
 exist for spies any more than it does for units — `db/lekmod/README.md`'s
 "Only English is available" note already covers this.
 
+## Plan: espionage in the chronicle (implemented)
+
+Status: **Implemented 2026-09-11.** `chronicle_game.md` had never
+mentioned espionage at all — confirmed by grep before this work, zero
+hits for "spy"/"espionage"/"tenure". Raised by the user while discussing
+`spy_names`: `analyze_game.md` already reads the full `espionage` digest
+section, but the chronicle read none of it.
+
+Deliberately narrow: of `tenures`, `missions`, `losses`, `counterspies`
+and `coups`, only the two that happen rarely enough to be worth a reader's
+attention went in — a spy's death and a coup's outcome. `tenures` is
+vision, not an event; `missions` and `counterspies` are routine enough on
+a long game to flood the chronicle with texture the reader has no reason
+to want. Explicitly out of scope for now, not forgotten.
+
+The other constraint the user set: neither may ever open an entry of its
+own. `ChronicleSpine` already had the mechanism for this — light moments
+(weight below `ANCHOR_WEIGHT`) join the nearest chosen cluster within
+`CLUSTER_GAP` turns, or fall to `background` if nothing is near, the same
+path `golden_age_started` and the rest of `logged_moments`' lighter
+entries already take. So `spy_killed` (weight 1) and `coup` (weight 2)
+needed no new attachment logic, just two new moment builders reading
+`Espionage#losses` / `Espionage#coups` into `ChronicleSpine#moments`,
+proven by tests asserting each joins a nearby entry and earns none on its
+own when isolated.
+
+`chronicle_game.md` gained one short section, "Espionage as texture, not
+an entry", placed beside the other event-shaped sections and instructing
+the model to fold each into whichever passage it already lands in rather
+than give it a scene, name the spy from `spy_names` (already reaching the
+chronicle digest for free through `ChronicleDigest` wrapping
+`DigestBuilder#call`), and read a coup's `outcome` as a seizure rather
+than an election.
+
 ## Plan: great people — appearance, use, and death (planned)
 
 Status: **Not implemented as its own reading.** `PlayerTimeline#great_people`

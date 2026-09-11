@@ -359,6 +359,22 @@ sack and no ruler killed where this is all that happened - a people can
 fall out of contention with not a shot fired, or with a war that fired
 far too many and settled nothing.
 
+## Espionage as texture, not an entry
+
+Two things happen quietly enough that the chronicle never stops for them
+alone: a `spy_killed` moment, an agent's death, and a `coup` moment, an
+attempt to seize a free city's allegiance by force rather than the ballot.
+Neither anchors an entry - fold each into the passage already covering
+those years, a clause or a sentence, not a scene of its own. Name the
+agent from `spy_names` when the ruleset gives one. Where a death's `city`
+and `city_civ` are absent, the record does not say where the agent fell,
+so leave the place out rather than guess it.
+
+A `coup`'s `outcome` is `failed` or `succeeded`. A failed attempt cost the
+agent sent to make it and changed nothing else - the free city's crown
+stayed where it was. A succeeded one moved that crown without a vote cast
+for it anywhere; write it as a seizure, not an election.
+
 ## Vocabulary: no game words
 
 The chronicle is written from inside the world, so the vocabulary of the
