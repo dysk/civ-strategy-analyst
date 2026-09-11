@@ -1022,8 +1022,78 @@ down where the tables are. A completion's kind comes off the record's own
 every completion in both logs carries one, so the join and the city-state
 list it needed are unnecessary.
 
-When iterations 3–6 land, this becomes an `(implemented)` section with the
-commit range and the per-iteration notes, like the tranche-1 features above.
+All six iterations landed: `5b0ff3e`, `e7f3742`, `17f497b`, `d150abe`,
+`efc4702`, `8dfa0fe`, `f0c098e`, `607595d`, `760fb70`, with `8bd4804` and
+`74d13d5` upstream in `civ-narrative-logger`.
+
+## Plan: espionage on the page (planned)
+
+Status: **Not implemented.** Espionage reaches the digest and both prompts
+and stops there. `games#show` has no espionage section and there is no
+espionage page, so the only way a reader sees any of it is by reading an
+LLM report. Every other substantial projection has both — `geometry`,
+`army`, `cultural`, `congress`, `victory_progress` — and this one has
+neither.
+
+Context: the projection is done and none of this adds a line of analysis.
+`Espionage` already answers `tenures`, `missions`, `losses`, `capacity`,
+`counterspies`, `coups` and `observers_of`, and the house pattern for a
+feature page is a controller that only arranges what a projection returns —
+`ArmyCompositionsController` samples every tenth turn,
+`CulturalStandingsController` merges two series, and neither computes
+anything. So this is presentation work, and any calculation that appears in
+a controller here is a sign it belongs in the projection instead.
+
+**Three things the page must show differently from a column of numbers**,
+because a table that flattens them lies exactly the way a prompt without the
+rules would:
+
+- `visible_from_turn` next to `from_turn`, never instead of it. The gap is
+  usually four turns and it is the whole content of the two Mysore
+  near-misses — a spy that arrived and a spy that could see are different
+  facts, and the second is the one a join uses.
+- `visible_from_turn_bounded` and `city_inferred` have to read as "no later
+  than" and "reconstructed". As bare numbers they pass for measurements.
+- A garrison read from the log and one inferred at confidence 1 are two
+  different claims and cannot share a column unmarked. `inferred` and
+  `confidence` are on the record for this reason.
+
+Sizes to design against, from the two imported games: 46 and 37 tenures, 30
+and 24 missions, 9 and 1 losses, 3 and 6 garrisons, 0 and 1 coups, over 6
+civs each. Tenures are the only table that grows badly — a longer game with
+six civs running five spies each will produce hundreds — so it is the one
+that needs a per-civ fold, the way `ArmyComposition` needed sampling.
+
+Iterations (each: failing tests → review → implementation):
+
+1. **`EspionageOperationsController#show`** + `app/views/espionage_operations/
+   show.html.erb`, routed as `resource :espionage, only: [ :show ]` beside
+   the other five. Four tables: capacity and losses per civ; tenures folded
+   per civ with `from_turn`, `visible_from_turn`, `until_turn`, `ended_by`
+   and the bounded flag; missions split by kind with `anchored: false`
+   marked as uncertain rather than counted in; garrisons and coups together,
+   each carrying how it was known. `applicable?` false renders the same
+   empty state the other pages use. A controller test per table, in
+   `test/controllers/espionage_operations_controller_test.rb`.
+2. **The `games#show` section and its link.** A summary table per civ —
+   spies made, spies lost, missions, garrison — and "See how the spies
+   moved" pointing at the page, matching the five sections already there.
+   `GamesController#show` gains one assembler alongside `army_rows` and
+   `cultural_rows`.
+3. **`key_moments_helper`'s `wonder_race_lost` line gains the full-view
+   clause.** This is where espionage reaches a reader who never opens the
+   page, and it is the one sentence the whole feature was built for. It must
+   not overstate: name the years of vision, never a decision, and never at
+   all where `contender_human` is false. Both live instances in the example
+   logs are an AI, so the clause ships with no exercised instance and the
+   test for it is a constructed human contender.
+
+Not in scope: charts of any kind — the app renders tables and one small
+capital layout, and a spy tenure is a span best read as a row. No new
+projection code; if a view wants a number `Espionage` does not answer, the
+answer is a method on the projection with its own test, not arithmetic in a
+controller. `DigestBuilderCostTest::PROJECTIONS` needs nothing: it covers
+`DigestBuilder.new.call` and these pages are not on that path.
 
 ## Plan: great people — appearance, use, and death (planned)
 

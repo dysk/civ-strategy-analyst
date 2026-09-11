@@ -863,6 +863,15 @@ say so — do not calibrate it against nothing.
    inference and confidence where not; `chronicle_game.md` gets how to write a
    race lost in full view.
 
+### Not built: the page
+
+The feature reaches the digest and both prompts and stops. `games#show` has
+no espionage section and there is no espionage page, so a reader who does not
+open an LLM report sees none of it — the only substantial projection in the
+app with neither. Planned in `docs/plan.md` as three presentation iterations:
+the page, the summary section and its link, and the full-view clause on the
+`wonder_race_lost` moment line.
+
 ## 5. City-state influence and the vote
 
 India ended allied to **10 of 11** city-states and won on diplomacy. The first
