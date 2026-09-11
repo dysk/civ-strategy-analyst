@@ -53,6 +53,15 @@ class EspionageOperationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.espionage-losses td.reconstructed"
   end
 
+  test "names a spy the ruleset gives a flavour name, in the losses table" do
+    @game.update!(lekmod_version: "35.3")
+    killed("India", 5, spy: "TXT_KEY_SPY_NAME_INDIA_7", agent: 7, city: "Delhi", city_civ: "India")
+
+    get game_espionage_url(@game)
+
+    assert_select "table.espionage-losses td", "Mukta"
+  end
+
   test "folds each civilization's spy tenures into its own table" do
     moved("India", 100, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan", state: "travelling")
     surveillance("India", 104, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan")
@@ -87,6 +96,27 @@ class EspionageOperationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.espionage-tenures td.bounded", false
   end
 
+  test "names a spy the ruleset gives a flavour name, in the tenures table" do
+    @game.update!(lekmod_version: "35.3")
+    moved("India", 100, spy: "TXT_KEY_SPY_NAME_INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan",
+          state: "travelling")
+
+    get game_espionage_url(@game)
+
+    assert_select "table.espionage-tenures td", "Mukta"
+    assert_select "table.espionage-tenures td", text: "TXT_KEY_SPY_NAME_INDIA_7", count: 0
+  end
+
+  test "reads an unresolved spy id as the civ and ordinal it names, not the raw id" do
+    @game.update!(lekmod_version: "35.3")
+    moved("India", 100, spy: "TXT_KEY_SPY_NAME_MADE_UP_9", agent: 7, city: "Kyoto", city_civ: "Japan",
+          state: "travelling")
+
+    get game_espionage_url(@game)
+
+    assert_select "table.espionage-tenures td", "Made Up 9"
+  end
+
   test "splits completed missions by kind" do
     surveillance("India", 104, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan")
     mission("India", 110, spy: "INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan", state: "gathering_intel")
@@ -106,6 +136,16 @@ class EspionageOperationsControllerTest < ActionDispatch::IntegrationTest
     get game_espionage_url(@game)
 
     assert_select "table.espionage-missions td.uncertain"
+  end
+
+  test "names a spy the ruleset gives a flavour name, in the missions table" do
+    @game.update!(lekmod_version: "35.3")
+    mission("India", 110, spy: "TXT_KEY_SPY_NAME_INDIA_7", agent: 7, city: "Kyoto", city_civ: "Japan",
+            state: "gathering_intel")
+
+    get game_espionage_url(@game)
+
+    assert_select "table.espionage-missions td", "Mukta"
   end
 
   test "lists a garrison read straight from the log" do

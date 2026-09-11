@@ -4,6 +4,7 @@ class EspionageOperationsController < ApplicationController
   def show
     @game = Game.find(params[:game_id])
     @espionage = Espionage.for(@game)
+    @spy_names = SpyNames.for(@game.lekmod_version)
     return unless @espionage.applicable?
 
     @capacity_rows = capacity_rows

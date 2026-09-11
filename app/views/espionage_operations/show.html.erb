@@ -52,7 +52,7 @@
         <% @loss_rows.each do |loss| %>
           <tr>
             <td><%= loss[:civ] %></td>
-            <td><%= loss[:spy] %></td>
+            <td><%= @spy_names.call(loss[:spy]) %></td>
             <td><%= loss[:turn] %></td>
             <td><%= loss[:city] || "&mdash;".html_safe %></td>
             <td><%= loss[:city_civ] || "&mdash;".html_safe %></td>
@@ -88,7 +88,7 @@
       <tbody>
         <% history[:tenures].each do |tenure| %>
           <tr>
-            <td><%= tenure[:spy] %></td>
+            <td><%= @spy_names.call(tenure[:spy]) %></td>
             <td><%= tenure[:city] || "&mdash;".html_safe %></td>
             <td><%= tenure[:from_turn] %></td>
             <td class="<%= "bounded" if tenure[:visible_from_turn_bounded] %>">
@@ -129,7 +129,7 @@
           <% group[:missions].each do |mission| %>
             <tr>
               <td><%= mission[:civ] %></td>
-              <td><%= mission[:spy] %></td>
+              <td><%= @spy_names.call(mission[:spy]) %></td>
               <td><%= mission[:city] || "&mdash;".html_safe %></td>
               <td><%= mission[:turn] %></td>
               <td class="<%= "uncertain" unless mission[:anchored] %>">
