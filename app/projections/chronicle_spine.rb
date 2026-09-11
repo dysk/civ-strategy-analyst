@@ -24,7 +24,7 @@ class ChronicleSpine
     religion_founded: 3, world_wonder: 3, city_founded: 2, religion_enhanced: 2,
     reformation_added: 2, congress_host_change: 2, spaceship_part_assembled: 2,
     pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1,
-    player_declared_irrelevant: 3, wonder_race: 1
+    player_declared_irrelevant: 3, wonder_race: 1, spy_killed: 1, coup: 2
   }.freeze
 
   # A war is worth what it cost. A declaration nobody acted on is an act of
@@ -114,7 +114,7 @@ class ChronicleSpine
   def light_moments = moments - anchor_moments
 
   def moments
-    @moments ||= (detected_moments + logged_moments)
+    @moments ||= (detected_moments + logged_moments + espionage_moments)
       .map { |moment| moment.merge(weight: weight_of(moment)) }
       .sort_by { |moment| moment[:turn] }
   end
@@ -245,6 +245,29 @@ class ChronicleSpine
   # A capital, or a city that stood for a fifth of its owner's people
   # before it fell, is a major loss; anything smaller is a border town.
   # Nil where no city snapshot places the city, leaving the weight flat.
+  # A spy's death and a coup's outcome are rare enough to be worth telling but
+  # never worth an entry of their own - light on purpose, so they can only
+  # ever join a heavier moment nearby.
+  def espionage_moments
+    spy_deaths + coup_moments
+  end
+
+  def spy_deaths
+    espionage.losses.map do |loss|
+      { type: :spy_killed, turn: loss[:turn], civ: loss[:civ], spy: loss[:spy],
+        city: loss[:city], city_civ: loss[:city_civ] }
+    end
+  end
+
+  def coup_moments
+    espionage.coups.map do |coup|
+      { type: :coup, turn: coup[:turn], civ: coup[:civ], city_state: coup[:city_state],
+        outcome: coup[:outcome], spy: coup[:spy] }
+    end
+  end
+
+  def espionage = @espionage ||= Espionage.for(@game)
+
   def capture_scale(event)
     return :major if event.payload["capital"]
 

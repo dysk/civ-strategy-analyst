@@ -305,6 +305,40 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_empty spine.quiet_spans
   end
 
+  test "a spy's death joins the entry it happened near, rather than starting one of its own" do
+    event(nil, "city_captured", 40, city: "Corinth", old_owner: "Greece", new_owner: "Rome")
+    spy_killed("England", "ENGLAND_1", 42, city: "London", city_civ: "England")
+
+    entry = spine.entries.sole
+
+    assert_includes entry[:moments].map { |moment| moment[:type] }, :spy_killed
+  end
+
+  test "a spy's death far from any entry earns none of its own" do
+    spy_killed("England", "ENGLAND_1", 100, city: "London", city_civ: "England")
+
+    assert_empty spine.entries
+    assert_includes spine.background.map { |moment| moment[:type] }, :spy_killed
+  end
+
+  test "a coup joins the entry it happened near, rather than starting one of its own" do
+    event(nil, "city_captured", 40, city: "Corinth", old_owner: "Greece", new_owner: "Rome")
+    spy_killed("Arabia", "ARABIA_0", 42, city: "Valletta", city_civ: "Valletta")
+    city_state_snapshot("Valletta", 42, relations: { "Arabia" => [ -10, 0 ] })
+
+    entry = spine.entries.sole
+
+    assert_includes entry[:moments].map { |moment| moment[:type] }, :coup
+  end
+
+  test "a coup far from any entry earns none of its own" do
+    spy_killed("Arabia", "ARABIA_0", 100, city: "Valletta", city_civ: "Valletta")
+    city_state_snapshot("Valletta", 100, relations: { "Arabia" => [ -10, 0 ] })
+
+    assert_empty spine.entries
+    assert_includes spine.background.map { |moment| moment[:type] }, :coup
+  end
+
   test "a war names what each side had standing when it opened" do
     event("Rome", "unit_created", 5, unit: "UNIT_ARCHER")
     declare_war
@@ -372,6 +406,15 @@ class ChronicleSpineTest < ActiveSupport::TestCase
 
   def city_snapshot(civ, turn, city, population:)
     event(civ, "city_snapshot", turn, city: city, population: population)
+  end
+
+  def spy_killed(civ, spy, turn, city:, city_civ:)
+    event(civ, "spy_killed", turn, spy: spy, city: city, city_civ: city_civ)
+  end
+
+  def city_state_snapshot(name, turn, relations: {})
+    event(nil, "city_state_snapshot", turn, city_state: name,
+      relations: relations.map { |civ, (influence, per_turn)| { "civ" => civ, "influence" => influence, "per_turn" => per_turn } })
   end
 
   def killed(killer, victim, unit, turn)
