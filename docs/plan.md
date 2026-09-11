@@ -1026,9 +1026,25 @@ All six iterations landed: `5b0ff3e`, `e7f3742`, `17f497b`, `d150abe`,
 `efc4702`, `8dfa0fe`, `f0c098e`, `607595d`, `760fb70`, with `8bd4804` and
 `74d13d5` upstream in `civ-narrative-logger`.
 
-## Plan: espionage on the page (planned)
+## Plan: espionage on the page (implemented)
 
-Status: **Not implemented.** Espionage reaches the digest and both prompts
+Status: **Implemented 2026-09-11** (commits `abd7664`, `6d86f39`,
+`b5df27c`, `92d6be5`). Espionage now has both a summary row on `games#show`
+and its own page, `EspionageOperationsController#show`, matching every
+other substantial projection.
+
+One departure from the plan below, found while implementing: "capacity and
+losses per civ" as a single table would have flattened `city_inferred` and
+`turns_since_last_seen` into a bare count, which is exactly the distinction
+the page exists to preserve (see the "three things" list). Losses got their
+own table instead — one row per death, civ across the whole game rather
+than folded per civ, since a handful of losses does not need the fold a
+zero of thousands of tenures does. Capacity stayed a single per-civ table
+with `killed` as its loss count, unchanged from the plan.
+
+What follows is the plan as written.
+
+Status (as planned): Espionage reaches the digest and both prompts
 and stops there. `games#show` has no espionage section and there is no
 espionage page, so the only way a reader sees any of it is by reading an
 LLM report. Every other substantial projection has both — `geometry`,
