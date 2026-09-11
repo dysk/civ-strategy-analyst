@@ -1431,3 +1431,147 @@ short section treating the destination split as characterisation, a
 one-sided route as a clause worth naming outright, and the concurrency
 curve as backdrop the chronicler mostly leaves unnarrated - the same
 texture-not-entry treatment feature 6 established for diplomatic ties.
+
+## Plan: yield attribution (implemented)
+
+Status: **Implemented 2026-09-11.** `docs/reading-the-new-log.md` §9 as
+written, two TDD cycles (the projection, then the digest section).
+
+`YieldAttribution` (`app/projections/yield_attribution.rb`) reads
+`snapshot.yield_sources`, the one field carrying the mechanism rather
+than just the curve, and which nothing read before this. `series(civ,
+yield_name)` returns `{turn, total, sources, shortfall}` per turn;
+`shortfall` is `total` minus the sum of the named parts, never folded
+into `cities` or hidden behind a normalised percentage, per the doc's own
+rule. `applicable?` is false when a log predates the field entirely -
+`babylon-domination` and `chile-vs-vietnam` both do.
+
+Checked against the real log rather than assumed: `india-diplo`'s
+Netherlands at turn 25 reports `culture: 7` against a `sources: {cities:
+6}` - a golden age's flat bonus, unattributed to any source - giving
+`shortfall: 1`, which the projection reproduces exactly. The vocabulary
+disagreement the doc flagged is real too: `science` calls the same
+city-state contribution `city_states`, `culture`/`faith` call it
+`minor_civs`; this version passes both through unnormalised rather than
+unifying them, a follow-up if it turns out to matter in practice.
+
+`DigestBuilder#yield_attribution` degrades to `{applicable: false,
+reason: :no_yield_sources}` on an old log, otherwise
+`by_civ.<civ>.<yield>` at ~25-turn checkpoints, the same grid
+`trade_routes`/`victory_progress` sample at - listing only the yields a
+civilization actually has source data for, not all four unconditionally.
+`YieldAttribution` joins `DigestBuilderCostTest::PROJECTIONS`.
+`analyze_game.md` gains the digest paragraph: what `shortfall` means, the
+`city_states`/`minor_civs` naming split, and a pointer to cross-reference
+`sources.city_states`/`minor_civs` against
+`city_states.by_civ.<civ>.attribution` as the second, independent check
+on feature 5's residual the doc called for.
+
+Not done, left for later: `chronicle_game.md` - the feature is
+attribution for analysis, not narrative texture, and the design doc named
+no chronicle role for it, unlike trade routes' concurrency curve; the
+`city_states`/`minor_civs` vocabulary unification; and an end-to-end
+`bin/civ analyze` A/B, which is pending the way several tranche 2 and 3
+features' A/Bs already are.
+
+## Plan: strategic resource shortages — combat penalty (planned)
+
+Status: **Not started.** Recorded 2026-09-11 so the idea has a home; no
+code written.
+
+Context: a player who runs a strategic resource (horse, iron, coal, oil,
+aluminum...) below zero doesn't just lose the ability to build more units
+that need it — every unit it already owns that needs that resource fights
+weaker. Checked against the rule rather than assumed, since every other
+feature in this file is:
+
+- `CvUnit::GetStrategicResourceCombatPenalty()`
+  (`LEKMOD_DLL/CvGameCoreDLL_Expansion2/CvUnit.cpp:12631`) loops every
+  resource; for one the unit requires
+  (`m_pUnitInfo->GetResourceQuantityRequirement(eResource) > 0`) and the
+  owner is short of (`getNumResourceAvailable(eResource) < 0`), it adds
+  `floor((iMissing / iUsed) * STRATEGIC_RESOURCE_EXHAUSTED_PENALTY())` —
+  `iMissing = iUsed - iTotal` — then clamps the **combined** total at
+  `STRATEGIC_RESOURCE_EXHAUSTED_PENALTY()`, never worse.
+- That constant is **`-50`** in this mod
+  (`LEKMOD/Override/CIV5Units.xml:92502`, the same table
+  `VERY_UNHAPPY_MAX_COMBAT_PENALTY` sits in). So the penalty scales with
+  how deep the deficit runs — a resource short by its full requirement
+  (deficit fraction 1.0) costs the full −50% combat strength — and needing
+  two resources at once is never worse than −50% total, not additive
+  beyond that floor.
+- The requirement side — which `UNIT_*` needs which `RESOURCE_*` and how
+  many — is `Unit_ResourceQuantityRequirements` in
+  `LEKMOD/Override/CIV5Units.xml:262725` (`UnitType`, `ResourceType`,
+  `Cost`). Same table shape as `Building_ResourceQuantityRequirements`,
+  which tranche 1's `buildings.yml` pass already has a pattern for.
+
+What's already logged, checked against the real example files rather than
+assumed: `snapshot.resources[]` carries `total`/`used`/`import`/`export`
+per resource per civ per turn (table in `docs/reading-the-new-log.md`,
+"read by nothing"). Scanning all five example logs for
+`total < used` (the deficit `getNumResourceAvailable` tests):
+
+| log | snapshots with a `resources[]` list | deficit rows |
+|---|---|---|
+| babylon-domination | 0 | — |
+| chile-vs-vietnam | 0 | — |
+| espionage-test | 619 | 0 |
+| **india-diplo** | 1,014 | **7** |
+| run-b-test | 104 | 0 |
+
+The seven are two real cases: **Netherlands ran `RESOURCE_HORSE` at
+`total: 0, used: 1` for six straight turns, 81–86** — a deficit fraction
+of 1.0, which by the formula above is a flat −50% on any horse-requiring
+unit it owned over that span. The DLL formula would apply this the moment
+the deficit exists, per-turn, not just at a threshold crossing. The
+seventh, Iroquois `RESOURCE_COCONUT` at turn 153 (`total: -1, used: 0`),
+is a **luxury**, not strategic — no unit has a
+`ResourceQuantityRequirement` on it, so `GetStrategicResourceCombatPenalty`
+never reaches it regardless of the negative total; worth naming so the
+projection doesn't mistake every negative `total` for a combat-relevant
+one.
+
+**Not yet confirmed:** no `unit_created` record for Netherlands names a
+horse-requiring unit type (`Horseman`, `Chariot Archer`, …) before turn 86
+in this log, so whether the six-turn deficit actually weakened a unit in
+play, or just meant six turns with no live horse-unit to weaken, is open —
+the next step, not something to assume either way.
+
+### Design sketch
+
+- Extend `LekmodIdsExtractor` (or a sibling pass, same pattern as
+  `buildings.yml`) over `Unit_ResourceQuantityRequirements` →
+  `db/lekmod/<version>/unit_resource_requirements.yml`
+  (`UNIT_*` → `{resource, cost}`, a unit can appear more than once).
+- A projection — `ResourceShortages` or a method added to wherever
+  `snapshot.resources[]` first gets read — reporting, per `(civ, turn)`,
+  every resource where `total < used`, the deficit fraction, and the
+  derived penalty (`floor(deficit_fraction * -50)`, combined penalty
+  floored at `-50`). Strategic resources only; a `resource.yml`-style
+  strategic/luxury/bonus classification (the `Resources` table's own
+  `ResourceUsage` field) keeps a Coconut-shaped row from being read as
+  combat-relevant.
+- Cross-reference which of the civ's own units (from `unit_created`,
+  never disbanded/lost since) actually require a resource in deficit that
+  turn — the exposed units, not just the resource name.
+- This is a **computed mechanical fact, never an observed one** — no
+  event logs a unit's actual combat strength, so nothing here confirms a
+  fight was lost to it. Digest and both prompts must say so exactly the
+  way §11's deal reconstruction is labelled inference, not narrate a
+  battle outcome from it.
+- `KeyMomentDetector` candidate: a civ entering or leaving a strategic
+  deficit while it holds units exposed to it — weight modest, since (per
+  the evidence above) this may turn out to be common and short-lived
+  rather than dramatic; recalibrate once measured across more logs.
+
+### Before designing further
+
+Re-run the deficit scan above against a bigger and a human-multiplayer
+log before committing to iteration boundaries — one six-turn Horse dip in
+one game, with no confirmed exposed unit, is not enough to calibrate a
+`KeyMomentDetector` weight or decide whether this earns its own digest
+section versus a line inside the existing resources read. Same discipline
+`docs/reading-the-new-log.md`'s tranche 3 preamble asks of research
+beelines, yield attribution, religion and deal reconstruction: specified
+lightly on purpose, re-measured before it's designed in full.
