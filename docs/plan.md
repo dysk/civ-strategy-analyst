@@ -1232,11 +1232,71 @@ chronicle digest for free through `ChronicleDigest` wrapping
 `DigestBuilder#call`), and read a coup's `outcome` as a seizure rather
 than an election.
 
-## Plan: great people — appearance, use, and death (planned)
+## Plan: great people — appearance, use, and death (implemented)
 
-Status: **Not implemented as its own reading.** `PlayerTimeline#great_people`
-today reads only `great_person_expended` and returns `{turn, great_person}`,
-surfaced in the digest as `great_people:`. It shows a bare list of "civ
+Status: **Implemented 2026-09-11.** `PlayerTimeline#great_people(civ)` now
+returns one row per departure — expended, killed, or disbanded — and a new
+`PlayerTimeline#great_people_born(civ)` returns the births timeline
+separately. Both reach the digest (`great_people:`, `great_people_born:`).
+Verified against `india-diplo` (game 32, 6-civ roster): 87 imported
+`great_person_expended` records (the file's raw 88 minus one session-restart
+duplicate `ImportGame`'s dedup already discards — not a gap in this work), 1
+enemy kill (an Iroquois `UNIT_PROPHET` to India, turn 144, the same record
+the original plan text used as its worked example), 0 disbandments. Expend
+actions split `{religious_action: 17, academy: 6, manufactory: 7, treatise:
+8, concert_tour: 8, great_work: 13, bulb: 17, holy_site: 2, trade_mission: 5,
+hurry: 3, customs_house: 1}` — every kind classified, no unmatched action.
+
+Two calls made beyond the plan text, both open to revisiting:
+
+- **`city` stays nil for a targeted expend** (Academy/Manufactory/Customs
+  House/Citadel/Holy Site/Landmark). `great_person_expended` carries no
+  location at all; only the matched `improvement_built` has x/y, and nothing
+  in the codebase resolves a tile to its owning city yet (`PlayerTimeline#valuation`
+  matches by city *name* from event payloads, never by geometry) — the
+  plan's claim that this join is "the projection's job, from `city_snapshot`
+  the way `PlayerTimeline#valuation` already does it" doesn't hold; that
+  method never touches x/y. Building a nearest-owned-city lookup
+  (`HexGrid#distance` against a civ's `city_founded`/`city_captured` plots)
+  is a real option for later if a report actually wants the city. `city` is
+  populated today only for `:killed`/`:disbanded`, straight from
+  `unit_lost`'s own `city` field (present on 489 of 1041 rows in
+  india-diplo; nil otherwise).
+- **Birth and fate are two separate methods, not merged rows.** The plan's
+  "Shape" line specs only `{turn, great_person, fate, action, city,
+  killed_by}` — no birth field — and the log carries no per-unit identity to
+  pair a specific birth to a specific fate beyond turn coincidence, which is
+  already the least certain part of the targeted-action pairing (see below).
+  Layering a second turn-coincidence guess on top felt like more inference
+  than the plan asked for, so births and fates stand as two independent
+  signals a report can correlate loosely rather than one the code claims to
+  have resolved. india-diplo: 98 births across the six civs, none of them
+  `UNIT_GREAT_GENERAL`/`UNIT_GREAT_ADMIRAL`-adjacent surprises (2 each, in
+  line with a war-heavy log).
+
+Action classification pairs each expend's kind against a same-turn
+`improvement_built` filtered to the improvement *that kind* can plant
+(`TARGETED_ACTIONS`), which is what resolves the plan's own ambiguous
+example cleanly: India turn 122 has three expends (Engineer/Scientist/
+Musician) and three improvements finished that turn (Manufactory/Academy/a
+third, unrelated one) — kind-filtering pairs Engineer→Manufactory and
+Scientist→Academy correctly and leaves Musician untargeted (Musician has no
+plantable form at all), with no risk of a false cross-match. The mod's
+civ-unique Prophet reskins (`UNIT_DALAILAMA`, `UNIT_MABA`,
+`UNIT_FAKEPROPHET`) are classified as prophets on the strength of sitting
+alongside `UNIT_PROPHET` in `WarCasualties::CIVILIAN_UNITS` — not confirmed
+against the mod's own unit table the way that list itself is.
+
+Not done, left for later: the tile→city lookup above; relabelling a
+`:disbanded` fate that's actually an unobserved coup-adjacent death (no such
+case in either example log); pairing a specific birth to a specific fate
+when the log someday carries per-unit identity.
+
+## Plan: great people — appearance, use, and death (original plan text)
+
+`PlayerTimeline#great_people`
+previously read only `great_person_expended` and returned `{turn, great_person}`,
+surfaced in the digest as `great_people:`. It showed a bare list of "civ
 expended a Great X on turn N" — no birth, no what the expend was *for*, no
 death.
 

@@ -73,10 +73,33 @@ class PlayerTimeline
     sort_events(pantheon + founded + enhanced + reformation)
   end
 
+  # Every great person's departure from play - expended, killed by an enemy,
+  # or disbanded - never its birth (see great_people_born). unit_lost fires
+  # for an expend too (UnitPrekill runs before the consuming effect), so a
+  # loss on the same turn as an expend for this civ is that echo, not a
+  # second great person - the log gives no per-unit identity to tell two
+  # genuinely simultaneous fates apart, and treating them as one is the
+  # far more common case.
   def great_people(civ)
-    of_type("great_person_expended").select { |e| e.civ == civ }.map do |e|
-      { turn: e.turn, great_person: e.payload["great_person"] }
+    expends = of_type("great_person_expended").select { |e| e.civ == civ }
+    expended_turns = expends.map(&:turn).to_set
+
+    losses = of_type("unit_lost").select do |e|
+      e.civ == civ && GREAT_PERSON_UNITS.key?(e.payload["unit"]) && !expended_turns.include?(e.turn)
     end
+
+    sort_events(expends.map { |e| expended_row(e) } + losses.map { |e| lost_row(e) })
+  end
+
+  # The births timeline appearance alone can give: which great person, on
+  # what turn, in which city (nil where the log didn't carry one - a
+  # barbarian-adjacent spawn quirk, not unique to great people).
+  def great_people_born(civ)
+    sort_events(
+      of_type("unit_created").select { |e| e.civ == civ && GREAT_PERSON_UNITS.key?(e.payload["unit"]) }.map do |e|
+        { turn: e.turn, great_person: e.payload["unit"], city: e.payload["city"] }
+      end
+    )
   end
 
   def eras(civ)
@@ -145,6 +168,77 @@ class PlayerTimeline
   end
 
   private
+
+  # The mod's great-person units, mapped to the kind they act as below.
+  # UNIT_DALAILAMA, UNIT_FAKEPROPHET and UNIT_MABA are civilization-unique
+  # reskins of the Prophet - grouped with it here on that basis (they sit
+  # alongside UNIT_PROPHET in WarCasualties::CIVILIAN_UNITS), not confirmed
+  # against the mod's own unit table the way that list is.
+  GREAT_PERSON_UNITS = {
+    "UNIT_SCIENTIST" => :scientist,
+    "UNIT_ENGINEER" => :engineer,
+    "UNIT_MERCHANT" => :merchant,
+    "UNIT_ARTIST" => :artist,
+    "UNIT_MUSICIAN" => :musician,
+    "UNIT_WRITER" => :writer,
+    "UNIT_PROPHET" => :prophet,
+    "UNIT_MABA" => :prophet,
+    "UNIT_FAKEPROPHET" => :prophet,
+    "UNIT_DALAILAMA" => :prophet,
+    "UNIT_GREAT_GENERAL" => :general,
+    "UNIT_GREAT_ADMIRAL" => :admiral
+  }.freeze
+
+  # The tile improvement each kind can plant instead of an instant use.
+  # Writer, Musician and Admiral have no planted form.
+  TARGETED_ACTIONS = {
+    scientist: { improvement: "IMPROVEMENT_ACADEMY", action: :academy },
+    engineer: { improvement: "IMPROVEMENT_MANUFACTORY", action: :manufactory },
+    merchant: { improvement: "IMPROVEMENT_CUSTOMS_HOUSE", action: :customs_house },
+    prophet: { improvement: "IMPROVEMENT_HOLY_SITE", action: :holy_site },
+    artist: { improvement: "IMPROVEMENT_LANDMARK", action: :landmark },
+    general: { improvement: "IMPROVEMENT_CITADEL", action: :citadel }
+  }.freeze
+
+  # The instant use when no matching improvement was planted the same turn.
+  # General and Admiral have none - a use that leaves no trace in the log.
+  UNTARGETED_ACTIONS = {
+    scientist: :bulb,
+    engineer: :hurry,
+    merchant: :trade_mission,
+    prophet: :religious_action,
+    artist: :great_work,
+    writer: :treatise,
+    musician: :concert_tour
+  }.freeze
+
+  def expended_row(event)
+    type = event.payload["great_person"]
+    { turn: event.turn, great_person: type, fate: :expended,
+      action: expend_action(GREAT_PERSON_UNITS[type], event.civ, event.turn), city: nil, killed_by: nil }
+  end
+
+  # (turn, civ) coincidence, not an id - the log has no other way to say a
+  # planted improvement belongs to a particular expend. Filtering candidate
+  # improvements to the one this kind can plant is what separates three
+  # great people expended the same turn against three unrelated
+  # improvements finished that same turn.
+  def expend_action(kind, civ, turn)
+    targeted = TARGETED_ACTIONS[kind]
+    return UNTARGETED_ACTIONS[kind] unless targeted
+
+    planted = of_type("improvement_built").any? do |e|
+      e.civ == civ && e.turn == turn && e.payload["improvement"] == targeted[:improvement]
+    end
+
+    planted ? targeted[:action] : UNTARGETED_ACTIONS[kind]
+  end
+
+  def lost_row(event)
+    killed_by = event.payload["killed_by"]
+    { turn: event.turn, great_person: event.payload["unit"],
+      fate: killed_by ? :killed : :disbanded, action: nil, city: event.payload["city"], killed_by: killed_by }
+  end
 
   # What a capture cost the side that lost it: the city's share of that
   # empire before the transfer, its size before and after, the resistance

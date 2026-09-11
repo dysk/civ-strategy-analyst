@@ -144,6 +144,7 @@ class DigestBuilder
         wars: timeline.wars(civ),
         irrelevance: timeline.irrelevance(civ),
         great_people: timeline.great_people(civ),
+        great_people_born: timeline.great_people_born(civ),
         eras: timeline.eras(civ),
         golden_ages: timeline.golden_ages(civ),
         wonders: timeline.wonders(civ),

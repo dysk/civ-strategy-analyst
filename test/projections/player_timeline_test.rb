@@ -165,15 +165,121 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     )
   end
 
-  test "great_people, eras and golden_ages list a civ's own events" do
-    event("Rome", "great_person_expended", 40, great_person: "UNIT_GREAT_SCIENTIST")
-    event("Greece", "great_person_expended", 41, great_person: "UNIT_GREAT_WRITER")
+  test "eras and golden_ages list a civ's own events" do
     event(nil, "era_entered", 50, team: 1, civs: %w[Rome Egypt], era: "ERA_CLASSICAL")
     event("Rome", "golden_age_started", 55)
 
-    assert_equal [ { turn: 40, great_person: "UNIT_GREAT_SCIENTIST" } ], timeline.great_people("Rome")
     assert_equal [ { turn: 50, era: "ERA_CLASSICAL" } ], timeline.eras("Rome")
     assert_equal [ { turn: 55 } ], timeline.golden_ages("Rome")
+  end
+
+  test "great_people reads an untargeted expend as the kind's instant use" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Greece", "great_person_expended", 41, great_person: "UNIT_WRITER")
+
+    assert_equal(
+      [ { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :bulb, city: nil, killed_by: nil } ],
+      timeline.great_people("Rome")
+    )
+  end
+
+  test "great_people reads a targeted expend from the matching same-turn improvement" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 5, y: 5)
+
+    assert_equal :academy, timeline.great_people("Rome").first[:action]
+  end
+
+  test "great_people leaves an expend untargeted when the same-turn improvement doesn't match the kind" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_MUSICIAN")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 5, y: 5)
+
+    assert_equal :concert_tour, timeline.great_people("Rome").first[:action]
+  end
+
+  test "great_people separates three same-turn expends by kind against three same-turn improvements" do
+    event("India", "great_person_expended", 122, great_person: "UNIT_ENGINEER")
+    event("India", "great_person_expended", 122, great_person: "UNIT_SCIENTIST")
+    event("India", "great_person_expended", 122, great_person: "UNIT_MUSICIAN")
+    event("India", "improvement_built", 122, improvement: "IMPROVEMENT_MANUFACTORY", x: 1, y: 1)
+    event("India", "improvement_built", 122, improvement: "IMPROVEMENT_ACADEMY", x: 2, y: 2)
+    event("India", "improvement_built", 122, improvement: "IMPROVEMENT_CONCERT_HALL", x: 3, y: 3)
+
+    actions = timeline.great_people("India").index_by { |g| g[:great_person] }.transform_values { |g| g[:action] }
+
+    assert_equal({ "UNIT_ENGINEER" => :manufactory, "UNIT_SCIENTIST" => :academy, "UNIT_MUSICIAN" => :concert_tour }, actions)
+  end
+
+  test "great_people treats the mod's civ-unique prophet analogues as prophets" do
+    event("Tibet", "great_person_expended", 64, great_person: "UNIT_DALAILAMA")
+    event("Tibet", "great_person_expended", 79, great_person: "UNIT_DALAILAMA")
+    event("Tibet", "improvement_built", 79, improvement: "IMPROVEMENT_HOLY_SITE", x: 5, y: 5)
+
+    religious_actions = timeline.great_people("Tibet").map { |g| g[:action] }
+
+    assert_equal [ :religious_action, :holy_site ], religious_actions
+  end
+
+  test "great_people gives a general a citadel action when planted, nil when not" do
+    event("Rome", "great_person_expended", 70, great_person: "UNIT_GREAT_GENERAL")
+    event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_CITADEL", x: 1, y: 1)
+    event("Rome", "great_person_expended", 80, great_person: "UNIT_GREAT_GENERAL")
+
+    actions = timeline.great_people("Rome").map { |g| g[:action] }
+
+    assert_equal [ :citadel, nil ], actions
+  end
+
+  test "great_people reads a great person killed by an enemy" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", city: "Roma", killed_by: "Greece")
+
+    assert_equal(
+      [ { turn: 60, great_person: "UNIT_GREAT_GENERAL", fate: :killed, action: nil, city: "Roma", killed_by: "Greece" } ],
+      timeline.great_people("Rome")
+    )
+  end
+
+  test "great_people reads a great person lost with no killer as disbanded" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_ENGINEER")
+
+    assert_equal(
+      [ { turn: 60, great_person: "UNIT_ENGINEER", fate: :disbanded, action: nil, city: nil, killed_by: nil } ],
+      timeline.great_people("Rome")
+    )
+  end
+
+  test "great_people does not double-count the UnitPrekill echo of an expend as a separate loss" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "unit_lost", 40, unit: "UNIT_SCIENTIST")
+
+    assert_equal 1, timeline.great_people("Rome").size
+    assert_equal :expended, timeline.great_people("Rome").first[:fate]
+  end
+
+  test "great_people ignores a lost unit that isn't a great person" do
+    event("Rome", "unit_lost", 10, unit: "UNIT_WARRIOR", killed_by: "Greece")
+
+    assert_empty timeline.great_people("Rome")
+  end
+
+  test "great_people_born lists a civ's own great-person births, ignoring ordinary units and other civs" do
+    event("Rome", "unit_created", 12, unit: "UNIT_SCIENTIST", city: "Roma")
+    event("Rome", "unit_created", 13, unit: "UNIT_WARRIOR", city: "Roma")
+    event("Greece", "unit_created", 14, unit: "UNIT_WRITER", city: "Athens")
+
+    assert_equal(
+      [ { turn: 12, great_person: "UNIT_SCIENTIST", city: "Roma" } ],
+      timeline.great_people_born("Rome")
+    )
+  end
+
+  test "great_people_born tolerates a birth with no recorded city" do
+    event("Rome", "unit_created", 12, unit: "UNIT_ENGINEER")
+
+    assert_equal(
+      [ { turn: 12, great_person: "UNIT_ENGINEER", city: nil } ],
+      timeline.great_people_born("Rome")
+    )
   end
 
   test "wonders lists world and national wonders built by a civ, ignoring regular buildings" do
