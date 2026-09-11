@@ -181,6 +181,48 @@ class KeyMomentsHelperTest < ActionView::TestCase
     assert_match(/ahead of a hard build/, key_moment_sentence(moment))
   end
 
+  test "names the years of vision when a human contender watched the race in full view" do
+    moment = { type: :wonder_race_lost, turn: 158, civ: "England", city: "London",
+               wonder: "BUILDING_LOUVRE", wonder_name: "Louvre", scale: :close,
+               production_invested: 425, turns_left: 2, winner: "Netherlands",
+               winner_city: "Amsterdam", winner_finish: :hard_built,
+               contender_human: true, observed_from_turn: 152, observed_turns: 6 }
+
+    assert_match(/England had 6 turns of visibility on it, from turn 152/, key_moment_sentence(moment))
+  end
+
+  test "never states a decision in the full-view clause" do
+    moment = { type: :wonder_race_lost, turn: 158, civ: "England", city: "London",
+               wonder: "BUILDING_LOUVRE", wonder_name: "Louvre", scale: :close,
+               production_invested: 425, turns_left: 2, winner: "Netherlands",
+               winner_city: "Amsterdam", winner_finish: :hard_built,
+               contender_human: true, observed_from_turn: 152, observed_turns: 6, response: :pressed_on }
+
+    refute_match(/pressed_on|pressed on/, key_moment_sentence(moment))
+  end
+
+  test "stays silent about vision for an AI contender, even when it was observed" do
+    moment = { type: :wonder_race_lost, turn: 158, civ: "England", city: "London",
+               wonder: "BUILDING_LOUVRE", wonder_name: "Louvre", scale: :close,
+               production_invested: 425, turns_left: 2, winner: "Netherlands",
+               winner_city: "Amsterdam", winner_finish: :hard_built,
+               contender_human: false, observed_from_turn: 152, observed_turns: 6 }
+
+    assert_equal "Turn 158: England lost the race for Louvre to Netherlands, 425 production sunk in",
+                 key_moment_sentence(moment)
+  end
+
+  test "adds no clause for a human contender with no vision of the race" do
+    moment = { type: :wonder_race_lost, turn: 158, civ: "England", city: "London",
+               wonder: "BUILDING_LOUVRE", wonder_name: "Louvre", scale: :close,
+               production_invested: 425, turns_left: 2, winner: "Netherlands",
+               winner_city: "Amsterdam", winner_finish: :hard_built,
+               contender_human: true, observed_from_turn: nil }
+
+    assert_equal "Turn 158: England lost the race for Louvre to Netherlands, 425 production sunk in",
+                 key_moment_sentence(moment)
+  end
+
   test "narrates a wonder becoming a contest" do
     moment = { type: :wonder_race, turn: 154, wonder: "BUILDING_LOUVRE", wonder_name: "Louvre",
                winner: "Netherlands", contenders: %w[England] }

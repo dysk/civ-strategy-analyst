@@ -54,9 +54,20 @@ module KeyMomentsHelper
     wonder_race: ->(m) { "#{m[:wonder_name]} became a contested build: #{m[:winner]} against #{m[:contenders].join(", ")}" },
     wonder_race_lost: ->(m) {
       rushed = " — #{m[:winner]} finished it ahead of a hard build" if m[:winner_finish] == :ahead_of_estimate
-      "#{m[:civ]} lost the race for #{m[:wonder_name]} to #{m[:winner]}, #{m[:production_invested]} production sunk in#{rushed}"
+      "#{m[:civ]} lost the race for #{m[:wonder_name]} to #{m[:winner]}, #{m[:production_invested]} production sunk in" \
+        "#{rushed}#{full_view_clause(m)}"
     }
   }.freeze
+
+  # This is where espionage reaches a reader who never opens the page, and it
+  # must not overstate what the log shows: the turns of vision, never the
+  # decision they invite. An AI contender made no decision to invite, so the
+  # clause stays silent on it even when it was observed.
+  def full_view_clause(moment)
+    return unless moment[:contender_human] && moment[:observed_from_turn]
+
+    " — #{moment[:civ]} had #{moment[:observed_turns]} turns of visibility on it, from turn #{moment[:observed_from_turn]}"
+  end
 
   TRENDS = {
     army_power_surge: :up, army_power_collapse: :down,
