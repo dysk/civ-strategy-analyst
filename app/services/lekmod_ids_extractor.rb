@@ -16,6 +16,12 @@ class LekmodIdsExtractor
 
   def unit_names = resolve(unit_to_description)
 
+  # A spy's id is already the Language_en_US text key - Civilization_SpyNames
+  # in CIV5Units.xml only enumerates which keys exist per civilization, it
+  # adds no Type indirection the way a policy or belief has - so no table
+  # needs parsing here, only the prefix that marks a key as a spy's.
+  def spy_names = texts.select { |tag, _| tag.start_with?(SPY_NAME_PREFIX) }
+
   # BUILDING_* -> { "name" => display name, "wonder" => scope } where scope
   # is "world" / "team" / "national" for a building whose class the ruleset
   # caps, and absent otherwise. The cap sits on the building's class, not
@@ -36,6 +42,8 @@ class LekmodIdsExtractor
 
   WONDER_SCOPE_FIELDS = { "MaxGlobalInstances" => "world", "MaxTeamInstances" => "team",
                           "MaxPlayerInstances" => "national" }.freeze
+
+  SPY_NAME_PREFIX = "TXT_KEY_SPY_NAME_".freeze
 
   # The name text of a national wonder carries the game's [COLOR_...] markup
   # around a trailing "*" that marks it as one; strip both back to the name.

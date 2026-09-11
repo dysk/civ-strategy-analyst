@@ -66,6 +66,24 @@ class LekmodIdsExtractorTest < ActiveSupport::TestCase
     refute names.key?("POLICY_TEST_ONE")
   end
 
+  test "resolves a spy name straight from its text key, preferring a Replace over the Row it overrides" do
+    names = LekmodIdsExtractor.new(SOURCE_DIR).spy_names
+
+    assert_equal "New Spy", names["TXT_KEY_SPY_NAME_TEST_ONE"]
+  end
+
+  test "resolves every spy name text key present, not just the overridden one" do
+    names = LekmodIdsExtractor.new(SOURCE_DIR).spy_names
+
+    assert_equal "Test Spy Two", names["TXT_KEY_SPY_NAME_TEST_TWO"]
+  end
+
+  test "leaves non-spy text keys out of the spy names" do
+    names = LekmodIdsExtractor.new(SOURCE_DIR).spy_names
+
+    refute names.key?("TXT_KEY_POLICY_TEST_ONE")
+  end
+
   test "resolves a building name from the Buildings table via its text key" do
     assert_equal "Test Wonder", buildings["BUILDING_TEST_WONDER"]["name"]
   end

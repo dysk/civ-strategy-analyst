@@ -21,5 +21,11 @@
 		<Row Tag="TXT_KEY_BUILDING_TEST_PLAIN">
 			<Text>Test Plain Building</Text>
 		</Row>
+		<Row Tag="TXT_KEY_SPY_NAME_TEST_ONE">
+			<Text>Old Spy</Text>
+		</Row>
+		<Row Tag="TXT_KEY_SPY_NAME_TEST_TWO">
+			<Text>Test Spy Two</Text>
+		</Row>
 	</Language_en_US>
 </GameData>
