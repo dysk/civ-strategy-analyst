@@ -31,9 +31,9 @@ class CapitalProximityTest < ActiveSupport::TestCase
 
     assert_equal(
       [
-        { civs: %w[Rome Greece], distance: 6, bearing: "E" },
-        { civs: %w[Rome Carthage], distance: 6, bearing: "N" },
-        { civs: %w[Greece Carthage], distance: 9, bearing: "NW" }
+        { civs: %w[Rome Greece], distance: 6, bearing: "E", met_turn: nil },
+        { civs: %w[Rome Carthage], distance: 6, bearing: "N", met_turn: nil },
+        { civs: %w[Greece Carthage], distance: 9, bearing: "NW", met_turn: nil }
       ],
       proximity.distances
     )
@@ -43,7 +43,30 @@ class CapitalProximityTest < ActiveSupport::TestCase
     founded("Rome", "Roma", 0, 44, 10)
     founded("Greece", "Athens", 0, 2, 10)
 
-    assert_equal [ { civs: %w[Rome Greece], distance: 4, bearing: "E" } ], proximity.distances
+    assert_equal [ { civs: %w[Rome Greece], distance: 4, bearing: "E", met_turn: nil } ], proximity.distances
+  end
+
+  test "reads met_turn from teams_met, regardless of which side is named first" do
+    founded("Rome", "Roma", 0, 10, 10)
+    founded("Greece", "Athens", 0, 16, 10)
+    teams_met("Greece", "Rome", 7)
+
+    assert_equal 7, proximity.distances.first[:met_turn]
+  end
+
+  test "leaves met_turn nil for a pair the log never recorded meeting" do
+    founded("Rome", "Roma", 0, 10, 10)
+    founded("Greece", "Athens", 0, 16, 10)
+
+    assert_nil proximity.distances.first[:met_turn]
+  end
+
+  test "matches met_turn defensively across every civ on each side of a teams_met record" do
+    founded("Rome", "Roma", 0, 10, 10)
+    founded("Greece", "Athens", 0, 16, 10)
+    event(nil, "teams_met", 12, team_a_civs: %w[Rome Carthage], team_b_civs: %w[Greece])
+
+    assert_equal 12, proximity.distances.find { |pair| pair[:civs] == %w[Rome Greece] }[:met_turn]
   end
 
   test "ignores cities founded without coordinates" do
@@ -105,7 +128,7 @@ class CapitalProximityTest < ActiveSupport::TestCase
     founded("Rome", "Roma", 0, 44, 10)
     founded("Greece", "Athens", 0, 2, 10)
 
-    assert_equal [ { civs: %w[Rome Greece], distance: 42, bearing: "W" } ],
+    assert_equal [ { civs: %w[Rome Greece], distance: 42, bearing: "W", met_turn: nil } ],
       CapitalProximity.for(@game).distances
   end
 
@@ -153,6 +176,10 @@ class CapitalProximityTest < ActiveSupport::TestCase
 
   def founded(civ, city, turn, x, y)
     event(civ, "city_founded", turn, city: city, x: x, y: y)
+  end
+
+  def teams_met(civ_a, civ_b, turn)
+    event(nil, "teams_met", turn, team_a_civs: [ civ_a ], team_b_civs: [ civ_b ])
   end
 
   def event(civ, event_type, turn, extra = {})

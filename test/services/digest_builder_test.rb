@@ -213,7 +213,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
     proximity = DigestBuilder.new(@game).call[:capital_proximity]
 
     assert_equal "Roma", proximity[:capitals]["Rome"][:city]
-    assert_equal [ { civs: %w[Rome Greece], distance: 6, bearing: "E" } ], proximity[:distances]
+    assert_equal [ { civs: %w[Rome Greece], distance: 6, bearing: "E", met_turn: nil } ], proximity[:distances]
   end
 
   test "includes who holds the ground between neighbouring capitals" do

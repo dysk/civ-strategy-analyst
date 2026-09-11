@@ -26,6 +26,7 @@ class CapitalProximity
     @grid = grid
     @bounds = bounds
     @foundings = game.event_log.of_type("city_founded")
+    @teams_met = game.event_log.of_type("teams_met")
   end
 
   def call
@@ -43,17 +44,39 @@ class CapitalProximity
   end
 
   # `bearing` reads from the first civilization towards the second.
+  # `met_turn` is when the two sides actually made contact - distance is
+  # geometry fixed at founding, met_turn is exploration, and the two can
+  # disagree: a close pair meeting late says something stood between them
+  # that the hex count alone does not show.
   def distances
     capitals.values.combination(2).map do |from, to|
       {
         civs: [ from[:civ], to[:civ] ],
         distance: @grid.distance(plot(from), plot(to)),
-        bearing: @grid.bearing(plot(from), plot(to))
+        bearing: @grid.bearing(plot(from), plot(to)),
+        met_turn: met_turn(from[:civ], to[:civ])
       }
     end
   end
 
   private
+
+  def met_turn(civ, other)
+    meetings_by_pair.fetch([ civ, other ].sort, []).min
+  end
+
+  # `teams_met` fires once per pair, but the pairing is read defensively -
+  # each side's `*_civs` crossed against the other's - so a log carrying
+  # more than one civ per team is still matched correctly.
+  def meetings_by_pair
+    @meetings_by_pair ||= @teams_met.each_with_object(Hash.new { |h, k| h[k] = [] }) do |event, index|
+      Array(event.payload["team_a_civs"]).each do |a|
+        Array(event.payload["team_b_civs"]).each do |b|
+          index[[ a, b ].sort] << event.turn
+        end
+      end
+    end
+  end
 
   # A civilization's capital is the first city it founded. Cities captured
   # later are somebody else's capital and do not replace it.
