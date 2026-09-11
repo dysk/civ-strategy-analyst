@@ -1356,3 +1356,40 @@ war already anchors its own entry, a tie broken by one needs no spine
 wiring of its own - `chronicle_game.md` gained a short section instructing
 the chronicler to fold both a standing tie and a `ties_at_declaration`
 clause into a passage that already exists, never a scene of its own.
+
+## Plan: first contact between majors (implemented)
+
+Status: **Implemented 2026-09-11.** Raised by the user while discussing
+diplomatic ties: `teams_met` (`team_a`/`team_a_civs`, `team_b`/
+`team_b_civs`, `turn`) is imported (`ImportGame::KNOWN_EVENT_TYPES`) and
+read by nothing - not even named in `docs/reading-the-new-log.md`'s survey
+of unread fields, an omission in that pass rather than a deliberate
+exclusion. In india-diplo it fires 88 times, 15 of them between a pair of
+majors (one per `C(6,2)` pair, as the rule demands) and the rest first
+contact with a city-state - scoped to majors only, on the
+`CapitalProximity` precedent that a city-state "plays no part in the game
+these distances describe."
+
+`CapitalProximity#distances` gains `met_turn` per pair, read from
+`teams_met` cross-joining each side's `*_civs` against the other's
+(defensive against a log where a team carries more than one civ, though
+none of the five example logs exercises that branch) and taking the
+earliest turn for a pair matched from either side. `distance` is geometry
+fixed at founding; `met_turn` is exploration, and india-diplo shows them
+disagreeing in both directions: Tibet-India sit 18 hexes apart, the 8th
+closest of 15 pairs, and do not meet until turn 64 - far later than every
+other pair within ten hexes of that rank; England-India sit 21 apart,
+solidly mid-table, and meet turn 10, the second-earliest contact in the
+game. Neither the table (`docs/plan.md`) nor `analyze_game.md` invents a
+terrain explanation for either - the digest carries no terrain at all -
+but both are named as the kind of mismatch worth a sentence.
+
+`analyze_game.md` gains the `met_turn` paragraph beside the existing
+`distance`/`bearing` one. `chronicle_game.md` folds it into the
+diplomatic-ties section already added for feature 6, as the natural
+opening line for a passage about a pair rather than a moment of its own -
+no `ChronicleSpine` weight, the same as `distance` and `bearing` carry
+none. Not built: a UI column. `games#show`'s capital-distances table
+shows only civs and hex count today, bearing included nowhere on the
+page, so `met_turn` stays digest/chronicle-only rather than breaking that
+precedent unasked.

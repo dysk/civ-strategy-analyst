@@ -430,6 +430,19 @@ part of such a map is its west. Either band is `null` when the log never
 reported that dimension of the map, and a `null` band is not an invitation
 to estimate one from the plots.
 
+Each pair also carries `met_turn`: the turn `teams_met` logged first
+contact between the two, null when the log never recorded one. `distance`
+is geometry fixed at founding; `met_turn` is exploration, and the two
+sometimes disagree - a pair among the closer half of `distances` that met
+much later than other similarly close pairs had something in the way that
+the hex count alone does not show, an unrevealed strait, a peninsula, a
+rival's territory sitting across the direct line. A pair that met
+unusually early despite a middling or long distance says the opposite -
+open or coastal ground between them, or an early scout that got lucky.
+Read `met_turn` beside `distance` rather than alone: a short distance and
+an early meeting together are the ordinary case and carry no story on
+their own.
+
 It also bears on domination progress: `victory_progress.capitals_held`
 says how many original capitals a civilization controls, but not which
 ones or how reachable the rest are. A civilization closest to a rival's

@@ -395,7 +395,7 @@ agent sent to make it and changed nothing else - the free city's crown
 stayed where it was. A succeeded one moved that crown without a vote cast
 for it anywhere; write it as a seizure, not an election.
 
-## Diplomatic ties as texture, not an entry
+## Diplomatic ties and first contact, as texture, not an entry
 
 `diplomatic_ties.pairs` records embassy, open borders, friendship,
 defensive pact and trade agreement between two realms - real contact
@@ -411,6 +411,17 @@ turning on one it had lately dealt with in good faith, worth a clause
 naming what broke and nothing more than the record shows. A war with no
 `ties_at_declaration` had no such contact to break, which is silence, not
 a fact to write around.
+
+Diplomatic ties presuppose two realms had already found each other.
+`capital_proximity.distances[].met_turn` names the year first contact was
+made, when the log recorded one - null otherwise, which is silence, not
+evidence the two never met. It is the natural opening line for a passage
+that already needs one, and worth a sentence in its own right when it
+disagrees with `distance`: two realms that started close but met
+unusually late found something standing between them worth naming as
+absence, the way an unbuffered capital does elsewhere; two that started
+far apart and met early travelled further than the map's plain distance
+suggests.
 
 ## Vocabulary: no game words
 
