@@ -225,6 +225,47 @@ class KeyMomentsHelperTest < ActionView::TestCase
                  key_moment_sentence(moment)
   end
 
+  test "narrates a research marker reached inside its calibrated band" do
+    moment = { type: :research_marker_reached, turn: 74, civ: "India", marker: "universities",
+               tech: "TECH_EDUCATION", tech_count: 18, band: { min: 16, max: 19 }, rush: true,
+               distance_to_band: 0 }
+
+    assert_equal "Turn 74: India beelined Universities at 18 technologies, inside the 16–19-tech band",
+                 key_moment_sentence(moment)
+  end
+
+  test "narrates artillery_cavalry as an Artillery beeline, never cavalry" do
+    moment = { type: :research_marker_reached, turn: 146, civ: "India", marker: "artillery_cavalry",
+               tech: "TECH_DYNAMITE", tech_count: 35, band: { min: 34, max: 36 }, rush: true,
+               distance_to_band: 0 }
+
+    assert_match(/beelined Artillery at/, key_moment_sentence(moment))
+    refute_match(/[Cc]avalry/, key_moment_sentence(moment))
+  end
+
+  test "narrates the earliest civ to raise a kind of great person" do
+    moment = { type: :great_person_first_of_kind, turn: 92, kind: :scientist, civs: %w[India] }
+
+    assert_equal "Turn 92: India was first to raise a Great Scientist", key_moment_sentence(moment)
+  end
+
+  test "credits every civ tied for first of a kind" do
+    moment = { type: :great_person_first_of_kind, turn: 92, kind: :general, civs: %w[India England] }
+
+    assert_equal "Turn 92: India, England were first to raise a Great General", key_moment_sentence(moment)
+  end
+
+  test "narrates a great person killed in battle" do
+    moment = { type: :great_person_lost, turn: 140, civ: "England", great_person: "UNIT_GREAT_GENERAL",
+               kind: :general, killed_by: "Netherlands" }
+
+    assert_equal "Turn 140: England's Great General was killed by Netherlands", key_moment_sentence(moment)
+  end
+
+  test "marks a lost great person as a downward moment" do
+    assert_match(/trend--down/, key_moment_trend({ type: :great_person_lost, turn: 140 }))
+  end
+
   test "narrates a wonder becoming a contest" do
     moment = { type: :wonder_race, turn: 154, wonder: "BUILDING_LOUVRE", wonder_name: "Louvre",
                winner: "Netherlands", contenders: %w[England] }

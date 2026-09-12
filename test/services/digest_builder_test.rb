@@ -305,6 +305,8 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :wonder_races_lost
     assert_includes digest[:key_moments].keys, :city_state_conquered
     assert_includes digest[:key_moments].keys, :research_rushes
+    assert_includes digest[:key_moments].keys, :great_people_first_of_kind
+    assert_includes digest[:key_moments].keys, :great_people_lost
   end
 
   test "carries the contested wonder races in full" do

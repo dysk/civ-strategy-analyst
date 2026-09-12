@@ -298,6 +298,21 @@ still planting improvements late has turns left to recoup them; one that
 shifted entirely to instant uses late was banking a return before the
 game ended rather than building for a future it didn't expect to need.
 
+Two further facts about great people arrive as key moments rather than
+inside any one civilization's own timeline. `great_people_first_of_kind`
+names the earliest civilization to raise each kind of genius - `civs`
+credits every civilization tied for first in the same year - and is minor
+color: worth a clause where it fits naturally alongside something else
+already being said, not a paragraph of its own. `great_people_lost`
+gathers every `killed` entry from every civilization's `great_people`
+timeline into one cross-civilization list - the same fact `fate: killed`
+already states there, not a new one, so read `killed_by` off this list
+rather than re-deriving it. Weigh the kinds unevenly: a lost general is a
+battle loss and a spent investment at once, worth its own line in Key
+Moments the same way a captured city is; every other kind lost this way
+is a lighter loss, worth folding into the war that took it rather than a
+moment of its own.
+
 The `espionage` field is where the log says who ran spies and what came of
 it. Read every part of it as **opportunity, never knowledge**. A spy with
 surveillance in a city opens that city's full screen to its owner,
@@ -1082,6 +1097,18 @@ any of the three means the civilization was already pulling ahead before
 it landed and keeps pulling ahead after. A civilization that hits more
 than one of the three widens that gap each time rather than just marking
 three separate leads.
+
+A `rush: true` hit belongs in Key Moments - name the civilization and the
+marker, and weigh its significance using the guidance above. It is
+calibrated to fire rarely on purpose: checked against a full example
+game, only two civilizations landed inside a band across every
+civilization and every marker in the log, so a hit here is already the
+digest doing the work of separating a beeline from ordinary research
+order, not raw material still waiting to be judged. Do not fold it
+silently into a civilization's strategic verdict and leave Key Moments
+without it. A `rush: false` near-miss stays supporting color for that
+verdict - worth a mention only when the broader research order already
+points the same way - not a moment of its own.
 
 The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a

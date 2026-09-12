@@ -281,7 +281,9 @@ class DigestBuilder
       wonder_races: detector.wonder_races,
       wonder_races_lost: detector.wonder_races_lost,
       city_state_conquered: detector.city_state_conquered,
-      research_rushes: detector.research_rushes
+      research_rushes: detector.research_rushes,
+      great_people_first_of_kind: detector.great_people_first_of_kind,
+      great_people_lost: detector.great_people_lost
     }
   end
 

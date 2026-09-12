@@ -12,6 +12,20 @@ module KeyMomentsHelper
   # instead, which already reads as a name and needs no decoding.
   def religion_name(key) = strip_prefix_and_titleize(key, "TXT_KEY_RELIGION_")
 
+  # docs/research-beelines.md names `artillery_cavalry`'s tech as an
+  # Artillery beeline - no cavalry unit unlocks on Dynamite at all - and
+  # keeps `the_internet` lowercase mid-sentence the way the tech itself is.
+  MARKER_NAMES = {
+    "crossbows" => "Crossbows", "universities" => "Universities",
+    "frigates" => "Frigates", "public_schools" => "Public Schools",
+    "artillery_cavalry" => "Artillery", "research_labs" => "Research Labs",
+    "planes" => "Planes", "battleships" => "Battleships",
+    "landships" => "Landships", "the_internet" => "the Internet",
+    "stealth_bombers" => "Stealth Bombers"
+  }.freeze
+
+  def marker_name(marker) = MARKER_NAMES.fetch(marker, marker.to_s.titleize)
+
   DESCRIPTIONS = {
     war: ->(m) { declaration(m) },
     buffer_city_lost: ->(m) { "#{m[:civ]} lost #{m[:city]} to #{m[:captured_by]}, " \
@@ -57,6 +71,14 @@ module KeyMomentsHelper
     apollo_completed: ->(m) { "#{m[:civ]} completed the Apollo Program" },
     spaceship_part_assembled: ->(m) { "#{m[:civ]} assembled a #{m[:part]} (#{m[:count]} total)" },
     science_victory_imminent: ->(m) { "#{m[:civ]} assembled #{m[:parts_assembled]} of 6 spaceship parts" },
+    research_marker_reached: ->(m) {
+      "#{m[:civ]} beelined #{marker_name(m[:marker])} at #{m[:tech_count]} technologies, " \
+        "inside the #{m[:band][:min]}–#{m[:band][:max]}-tech band"
+    },
+    great_person_first_of_kind: ->(m) {
+      "#{m[:civs].join(", ")} #{m[:civs].one? ? "was" : "were"} first to raise a Great #{m[:kind].to_s.capitalize}"
+    },
+    great_person_lost: ->(m) { "#{possessive(m[:civ])} Great #{m[:kind].to_s.capitalize} was killed by #{m[:killed_by]}" },
     wonder_race: ->(m) { "#{m[:wonder_name]} became a contested build: #{m[:winner]} against #{m[:contenders].join(", ")}" },
     wonder_race_lost: ->(m) {
       rushed = " — #{m[:winner]} finished it ahead of a hard build" if m[:winner_finish] == :ahead_of_estimate
@@ -80,7 +102,7 @@ module KeyMomentsHelper
     happiness_surge: :up, happiness_collapse: :down,
     capital_gained: :up, capital_lost: :down,
     buffer_city_lost: :down, player_declared_irrelevant: :down,
-    wonder_race_lost: :down
+    wonder_race_lost: :down, great_person_lost: :down
   }.freeze
 
   ARROWS = { up: "▲", down: "▼" }.freeze
