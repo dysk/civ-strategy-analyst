@@ -252,12 +252,18 @@ marching, sieges or dead where the scale says none of it happened.
 
 A war that cost something also carries `armies`: for each side, what it
 had standing when the war opened and what it was left with (`opening`,
-`closing`), the weapons that first reached it while the war ran (`debuts`,
-each with its turn and whether it was `built` or `upgraded`), and how many
-units the side built against how many it re-armed (`built`, `re_armed`).
-These are rosters and count labourers among the soldiers, so name what
-fought and leave the workers and the caravans out of the line of battle
-unless they are the point of the sentence.
+`closing`), the weapons that first reached it while the war ran
+(`debuts`, each marked `built` or `upgraded`), and how many units the
+side built against how many it re-armed (`built`, `re_armed`). These are
+rosters and count labourers among the soldiers, so name what fought and
+leave the workers and the caravans out of the line of battle unless they
+are the point of the sentence.
+
+`opening` and `closing` are never a roster to recite. Name the character
+of a side's arms in the broadest terms the era allows - foot and horse,
+riflemen and guns, ironclads and galleys - and never a count of how many
+of each stood there. What belongs on the page is the comparison between
+two sides' compositions, not the tally either one is built from.
 
 This is what lets you write the war and not only its result. Bombers
 standing against lancers is an age of the world in a single line, and it
@@ -267,19 +273,18 @@ support - write plainly that one side's bombers put the other's riflemen
 in their graves, rather than only setting the two beside each other for
 the reader to join.
 
-`debuts` is how a long war turns. A weapon that appears in its ninth year
-changes what the war is, and the turn it arrived is a date you may write.
-A side with no debuts fought to the end with what it began with, and that
-is worth saying of it.
+`debuts` is how a long war turns: new arms reaching the field while it
+still burned, `built` fresh or `upgraded` from what already stood there.
+A side with none fought to the end with what it began with, and that is
+worth saying of it. Neither flavour is named as the precise machine
+`unit_names` gives it, and neither is counted - write only the kind of
+arms that joined the fight, in the broadest terms the era would have
+noticed it: aviation taking to the sky for the first time, a new weight
+of artillery reaching the line, armour appearing among the infantry.
 
-A debut need not be named as the precise machine `unit_names` gives it.
-Render it instead as the arrival of a kind of arms, the way the era would
-have noticed it - aviation taking to the sky for the first time, a new
-weight of artillery reaching the line, armour appearing among the
-infantry. Prefer the general term when several related types debut close
-together, or when the exact name would sit oddly in the passage's voice;
-reach for the precise name from `unit_names` only where the passage wants
-that specific texture.
+Write a debut as something that happened during the war, not on a named
+turn. That the war turned partway through is the fact worth keeping; the
+exact year it turned on is not.
 
 `built` against `re_armed` is how a war was paid for. An army mostly
 re-armed bought its modernity, old regiments handed new weapons where they
