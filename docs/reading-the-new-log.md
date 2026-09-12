@@ -1186,6 +1186,13 @@ that is currently invisible. The pressure fields make this the third consumer of
 feature 7's route reconstruction, which is an argument for doing 7 properly
 rather than cheaply.
 
+`docs/religion.md` is this feature's full design, measured against the DLL
+source and all five example logs. The headline finding: `city_converted`
+only fires when a city *gains* a full religion, never when it loses one to
+atheism or pantheon, so the event stream alone cannot even reconstruct a
+city's current state, and most of the rows it does carry are population
+churn rather than an actual change of majority. Not implemented yet.
+
 ## 11. Deal reconstruction, labelled as inference
 
 **Implemented 2026-09-12.** As written below, with two corrections found
