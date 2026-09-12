@@ -120,6 +120,18 @@ heavily as score and city count. A civilization with fewer, denser cities
 and a strong tech or population lead can be out-competing a wider empire
 even while trailing in raw score.
 
+Each checkpoint also carries `production`, `food`, `gross_gold`, and
+`plots` - the raw inputs behind the game's own Demographics screen, not
+derived figures. `production` and `food` are the empire's total yield per
+turn in each category. `plots` counts the tiles the empire's territory
+covers - a land measure independent of `cities`, since a civilization can
+hold few cities spread across a lot of land or many cities packed onto
+little. `gross_gold` is income before unit and building upkeep, unlike
+`gold_per_turn`, which is already net of it; the gap between the two says
+how much of a civilization's income its own empire is consuming, and a
+widening gap over time can mean an empire outgrowing its upkeep rather
+than one improving its finances.
+
 Each metric checkpoint may include `tech_cost_multiplier` and
 `policy_cost_multiplier`. In this ruleset, the capital is free, and every
 city beyond it adds +5% to the cost of researching a new technology and
@@ -246,8 +258,45 @@ which; `unobserved` means the winner was never seen building it. A race
 lost against an `ahead_of_estimate` finish was not lost to superior
 production, and a contender still building the wonder on the turn it
 completed may have finished it the same turn and lost the tie the game
-breaks at random. The `wonder_race_lost` key moments carry a `scale` of
-`close` or `distant` marking which losses were genuine races.
+breaks at random. These moments make up `key_moments.wonder_races_lost`;
+each `wonder_race_lost` entry carries a `scale` of `close` or `distant`
+marking which losses were genuine races.
+
+A civilization's `great_people_born` timeline is only a birth record -
+which kind, on what turn, in which city. What became of each one is a
+separate fact, in the `great_people` timeline: `fate` is `expended` (used
+deliberately), `killed` (lost in combat, `killed_by` naming who), or
+`disbanded` (dismissed without being used). Judge a civilization by what
+its great people did, never by how many it produced - a birth spent well
+is worth more than three left to die unused.
+
+For an `expended` entry, `action` is the choice that mattered: a
+scientist, engineer, merchant, prophet or artist can either plant a
+permanent tile improvement (`academy`, `manufactory`, `customs_house`,
+`holy_site`, `landmark` respectively - each keeps paying out for every
+turn left in the game after it goes down) or take an instant one-turn
+effect instead (`bulb`, `hurry`, `trade_mission`, `religious_action`,
+`great_work`). A writer's `treatise` and a musician's `concert_tour` are
+always instant - neither has a planted form. A general can plant a
+`citadel`; an admiral has no planted form. Weigh a late-game planted
+improvement against an equally late instant use the same way you weigh a
+late wonder against a displaced army: the planted one still had few turns
+left to earn back its value, the instant one paid out in full the moment
+it was used. A general or admiral expended without planting a citadel
+leaves no `action` at all - the log has no hook for what an instant
+general or admiral use accomplished, so a null `action` there is a gap in
+the record, not a great person wasted.
+
+`great_people_profile` summarizes this per civilization: `by_kind` is how
+many were expended of each kind, and `infrastructure`/`consumption` each
+split their counts into `early`/`late` halves of the game as actually
+played (the turn count that was logged, not `early_game`'s milestone
+boundary - a great person is typically the product of policies and
+culture arriving well past that boundary, so almost every expend would
+otherwise land in "late" regardless of when it happened). A civilization
+still planting improvements late has turns left to recoup them; one that
+shifted entirely to instant uses late was banking a return before the
+game ended rather than building for a future it didn't expect to need.
 
 The `espionage` field is where the log says who ran spies and what came of
 it. Read every part of it as **opportunity, never knowledge**. A spy with
@@ -966,8 +1015,9 @@ both patterns, and `matches` beginning the very next turn for the same
 civilization and resource is the tell that distinguishes the second from
 the first.
 
-A `research_marker_reached` key moment fires when a civilization's tech
-count, at the turn it researched one of eleven marker technologies, lands
+These moments make up `key_moments.research_rushes`. A
+`research_marker_reached` entry fires when a civilization's tech count,
+at the turn it researched one of eleven marker technologies, lands
 inside that marker's calibrated band - a target reached with suspiciously
 few techs behind it, the signature of a beeline rather than organic
 research order. `tech_count` is the number of technologies researched by
@@ -988,6 +1038,15 @@ this game saw proposed - `proposer`, `repeal`, `proposed_turn`, `outcome`,
 `outcome_turn`, and `repealed_turn` if a passed resolution was later
 repealed). Each resolution's `resolution` field is a `RESOLUTION_*` id;
 look it up in `lekmod.resolutions` for its display name.
+
+Each `delegates_by_civ` checkpoint carries both `votes` and `core_votes`.
+`votes` is the full delegate count that session, `core_votes` only the
+delegates a civilization's own cities and population earned - the gap
+between them is votes bought or won elsewhere, chiefly allied
+city-states. A civilization with `votes` well above `core_votes` has
+built its Congress weight on alliances rather than its own empire, which
+is a weaker position: a rival flipping one of those city-states costs it
+delegates a growing empire would not have to defend.
 
 `outcome` is `passed`, `failed`, `undetermined`, or null. The last two
 are different claims. Null means the vote had not been held by the end of
