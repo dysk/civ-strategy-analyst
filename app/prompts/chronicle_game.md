@@ -444,6 +444,27 @@ falling with its wars and its roads; it earns a sentence at most, at a
 telling reversal - a curve that collapses with a war's opening, say - and
 no sentence at all otherwise.
 
+## Deals, as texture, not an entry
+
+`deals.matches` never anchors an entry of its own - it is reconstructed
+from two realms' resource stocks lining up, not read from a record of the
+trade itself, and the price, the duration and whether it was gold or
+another resource that paid for it are never known. Fold a long-running
+match into a passage already covering the two realms it names: one
+supplying horses for wine across a hundred turns is a real bond between
+them, worth a clause the same way a standing embassy is, never a scene of
+its own and never narrated as though the terms were on the record.
+
+`deals.unattributed_imports` is the quieter case - a resource a realm
+came to hold with no ally seen supplying it, most often a free city's
+gift to one it stands loyal to. Treat it exactly as loyalty itself is
+treated: worth a clause folded into a passage the alliance already
+earns, never a figure, and never written as certain when the record
+itself is not - a single such turn immediately before a `deals.matches`
+span between the same realm and another power is the two snapshots of an
+ordinary trade catching up with each other, not a free city's gift, and
+does not belong in the chronicle as one.
+
 ## Vocabulary: no game words
 
 The chronicle is written from inside the world, so the vocabulary of the
