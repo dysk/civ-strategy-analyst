@@ -1767,3 +1767,65 @@ per-unit combined-penalty summation across more than one simultaneously
 short resource (unobserved in any example log so far — every case found
 was a single resource); and `chronicle_game.md` (no narrative role named
 for this feature, matching research beelines' own omission).
+
+## Plan: deal reconstruction (implemented)
+
+Status: **Implemented 2026-09-12.** `docs/reading-the-new-log.md` §11, with
+two corrections found re-measuring against three logs that carry
+`resources[]` (india-diplo, espionage-test, run-b-test) rather than just
+the one the doc was written against.
+
+`CvDeal` is unreachable from Lua, so no event names a gold trade, a
+gold-per-turn trade or a city trade — none of it is ever visible. What is:
+`snapshot.resources[]`, each civ's own import/export of a resource per
+turn, and the only usable signal is two civs' flows lining up on the same
+turn. The doc's own rule bolds "a **luxury** appearing in one import and
+another's export is a deal" — measured against the real logs, roughly a
+quarter of matched flows are strategic resources, not luxuries (Netherlands
+ran Horse for Wine with Tibet for over a hundred turns in india-diplo), so
+the restriction is dropped: either kind of resource counts.
+
+The second correction is one the doc doesn't anticipate at all: one
+exporter can serve two importers of the same resource at once, and the
+split can't be recovered from a stock total. Netherlands fed both
+Zimbabwe (3/turn) and Tibet (4/turn) Horse simultaneously for a long
+stretch in india-diplo — the real trigger for this. `Deals#matches`
+reports nothing for a turn where more than one civ exports or more than
+one imports the same resource, rather than guess a pairing; it confirms
+only turns with exactly one of each, collapsed into `{resource, exporter,
+importer, from_turn, to_turn}` spans across consecutive turns.
+
+`Deals#unattributed_imports` (`app/projections/deals.rb`) lists `{civ,
+resource, turn, amount}` for every import with no major exporting that
+resource the same turn — city-states never appear in `resources[]` at
+all (confirmed against the log: zero snapshot rows for any of india-diplo's
+eleven city-states), so this is very likely an ally's gift. Not certain,
+though: the same shape appears for exactly one turn at the start of a real
+major-to-major swap when one side's snapshot updates a turn ahead of the
+other's — the india-diplo Netherlands/Tibet Wine swap does this on its own
+first turn. `matches` picking up the same civ and resource the very next
+turn is the tell that separates a lagging swap from an actual gift; the
+doc, the digest paragraph and both prompts say so rather than guessing.
+
+`applicable?` is false on a log with no `resources[]` at all
+(`babylon-domination`, `chile-vs-vietnam`), the same predicate
+`ResourceShortages` uses. `Deals` joins
+`DigestBuilderCostTest::PROJECTIONS`; `DigestBuilder#deals` degrades to
+`{applicable: false, reason: :no_resource_data}`, otherwise carries
+`matches` and `unattributed_imports` as whole-game lists, uncheckpointed —
+the same rule `trade_routes.one_sided` and `espionage`'s tenures and coups
+already follow, since neither is a per-turn-per-civ series the digest
+budget needs guarding against.
+
+`analyze_game.md` gains the digest paragraph, including the "reconstructed,
+not observed" framing and the lagging-swap-vs-gift tell.
+`chronicle_game.md` gains a "Deals, as texture, not an entry" section
+alongside trade routes and city-state loyalty — a long-running match is a
+bond worth a clause where a passage already covers the two civs, and an
+unattributed import is treated exactly as city-state loyalty already is,
+never a figure, never written as certain when the record itself is not.
+
+Not done, left for later: a `KeyMomentDetector` moment (a deal's start or
+end is not currently a moment, unlike a war or a wonder race); and an
+end-to-end `bin/civ analyze` A/B, pending the way several tranche 2 and 3
+features' A/Bs already are.

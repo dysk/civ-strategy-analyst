@@ -1188,16 +1188,42 @@ rather than cheaply.
 
 ## 11. Deal reconstruction, labelled as inference
 
+**Implemented 2026-09-12.** As written below, with two corrections found
+re-measuring against three real logs rather than just india-diplo (the
+other two, `babylon-domination` and `chile-vs-vietnam`, carry no
+`resources[]` at all).
+
 `CvDeal` is unreachable from Lua, so gold, gold-per-turn and city trades cannot
 be logged at all. What can: `snapshot.resources[]` gives `total` / `used` /
-`import` / `export` per strategic and luxury resource, and **a luxury appearing
-in one player's imports and another's exports on the same turn is a deal**. The
-projection matches import/export pairs between majors; an import with no major
-exporter is a city-state ally's gift, which is itself a useful signal — and the
-one piece of evidence that would put a number on feature 5's residual.
+`import` / `export` per strategic and luxury resource. The text below bolded
+"a **luxury** appearing in one player's imports and another's exports on the
+same turn is a deal" — measured, roughly a quarter of matched flows in
+india-diplo are strategic resources (Netherlands ran Horse for Wine with Tibet
+for over a hundred turns), so the rule ships for both kinds, not luxuries
+alone.
 
-The digest and both prompts must say this is reconstructed, and must say what
-stays invisible: the price, the gold, the duration.
+The second correction: the text implies one exporter and one importer per
+match, and real games break that constantly. Netherlands fed both Zimbabwe and
+Tibet Horse at once for a long stretch — one stock, two importers, and the
+split between them cannot be recovered from a total. `Deals#matches` reports
+nothing for a turn where more than one civ exports or more than one imports
+the same resource, rather than pair the wrong two civs; it only ever confirms
+the turns where exactly one of each exists, collapsed into `{resource,
+exporter, importer, from_turn, to_turn}` spans of consecutive turns.
+
+An import with no major exporter that same turn (`Deals#unattributed_imports`)
+is most likely a city-state ally's gift — city-states never appear in
+`resources[]` at all, confirmed against the log. It is not certain, though:
+the same shape shows up for exactly one turn at the start of a real
+major-to-major swap, when one side's snapshot updates a turn before the
+other's. `matches` picking up the same civ and resource the very next turn is
+the tell that separates the two; the digest and both prompts say so.
+
+The digest and both prompts say this is reconstructed, and say what stays
+invisible: the price, the gold, the duration. `Deals` joins
+`DigestBuilderCostTest::PROJECTIONS`; `DigestBuilder#deals` degrades to
+`{applicable: false, reason: :no_resource_data}` on a log with no
+`resources[]`, the same predicate `resource_shortages` uses.
 
 ---
 
