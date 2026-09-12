@@ -44,6 +44,7 @@ class DigestBuilder
       espionage: espionage,
       diplomatic_ties: diplomatic_ties,
       trade_routes: trade_routes,
+      religion: religion,
       yield_attribution: yield_attribution,
       resource_shortages: resource_shortages,
       deals: deals,
@@ -348,6 +349,21 @@ class DigestBuilder
   # of the five example logs predate the field. Only the yields a civ has
   # source data for are listed, each sampled at the same ~25-turn
   # checkpoints every other per-turn digest section uses.
+  # Holds and inferred missionary/inquisitor uses are both already
+  # per-civ - see Religion - so by_civ is a straight read, the same shape
+  # espionage and trade_routes split into.
+  def religion
+    reconstruction = Religion.for(@game)
+    return { applicable: false, reason: :no_conversions } unless reconstruction.applicable?
+
+    { applicable: true, by_civ: civs.index_with { |civ| religion_for(reconstruction, civ) } }
+  end
+
+  def religion_for(reconstruction, civ)
+    { holds: reconstruction.holds(civ), missionary_uses: reconstruction.missionary_uses(civ),
+      inquisitor_uses: reconstruction.inquisitor_uses(civ) }
+  end
+
   def yield_attribution
     attribution = YieldAttribution.for(@game)
     return { applicable: false, reason: :no_yield_sources } unless attribution.applicable?

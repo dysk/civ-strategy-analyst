@@ -479,6 +479,25 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ applicable: false, reason: :no_trade_route_events }, DigestBuilder.new(@game).call[:trade_routes])
   end
 
+  test "carries each civ's religious holds and inferred missionary/inquisitor uses" do
+    event("Rome", "city_converted", 50, city: "Roma", religion: "RELIGION_CATHOLICISM")
+    event("Rome", "unit_lost", 60, unit: "UNIT_MISSIONARY", city: "Roma")
+    event("Rome", "unit_lost", 70, unit: "UNIT_INQUISITOR", killed_by: "Greece")
+
+    religion = DigestBuilder.new(@game).call[:religion]
+
+    assert_equal true, religion[:applicable]
+    assert_equal %w[Rome Greece], religion[:by_civ].keys
+    assert_equal [ "RELIGION_CATHOLICISM" ], religion[:by_civ]["Rome"][:holds].map { |h| h[:religion] }
+    assert_equal [ 60 ], religion[:by_civ]["Rome"][:missionary_uses].map { |u| u[:turn] }
+    assert_empty religion[:by_civ]["Rome"][:inquisitor_uses]
+    assert_empty religion[:by_civ]["Greece"][:holds]
+  end
+
+  test "religion degrades to inapplicable when the log carries no city_converted" do
+    assert_equal({ applicable: false, reason: :no_conversions }, DigestBuilder.new(@game).call[:religion])
+  end
+
   test "includes each civ's yield attribution, sampled at checkpoints" do
     snapshot("Rome", 10, science: 30, yield_sources: { "science" => { "cities" => 30 } })
     snapshot("Rome", 30, science: 36, yield_sources: { "science" => { "cities" => 35 } })

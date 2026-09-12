@@ -840,6 +840,47 @@ victim and no amount attached - `trade_route_ended` and
 `trade_route_plundered` cannot say why a route stopped or who lost what,
 only that one did, on a given turn.
 
+The `religion` digest key answers which religion actually held each city's
+majority, and for how long. `applicable` is false and nothing else is
+present when the log carries no `city_converted` at all. Otherwise
+`by_civ.<civ>.holds` is already deduplicated into maximal runs - a single
+raw `city_converted` row is never itself evidence of anything, since
+population growth moves the payload's follower count under an unchanged
+majority far more often than the majority itself changes, so most rows
+are that churn, not a real shift. Each hold carries `city`, `religion`,
+`from_turn`, `to_turn`, and `settled` - true once the hold either survives
+to the next `city_snapshot` reading for that city or crosses a plain span
+with nothing to check it against, false otherwise. Treat an unsettled
+hold as a flicker worth a clause at most, and a settled one as the real
+event: a city's majority actually changed hands, not just its count.
+
+Losing a religion to atheism or a bare pantheon is never logged, only
+gaining one is, so a hold is a lower bound on how long its religion
+actually stood, and can silently round-trip through atheism and back
+without the event stream saying a word. Where the game carries
+`city_snapshot`, that silent round-trip is already caught and split into
+two holds rather than one unbroken one; two of the five example logs
+(`babylon-domination`, `chile-vs-vietnam`) carry no `city_snapshot` at
+all, and a `holds` reading built from either should be given noticeably
+less confidence than one corroborated by the snapshot channel.
+
+`by_civ.<civ>.missionary_uses` and `.inquisitor_uses` are inferred, never
+observed: neither unit's spread action fires any log hook, so the only
+trace either leaves is its own `unit_lost` with no `killed_by` - both
+units end themselves immediately after acting. Every entry here carries
+`inferred: true` for that reason, and carries only whatever `city`/`x`/`y`
+its loss record happened to hold, which is often nothing. No entry here
+can be joined to a specific hold as its cause; the log gives no per-unit
+identity to connect a spend to the conversion it may have caused, and
+adjacency, spy pressure and holy-city pressure - three of the five real
+channels that move a city's religious pressure - leave no trace at all.
+A hold beginning within a turn or two of a missionary or inquisitor use,
+or during an active high-pressure trade route (`trade_routes` carries
+`from_pressure`/`to_pressure` on established routes), is a candidate
+explanation worth naming as one - never state it as the cause, the same
+residual framing `city_states.by_civ.<civ>.attribution`'s `unexplained`
+already asks for.
+
 The `yield_attribution` digest key breaks a civilization's science,
 culture, faith and tourism into where each point came from, at ~25-turn
 checkpoints. `applicable` is false and nothing else is present when the

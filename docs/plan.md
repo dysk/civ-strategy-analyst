@@ -1829,3 +1829,67 @@ Not done, left for later: a `KeyMomentDetector` moment (a deal's start or
 end is not currently a moment, unlike a war or a wonder race); and an
 end-to-end `bin/civ analyze` A/B, pending the way several tranche 2 and 3
 features' A/Bs already are.
+
+## Plan: religion and conversion (implemented)
+
+Status: **Implemented 2026-09-12.** `docs/reading-the-new-log.md` §10, per
+the design in `docs/religion.md`, across five TDD iterations.
+
+`city_converted` only fires on gaining a full religion — the DLL guard at
+`CvReligionClasses.cpp:4574` excludes losing one to atheism or pantheon
+entirely — and even the rows that do fire are mostly population churn
+moving a follower count under an unchanged majority, not a real shift.
+`Religion#holds(civ)` (`app/projections/religion.rb`) collapses a city's
+raw `city_converted` stream into maximal runs of one religion holding its
+majority, each carrying `settled` — true once the hold survives to the
+next `city_snapshot` reading for that city or crosses a plain
+`SETTLED_MIN_SPAN` (4 turns, the doc's own median-transition figure) with
+nothing to check it against, false otherwise. Verified against a real
+import: india-diplo's India collapses to 104 city-wide holds, exactly the
+doc's own measured count.
+
+Iteration 3 closed the doc's own stated gap: where `city_snapshot` exists,
+its religion field going silently absent between two rows naming the same
+religion is proof of an unlogged atheism round-trip, so the run splits
+there rather than reading as one unbroken hold. Confirmed against
+Vijayanagara (india-diplo, turns 105–184) — the naive single hold running
+straight through the doc's own documented 137–168 gap now splits exactly
+at it. Two of the five example logs (`babylon-domination`,
+`chile-vs-vietnam`) carry no `city_snapshot` at all, so a `holds` reading
+there stays a lower bound with no way to catch the same gap.
+
+Iteration 4 added `Religion#missionary_uses(civ)` / `#inquisitor_uses(civ)`,
+inferred from `unit_lost` rows with no `killed_by` for `UNIT_MISSIONARY`
+and `UNIT_INQUISITOR` — neither unit's spread action fires any log hook at
+all, so an absent `killed_by` is the unit's own `kill(true)` right after
+acting, the only trace either leaves. Each entry carries `inferred: true`
+and whatever `city`/`x`/`y` the loss record happened to hold, which is
+often nothing; a present `killed_by` means an enemy ended the unit first
+and is excluded.
+
+`DigestBuilder#religion` (iteration 5) degrades to
+`{applicable: false, reason: :no_conversions}` on a log with no
+`city_converted` at all, otherwise carries `by_civ.<civ>` with `holds`,
+`missionary_uses` and `inquisitor_uses` — the same per-civ shape espionage
+and trade_routes already split into. `Religion` joins
+`DigestBuilderCostTest::PROJECTIONS`. `analyze_game.md` gains the digest
+paragraph, including the settled/flicker distinction and the
+candidate-cause framing for a hold near an inferred missionary/inquisitor
+use or an active high-pressure trade route — never stated as the cause,
+since the payload never carries a pressure delta, only the eventual
+majority. `chronicle_game.md` gains a "Religious conversion, mostly
+texture" section: an unsettled hold is folded into an existing passage at
+most, a settled one earns a clause, and a capital or holy city settling on
+a foreign faith earns one even alone.
+
+Not done, left for later: trade-route religious pressure
+(`from_pressure`/`to_pressure` on `trade_route_established`) needed no new
+reconstruction per the doc, so it was never pulled into `religion` itself —
+it stays reachable only through `trade_routes`, as designed. No
+`KeyMomentDetector`/`ChronicleSpine` anchor moment for a settled hold —
+the doc's own proposed shape stops at digest and prompt guidance and gives
+no basis to calibrate a weight, so none was invented. Adjacency spread,
+spy pressure and holy-city passive pressure remain entirely unlogged, per
+the doc; no reconstruction is possible for any of the three. An end-to-end
+`bin/civ analyze`/`bin/civ chronicle` A/B is pending, the same as several
+other tranche features.

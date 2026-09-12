@@ -444,6 +444,33 @@ falling with its wars and its roads; it earns a sentence at most, at a
 telling reversal - a curve that collapses with a war's opening, say - and
 no sentence at all otherwise.
 
+## Religious conversion, mostly texture
+
+`religion.by_civ.<civ>.holds` is already collapsed to maximal runs, but
+most of what is left is still a flicker, not a lasting change: a hold
+marked `settled: false` never earns an entry of its own, and belongs, if
+anywhere, folded into a passage already telling that city's story. A
+`settled: true` hold is different - a city's majority actually changed
+and stayed changed, which is a real turn in a realm's character, not
+bookkeeping. A capital or a realm's own holy city settling on a foreign
+faith is worth its own clause even alone; a lesser border town settling
+the same way is worth one only where a passage already needs it.
+
+`missionary_uses` and `inquisitor_uses` are inferred acts, not confirmed
+effects - the log only ever shows the unit spending itself, never what
+happened to the city on the other end. Write one as a quiet act of
+faith, not as a cause: "a missionary was spent near Delhi" earns a clause
+only when a settled hold nearby gives it something to have plausibly
+caused, phrased as a likelihood ("likely turned the city," "may have
+carried the faith there") rather than a fact the log never actually
+states.
+
+Two of the five example logs carry no `city_snapshot` at all, so
+`religion` there is read from the noisy event stream alone, with no way
+to catch a silent lapse into atheism. Write conversions from those games
+more tentatively than from a game where the snapshot channel confirms
+them.
+
 ## Deals, as texture, not an entry
 
 `deals.matches` never anchors an entry of its own - it is reconstructed

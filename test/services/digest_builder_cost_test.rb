@@ -35,7 +35,7 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
     MetricSeries, PlayerTimeline, SpaceshipTimeline, MapBounds, EarlyGame,
     CapitalsTimeline, CapitalProximity, BufferCities, InfluenceTimeline,
     CongressTimeline, EmpireGeometry, ArmyComposition, WonderRaces, CityValue,
-    Espionage, TradeRoutes, YieldAttribution, ResearchBeelines, ResourceShortages, Deals
+    Espionage, TradeRoutes, YieldAttribution, ResearchBeelines, ResourceShortages, Deals, Religion
   ].freeze
 
   # Capital distances are measured twice on purpose: once on the wrapped map,
