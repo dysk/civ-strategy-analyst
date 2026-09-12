@@ -20,7 +20,8 @@ class ReligionTest < ActiveSupport::TestCase
     converted(50, "India", "Delhi", "RELIGION_HINDUISM")
 
     hold = Religion.new(@game).holds("India").first
-    assert_equal({ civ: "India", city: "Delhi", religion: "RELIGION_HINDUISM", from_turn: 50, to_turn: 50 },
+    assert_equal({ civ: "India", city: "Delhi", religion: "RELIGION_HINDUISM",
+                   from_turn: 50, to_turn: 50, settled: false },
                  hold)
   end
 
@@ -90,6 +91,64 @@ class ReligionTest < ActiveSupport::TestCase
     assert_equal %w[India Tibet], religion.holds.map { |h| h[:civ] }.sort
   end
 
+  # No city_snapshot anywhere in this game, so settled falls back to a plain
+  # span - the user's own calibration, same footing as WONDER_RACE_MIN_INVESTED.
+  test "settled falls back to a span once it crosses the threshold, with no snapshot to check against" do
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    converted(54, "India", "Delhi", "RELIGION_HINDUISM")
+
+    assert Religion.new(@game).holds("India").first[:settled]
+  end
+
+  test "a flicker shorter than the threshold is not settled with nothing to confirm it" do
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    converted(52, "India", "Delhi", "RELIGION_HINDUISM")
+
+    assert_not Religion.new(@game).holds("India").first[:settled]
+  end
+
+  # The event stream alone cannot tell a same-turn flicker from a lasting
+  # conversion; a snapshot naming the same religion afterward can.
+  test "a later city_snapshot naming the same religion settles a hold too short to prove itself" do
+    converted(105, "India", "Vijayanagara", "RELIGION_HINDUISM")
+    snapshot(107, "India", "Vijayanagara", religion: "RELIGION_HINDUISM")
+
+    assert Religion.new(@game).holds("India").first[:settled]
+  end
+
+  test "a later city_snapshot naming a different religion means the hold never settled" do
+    converted(105, "India", "Vijayanagara", "RELIGION_HINDUISM")
+    snapshot(107, "India", "Vijayanagara", religion: "RELIGION_PROTESTANTISM")
+
+    assert_not Religion.new(@game).holds("India").first[:settled]
+  end
+
+  # The omit rule: no majority religion is an absent field, not a null one.
+  test "a later city_snapshot with no religion field at all means the hold never settled" do
+    converted(105, "India", "Vijayanagara", "RELIGION_HINDUISM")
+    snapshot(107, "India", "Vijayanagara")
+
+    assert_not Religion.new(@game).holds("India").first[:settled]
+  end
+
+  # The snapshot channel outranks the span even when the span alone would
+  # have been enough - it is the more trustworthy of the two per docs/religion.md.
+  test "a contradicting snapshot overrules a span that would otherwise settle the hold" do
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    converted(56, "India", "Delhi", "RELIGION_HINDUISM")
+    snapshot(58, "India", "Delhi", religion: "RELIGION_CATHOLICISM")
+
+    assert_not Religion.new(@game).holds("India").first[:settled]
+  end
+
+  test "a snapshot only before the hold started does not count as confirmation" do
+    snapshot(40, "India", "Delhi", religion: "RELIGION_PANTHEON")
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    converted(52, "India", "Delhi", "RELIGION_HINDUISM")
+
+    assert_not Religion.new(@game).holds("India").first[:settled]
+  end
+
   private
 
   def converted(turn, civ, city, religion)
@@ -97,5 +156,13 @@ class ReligionTest < ActiveSupport::TestCase
     payload = { "event" => "city_converted", "turn" => turn, "civ" => civ, "city" => city, "religion" => religion }
     @game.game_events.create!(seq: @seq, session_index: 0, turn: turn,
                               event_type: "city_converted", civ: civ, payload: payload)
+  end
+
+  def snapshot(turn, civ, city, religion: nil)
+    @seq += 1
+    payload = { "event" => "city_snapshot", "turn" => turn, "civ" => civ, "city" => city }
+    payload["religion"] = religion if religion
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn,
+                              event_type: "city_snapshot", civ: civ, payload: payload)
   end
 end

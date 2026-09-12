@@ -13,6 +13,13 @@
 class Religion
   extend Projection
 
+  # The span a hold must cross to count as settled when no city_snapshot
+  # exists to check it against - the user's own number from play, not a
+  # measurement. Docs/religion.md's own figures put the median span at 4 and
+  # 47% of transitions at 3 turns or less, so this sits right at that edge
+  # rather than clear of it.
+  SETTLED_MIN_SPAN = 4
+
   def initialize(game)
     @game = game
     @log = game.event_log
@@ -32,6 +39,8 @@ class Religion
   private
 
   def conversions = @conversions ||= @log.of_type("city_converted")
+
+  def city_snapshots = @city_snapshots ||= @log.of_type("city_snapshot")
 
   def all_holds
     @all_holds ||= conversions
@@ -53,8 +62,25 @@ class Religion
 
   def hold(run)
     first = run.first
+    city, religion, to_turn = first.payload["city"], first.payload["religion"], run.last.turn
 
-    { civ: first.civ, city: first.payload["city"], religion: first.payload["religion"],
-      from_turn: first.turn, to_turn: run.last.turn }
+    { civ: first.civ, city: city, religion: religion, from_turn: first.turn, to_turn: to_turn,
+      settled: settled?(city, religion, first.turn, to_turn) }
+  end
+
+  # The snapshot channel outranks the span wherever it can answer at all - it
+  # says plainly when a city holds no religion, rather than staying silent the
+  # way the event stream does. The span is only a fallback for a hold nothing
+  # confirms either way.
+  def settled?(city, religion, from_turn, to_turn)
+    confirmation = next_snapshot(city, to_turn)
+    return confirmation.payload["religion"] == religion if confirmation
+
+    to_turn - from_turn >= SETTLED_MIN_SPAN
+  end
+
+  def next_snapshot(city, to_turn)
+    city_snapshots.select { |event| event.payload["city"] == city && event.turn > to_turn }
+      .min_by(&:turn)
   end
 end
