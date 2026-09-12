@@ -74,4 +74,85 @@ class AnalysesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "show links to the digest snapshot" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(model: "m", report: "report", digest: {})
+
+    get game_analysis_url(game, analysis)
+
+    assert_response :success
+    assert_select "a[href=?]", digest_game_analysis_path(game, analysis)
+  end
+
+  test "digest renders every top-level projection as its own collapsible section" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(
+      model: "m", report: "report",
+      digest: { "roster" => [ { "civ" => "ROME" } ], "espionage" => { "applicable" => false } }
+    )
+
+    get digest_game_analysis_url(game, analysis)
+
+    assert_response :success
+    assert_select "details summary", text: /roster/
+    assert_select "details summary", text: /espionage/
+    assert_match "ROME", response.body
+    assert_match "applicable", response.body
+  end
+
+  test "digest flags an empty section" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(model: "m", report: "report", digest: { "buffer_cities" => {} })
+
+    get digest_game_analysis_url(game, analysis)
+
+    assert_select "details.digest-section--empty summary", text: /buffer_cities/
+  end
+
+  test "digest flags a section marked not applicable" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(model: "m", report: "report", digest: { "religion" => { "applicable" => false, "reason" => "no_conversions" } })
+
+    get digest_game_analysis_url(game, analysis)
+
+    assert_select "details.digest-section--empty summary", text: /religion/
+  end
+
+  test "digest does not flag a section that has data" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(model: "m", report: "report", digest: { "roster" => [ { "civ" => "ROME" } ] })
+
+    get digest_game_analysis_url(game, analysis)
+
+    assert_select "details.digest-section--empty", false
+  end
+
+  test "digest links out to the dedicated page for sections that already have one" do
+    game = Game.create!(name: "History Game")
+    analysis = game.analyses.create!(
+      model: "m", report: "report",
+      digest: {
+        "espionage" => { "applicable" => true }, "cultural" => {}, "congress" => {},
+        "victory_progress" => {}, "roster" => []
+      }
+    )
+
+    get digest_game_analysis_url(game, analysis)
+
+    assert_select "details summary a[href=?]", game_espionage_path(game)
+    assert_select "details summary a[href=?]", game_cultural_path(game)
+    assert_select "details summary a[href=?]", game_congress_path(game)
+    assert_select "details summary a[href=?]", game_victory_progress_path(game)
+  end
+
+  test "digest 404s for an analysis id that doesn't belong to the game" do
+    game = Game.create!(name: "History Game")
+    other_game = Game.create!(name: "Other Game")
+    other_analysis = other_game.analyses.create!(model: "m", report: "report", digest: {})
+
+    get digest_game_analysis_url(game, other_analysis)
+
+    assert_response :not_found
+  end
 end

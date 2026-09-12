@@ -1,0 +1,21 @@
+<%= link_to "&laquo; Analysis".html_safe, game_analysis_path(@game, @analysis), class: "back-link" %>
+
+<h1>Digest Snapshot</h1>
+<p class="subtitle">
+  <%= @game.name %> &middot; <%= @analysis.model %> &middot;
+  generated <%= @analysis.created_at.strftime("%Y-%m-%d %H:%M") %>
+</p>
+<p class="meta">Every projection the prompt above actually received, exactly as sent to the model.</p>
+
+<% @analysis.digest.each do |key, value| %>
+  <details class="digest-section<%= " digest-section--empty" if digest_section_empty?(value) %>">
+    <summary>
+      <%= key %>
+      <% if digest_section_empty?(value) %><span class="badge">empty</span><% end %>
+      <% if (path = digest_dedicated_page_path(key, @game)) %>
+        &middot; <%= link_to "full page", path %>
+      <% end %>
+    </summary>
+    <pre><code><%= JSON.pretty_generate(value) %></code></pre>
+  </details>
+<% end %>

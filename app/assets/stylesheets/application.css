@@ -200,6 +200,27 @@ blockquote {
   color: var(--color-badge-analyzed-fg);
 }
 
+.digest-section {
+  margin: 0.75rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.digest-section--empty {
+  opacity: 0.6;
+}
+
+.digest-section summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.digest-section pre {
+  margin: 0.75rem 0 0.25rem;
+}
+
 .back-link {
   display: inline-block;
   margin-bottom: 1rem;

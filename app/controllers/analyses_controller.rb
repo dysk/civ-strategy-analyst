@@ -13,6 +13,10 @@ class AnalysesController < ApplicationController
     @analysis = @game.analyses.find(params[:id])
   end
 
+  def digest
+    @analysis = @game.analyses.find(params[:id])
+  end
+
   private
 
   def set_game

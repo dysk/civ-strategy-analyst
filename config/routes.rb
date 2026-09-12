@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   resources :games, only: [ :index, :show ] do
     resources :analyses, only: [ :index, :show ] do
       get :prompt, on: :member
+      get :digest, on: :member
     end
     resources :events, only: [ :index ], controller: "game_events"
     resource :geometry, only: [ :show ], controller: "empire_geometries"
