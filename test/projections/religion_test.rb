@@ -65,6 +65,62 @@ class ReligionTest < ActiveSupport::TestCase
     assert_equal 80, hold[:to_turn]
   end
 
+  # Vijayanagara again (docs/religion.md): city_converted has nothing between
+  # turn 137 and turn 168 because losing a religion to atheism is never
+  # logged, but a silent atheism round-trip through that gap still shows up
+  # in city_snapshot as the religion field going absent - so two rows naming
+  # the same religion either side of that absence are two holds, not one.
+  test "a snapshot's absent religion field mid-run splits it into two holds" do
+    converted(110, "India", "Vijayanagara", "RELIGION_HINDUISM")
+    snapshot(150, "India", "Vijayanagara")
+    converted(168, "India", "Vijayanagara", "RELIGION_HINDUISM")
+
+    holds = Religion.new(@game).holds("India")
+    assert_equal [ [ "RELIGION_HINDUISM", 110, 110 ], [ "RELIGION_HINDUISM", 168, 168 ] ],
+                 holds.map { |h| h.values_at(:religion, :from_turn, :to_turn) }
+  end
+
+  test "a snapshot confirming the same religion mid-run does not split it" do
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    snapshot(52, "India", "Delhi", religion: "RELIGION_HINDUISM")
+    converted(55, "India", "Delhi", "RELIGION_HINDUISM")
+
+    holds = Religion.new(@game).holds("India")
+    assert_equal 1, holds.size
+    assert_equal [ 50, 55 ], holds.first.values_at(:from_turn, :to_turn)
+  end
+
+  test "two separate silent gaps split a run into three holds" do
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    snapshot(55, "India", "Delhi")
+    converted(60, "India", "Delhi", "RELIGION_HINDUISM")
+    snapshot(65, "India", "Delhi")
+    converted(70, "India", "Delhi", "RELIGION_HINDUISM")
+
+    holds = Religion.new(@game).holds("India")
+    assert_equal [ [ 50, 50 ], [ 60, 60 ], [ 70, 70 ] ], holds.map { |h| h.values_at(:from_turn, :to_turn) }
+  end
+
+  test "an absent-religion snapshot outside the gap between two rows does not split them" do
+    snapshot(40, "India", "Delhi")
+    converted(50, "India", "Delhi", "RELIGION_HINDUISM")
+    converted(60, "India", "Delhi", "RELIGION_HINDUISM")
+    snapshot(70, "India", "Delhi")
+
+    holds = Religion.new(@game).holds("India")
+    assert_equal 1, holds.size
+    assert_equal [ 50, 60 ], holds.first.values_at(:from_turn, :to_turn)
+  end
+
+  test "a split hold's settled check runs against its own new boundary, not the original run's" do
+    converted(110, "India", "Vijayanagara", "RELIGION_HINDUISM")
+    snapshot(150, "India", "Vijayanagara")
+    converted(168, "India", "Vijayanagara", "RELIGION_HINDUISM")
+
+    first_hold = Religion.new(@game).holds("India").first
+    assert_not first_hold[:settled]
+  end
+
   test "each city's holds are reconstructed independently" do
     converted(50, "India", "Delhi", "RELIGION_HINDUISM")
     converted(52, "India", "Vijayanagara", "RELIGION_CATHOLICISM")

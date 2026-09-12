@@ -7,9 +7,10 @@
 #
 # `city_converted` only fires on a gain, never on a loss to atheism or
 # pantheon, so a hold that runs to the log's last row for its city is a
-# lower bound on how long the religion actually stood, and a silent
-# atheism round-trip between two rows naming the same religion reads as
-# one unbroken hold. Neither is corrected here yet.
+# lower bound on how long the religion actually stood. A silent atheism
+# round-trip between two rows naming the same religion would otherwise read
+# as one unbroken hold; where city_snapshot exists, its own religion field
+# going absent between those two rows catches it and splits the run.
 class Religion
   extend Projection
 
@@ -55,8 +56,24 @@ class Religion
 
   def runs(events)
     events.each_with_object([]) do |event, runs|
-      runs << [] if runs.empty? || runs.last.last.payload["religion"] != event.payload["religion"]
+      runs << [] if runs.empty? || breaks_run?(runs.last.last, event)
       runs.last << event
+    end
+  end
+
+  def breaks_run?(previous, event)
+    previous.payload["religion"] != event.payload["religion"] || lapsed_between?(previous, event)
+  end
+
+  # A gap the event stream can't see: the religion held at `previous` and
+  # `event` is the same, but a snapshot strictly between them shows the
+  # field absent, so the city lost and regained it silently in between.
+  def lapsed_between?(previous, event)
+    city = previous.payload["city"]
+
+    city_snapshots.any? do |snapshot|
+      snapshot.payload["city"] == city && snapshot.turn > previous.turn && snapshot.turn < event.turn &&
+        !snapshot.payload.key?("religion")
     end
   end
 
