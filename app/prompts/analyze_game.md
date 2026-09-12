@@ -1040,6 +1040,49 @@ statistically derived threshold - treat a hit as suggestive, not proof,
 and never claim a beeline the civilization's broader research order
 contradicts.
 
+The `marker` string names a payoff, not the tech itself, and is not
+always accurate - `docs/research-beelines.md` resolves what each of the
+eleven actually unlocks against the mod source rather than the label.
+Two are worth calling out specifically: `artillery_cavalry` unlocks only
+Artillery, no cavalry unit sits on Dynamite at all, so narrate a hit
+there as an Artillery beeline and never mention cavalry. Artillery itself
+is worth narrating on its own merits: Range 3 against a Cannon's Range 2,
+and its role is built around sieging cities rather than field battles.
+Paired with Cavalry the civilization already researched (Cavalry needs
+Military Science, well earlier in the tree than Dynamite), it is a
+hard-to-stop combination - the
+Cavalry runs down and finishes what the Artillery's range already
+softened, so treat that pairing as a real threat, not two separate
+markers. `the_internet`
+unlocks no unit or building whatsoever - the tech itself doubles
+Culture/Tourism spread rate - so a hit there is a Cultural Victory
+signal, never a military one, and must not be narrated the way the other
+ten are. `research_labs` carries the only zero-width band of the eleven
+(`{42, 42}`) and no example log in this repo confirms it - treat a near
+miss here (41 or 43) as far more suggestive than a near miss on any other
+marker, whose 2-5 tech bands already have slack built in. For the rest,
+weigh what the beeline is actually racing toward:
+`planes` (Flight) is the sharpest military marker of the eleven: nothing
+on the ground can touch a Triplane or a Great War Bomber at all, and
+early on the only real counter is a rival fielding its own planes,
+since neither the Fighter upgrade (Radar) nor the Anti-Aircraft Gun
+(Ballistics) exist yet - a hit there is close to a free window, not just
+a lead. `landships` (Combustion) is a similar steamroll, the first
+Armored-class unit against anyone still on Riflemen or Cavalry, but it
+does have real counters already on the board by the time Combustion
+lands: Combustion requires Railroad, and Railroad alone is enough for the
+Anti-Tank Rifle (+200% vs. Armored), so a defender is not necessarily
+defenseless - and planes bomb Landships as readily as anything else on
+the ground. `universities`, `public_schools` and `research_labs` carry no
+combat signal - read them as economic, not aggressive - but not as
+harmless. Each is a rung on the same compounding ladder: being first to a
+science building buys extra beakers that reach the next tech, and the
+next science building, faster than a rival still without it, so a hit on
+any of the three means the civilization was already pulling ahead before
+it landed and keeps pulling ahead after. A civilization that hits more
+than one of the three widens that gap each time rather than just marking
+three separate leads.
+
 The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a
 diplomatic victory), `delegates_by_civ` (each civilization's delegate
