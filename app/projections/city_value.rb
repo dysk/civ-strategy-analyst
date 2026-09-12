@@ -35,6 +35,12 @@ class CityValue
       .merge(METRICS.flat_map { |name, field| share_and_rank(name, field, own, peers) }.to_h)
   end
 
+  # `at`, run over every turn `city` was itself snapshotted, in turn order -
+  # the full history a single lookup only samples one point of.
+  def series(city)
+    rows_by_city.fetch(city, []).map(&:turn).uniq.sort.filter_map { |turn| at(city, turn) }
+  end
+
   private
 
   # The last snapshot of `city` on or before `turn`; among ties on the

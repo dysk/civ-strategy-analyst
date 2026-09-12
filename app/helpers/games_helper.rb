@@ -38,6 +38,14 @@ module GamesHelper
     value.delete_prefix(prefix).tr("_", " ").downcase.titleize
   end
 
+  # A share is nil where the whole empire earned nothing of that yield -
+  # a blank cell, not a false zero.
+  def share_percentage(value)
+    return "&mdash;".html_safe unless value
+
+    number_to_percentage(value * 100, precision: 1)
+  end
+
   def resource_name(id) = strip_prefix_and_titleize(id, "RESOURCE_")
   def minor_civ_trait_name(id) = strip_prefix_and_titleize(id, "MINOR_TRAIT_")
   def minor_civ_personality_name(id) = strip_prefix_and_titleize(id, "MINOR_CIV_PERSONALITY_")

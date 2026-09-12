@@ -12,6 +12,7 @@ class GameProjectionsController < ApplicationController
     @key_moment_groups = key_moment_groups
     @wonder_races = wonder_races_view
     @army_rows = army_rows
+    @city_census_rows = city_census_rows
     @cultural_rows = cultural_rows
     @congress_summary = congress_summary
     @victory_progress_rows = victory_progress_rows
@@ -119,6 +120,25 @@ class GameProjectionsController < ApplicationController
 
     @game.players.order(:id).filter_map do |player|
       armies.latest(player.civ)&.merge(civ: player.civ)
+    end
+  end
+
+  # Every city at its own last snapshot, largest first within each civ, with
+  # the share and rank CityValue prices it at - so a capital reading rank 2
+  # or a set of shares nowhere near summing to a whole empire is visible
+  # here rather than found later inside a chronicle. `CityCensus#cities`
+  # resolves ownership per city, so a captured city lists under its new
+  # owner rather than lingering under the one that lost it.
+  def city_census_rows
+    census = CityCensus.for(@game)
+    return [] unless census.applicable?
+
+    value = CityValue.for(@game)
+    last_turn = @game.game_events.maximum(:turn).to_i
+    by_civ = census.cities(last_turn).group_by { |city| city[:civ] }
+
+    @game.players.order(:id).flat_map do |player|
+      by_civ.fetch(player.civ, []).map { |city| city.merge(value.at(city[:city], last_turn) || {}) }
     end
   end
 

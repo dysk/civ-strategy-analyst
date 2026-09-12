@@ -1,0 +1,59 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>City Census</h1>
+<p class="subtitle">
+  Each city's share of its owner's empire, sampled every
+  <%= CityCensusesController::SAMPLE_INTERVAL %> turns and at the last turn recorded.
+  A city that changed hands carries its history under whichever civ holds it now.
+</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No city snapshot data in this game's log.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <% history[:cities].each do |city_history| %>
+      <h3><%= city_history[:city] %></h3>
+
+      <table class="city-value-history">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Civ</th>
+            <th>Population</th>
+            <th>Science</th>
+            <th>Production</th>
+            <th>Gold</th>
+            <th>Culture</th>
+            <th>Faith</th>
+            <th>Buildings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% city_history[:series].each do |entry| %>
+            <tr>
+              <td><%= entry[:turn] %></td>
+              <td><%= entry[:civ] %></td>
+              <td><%= share_percentage(entry[:population_share]) %></td>
+              <td><%= share_percentage(entry[:science_share]) %></td>
+              <td><%= share_percentage(entry[:production_share]) %></td>
+              <td><%= share_percentage(entry[:gold_share]) %></td>
+              <td><%= share_percentage(entry[:culture_share]) %></td>
+              <td><%= share_percentage(entry[:faith_share]) %></td>
+              <td><%= share_percentage(entry[:buildings_share]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+
+  <p class="note">
+    Each figure is the city's share of that yield among every city its
+    civilization held on the same turn - a city changing hands is a jump in
+    whose empire it counts against, not a change in the city itself. A blank
+    cell is a yield the whole empire earned nothing of that turn, not a
+    missing snapshot.
+  </p>
+<% end %>

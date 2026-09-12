@@ -87,6 +87,28 @@ class CityValueTest < ActiveSupport::TestCase
     assert_nil value[:faith_rank]
   end
 
+  test "series gives the city's value at every turn it was itself snapshotted" do
+    city_snapshot("Iroquois", 100, "Onondaga", population: 10)
+    city_snapshot("Iroquois", 100, "Cattaraugus", population: 10)
+    city_snapshot("Iroquois", 150, "Onondaga", population: 18)
+    city_snapshot("Iroquois", 150, "Cattaraugus", population: 6)
+
+    series = CityValue.new(@game).series("Onondaga")
+
+    assert_equal [ 100, 150 ], series.map { |entry| entry[:turn] }
+    assert_in_delta 0.5, series.first[:population_share], 0.001
+    assert_in_delta 0.75, series.last[:population_share], 0.001
+  end
+
+  test "series follows a city across a change of owner" do
+    city_snapshot("Iroquois", 100, "Cahokia", population: 10)
+    city_snapshot("England", 120, "Cahokia", population: 6)
+
+    series = CityValue.new(@game).series("Cahokia")
+
+    assert_equal [ "Iroquois", "England" ], series.map { |entry| entry[:civ] }
+  end
+
   test "applicable? is false when the log carries no city snapshot" do
     @game.game_events.create!(
       seq: @seq += 1, session_index: 0, turn: 1, event_type: "snapshot", civ: "Iroquois",

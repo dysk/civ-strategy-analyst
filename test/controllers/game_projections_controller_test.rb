@@ -389,6 +389,43 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.army", false
   end
 
+  test "show lists each civilization's cities with their population and share" do
+    game = Game.create!(name: "City Census Game")
+    game.players.create!(civ: "Rome")
+    event(game, "Rome", "city_snapshot", 20, "city" => "Roma", "population" => 18)
+    event(game, "Rome", "city_snapshot", 20, "city" => "Ostia", "population" => 6)
+
+    get game_projections_url(game)
+
+    assert_response :success
+    assert_select "table.city-census" do
+      assert_select "td", "Roma"
+      assert_select "td", "18"
+      assert_select "td", "75.0%"
+      assert_select "td", "1"
+    end
+  end
+
+  test "show links to the history behind the city census table" do
+    game = Game.create!(name: "City Census Link Game")
+    game.players.create!(civ: "Rome")
+    event(game, "Rome", "city_snapshot", 20, "city" => "Roma", "population" => 18)
+
+    get game_projections_url(game)
+
+    assert_select "a[href=?]", game_city_census_path(game)
+  end
+
+  test "show omits the city census table for a game whose log carries no city snapshot" do
+    game = Game.create!(name: "No Census Game")
+    game.players.create!(civ: "Rome")
+    snapshot(game, "Rome", 20, score: 100)
+
+    get game_projections_url(game)
+
+    assert_select "table.city-census", false
+  end
+
   test "show displays each civilization's tourism and cultural standing" do
     game = Game.create!(name: "Cultural Table Game")
     game.players.create!(civ: "Rome")
@@ -796,6 +833,7 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     %w[Rome Greece Persia].each { |civ| game.players.create!(civ: civ) }
     city(game, "Rome", 1, 10, 10)
     city(game, "Greece", 1, 30, 10)
+    event(game, "Rome", "city_snapshot", 10, "city" => "Roma", "population" => 12)
     snapshot(game, "Rome", 10, military_might: 100, military_units: 2, tourism: 40, capitals: %w[Rome],
       resources: [ { "resource" => "RESOURCE_WINE", "total" => 1, "used" => 0, "import" => 1, "export" => 0 } ],
       yield_sources: { science: { cities: 5 } }, science: 5)
@@ -813,9 +851,10 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     get game_projections_url(game)
 
     assert_response :success
-    %w[table.capital-distances table.geometry table.early-game table.army table.cultural table.congress
-       table.victory-progress table.espionage table.diplomatic-ties table.trade-routes table.religion-holds
-       table.yield-attribution table.resource-shortages table.deals table.city-state-traits].each do |selector|
+    %w[table.capital-distances table.geometry table.early-game table.army table.city-census table.cultural
+       table.congress table.victory-progress table.espionage table.diplomatic-ties table.trade-routes
+       table.religion-holds table.yield-attribution table.resource-shortages table.deals
+       table.city-state-traits].each do |selector|
       disclosure = disclosure_wrapping(selector)
       assert disclosure, "#{selector} is not inside a details.disclosure"
       assert_nil disclosure["open"], "#{selector} is expanded by default"

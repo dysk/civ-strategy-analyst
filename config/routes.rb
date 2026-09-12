@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     resource :trade_routes, only: [ :show ], controller: "trade_route_histories"
     resource :yield_attribution, only: [ :show ], controller: "yield_attribution_histories"
     resource :city_states, only: [ :show ], controller: "city_state_histories"
+    resource :city_census, only: [ :show ], controller: "city_censuses"
   end
 
   # Defines the root path route ("/")

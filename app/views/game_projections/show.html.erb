@@ -253,6 +253,38 @@
   </details>
 <% end %>
 
+<%= section_heading("City Census", "city-census") %>
+<% if @city_census_rows.empty? %>
+  <p class="empty-state">No city snapshot data in this game's log.</p>
+<% else %>
+  <details class="disclosure">
+    <summary>City census table</summary>
+    <table class="city-census">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>City</th>
+          <th>Population</th>
+          <th>Pop. Share</th>
+          <th>Pop. Rank</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @city_census_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:city] %></td>
+            <td><%= row[:population] %></td>
+            <td><%= share_percentage(row[:population_share]) %></td>
+            <td><%= row[:population_rank] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how each city's value changed over time", game_city_census_path(@game) %></p>
+  </details>
+<% end %>
+
 <%= section_heading("Cultural Standing", "cultural-standing") %>
 <% if @cultural_rows.empty? %>
   <p class="empty-state">No tourism data in this game's snapshots.</p>

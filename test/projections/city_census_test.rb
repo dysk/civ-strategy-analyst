@@ -43,6 +43,39 @@ class CityCensusTest < ActiveSupport::TestCase
     assert_equal [], CityCensus.new(@game).sizes("Iroquois", 40)
   end
 
+  test "snapshot pairs each city with its population, largest first" do
+    city_snapshot("Tibet", 40, "Lhasa", population: 12)
+    city_snapshot("Tibet", 40, "Gyantse", population: 7)
+
+    assert_equal [ { city: "Lhasa", population: 12 }, { city: "Gyantse", population: 7 } ],
+                 CityCensus.new(@game).snapshot("Tibet", 40)
+  end
+
+  test "cities lists every city across every civ, largest first" do
+    city_snapshot("Tibet", 40, "Lhasa", population: 12)
+    city_snapshot("Iroquois", 40, "Onondaga", population: 18)
+
+    assert_equal [ { city: "Onondaga", civ: "Iroquois", population: 18 },
+                   { city: "Lhasa", civ: "Tibet", population: 12 } ],
+                 CityCensus.new(@game).cities(40)
+  end
+
+  test "cities lists a captured city under its new owner, not the one that lost it" do
+    city_snapshot("Tibet", 10, "Lhasa", population: 12)
+    city_snapshot("Iroquois", 20, "Lhasa", population: 8)
+
+    assert_equal [ { city: "Lhasa", civ: "Iroquois", population: 8 } ], CityCensus.new(@game).cities(40)
+  end
+
+  test "cities does not resurrect a captured city under its former owner" do
+    city_snapshot("Tibet", 10, "Lhasa", population: 12)
+    city_snapshot("Iroquois", 20, "Lhasa", population: 8)
+
+    cities = CityCensus.new(@game).cities(40)
+
+    assert_equal 1, cities.size
+  end
+
   test "applicable? is false when the log carries no city snapshot" do
     @game.game_events.create!(
       seq: @seq += 1, session_index: 0, turn: 1, event_type: "snapshot", civ: "Tibet",
