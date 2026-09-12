@@ -894,6 +894,37 @@ and bonus resources never appear here even when their own total runs
 negative - only a resource the ruleset itself classifies as strategic
 carries a combat penalty at all.
 
+The `deals` digest key is **reconstructed, not observed**: `CvDeal` is
+unreachable from Lua, so no event names a gold trade, a gold-per-turn
+trade, or a city trade at all - none of those ever appear here, and
+neither does price or duration for anything that does. What can be seen
+is `snapshot.resources[]`, each civilization's own import/export of a
+resource per turn, and `deals` is built from nothing but two civilizations'
+flows lining up. `applicable` is false and nothing else is present when
+the log carries no `resources[]` data at all, the same predicate
+`resource_shortages` uses.
+
+`matches` is a whole-game list of confirmed swaps, collapsed into spans of
+consecutive turns: `{resource, exporter, importer, from_turn, to_turn}`.
+A resource here can be either a luxury or a strategic one - both trade
+under `CvDeal`, and roughly a quarter of the swaps found in a real game
+were strategic. A turn where more than one civilization exports or more
+than one imports the same resource at once is left out of `matches`
+entirely rather than guessed at: one civilization can supply two others
+with the same resource simultaneously, and the split between them cannot
+be recovered from a stock total, so say nothing sooner than pair the
+wrong two civilizations.
+
+`unattributed_imports` lists `{civ, resource, turn, amount}` for every
+import with no major exporting that resource the same turn - most likely
+a city-state ally's gift, since city-states never appear in `resources[]`
+at all. Treat it as a strong signal, not a certainty: the same shape
+appears for one turn at the start of a genuine major-to-major swap, when
+one side's snapshot has updated before the other's - real games show
+both patterns, and `matches` beginning the very next turn for the same
+civilization and resource is the tell that distinguishes the second from
+the first.
+
 A `research_marker_reached` key moment fires when a civilization's tech
 count, at the turn it researched one of eleven marker technologies, lands
 inside that marker's calibrated band - a target reached with suspiciously
