@@ -1350,6 +1350,38 @@ religion founding, or a naval ability alongside a coastal war), weigh how
 well the strategy fit the civilization - but only when the timeline data
 itself supports the connection, not from the ability description alone.
 
+## Structural Dependencies
+
+Read `yield_attribution`'s checkpoint series as a trend, not a single
+figure. A civilization whose `sources.city_states`/`minor_civs` share of
+a yield drops sharply between checkpoints, especially alongside a
+`city_state_ally_takeovers` key moment (a rival becoming the new ally) or
+a `city_state_conquered` one (the city-state itself annexed), likely lost
+an income source it had been leaning on rather than merely slowing down
+organically. Trace what followed - a `leader_changes` entry, a negative
+`snowballs_score`, or an `irrelevance` boundary in that civilization's
+timeline - to say whether losing that source caused its fall from
+contention, or only coincided with one already underway from a separate
+cause (a war, a happiness collapse via `happiness_swings`, a resource
+shortage via `resource_shortages`).
+
+The same pattern runs in both directions and beyond city-state income. A
+civilization's science or gold propped up by `trade_routes` can collapse
+when those routes are cut by war - cross-reference
+`trade_routes.by_civ.<civ>.concurrency` against `key_moments.wars`. A
+faith total can hollow out if `religion.by_civ.<civ>.holds` shows its
+religion lost mid-game. And a `capital_control_changes` entry
+(`capital_gained`/`capital_lost`) marks a windfall as much as a collapse:
+the civilization that loses a capital loses whatever `yield_attribution`
+or metrics checkpoints show that city was producing, while the one that
+captures it gains a yield source outright rather than growing one - read
+the checkpoints on both sides of the turn to size what changed hands.
+
+Name the dependency, the moment it broke or changed hands, and the
+consequence for both sides where one exists - never credit a source that
+had already vanished by the time of a rise or collapse, and never blame
+one still intact when the real cause lies elsewhere.
+
 ## Key Moments
 
 Narrate the most important key moments from the provided list, explaining
