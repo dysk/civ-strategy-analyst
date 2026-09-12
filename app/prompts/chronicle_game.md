@@ -212,9 +212,15 @@ unit, heaviest first. The names arrive as the game's own -
 use before it reaches the page as crossbowmen, named as the era would.
 Take the name from there rather than from the ID: `UNIT_WWI_TANK` is a
 Landship and `UNIT_BARBARIAN_WARRIOR` a brute, and neither is legible in
-the ID that carries it. This is the record of the dead alone. It never says what killed
-them, so write that a side's crossbowmen and pikemen fell and leave the
-hand that felled them unnamed rather than invent it.
+the ID that carries it. This is the record of the dead alone. It never
+names the weapon that did the killing, but the roster beside it often
+does: where a side's `armies` fielded bombers, artillery or cavalry and
+the enemy it fought buried riflemen and pikemen, the field itself answers
+the question the dead cannot, and the passage may say so plainly - "the
+pikemen fell under the guns and armour ranged against them" - rather than
+only setting the two lists side by side. Where the two arsenals were
+close in kind, or no roster covers that side of the war, name the dead
+and leave the killer out rather than guess at one.
 
 What the two lists hold against each other is worth more than either: an
 age can stand between the arsenals, and riflemen and gatling guns dying to
@@ -255,15 +261,25 @@ unless they are the point of the sentence.
 
 This is what lets you write the war and not only its result. Bombers
 standing against lancers is an age of the world in a single line, and it
-is in the record rather than added to it. The same rule holds as for the
-dead, though: the roster says what stood there, never what struck what.
-Write that one side's bombers were in the sky and the other's riflemen
-died, and leave the reader to join them.
+is in the record rather than added to it. Read against `losses_by_type`
+as above, the roster also licenses the sentence the dead alone cannot
+support - write plainly that one side's bombers put the other's riflemen
+in their graves, rather than only setting the two beside each other for
+the reader to join.
 
 `debuts` is how a long war turns. A weapon that appears in its ninth year
 changes what the war is, and the turn it arrived is a date you may write.
 A side with no debuts fought to the end with what it began with, and that
 is worth saying of it.
+
+A debut need not be named as the precise machine `unit_names` gives it.
+Render it instead as the arrival of a kind of arms, the way the era would
+have noticed it - aviation taking to the sky for the first time, a new
+weight of artillery reaching the line, armour appearing among the
+infantry. Prefer the general term when several related types debut close
+together, or when the exact name would sit oddly in the passage's voice;
+reach for the precise name from `unit_names` only where the passage wants
+that specific texture.
 
 `built` against `re_armed` is how a war was paid for. An army mostly
 re-armed bought its modernity, old regiments handed new weapons where they
@@ -346,6 +362,16 @@ Weigh the loss by `before` - what was destroyed in the taking is not what
 the victor now holds. A `conquest: false` entry is a cession, already
 covered above: no sack, `before` and `after` alike, and none of this
 applies.
+
+A capture that fell within a war already covered in this entry may borrow
+a general sense of the attacking force from that war's `armies` - not
+turn-matched to the day the city fell, but enough to say a city stormed
+by riflemen and field guns rather than one taken by spearmen, when that
+war's roster and `debuts` support it. This is texture for the passage,
+not a claim about which units stood at that city on that day, so keep it
+general - a kind of arms, not a count - and where no war entry covers the
+capture, or its roster gives no clear sense of the age fighting there,
+leave the attacker's arms unnamed rather than invent them.
 
 `valuation.resistance` is the years the new ruler spent holding the city
 down, `resistance_turns` counting to zero. A larger city seethes longer;
