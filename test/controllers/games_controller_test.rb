@@ -272,6 +272,20 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_operator response.body.index('class="geometry"'), :<, response.body.index('id="wonder-races"')
   end
 
+  test "show places the Strategy Report section right after the capital layout graphic" do
+    game = Game.create!(name: "Report Placement Game", map_width: 46)
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+    game.analyses.create!(model: "m", report: "# Verdict", digest: {})
+
+    get game_url(game)
+
+    body = response.body
+    assert_operator body.index('svg class="capital-layout"'), :<, body.index('id="strategy-report"')
+    assert_operator body.index('id="strategy-report"'), :<, body.index('class="capital-distances"')
+  end
+
   test "show places the Wonder Races section below Early Game" do
     game = Game.create!(name: "Section Order Game")
     game.players.create!(civ: "Rome")
@@ -696,6 +710,185 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     get game_url(game)
 
     assert_select "table.espionage", false
+  end
+
+  test "show lists diplomatic ties between civs" do
+    game = Game.create!(name: "Ties Game")
+    %w[Rome Greece].each { |civ| game.players.create!(civ: civ) }
+    event(game, "Rome", "embassy_established", 6, "civ" => "Rome", "other_civ" => "Greece")
+    event(game, "Greece", "embassy_established", 6, "civ" => "Greece", "other_civ" => "Rome")
+
+    get game_url(game)
+
+    assert_select "table.diplomatic-ties tbody tr td", text: "embassy"
+  end
+
+  test "show omits the diplomatic ties table for a game with no tie events" do
+    game = Game.create!(name: "No Ties Game")
+    game.players.create!(civ: "Rome")
+
+    get game_url(game)
+
+    assert_select "table.diplomatic-ties", false
+    assert_select "p.empty-state", /embassy/i
+  end
+
+  test "show summarises each civ's trade route destinations" do
+    game = Game.create!(name: "Trade Game")
+    game.players.create!(civ: "India")
+    event(game, "India", "trade_route_established", 10, "from_city" => "Delhi", "to_city" => "Mumbai",
+          "to_civ" => "India", "type" => "food", "turns_left" => 15)
+
+    get game_url(game)
+
+    assert_select "table.trade-routes tbody tr td", text: "India"
+  end
+
+  test "show omits the trade routes table for a game with no trade route events" do
+    game = Game.create!(name: "No Trade Game")
+    game.players.create!(civ: "India")
+
+    get game_url(game)
+
+    assert_select "table.trade-routes", false
+  end
+
+  test "show lists each city's religious holds" do
+    game = Game.create!(name: "Religion Game")
+    game.players.create!(civ: "India")
+    event(game, "India", "city_converted", 50, "city" => "Delhi", "religion" => "TXT_KEY_RELIGION_HINDUISM")
+
+    get game_url(game)
+
+    assert_select "table.religion-holds tbody tr td", text: "Hinduism"
+  end
+
+  test "show omits the religion tables for a game with no conversions" do
+    game = Game.create!(name: "No Religion Game")
+    game.players.create!(civ: "India")
+
+    get game_url(game)
+
+    assert_select "table.religion-holds", false
+  end
+
+  test "show shows the latest yield source breakdown per civ" do
+    game = Game.create!(name: "Yield Game")
+    game.players.create!(civ: "India")
+    snapshot(game, "India", 10, science: 40, yield_sources: { science: { cities: 40 } })
+
+    get game_url(game)
+
+    assert_select "table.yield-attribution tbody tr td", text: "cities: 40"
+  end
+
+  test "show omits the yield attribution table for a game with no source data" do
+    game = Game.create!(name: "No Yield Game")
+    game.players.create!(civ: "India")
+
+    get game_url(game)
+
+    assert_select "table.yield-attribution", false
+  end
+
+  test "show lists strategic resource deficits per civ" do
+    game = Game.create!(name: "Shortage Game")
+    game.players.create!(civ: "Netherlands")
+    snapshot(game, "Netherlands", 81, resources: [ { "resource" => "RESOURCE_HORSE", "total" => 0, "used" => 1 } ])
+
+    get game_url(game)
+
+    assert_select "table.resource-shortages tbody tr td", text: "Horse"
+  end
+
+  test "show names each exposed unit rather than its internal id" do
+    game = Game.create!(name: "Shortage Game")
+    game.players.create!(civ: "Netherlands")
+    event(game, "Netherlands", "unit_created", 80, "unit" => "UNIT_HORSEMAN")
+    snapshot(game, "Netherlands", 81, resources: [ { "resource" => "RESOURCE_HORSE", "total" => 0, "used" => 1 } ])
+
+    get game_url(game)
+
+    assert_select "table.resource-shortages tbody tr td", text: "Horseman"
+  end
+
+  test "show omits the resource shortages table for a game with no deficits" do
+    game = Game.create!(name: "No Shortage Game")
+    game.players.create!(civ: "Netherlands")
+
+    get game_url(game)
+
+    assert_select "table.resource-shortages", false
+  end
+
+  test "show lists confirmed resource deals" do
+    game = Game.create!(name: "Deals Game")
+    %w[Tibet Netherlands].each { |civ| game.players.create!(civ: civ) }
+    snapshot(game, "Tibet", 19, resources: [ { "resource" => "RESOURCE_WINE", "total" => 1, "used" => 0, "import" => 0, "export" => 1 } ])
+    snapshot(game, "Netherlands", 19, resources: [ { "resource" => "RESOURCE_WINE", "total" => 1, "used" => 0, "import" => 1, "export" => 0 } ])
+
+    get game_url(game)
+
+    assert_select "table.deals tbody tr td", text: "Wine"
+  end
+
+  test "show names an unattributed import's resource rather than its internal id" do
+    game = Game.create!(name: "Unattributed Import Game")
+    game.players.create!(civ: "Zurich")
+    snapshot(game, "Zurich", 19, resources: [ { "resource" => "RESOURCE_HORSE", "total" => 1, "used" => 0, "import" => 1, "export" => 0 } ])
+
+    get game_url(game)
+
+    assert_select "table.deals-unattributed tbody tr td", text: "Horse"
+  end
+
+  test "show omits the deals table for a game with no resource flow data" do
+    game = Game.create!(name: "No Deals Game")
+    game.players.create!(civ: "Tibet")
+
+    get game_url(game)
+
+    assert_select "table.deals", false
+  end
+
+  test "show lists city-state traits and alliances" do
+    game = Game.create!(name: "City-State Game")
+    game.players.create!(civ: "India")
+    event(game, nil, "session_started", 0, "city_states" => [ { "civ" => "Ljubljana", "trait" => "cultured" } ])
+    event(game, nil, "city_state_snapshot", 48, "city_state" => "Ljubljana",
+          "relations" => [ { "civ" => "India", "influence" => 5, "per_turn" => 1.25 } ])
+
+    get game_url(game)
+
+    assert_select "table.city-state-traits tbody tr td", text: "Ljubljana"
+  end
+
+  test "show names a city-state's trait, personality and unique unit rather than their internal ids" do
+    game = Game.create!(name: "City-State Naming Game")
+    game.players.create!(civ: "India")
+    event(game, nil, "session_started", 0, "city_states" => [
+      { "civ" => "Ljubljana", "trait" => "MINOR_TRAIT_CULTURED", "personality" => "MINOR_CIV_PERSONALITY_THEOCRATIC",
+        "unique_unit" => "UNIT_HORSEMAN" }
+    ])
+    event(game, nil, "city_state_snapshot", 48, "city_state" => "Ljubljana",
+          "relations" => [ { "civ" => "India", "influence" => 5, "per_turn" => 1.25 } ])
+
+    get game_url(game)
+
+    assert_select "table.city-state-traits tbody tr" do
+      assert_select "td", text: "Cultured"
+      assert_select "td", text: "Theocratic"
+      assert_select "td", text: "Horseman"
+    end
+  end
+
+  test "show omits the city-state tables for a game with no city-state snapshots" do
+    game = Game.create!(name: "No City-State Game")
+    game.players.create!(civ: "India")
+
+    get game_url(game)
+
+    assert_select "table.city-state-traits", false
   end
 
   test "show lists wonder races among the key moments" do

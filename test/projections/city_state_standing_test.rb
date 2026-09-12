@@ -143,6 +143,35 @@ class CityStateStandingTest < ActiveSupport::TestCase
     assert_not CityStateStanding.new(@game).attribution("Ljubljana", "England")[:merchant_confederacy]
   end
 
+  # A relation the log carries with no per_turn at all - seen for real in
+  # india-diplo.jsonl - must not crash decay_across; the unmeasured stretch
+  # falls into `unexplained` like every other unlogged cause, rather than
+  # being treated as a NoMethodError.
+  test "attribution treats a snapshot with no per_turn as zero decay for that stretch" do
+    city_state("Ljubljana", 10, relations: [ { civ: "India", influence: 20, per_turn: 2.0 } ])
+    city_state("Ljubljana", 30, relations: [ { civ: "India", influence: 25 } ])
+    city_state("Ljubljana", 50, relations: [ { civ: "India", influence: 40, per_turn: -1.0 } ])
+
+    result = CityStateStanding.new(@game).attribution("Ljubljana", "India")
+
+    assert_equal 20, result[:gain]
+    assert_equal 40.0, result[:decay]
+  end
+
+  # Also real in india-diplo.jsonl: a relation logged with no influence value
+  # at all (still carrying per_turn and protected). Gain falls back to the
+  # nearest snapshots that do carry influence, rather than crashing on nil.
+  test "attribution falls back to the nearest known influence when a boundary snapshot omits it" do
+    city_state("Ljubljana", 10, relations: [ { civ: "India", per_turn: 1.25, protected: true } ])
+    city_state("Ljubljana", 20, relations: [ { civ: "India", influence: 20, per_turn: 2.0 } ])
+    city_state("Ljubljana", 60, relations: [ { civ: "India", influence: 100, per_turn: -1.0 } ])
+
+    result = CityStateStanding.new(@game).attribution("Ljubljana", "India")
+
+    assert_equal 80, result[:gain]
+    assert_equal 92.5, result[:decay]
+  end
+
   test "attribution reports zero gain and decay when the pair has fewer than two snapshot points" do
     city_state("Ljubljana", 10, relations: [ { civ: "India", influence: 20, per_turn: 2.0 } ])
 

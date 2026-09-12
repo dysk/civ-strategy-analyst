@@ -1,6 +1,8 @@
 require "test_helper"
 
 class KeyMomentsHelperTest < ActionView::TestCase
+  helper GamesHelper
+
   test "narrates a war that ended in peace" do
     assert_equal "Turn 57: Chile declared war on Vietnam (peace at turn 70)",
                  key_moment_sentence(war(turn_peace: 70))
@@ -255,6 +257,36 @@ class KeyMomentsHelperTest < ActionView::TestCase
       "Turn 30: Chile founded Christianity (#2) with BELIEF_A, BELIEF_B",
       key_moment_sentence(moment)
     )
+  end
+
+  # The log names a founded religion by its internal key, not the name a
+  # reader knows it by - TXT_KEY_RELIGION_PROTESTANTISM is Protestantism.
+  test "narrates a religion founding by its display name, not its internal key" do
+    moment = { type: :religion_founded, turn: 30, civ: "Chile", religion: "TXT_KEY_RELIGION_PROTESTANTISM",
+               holy_city: "Santiago", beliefs: %w[BELIEF_A BELIEF_B], order: 2 }
+
+    assert_equal(
+      "Turn 30: Chile founded Protestantism (#2) with BELIEF_A, BELIEF_B",
+      key_moment_sentence(moment)
+    )
+  end
+
+  test "narrates a religion enhancement by its display name" do
+    moment = { type: :religion_enhanced, turn: 60, civ: "Chile", religion: "TXT_KEY_RELIGION_CATHOLICISM",
+               beliefs: %w[BELIEF_C] }
+
+    assert_equal "Turn 60: Chile enhanced Catholicism with BELIEF_C", key_moment_sentence(moment)
+  end
+
+  test "narrates a reformation belief added to a religion by its display name" do
+    moment = { type: :reformation_added, turn: 70, civ: "Chile", religion: "TXT_KEY_RELIGION_HINDUISM",
+               belief: "BELIEF_D" }
+
+    assert_equal "Turn 70: Chile added the reformation belief BELIEF_D to Hinduism", key_moment_sentence(moment)
+  end
+
+  test "leaves a custom religion name a player typed at founding untouched" do
+    assert_equal "Sun Worship", religion_name("Sun Worship")
   end
 
   test "marks a swing upwards so its direction is visible before reading" do

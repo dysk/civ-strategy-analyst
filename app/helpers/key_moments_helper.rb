@@ -6,6 +6,12 @@ module KeyMomentsHelper
     level.to_s.sub("INFLUENCE_LEVEL_", "").capitalize
   end
 
+  # The log only names a religion by its internal key for the fixed set
+  # LEKMOD ships - TXT_KEY_RELIGION_PROTESTANTISM is Protestantism. A player
+  # who typed a custom name at founding has it stored as that literal text
+  # instead, which already reads as a name and needs no decoding.
+  def religion_name(key) = strip_prefix_and_titleize(key, "TXT_KEY_RELIGION_")
+
   DESCRIPTIONS = {
     war: ->(m) { declaration(m) },
     buffer_city_lost: ->(m) { "#{m[:civ]} lost #{m[:city]} to #{m[:captured_by]}, " \
@@ -13,13 +19,13 @@ module KeyMomentsHelper
     leader_change: ->(m) { "#{m[:metric]} lead passed from #{m[:from]} to #{m[:to]}" },
     era_lead: ->(m) { "#{m[:civs].join(", ")} reached #{m[:era]} first" },
     pantheon_founded: ->(m) { "#{m[:civ]} founded a pantheon with #{m[:belief]}" },
-    religion_founded: ->(m) { "#{m[:civ]} founded #{m[:religion]} (##{m[:order]}) with #{Array(m[:beliefs]).join(", ")}" },
+    religion_founded: ->(m) { "#{m[:civ]} founded #{religion_name(m[:religion])} (##{m[:order]}) with #{Array(m[:beliefs]).join(", ")}" },
     player_declared_irrelevant: ->(m) {
       "#{m[:civ]} asked to be ruled out of contention, and the other players agreed " \
         "(#{m[:yes_votes]}–#{m[:no_votes]})"
     },
-    religion_enhanced: ->(m) { "#{m[:civ]} enhanced #{m[:religion]} with #{Array(m[:beliefs]).join(", ")}" },
-    reformation_added: ->(m) { "#{m[:civ]} added the reformation belief #{m[:belief]} to #{m[:religion]}" },
+    religion_enhanced: ->(m) { "#{m[:civ]} enhanced #{religion_name(m[:religion])} with #{Array(m[:beliefs]).join(", ")}" },
+    reformation_added: ->(m) { "#{m[:civ]} added the reformation belief #{m[:belief]} to #{religion_name(m[:religion])}" },
     ideology_unlocked: ->(m) { "#{m[:civ]} unlocked #{m[:ideology]}" },
     ideology_adopted: ->(m) { "#{m[:civ]} adopted #{m[:ideology]}" },
     tenet_adopted: ->(m) { "#{m[:civ]} adopted the #{m[:ideology]} tenet #{m[:tenet]}" },

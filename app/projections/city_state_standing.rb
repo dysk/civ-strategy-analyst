@@ -40,7 +40,7 @@ class CityStateStanding
   # successful coups live, none of them logged.
   def attribution(city_state, civ)
     points = series(city_state, civ).sort_by { |p| p[:turn] }
-    gain, decay = points.size >= 2 ? [ points.last[:influence] - points.first[:influence], decay_across(points) ] : [ 0, 0 ]
+    gain, decay = points.size >= 2 ? [ gain_across(points), decay_across(points) ] : [ 0, 0 ]
     rigs = rig_count(city_state, civ)
     explained = rigs * RIG_GAIN
 
@@ -56,7 +56,22 @@ class CityStateStanding
 
   private
 
-  def decay_across(points) = points.each_cons(2).sum { |a, b| a[:per_turn] * (b[:turn] - a[:turn]) }
+  # A relation can be logged with no influence value at all - real in
+  # india-diplo.jsonl, alongside per_turn and protected. Gain falls back to
+  # the nearest snapshots that do carry it, rather than crash on a boundary
+  # point that happens to be the one missing it.
+  def gain_across(points)
+    known = points.select { |p| p[:influence] }
+    return 0 if known.size < 2
+
+    known.last[:influence] - known.first[:influence]
+  end
+
+  # A relation can be logged with no per_turn at all - real in
+  # india-diplo.jsonl. That stretch's decay is simply unmeasured, so it
+  # counts as zero rather than crashing; the gap still surfaces, in
+  # `unexplained`, same as every other unlogged cause.
+  def decay_across(points) = points.each_cons(2).sum { |a, b| (a[:per_turn] || 0) * (b[:turn] - a[:turn]) }
 
   def rig_count(city_state, civ)
     espionage.missions(civ).count { |m| m[:kind] == :election_rigging && m[:city_civ] == city_state }

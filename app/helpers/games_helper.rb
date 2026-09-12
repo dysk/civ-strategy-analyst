@@ -27,6 +27,21 @@ module GamesHelper
 
   def outcome_source_label(source) = OUTCOME_SOURCES.fetch(source, source.to_s)
 
+  # A game log names things - resources, city-state traits and
+  # personalities - by their internal id, which happens to decode to their
+  # display name word for word. A value already free of the prefix (a
+  # player-typed name, for instance) is not this game's to touch, so it
+  # passes through unchanged.
+  def strip_prefix_and_titleize(value, prefix)
+    return value unless value.to_s.start_with?(prefix)
+
+    value.delete_prefix(prefix).tr("_", " ").downcase.titleize
+  end
+
+  def resource_name(id) = strip_prefix_and_titleize(id, "RESOURCE_")
+  def minor_civ_trait_name(id) = strip_prefix_and_titleize(id, "MINOR_TRAIT_")
+  def minor_civ_personality_name(id) = strip_prefix_and_titleize(id, "MINOR_CIV_PERSONALITY_")
+
   # A team victory keeps every member; winner_civ is only its first name.
   def outcome_winner_names(game, outcome)
     game.winner_civs.presence&.join(", ") || outcome[:winner_civ]

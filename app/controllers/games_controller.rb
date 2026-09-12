@@ -31,6 +31,18 @@ class GamesController < ApplicationController
     @congress_summary = congress_summary
     @victory_progress_rows = victory_progress_rows
     @espionage_rows = espionage_rows
+    @diplomatic_tie_rows = diplomatic_tie_rows
+    @trade_route_destination_rows = trade_route_destination_rows
+    @trade_route_one_sided_rows = trade_route_one_sided_rows
+    @religion_hold_rows = religion_hold_rows
+    @religion_use_rows = religion_use_rows
+    @yield_attribution_rows = yield_attribution_rows
+    @resource_shortage_rows = resource_shortage_rows
+    @deal_match_rows = deal_match_rows
+    @deal_unattributed_import_rows = deal_unattributed_import_rows
+    @city_state_trait_rows = city_state_trait_rows
+    @city_state_alliance_rows = city_state_alliance_rows
+    @city_state_attribution_rows = city_state_attribution_rows
     @latest_analysis = @game.analyses.order(created_at: :desc).first
   end
 
@@ -280,6 +292,120 @@ class GamesController < ApplicationController
         missions: espionage.missions(player.civ).size, garrisoned: espionage.counterspies(player.civ).any? }
     end
   end
+
+  # Every tie ever held between any two civs, oldest first - the same
+  # ground DigestBuilder covers pair by pair for the prompt.
+  def diplomatic_tie_rows
+    ties = DiplomaticTies.for(@game)
+    return [] unless ties.applicable?
+
+    civs.combination(2).flat_map { |a, b| ties.spans(a, b).map { |span| span.merge(civs: [ a, b ]) } }
+      .sort_by { |row| row[:from_turn] }
+  end
+
+  def trade_route_destination_rows
+    routes = TradeRoutes.for(@game)
+    return [] unless routes.applicable?
+
+    civs.map do |civ|
+      destination = routes.by_destination(civ)
+      { civ: civ, own_food: destination[:own][:food], own_production: destination[:own][:production],
+        city_state: destination[:city_state], major: destination[:major] }
+    end
+  end
+
+  # A civ feeding a rival's science or tourism without ever seeing a return -
+  # invisible unless the two sides of the same route are put side by side.
+  def trade_route_one_sided_rows
+    routes = TradeRoutes.for(@game)
+    return [] unless routes.applicable?
+
+    routes.one_sided.sort_by { |row| row[:turn] }
+  end
+
+  def religion_hold_rows
+    religion = Religion.for(@game)
+    return [] unless religion.applicable?
+
+    religion.holds
+  end
+
+  def religion_use_rows
+    religion = Religion.for(@game)
+    return [] unless religion.applicable?
+
+    civs.map do |civ|
+      { civ: civ, missionary_uses: religion.missionary_uses(civ).size, inquisitor_uses: religion.inquisitor_uses(civ).size }
+    end
+  end
+
+  # Latest checkpoint per (civ, yield) a civ has source data for - the same
+  # slice DigestBuilder samples, at its most recent point.
+  def yield_attribution_rows
+    attribution = YieldAttribution.for(@game)
+    return [] unless attribution.applicable?
+
+    civs.flat_map do |civ|
+      attribution.yields(civ).filter_map do |yield_name|
+        latest = attribution.series(civ, yield_name).max_by { |point| point[:turn] }
+        latest&.merge(civ: civ, yield_name: yield_name)
+      end
+    end
+  end
+
+  def resource_shortage_rows
+    shortages = ResourceShortages.for(@game)
+    return [] unless shortages.applicable?
+
+    civs.flat_map { |civ| shortages.deficits(civ).map { |deficit| deficit.merge(civ: civ) } }
+      .sort_by { |row| row[:turn] }
+  end
+
+  def deal_match_rows
+    deals = Deals.for(@game)
+    return [] unless deals.applicable?
+
+    deals.matches
+  end
+
+  def deal_unattributed_import_rows
+    deals = Deals.for(@game)
+    return [] unless deals.applicable?
+
+    deals.unattributed_imports.sort_by { |row| row[:turn] }
+  end
+
+  def city_state_trait_rows
+    standing = CityStateStanding.for(@game)
+    return [] unless standing.applicable?
+
+    standing.traits
+  end
+
+  def city_state_alliance_rows
+    standing = CityStateStanding.for(@game)
+    return [] unless standing.applicable?
+
+    civs.flat_map { |civ| standing.alliances(civ).map { |span| span.merge(civ: civ) } }.sort_by { |row| row[:from_turn] }
+  end
+
+  # Same guard DigestBuilder's attribution_by_city_state applies: only a
+  # civ/city-state pair with a standing series at all gets an attribution row.
+  def city_state_attribution_rows
+    standing = CityStateStanding.for(@game)
+    return [] unless standing.applicable?
+
+    civs.flat_map do |civ|
+      standing.traits.filter_map do |trait|
+        city_state = trait[:city_state]
+        next if standing.series(city_state, civ).empty?
+
+        standing.attribution(city_state, civ).merge(civ: civ, city_state: city_state)
+      end
+    end
+  end
+
+  def civs = @civs ||= @game.players.order(:id).pluck(:civ)
 
   # The empire's shape as it stands, plus the first turn its city count
   # stopped adding up - after which the shape is only approximate.
