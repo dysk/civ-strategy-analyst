@@ -18,6 +18,11 @@ class GameTest < ActiveSupport::TestCase
     assert_predicate game, :pangaea?
   end
 
+  test "an Oval map counts as Pangaea, regardless of case" do
+    assert_predicate Game.new(name: "Test Game", map_script: "Oval"), :pangaea?
+    assert_predicate Game.new(name: "Test Game", map_script: "oval"), :pangaea?
+  end
+
   test "any other map script is not Pangaea" do
     refute_predicate Game.new(name: "Test Game", map_script: "Continents"), :pangaea?
   end

@@ -5,7 +5,7 @@ class Game < ApplicationRecord
 
   validates :name, presence: true
 
-  PANGAEA = /pangaea/i
+  PANGAEA = /pangaea|oval/i
 
   # Pangaea puts every player on one landmass with ocean at the map's edges,
   # so the seam the coordinates wrap across is neither a route an army can
