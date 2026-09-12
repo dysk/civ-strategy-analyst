@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/unit_resource_requirements.yml: UNIT_* -> the
+# resources it needs and how much of each, extracted from a checkout of the
+# mod's XML source. ResourceShortages reads it to tell which of a civ's own
+# units are exposed to a strategic deficit - see db/lekmod/README.md and
+# LekmodIdsExtractor.
+#
+# The <Unit_ResourceQuantityRequirements> table sits in Override/CIV5Units.xml,
+# not a file named for it - the same trap the README notes for Resolutions,
+# Buildings and Technologies.
+#
+# Usage:
+#   script/extract_lekmod_unit_resource_requirements SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_unit_resource_requirements /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/unit_resource_requirements.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+unless source_dir && target
+  abort "Usage: script/extract_lekmod_unit_resource_requirements SOURCE_DIR TARGET_YML"
+end
+
+requirements = LekmodIdsExtractor.new(source_dir).unit_resource_requirements
+if requirements.empty?
+  abort "No unit resource requirements resolved from #{source_dir} - check the path points at LEKMOD/Override."
+end
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, requirements.sort.to_h.to_yaml)
+
+puts "Wrote #{target} - #{requirements.size} units resolved with a resource requirement."

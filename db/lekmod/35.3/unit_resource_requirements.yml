@@ -1,0 +1,196 @@
+---
+UNIT_AMERICAN_B17:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_ARABIAN_CAMELARCHER:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_ARGENTINA_KNIGHT:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_ARMENIA_HORSEMAN:
+- resource: RESOURCE_HORSE
+  cost: 2
+UNIT_AUSTRIAN_HUSSAR:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_AYYUBIDS_KNIGHT:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_BATTLESHIP:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_BERBER_CAVALRY:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_BOMBER:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_BYZANTINE_CATAPHRACT:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_CARDOEN:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_CAVALRY:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_CHARIOT_ARCHER:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_COLOMBIAN_CAVALRY:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_CRUSADER:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_DANISH_BERSERKER:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_ENGLISH_SHIPOFTHELINE:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_FIGHTER:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_FRIGATE:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_GEORGIA_KHEVSUR:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_GERMAN_PANZER:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_HELICOPTER_GUNSHIP:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_HETAIROI:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_HITTITE_CHARIOT:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_HORSEMAN:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_HUN_HORSE_ARCHER:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_IRONCLAD:
+- resource: RESOURCE_COAL
+  cost: 1
+UNIT_JAPANESE_SAMURAI:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_KNIGHT:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_KONNITSA:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_KRIS_SWORDSMAN:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_LANCER:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_LONGSWORDSMAN:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_MARATHI:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_MC_LITE_GRANADINE_CAVALRY:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_MC_SCOTTISH_GALLOWGLASS:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_MECH:
+- resource: RESOURCE_URANIUM
+  cost: 1
+UNIT_MISSILE_CRUISER:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_MODERN_ARMOR:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_MONGOLIAN_KESHIK:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_NUCLEAR_MISSILE:
+- resource: RESOURCE_URANIUM
+  cost: 2
+UNIT_OTTOMAN_SIPAHI:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_PALMYRA_CLIBANARIUS:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_PEDITE:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_POLISH_WINGED_HUSSAR:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_QIANLONG:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_ROMAN_LEGION:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_RUSSIAN_COSSACK:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_SEAXMANN:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_SHOSHONE_COMANCHE_RIDERS:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_SONGHAI_MUSLIMCAVALRY:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_SS_BOOSTER:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_SS_COCKPIT:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_SS_ENGINE:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_SS_STASIS_CHAMBER:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_STEALTH_BOMBER:
+- resource: RESOURCE_ALUMINUM
+  cost: 1
+UNIT_SWEDISH_HAKKAPELIITTA:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_SWORDSMAN:
+- resource: RESOURCE_IRON
+  cost: 1
+UNIT_TACHANKA:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_TANK:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_TRIPLANE:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_ULAN:
+- resource: RESOURCE_HORSE
+  cost: 1
+UNIT_WWI_BOMBER:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_WWI_TANK:
+- resource: RESOURCE_OIL
+  cost: 1
+UNIT_YUGO_M84:
+- resource: RESOURCE_OIL
+  cost: 1

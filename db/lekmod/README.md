@@ -21,6 +21,10 @@ db/lekmod/<version>/
                      way (optional; see below)
   spy_names.yml      TXT_KEY_SPY_NAME_* -> flavour name, extracted the
                      same way (optional; see below)
+  resource_usages.yml               RESOURCE_* -> bonus/strategic/luxury,
+                                     extracted the same way (optional; see below)
+  unit_resource_requirements.yml    UNIT_* -> resources needed and cost,
+                                     extracted the same way (optional; see below)
 ```
 
 There is no `resolutions.md`: LEKMOD leaves the base game's World
@@ -125,6 +129,38 @@ above. Generate one with:
 ```sh
 script/extract_lekmod_technologies /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/technologies.yml
 ```
+
+## Resource classification and unit requirements
+
+`resource_usages.yml` maps every `RESOURCE_*` to `"bonus"` / `"strategic"` /
+`"luxury"`, and `unit_resource_requirements.yml` maps every `UNIT_*` that
+needs one to the resources it needs and how much of each. `ResourceShortages`
+reads both to tell a strategic deficit (Horse, Iron, Coal, Oil, Aluminum,
+Uranium - the resources LEKMOD's own combat rule reads) from a luxury one
+running negative, which carries no combat penalty at all, and to name which
+of a civilization's own units are exposed to a deficit it is running.
+
+The source field is `ResourceUsage` on the `<Resources>` table, an integer
+column (`CIV5Units.xml:192705`) rather than a string enum -
+`RESOURCEUSAGE_BONUS` / `_STRATEGIC` / `_LUXURY` are `0` / `1` / `2` in that
+order (`CvGameCoreDLLUtil/include/CvEnums.h:1194`). Unit requirements come
+from `Unit_ResourceQuantityRequirements` (`UnitType`, `ResourceType`,
+`Cost`), one row per `(unit, resource)` pair - a unit needing two resources
+at once appears twice. Both tables sit in `Override/CIV5Units.xml`, not a
+file named for them - the same trap as Resolutions, Buildings and
+Technologies above. Generate them with:
+
+```sh
+script/extract_lekmod_resource_usages /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/resource_usages.yml
+script/extract_lekmod_unit_resource_requirements /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/unit_resource_requirements.yml
+```
+
+`ResourceRequirements` resolves a game's version against these files the
+same loose way `Wonders` resolves `buildings.yml`: exact version if it has
+both files, otherwise the newest version that does. This data is about as
+stable as a ruleset gets - which resources are strategic and which units
+consume them tracks core Civ5 mechanics a balance patch rarely touches - so
+a hotfix snapshot inheriting an older version's copy is a safe bet.
 
 ## Spy names
 
@@ -255,6 +291,8 @@ script/extract_lekmod_ids /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/ids.ym
 script/extract_lekmod_unit_names /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/units.yml
 script/extract_lekmod_buildings /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/buildings.yml
 script/extract_lekmod_technologies /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/technologies.yml
+script/extract_lekmod_resource_usages /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/resource_usages.yml
+script/extract_lekmod_unit_resource_requirements /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/unit_resource_requirements.yml
 ```
 
 Only scan `LEKMOD/Override`, not the whole checkout - a sibling

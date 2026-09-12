@@ -40,10 +40,35 @@ class LekmodIdsExtractor
 
   def technologies = resolve(tech_to_description)
 
+  # RESOURCE_* -> "bonus" / "strategic" / "luxury", from the Resources
+  # table's own ResourceUsage column. That column is an integer
+  # (CIV5Units.xml:192705), not a string enum - RESOURCEUSAGE_BONUS,
+  # _STRATEGIC and _LUXURY are 0, 1 and 2 in that order (CvEnums.h:1194).
+  def resource_usages
+    documents.each_with_object({}) do |doc, result|
+      doc.css("Resources Row").each do |row|
+        type = row.at_css("Type")&.text
+        usage = row.at_css("ResourceUsage")&.text
+        result[type] = RESOURCE_USAGES[usage.to_i] if type && usage
+      end
+    end
+  end
+
+  # UNIT_* -> every resource it needs and how much, from
+  # Unit_ResourceQuantityRequirements (UnitType, ResourceType, Cost) - one
+  # row per (unit, resource) pair, so a unit needing two resources at once
+  # appears twice.
+  def unit_resource_requirements
+    requirement_rows.group_by { |row| row[:unit] }
+      .transform_values { |rows| rows.map { |row| { "resource" => row[:resource], "cost" => row[:cost] } } }
+  end
+
   private
 
   WONDER_SCOPE_FIELDS = { "MaxGlobalInstances" => "world", "MaxTeamInstances" => "team",
                           "MaxPlayerInstances" => "national" }.freeze
+
+  RESOURCE_USAGES = %w[bonus strategic luxury].freeze
 
   SPY_NAME_PREFIX = "TXT_KEY_SPY_NAME_".freeze
 
@@ -79,6 +104,16 @@ class LekmodIdsExtractor
           scope if row.at_css(field)&.text.to_i.positive?
         end.first
       end
+    end
+  end
+
+  def requirement_rows
+    documents.flat_map { |doc| doc.css("Unit_ResourceQuantityRequirements Row") }.filter_map do |row|
+      unit = row.at_css("UnitType")&.text
+      resource = row.at_css("ResourceType")&.text
+      next unless unit && resource
+
+      { unit: unit, resource: resource, cost: row.at_css("Cost")&.text.to_i }
     end
   end
 

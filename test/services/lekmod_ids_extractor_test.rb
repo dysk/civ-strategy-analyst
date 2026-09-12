@@ -130,8 +130,43 @@ class LekmodIdsExtractorTest < ActiveSupport::TestCase
     assert_equal "Test Literal Tech", technologies["TECH_TEST_LITERAL"]
   end
 
+  # ResourceUsage is an integer column (CIV5Units.xml:192705), not a string
+  # enum - RESOURCEUSAGE_BONUS/STRATEGIC/LUXURY = 0/1/2 per CvEnums.h:1194.
+  test "classifies a resource whose ResourceUsage is 1 as strategic" do
+    assert_equal "strategic", resource_usages["RESOURCE_TEST_STRATEGIC"]
+  end
+
+  test "classifies a resource whose ResourceUsage is 2 as luxury" do
+    assert_equal "luxury", resource_usages["RESOURCE_TEST_LUXURY"]
+  end
+
+  test "classifies a resource whose ResourceUsage is 0 as bonus" do
+    assert_equal "bonus", resource_usages["RESOURCE_TEST_BONUS"]
+  end
+
+  test "maps a unit to the resource it requires, with cost" do
+    assert_equal [ { "resource" => "RESOURCE_TEST_STRATEGIC", "cost" => 1 } ],
+                 unit_resource_requirements["UNIT_TEST_ONE"]
+  end
+
+  # A unit can need more than one resource at once - Unit_ResourceQuantityRequirements
+  # carries one row per (unit, resource) pair, not one row per unit.
+  test "lists every resource a unit requires when it requires more than one" do
+    reqs = unit_resource_requirements["UNIT_TEST_LITERAL"]
+
+    assert_equal 2, reqs.size
+    assert_includes reqs, { "resource" => "RESOURCE_TEST_STRATEGIC", "cost" => 2 }
+    assert_includes reqs, { "resource" => "RESOURCE_TEST_LUXURY", "cost" => 1 }
+  end
+
+  test "omits a unit with no resource requirement" do
+    refute unit_resource_requirements.key?("UNIT_TEST_NO_REQUIREMENT")
+  end
+
   private
 
   def buildings = LekmodIdsExtractor.new(SOURCE_DIR).buildings
   def technologies = LekmodIdsExtractor.new(SOURCE_DIR).technologies
+  def resource_usages = LekmodIdsExtractor.new(SOURCE_DIR).resource_usages
+  def unit_resource_requirements = LekmodIdsExtractor.new(SOURCE_DIR).unit_resource_requirements
 end

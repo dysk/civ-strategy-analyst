@@ -112,4 +112,38 @@
 			<Description>Test Markup Wonder [COLOR_CYAN]*[ENDCOLOR]</Description>
 		</Row>
 	</Buildings>
+	<Resources>
+		<Row>
+			<ID>1</ID>
+			<Type>RESOURCE_TEST_STRATEGIC</Type>
+			<ResourceUsage>1</ResourceUsage>
+		</Row>
+		<Row>
+			<ID>2</ID>
+			<Type>RESOURCE_TEST_LUXURY</Type>
+			<ResourceUsage>2</ResourceUsage>
+		</Row>
+		<Row>
+			<ID>3</ID>
+			<Type>RESOURCE_TEST_BONUS</Type>
+			<ResourceUsage>0</ResourceUsage>
+		</Row>
+	</Resources>
+	<Unit_ResourceQuantityRequirements>
+		<Row>
+			<UnitType>UNIT_TEST_ONE</UnitType>
+			<ResourceType>RESOURCE_TEST_STRATEGIC</ResourceType>
+			<Cost>1</Cost>
+		</Row>
+		<Row>
+			<UnitType>UNIT_TEST_LITERAL</UnitType>
+			<ResourceType>RESOURCE_TEST_STRATEGIC</ResourceType>
+			<Cost>2</Cost>
+		</Row>
+		<Row>
+			<UnitType>UNIT_TEST_LITERAL</UnitType>
+			<ResourceType>RESOURCE_TEST_LUXURY</ResourceType>
+			<Cost>1</Cost>
+		</Row>
+	</Unit_ResourceQuantityRequirements>
 </GameData>

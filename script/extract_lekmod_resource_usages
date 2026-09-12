@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/resource_usages.yml: RESOURCE_* -> "bonus" /
+# "strategic" / "luxury", extracted from a checkout of the mod's XML source.
+# ResourceShortages reads it to tell a strategic deficit (combat-relevant)
+# from a luxury one (not) - see db/lekmod/README.md and LekmodIdsExtractor.
+#
+# The <Resources> table sits in Override/CIV5Units.xml, not a file named for
+# it - the same trap the README notes for Resolutions, Buildings and
+# Technologies.
+#
+# Usage:
+#   script/extract_lekmod_resource_usages SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_resource_usages /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/resource_usages.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+abort "Usage: script/extract_lekmod_resource_usages SOURCE_DIR TARGET_YML" unless source_dir && target
+
+usages = LekmodIdsExtractor.new(source_dir).resource_usages
+abort "No resources resolved from #{source_dir} - check the path points at LEKMOD/Override." if usages.empty?
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, usages.sort.to_h.to_yaml)
+
+strategic = usages.count { |_id, usage| usage == "strategic" }
+puts "Wrote #{target} - #{usages.size} resources resolved, #{strategic} of them strategic."

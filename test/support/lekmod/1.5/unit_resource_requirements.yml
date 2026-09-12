@@ -1,0 +1,4 @@
+---
+UNIT_HORSEMAN:
+  - resource: RESOURCE_HORSE
+    cost: 1
