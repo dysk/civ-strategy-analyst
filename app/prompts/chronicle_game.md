@@ -115,6 +115,17 @@ The chronicler's measures are: ahead of, behind, first among, last of all,
 alone among them, twice, half, a third, five times over, in the time it took
 another to do one thing.
 
+`standings` gives the final ranking by score, best first - not a figure to
+quote, but the source of a closing line like "of all the powers that had
+risen, none stood higher" or "the least among them, and it showed."
+`early_game` gives, for each people, the turn it left the age of settlement
+behind - the first to hold both a university and a workshop, or the
+buildings that stood in their place - and why the record stops counting
+there (`reason`: a milestone reached, the game ending first, or a deadline
+overtaking it). This is the material for "first to leave the plough for the
+school" and its opposite, a people still breaking new ground when its
+rivals already had their universities standing.
+
 Three kinds of figures a chronicle may quote outright:
 
 - `souls` in the metric checkpoints - the people of an empire, already
@@ -297,6 +308,18 @@ name the cause, since you are not told it. A winner who surged in the last
 years took the work by more than patience; a loser who surged and lost
 still spent the surge.
 
+A `world_wonder` moment is simply a wonder completed, win or lose -
+`wonder` the work, `city` where it rose. Not every wonder was raced for;
+write one that wasn't the way any other great construction is written. Where
+the same wonder also appears as a `wonder_race_lost` moment for a rival
+people, the two are one work seen from its two sides and belong in a single
+passage.
+
+A `natural_wonder` moment is a wonder of the land found rather than raised -
+`wonder` names it, `civ` the people whose scouts first came upon it. This is
+discovery, not labour, and belongs among the passages about a people's
+reach and travels, not beside the works its masons built.
+
 ## When a city changes hands
 
 A `city_captured` moment is a city passing from one people to another,
@@ -359,6 +382,38 @@ sack and no ruler killed where this is all that happened - a people can
 fall out of contention with not a shot fired, or with a war that fired
 far too many and settled nothing.
 
+## Great people
+
+A `great_person_first_of_kind` moment names the `kind` of genius a people
+first put in the world - `scientist`, `engineer`, `merchant`, `artist`,
+`musician`, `writer`, `prophet`, `general`, `admiral` - and the `civs` that
+share the credit, where more than one people reached it in the same year.
+This is texture, not an entry of its own: a clause noting a realm was first
+among its neighbours to raise a mind of that kind, folded into a passage
+that already exists for other reasons.
+
+A `great_person_lost` moment is a genius killed in battle rather than spent
+on the work they were raised for - `kind` says what they were, `killed_by`
+the people whose army did it. A general lost this way is a battle loss and
+a ruined investment at once, and earns an entry the way a border town
+falling does; every other kind lost is a lighter loss, worth a clause in
+the passage about the war that took them. Write from `kind`, never from
+`great_person` - that field is the ruleset's own unit name, not a word for
+the page.
+
+`great_people_profile.by_kind`, in each people's `timelines` entry, counts
+how many of each kind of genius it actually put to work - scientists
+against artists against generals and the rest. Never quote the count
+itself; write the shape of it instead, the way any other quantity in the
+chronicle is written. A people that turned out scientists and engineers
+above all others chose the path of the school and the workshop; one whose
+geniuses were mostly generals and admirals chose the path of the sword;
+one weighted toward artists, musicians and writers built its renown in
+paint and song rather than in armies or academies. Where one people's
+profile stands out plainly against its neighbours', that contrast is
+worth a clause in whatever passage already describes the character of its
+age - never an entry earned by the profile alone.
+
 ## City-states and their loyalty
 
 A free city's alliance is texture, never an entry of its own -
@@ -378,6 +433,19 @@ shake it loose - already say so.
 A free city taken by force is narrated the same as any other city
 changing hands, under `city_captured` above; write no distinction
 between a free city's fall and a great realm's.
+
+## Public mood, as texture, not an entry
+
+`happiness_swings` names two things that never anchor an entry of their
+own - `happiness_collapse`, a people's contentment breaking within a
+handful of years, and `happiness_surge`, the reverse - and
+`unhappiness_periods` marks a whole stretch spent below contentment
+altogether. None of `from`, `to` or `delta` may reach the page; happiness
+is banned the same as any other instrument reading. What may be written is
+the shape of it - a realm gripped by riots and empty granaries during a war
+it was losing, one enjoying a settled peace its rivals lacked - folded into
+a passage that already exists for the war, the famine or the peace that
+caused it.
 
 ## Espionage as texture, not an entry
 
@@ -456,6 +524,17 @@ bookkeeping. A capital or a realm's own holy city settling on a foreign
 faith is worth its own clause even alone; a lesser border town settling
 the same way is worth one only where a passage already needs it.
 
+A `pantheon_founded` moment is a people's first belief settled, in `city`,
+before any religion of its own existed - `belief` names it: light,
+background material, a clause about a place's oldest devotion rather than
+an entry. A `religion_enhanced` moment is a religion given a further
+belief once it was already founded, `religion` naming the faith and
+`beliefs` what it gained; a `reformation_added` moment is the same
+religion given a rarer belief still, of a kind no other faith in the game
+may also hold. Fold either into a passage already telling that religion's
+story - a faith maturing, gaining the practices that will set it apart
+from its rivals - rather than writing either as a scene alone.
+
 `missionary_uses` and `inquisitor_uses` are inferred acts, not confirmed
 effects - the log only ever shows the unit spending itself, never what
 happened to the city on the other end. Write one as a quiet act of
@@ -491,6 +570,35 @@ itself is not - a single such turn immediately before a `deals.matches`
 span between the same realm and another power is the two snapshots of an
 ordinary trade catching up with each other, not a free city's gift, and
 does not belong in the chronicle as one.
+
+## A victory nearing
+
+Three moments mark a people closing in on a victory the game itself would
+recognise, though the chronicle must never name the victory type or its
+mechanics: `cultural_victory_imminent`, `science_victory_imminent` and
+`diplomatic_victory_imminent`. Each anchors an entry, the same weight as a
+capital taken - write it as the moment the age's ending first came into
+view, not as a checkpoint cleared.
+
+`cultural_victory_imminent` names a people whose fashions had spread
+through almost every rival capital (`civs_influential_on` against
+`living_majors` at that turn) - write it as a way of life the rest of the
+world could no longer resist, never as a number reached.
+`science_victory_imminent` marks a people that had nearly finished its
+ship to the stars; fold in the detail from `spaceship_part_assembled`
+moments (`part`, `count`) where a passage wants a concrete piece of the
+work - an engine mounted, a hull section raised, each one the world's
+clock ticking down. `spaceship_part_assembled` is otherwise texture only,
+never an entry to itself. `diplomatic_victory_imminent` marks a people
+that had won the assembled world's votes - never quote `votes` or
+`votes_needed`, only that the world congress had all but crowned them.
+
+None of the three says the game ended there, only that it came close. Some
+were answered by a war, by a rival's faster ship, by a congress that
+changed its mind before the vote that would have settled it. Read
+`outcome` for how the age actually closed, and write the imminent moment
+as suspense resolved one way or the other by what follows, never as the
+ending itself.
 
 ## Vocabulary: no game words
 
