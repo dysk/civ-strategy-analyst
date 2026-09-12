@@ -870,6 +870,30 @@ corroborates - independently of the influence curve itself - how much of
 its city-state standing was actually paying for something rather than
 sitting on the scoreboard.
 
+The `resource_shortages` digest key covers LEKMOD's strategic-resource
+combat rule: a civilization running a strategic resource (horse, iron,
+coal, oil, aluminum, uranium) below what its units are using takes a
+combat penalty on every unit already built that needs it, scaled by how
+deep the deficit runs and never worse than -50%. `applicable` is false and
+nothing else is present when the log carries no `resources[]` data at all
+(two of the five example logs predate it). Otherwise `by_civ.<civ>` lists
+every `{turn, resource, total, used, deficit_fraction, penalty,
+exposed_units}` this civilization ran - `deficit_fraction` is how much of
+`used` was missing, `penalty` is the LEKMOD formula's own
+`floor(deficit_fraction * -50)`, and `exposed_units` names which of the
+civilization's own units (still in the field that turn, per its
+unit_created/unit_lost history) actually need the short resource.
+
+This is a **computed mechanical fact, never an observed one**: no event
+logs a unit's actual combat strength, so nothing here confirms a fight was
+lost to it, or even that the exposed unit ever fought while short. Say a
+civilization "ran a resource deficit" or "had units exposed to a combat
+penalty", never that it "fought weaker" or "lost because of this" -
+`exposed_units` names an at-risk unit, not a documented casualty. Luxury
+and bonus resources never appear here even when their own total runs
+negative - only a resource the ruleset itself classifies as strategic
+carries a combat penalty at all.
+
 A `research_marker_reached` key moment fires when a civilization's tech
 count, at the turn it researched one of eleven marker technologies, lands
 inside that marker's calibrated band - a target reached with suspiciously

@@ -1652,10 +1652,11 @@ narrative role for this feature, and tranche 3's own discipline ("specified
 more lightly on purpose... re-measured against a second real log before
 it is designed in full") argues against inventing one unasked.
 
-## Plan: strategic resource shortages — combat penalty (planned)
+## Plan: strategic resource shortages — combat penalty (implemented)
 
-Status: **Not started.** Recorded 2026-09-11 so the idea has a home; no
-code written.
+Status: **Implemented 2026-09-12.** Two TDD cycles (the data extraction,
+then the projection and its digest section), re-verified against the real
+mod checkout rather than the citations below alone.
 
 Context: a player who runs a strategic resource (horse, iron, coal, oil,
 aluminum...) below zero doesn't just lose the ability to build more units
@@ -1710,46 +1711,59 @@ never reaches it regardless of the negative total; worth naming so the
 projection doesn't mistake every negative `total` for a combat-relevant
 one.
 
-**Not yet confirmed:** no `unit_created` record for Netherlands names a
-horse-requiring unit type (`Horseman`, `Chariot Archer`, …) before turn 86
-in this log, so whether the six-turn deficit actually weakened a unit in
-play, or just meant six turns with no live horse-unit to weaken, is open —
-the next step, not something to assume either way.
+**Resolved during implementation:** re-running `ResourceShortages` directly
+against `india-diplo` (not just re-scanning `snapshot.resources[]`) shows
+Netherlands had `UNIT_CHARIOT_ARCHER` in the field for the whole six-turn
+Horse deficit, turns 81–86 — the exposed unit this doc's first pass could
+not confirm.
 
-### Design sketch
+One correction against the citations above, caught by checking the real
+mod checkout rather than trusting a plan doc's own citation: `ResourceUsage`
+is an **integer** column (`LEKMOD/Override/CIV5Units.xml:192705`), not a
+string enum. `RESOURCEUSAGE_BONUS` / `_STRATEGIC` / `_LUXURY` are `0` / `1`
+/ `2` in that order
+(`LEKMOD_DLL/.../CvGameCoreDLLUtil/include/CvEnums.h:1194`) — verified
+against real rows: Horse/Iron/Coal/Oil/Aluminum/Uranium all carry `1`, every
+luxury carries `2`. `Unit_ResourceQuantityRequirements`'s `UnitType`/
+`ResourceType`/`Cost` shape was exactly as cited.
 
-- Extend `LekmodIdsExtractor` (or a sibling pass, same pattern as
-  `buildings.yml`) over `Unit_ResourceQuantityRequirements` →
-  `db/lekmod/<version>/unit_resource_requirements.yml`
-  (`UNIT_*` → `{resource, cost}`, a unit can appear more than once).
-- A projection — `ResourceShortages` or a method added to wherever
-  `snapshot.resources[]` first gets read — reporting, per `(civ, turn)`,
-  every resource where `total < used`, the deficit fraction, and the
-  derived penalty (`floor(deficit_fraction * -50)`, combined penalty
-  floored at `-50`). Strategic resources only; a `resource.yml`-style
-  strategic/luxury/bonus classification (the `Resources` table's own
-  `ResourceUsage` field) keeps a Coconut-shaped row from being read as
-  combat-relevant.
-- Cross-reference which of the civ's own units (from `unit_created`,
-  never disbanded/lost since) actually require a resource in deficit that
-  turn — the exposed units, not just the resource name.
-- This is a **computed mechanical fact, never an observed one** — no
-  event logs a unit's actual combat strength, so nothing here confirms a
-  fight was lost to it. Digest and both prompts must say so exactly the
-  way §11's deal reconstruction is labelled inference, not narrate a
-  battle outcome from it.
-- `KeyMomentDetector` candidate: a civ entering or leaving a strategic
-  deficit while it holds units exposed to it — weight modest, since (per
-  the evidence above) this may turn out to be common and short-lived
-  rather than dramatic; recalibrate once measured across more logs.
+`LekmodIdsExtractor#resource_usages` and `#unit_resource_requirements`
+(`app/services/lekmod_ids_extractor.rb`) extract the two tables;
+`script/extract_lekmod_resource_usages` and
+`script/extract_lekmod_unit_resource_requirements` write
+`db/lekmod/<version>/resource_usages.yml` and
+`unit_resource_requirements.yml`, generated for 35.3 against the real
+checkout (57 resources, 6 of them strategic; 65 units with a requirement).
+`ResourceRequirements` (`app/services/resource_requirements.rb`) resolves a
+game's version against them the same loose way `Wonders` resolves
+`buildings.yml`.
 
-### Before designing further
+`ResourceShortages` (`app/projections/resource_shortages.rb`) reports,
+per `(civ, turn)`, every strategic resource where `total < used`, the
+deficit fraction, the derived penalty (`floor(deficit_fraction * -50)`),
+and `exposed_units` — the civ's own units still in the field that turn
+(via `unit_created`/`unit_lost`) that actually require the short resource.
+`applicable?` is false when a log predates `resources[]` entirely
+(`babylon-domination`, `chile-vs-vietnam`). Labelled throughout — the
+projection's own comment, the digest paragraph, `analyze_game.md` — as a
+**computed mechanical fact, never an observed one**: no event logs a
+unit's actual combat strength, so this never claims a fight was lost to
+it, only that a unit was exposed. `ResourceShortages` joins
+`DigestBuilderCostTest::PROJECTIONS`; `DigestBuilder#resource_shortages`
+degrades to `{applicable: false, reason: :no_resource_data}` on an old log,
+otherwise `by_civ.<civ>` lists every deficit in full (no checkpoint
+sampling — deficits are rare and short-lived per the survey above, not a
+per-turn-per-city section the digest budget needs guarding against).
+`analyze_game.md` gains the digest paragraph, including the
+"say exposed, never say it lost" rule.
 
-Re-run the deficit scan above against a bigger and a human-multiplayer
-log before committing to iteration boundaries — one six-turn Horse dip in
-one game, with no confirmed exposed unit, is not enough to calibrate a
-`KeyMomentDetector` weight or decide whether this earns its own digest
-section versus a line inside the existing resources read. Same discipline
+Not done, left for later — the same discipline
 `docs/reading-the-new-log.md`'s tranche 3 preamble asks of research
-beelines, yield attribution, religion and deal reconstruction: specified
-lightly on purpose, re-measured before it's designed in full.
+beelines, yield attribution, religion and deal reconstruction, specified
+lightly on purpose and re-measured before being designed in full: a
+`KeyMomentDetector` moment for entering/leaving a deficit (one six-turn
+Horse dip in one game is not enough to calibrate a weight); the DLL's
+per-unit combined-penalty summation across more than one simultaneously
+short resource (unobserved in any example log so far — every case found
+was a single resource); and `chronicle_game.md` (no narrative role named
+for this feature, matching research beelines' own omission).

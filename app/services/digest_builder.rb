@@ -45,6 +45,7 @@ class DigestBuilder
       diplomatic_ties: diplomatic_ties,
       trade_routes: trade_routes,
       yield_attribution: yield_attribution,
+      resource_shortages: resource_shortages,
       unit_names: unit_names,
       spy_names: spy_names,
       cultural: cultural_by_civ,
@@ -357,6 +358,17 @@ class DigestBuilder
     attribution.yields(civ).index_with do |yield_name|
       sample_checkpoints(attribution.series(civ, yield_name).to_h { |point| [ point[:turn], point.except(:turn) ] })
     end
+  end
+
+  # `applicable` is false and nothing else is present for the two example
+  # logs that predate resources[]. `deficits` is a computed mechanical fact
+  # from the DLL's own combat rule, never an observed one - see
+  # ResourceShortages.
+  def resource_shortages
+    shortages = ResourceShortages.new(@game, requirements: ResourceRequirements.for(@lekmod_version, root: @lekmod_root))
+    return { applicable: false, reason: :no_resource_data } unless shortages.applicable?
+
+    { applicable: true, by_civ: civs.index_with { |civ| shortages.deficits(civ) } }
   end
 
   def lekmod

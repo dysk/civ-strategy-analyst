@@ -507,6 +507,24 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ applicable: false, reason: :no_yield_sources }, DigestBuilder.new(@game).call[:yield_attribution])
   end
 
+  test "includes each civ's strategic resource deficits and which of its units are exposed" do
+    event("Rome", "unit_created", 50, unit: "UNIT_HORSEMAN")
+    snapshot("Rome", 81, resources: [ { "resource" => "RESOURCE_HORSE", "total" => 0, "used" => 1 } ])
+
+    digest = lekmod_digest
+
+    assert_equal true, digest[:resource_shortages][:applicable]
+    assert_equal(
+      [ { turn: 81, resource: "RESOURCE_HORSE", total: 0, used: 1,
+          deficit_fraction: 1.0, penalty: -50, exposed_units: [ "UNIT_HORSEMAN" ] } ],
+      digest[:resource_shortages][:by_civ]["Rome"]
+    )
+  end
+
+  test "resource_shortages degrades to inapplicable when the log carries no resources data" do
+    assert_equal({ applicable: false, reason: :no_resource_data }, DigestBuilder.new(@game).call[:resource_shortages])
+  end
+
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do
     event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
     event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")
