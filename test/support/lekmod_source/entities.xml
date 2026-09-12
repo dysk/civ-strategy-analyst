@@ -42,6 +42,18 @@
 			<Description>Test Anti-Tank Rifle</Description>
 		</Row>
 	</Units>
+	<Technologies>
+		<Row>
+			<ID>1</ID>
+			<Type>TECH_TEST_ONE</Type>
+			<Description>TXT_KEY_TECH_TEST_ONE_TITLE</Description>
+		</Row>
+		<Row>
+			<ID>2</ID>
+			<Type>TECH_TEST_LITERAL</Type>
+			<Description>Test Literal Tech</Description>
+		</Row>
+	</Technologies>
 	<BuildingClasses>
 		<Row>
 			<Type>BUILDINGCLASS_TEST_WONDER</Type>

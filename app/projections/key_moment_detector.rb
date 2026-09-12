@@ -466,6 +466,18 @@ class KeyMomentDetector
       winner_accelerated_on_turns: race[:winner_accelerated_on_turns] }.merge(observed)
   end
 
+  # A marker technology reached on a suspiciously short tech count -
+  # ResearchBeelines::MARKERS calibrates the bands. Restricted to
+  # game.players because city-states "research" the same tech the same
+  # turn as every major sharing the game's tech pool.
+  def research_rushes
+    beelines = ResearchBeelines.for(@game)
+
+    @game.players.pluck(:civ).flat_map do |civ|
+      beelines.markers_reached(civ).map { |m| { type: :research_marker_reached, civ: civ }.merge(m) }
+    end.sort_by { |moment| moment[:turn] }
+  end
+
   # The moment a wonder became a contest. Light on its own - a game has many
   # - it is texture for the entry its loss anchors.
   def wonder_races

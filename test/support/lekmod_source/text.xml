@@ -21,6 +21,9 @@
 		<Row Tag="TXT_KEY_BUILDING_TEST_PLAIN">
 			<Text>Test Plain Building</Text>
 		</Row>
+		<Row Tag="TXT_KEY_TECH_TEST_ONE_TITLE">
+			<Text>Test Technology</Text>
+		</Row>
 		<Row Tag="TXT_KEY_SPY_NAME_TEST_ONE">
 			<Text>Old Spy</Text>
 		</Row>

@@ -109,6 +109,23 @@ buildings resolve to placeholder or non-English text in the mod source
 itself (`BUILDING_ARGENTINA_STABLE` -> "Ocupada estable"); none are
 wonders, so wonder detection is unaffected.
 
+## Technology names
+
+`technologies.yml` maps every `TECH_*` to its display name, the same
+pass as `buildings.yml` and `units.yml`. Nothing at runtime reads it -
+it exists to verify `ResearchBeelines::MARKERS` against the ruleset, since
+that table is small enough to hardcode rather than resolve on every
+digest build (`TECH_PLASTIC`, not `TECH_PLASTICS`; `TECH_STEALTH` exists
+in the ruleset even on games too short to reach it).
+
+The `<Technologies>` table sits in `Override/CIV5Units.xml`, not a file
+named for it - the same misfiled-table trap as Resolutions and Buildings
+above. Generate one with:
+
+```sh
+script/extract_lekmod_technologies /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/technologies.yml
+```
+
 ## Spy names
 
 `spy_names.yml` maps every `TXT_KEY_SPY_NAME_*` id a game's `spy_*` events
@@ -237,6 +254,7 @@ git -C /path/to/Lekmod archive <that-commit> LEKMOD/Override | tar -x -C /tmp/le
 script/extract_lekmod_ids /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/ids.yml
 script/extract_lekmod_unit_names /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/units.yml
 script/extract_lekmod_buildings /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/buildings.yml
+script/extract_lekmod_technologies /tmp/lekmod-35.3/LEKMOD/Override db/lekmod/35.3/technologies.yml
 ```
 
 Only scan `LEKMOD/Override`, not the whole checkout - a sibling

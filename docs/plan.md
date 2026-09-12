@@ -1594,6 +1594,64 @@ no chronicle role for it, unlike trade routes' concurrency curve; the
 `bin/civ analyze` A/B, which is pending the way several tranche 2 and 3
 features' A/Bs already are.
 
+## Plan: research beelines (implemented)
+
+Status: **Implemented 2026-09-12.** `docs/reading-the-new-log.md` §8, all
+three "settle before implementing" points resolved against
+`examples/india-diplo.jsonl` rather than left as assumptions -
+`docs/research-beelines.md` records the reasoning.
+
+`ResearchBeelines` (`app/projections/research_beelines.rb`) hardcodes the
+eleven marker technologies as `MARKERS` (`marker`, `tech`, `band`), each
+resolved against a checkout of the LEKMOD mod source rather than guessed -
+confirming `TECH_PLASTIC` not `TECH_PLASTICS`, and that `TECH_STEALTH`
+exists in the ruleset even though india-diplo's 184 turns never reach it.
+`#markers_reached(civ)` reports every marker a civ ever hit, not just the
+first, each carrying `tech_count`, `band`, a signed `distance_to_band`
+(zero inside the band, negative early, positive late) and `rush`
+(`distance_to_band.zero?`) - a near-miss stays visible data instead of an
+invented tolerance threshold.
+
+The doc's first open question - `tech_researched` plus `tech_from_ruins`
+disagreeing with `snapshot.techs` by one or two - resolved to a bug, not a
+close call: `tech_from_ruins` fires *alongside* `tech_researched` for a
+tech a civ already got that way (England's Mining at turn 9), so treating
+it as a second acquisition double-counts. The tech count basis is
+`tech_researched` events alone, up to and including the marker turn,
+restricted to civs present in that event's `civs` array - which
+reproduces the doc's validated numbers exactly (India Education #18 turn
+74, England Navigation #27 turn 118) where the additive count did not.
+`snapshot.techs` on the marker turn is still carried alongside as
+`snapshot_tech_count`, via `MetricSeries`, for comparison - never as the
+band's basis.
+
+The second question - city-states appearing in `tech_researched.civs` -
+is handled at the roster layer rather than inside the projection:
+`KeyMomentDetector#research_rushes` loops `game.players.pluck(:civ)`,
+matching how `TradeRoutes`/`YieldAttribution` take an explicit civ
+argument and stay safe by construction. `research_rushes` emits a
+`:research_marker_reached` moment per marker a player civ reached,
+sorted by turn, and joins `DigestBuilder#key_moments` under
+`research_rushes` - no dedicated top-level digest key, the same
+key-moments-only treatment as `wonder_races_lost`/`capital_control_changes`.
+
+The third question - resolving the marker ids rather than guessing -
+added `LekmodIdsExtractor#technologies` and `script/extract_lekmod_technologies`,
+following the `#buildings` precedent exactly: the `<Technologies>` table
+sits unmodified inside `Override/CIV5Units.xml`, not a file named for it,
+the same misfiled-table trap already documented for Resolutions and
+Buildings. `db/lekmod/35.3/technologies.yml` exists for that audit trail;
+`ResearchBeelines::MARKERS` itself stays hardcoded, matching
+`KeyMomentDetector::BRANCH_POLICIES` rather than adding a new
+runtime-reading service for a table this small.
+
+`ResearchBeelines` joins `DigestBuilderCostTest::PROJECTIONS`.
+`analyze_game.md` gains a `research_marker_reached` paragraph beside
+`yield_attribution`'s. Not done: `chronicle_game.md` - the doc names no
+narrative role for this feature, and tranche 3's own discipline ("specified
+more lightly on purpose... re-measured against a second real log before
+it is designed in full") argues against inventing one unasked.
+
 ## Plan: strategic resource shortages — combat penalty (planned)
 
 Status: **Not started.** Recorded 2026-09-11 so the idea has a home; no

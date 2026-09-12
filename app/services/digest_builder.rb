@@ -277,7 +277,8 @@ class DigestBuilder
       players_declared_irrelevant: detector.players_declared_irrelevant,
       wonder_races: detector.wonder_races,
       wonder_races_lost: detector.wonder_races_lost,
-      city_state_conquered: detector.city_state_conquered
+      city_state_conquered: detector.city_state_conquered,
+      research_rushes: detector.research_rushes
     }
   end
 

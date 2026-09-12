@@ -121,7 +121,17 @@ class LekmodIdsExtractorTest < ActiveSupport::TestCase
     assert_equal "Test Markup Wonder", buildings["BUILDING_TEST_MARKUP"]["name"]
   end
 
+  test "resolves a technology name from the Technologies table via its text key" do
+    assert_equal "Test Technology", technologies["TECH_TEST_ONE"]
+  end
+
+  # Same as units and buildings: LEKMOD's own techs write English straight into Description.
+  test "takes a technology description that is already English as the name" do
+    assert_equal "Test Literal Tech", technologies["TECH_TEST_LITERAL"]
+  end
+
   private
 
   def buildings = LekmodIdsExtractor.new(SOURCE_DIR).buildings
+  def technologies = LekmodIdsExtractor.new(SOURCE_DIR).technologies
 end

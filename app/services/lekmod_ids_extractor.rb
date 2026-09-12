@@ -38,6 +38,8 @@ class LekmodIdsExtractor
     end
   end
 
+  def technologies = resolve(tech_to_description)
+
   private
 
   WONDER_SCOPE_FIELDS = { "MaxGlobalInstances" => "world", "MaxTeamInstances" => "team",
@@ -119,6 +121,10 @@ class LekmodIdsExtractor
 
   def unit_to_description
     documents.each_with_object({}) { |doc, result| extract_type_mapping(doc, "Units", "Description", result) }
+  end
+
+  def tech_to_description
+    documents.each_with_object({}) { |doc, result| extract_type_mapping(doc, "Technologies", "Description", result) }
   end
 
   def txt_key_to_text

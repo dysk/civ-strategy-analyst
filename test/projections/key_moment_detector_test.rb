@@ -1041,6 +1041,30 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal :close, detector.wonder_races_lost.sole[:scale]
   end
 
+  test "research_rushes reports a marker tech reached inside its calibrated band" do
+    @game.players.create!(civ: "India", human: true)
+    (1..17).each { |i| event(nil, "tech_researched", i, tech: "TECH_FILLER_#{i}", civs: %w[India]) }
+    event(nil, "tech_researched", 74, tech: "TECH_EDUCATION", civs: %w[India])
+
+    moment = detector.research_rushes.find { |m| m[:marker] == "universities" }
+
+    assert_equal :research_marker_reached, moment[:type]
+    assert_equal "India", moment[:civ]
+    assert_equal 74, moment[:turn]
+    assert_equal true, moment[:rush]
+  end
+
+  # Every city-state "researches" the same tech on the same turn as the
+  # majors - a rush loop that isn't restricted to game.players fires once
+  # per city-state on top of the real result.
+  test "research_rushes is restricted to game.players, not every civ tech_researched names" do
+    @game.players.create!(civ: "India", human: true)
+    (1..17).each { |i| event(nil, "tech_researched", i, tech: "TECH_FILLER_#{i}", civs: %w[India Zurich]) }
+    event(nil, "tech_researched", 74, tech: "TECH_EDUCATION", civs: %w[India Zurich])
+
+    assert_empty detector.research_rushes.select { |m| m[:civ] == "Zurich" }
+  end
+
   private
 
   def lost_race(wonder, winner:, completed:, winner_from:, loser:, first:, last:, invested:, turns_left:,

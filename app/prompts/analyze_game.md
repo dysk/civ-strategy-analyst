@@ -870,6 +870,20 @@ corroborates - independently of the influence curve itself - how much of
 its city-state standing was actually paying for something rather than
 sitting on the scoreboard.
 
+A `research_marker_reached` key moment fires when a civilization's tech
+count, at the turn it researched one of eleven marker technologies, lands
+inside that marker's calibrated band - a target reached with suspiciously
+few techs behind it, the signature of a beeline rather than organic
+research order. `tech_count` is the number of technologies researched by
+turn `turn`; `band` is the calibrated `{min, max}`; `distance_to_band` is
+signed - zero inside the band, negative if the civilization arrived early,
+positive if late - so a near-miss still reads as a near-miss rather than
+disappearing alongside the hits. `rush` is `distance_to_band == 0`. The
+bands are the log author's calibration from played games, not a
+statistically derived threshold - treat a hit as suggestive, not proof,
+and never claim a beeline the civilization's broader research order
+contradicts.
+
 The `congress` digest key covers the World Congress: `host_history` (who
 has hosted, over time), `votes_needed` (the latest known threshold for a
 diplomatic victory), `delegates_by_civ` (each civilization's delegate

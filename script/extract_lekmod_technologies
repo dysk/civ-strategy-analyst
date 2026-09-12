@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Builds db/lekmod/<version>/technologies.yml: TECH_* -> display name,
+# extracted from a checkout of the mod's XML source. Exists to verify
+# ResearchBeelines::MARKERS against the ruleset, not to be read at runtime -
+# the marker table is small and hardcoded (see db/lekmod/README.md).
+#
+# The <Technologies> table sits in Override/CIV5Units.xml, not a file named
+# for it - the same trap the README notes for Resolutions and Buildings.
+#
+# Usage:
+#   script/extract_lekmod_technologies SOURCE_DIR TARGET_YML
+#
+# Example:
+#   script/extract_lekmod_technologies /path/to/Lekmod/LEKMOD/Override db/lekmod/35.3/technologies.yml
+
+require_relative "../config/environment"
+require "yaml"
+
+source_dir, target = ARGV
+abort "Usage: script/extract_lekmod_technologies SOURCE_DIR TARGET_YML" unless source_dir && target
+
+technologies = LekmodIdsExtractor.new(source_dir).technologies
+abort "No technologies resolved from #{source_dir} - check the path points at LEKMOD/Override." if technologies.empty?
+
+FileUtils.mkdir_p(File.dirname(target))
+File.write(target, technologies.sort.to_h.to_yaml)
+
+puts "Wrote #{target} - #{technologies.size} technologies resolved."
