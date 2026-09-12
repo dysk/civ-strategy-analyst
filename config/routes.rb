@@ -15,6 +15,7 @@ Rails.application.routes.draw do
       get :digest, on: :member
     end
     resources :events, only: [ :index ], controller: "game_events"
+    resource :projections, only: [ :show ], controller: "game_projections"
     resource :geometry, only: [ :show ], controller: "empire_geometries"
     resource :army, only: [ :show ], controller: "army_compositions"
     resource :cultural, only: [ :show ], controller: "cultural_standings"
