@@ -1,0 +1,37 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Trade Routes</h1>
+<p class="subtitle">How many routes each civilization ran at once, at every turn a route started or stopped.</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No trade route activity in this game's events.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <table class="trade-route-concurrency">
+      <thead>
+        <tr>
+          <th>Turn</th>
+          <th>Live Routes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% history[:series].each do |entry| %>
+          <tr>
+            <td><%= entry[:turn] %></td>
+            <td><%= entry[:count] %></td>
+            <td><% if entry[:flagged] %><span class="badge">estimated end</span><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <p class="note">
+    A route's end is only trusted up to its own <code>turns_left</code> estimate,
+    so a point flagged here had no matching end recorded, or the one matched ran
+    past that estimate.
+  </p>
+<% end %>

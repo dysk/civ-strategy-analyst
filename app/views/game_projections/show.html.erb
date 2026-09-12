@@ -2,6 +2,7 @@
 
 <h1>Projections &mdash; <%= @game.name %></h1>
 
+<%= section_heading("Capital Distances", "capital-distances") %>
 <% if @capital_distances.empty? %>
   <p class="empty-state">No capital coordinates in this game's events.</p>
 <% else %>
@@ -31,6 +32,7 @@
   </details>
 <% end %>
 
+<%= section_heading("Buffer Cities", "buffer-cities") %>
 <% if !@buffer_cities[:applicable] %>
   <p class="empty-state">Buffer cities are only computed for Pangaea maps.</p>
 <% elsif @buffer_cities[:pairs].empty? %>
@@ -94,6 +96,7 @@
   </details>
 <% end %>
 
+<%= section_heading("Empire Geometry", "empire-geometry") %>
 <% if @geometry_rows.empty? %>
   <p class="empty-state">No city coordinates, so no empire geometry.</p>
 <% else %>
@@ -135,31 +138,34 @@
 <% if @early_game_rows.empty? %>
   <p class="empty-state">No players in this game.</p>
 <% else %>
-  <p class="note">Deadline: turn <%= @early_game_deadline_turn %> (<%= @game.game_speed %>).</p>
-  <table class="early-game">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Ends Turn</th>
-        <th>Why</th>
-        <th>Milestone</th>
-        <th>Tech</th>
-        <th>Building</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @early_game_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Early game table</summary>
+    <p class="note">Deadline: turn <%= @early_game_deadline_turn %> (<%= @game.game_speed %>).</p>
+    <table class="early-game">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:end_turn] %></td>
-          <td><%= row[:reason] %></td>
-          <td><%= early_game_milestone(row) || "&mdash;".html_safe %></td>
-          <td><%= row[:tech_turn] || "&mdash;".html_safe %></td>
-          <td><%= row[:building_turn] || "&mdash;".html_safe %></td>
+          <th>Civ</th>
+          <th>Ends Turn</th>
+          <th>Why</th>
+          <th>Milestone</th>
+          <th>Tech</th>
+          <th>Building</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @early_game_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:end_turn] %></td>
+            <td><%= row[:reason] %></td>
+            <td><%= early_game_milestone(row) || "&mdash;".html_safe %></td>
+            <td><%= row[:tech_turn] || "&mdash;".html_safe %></td>
+            <td><%= row[:building_turn] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
 <% end %>
 
 <%= section_heading("Wonder Races", "wonder-races") %>
@@ -168,518 +174,560 @@
 <% elsif @wonder_races[:races].empty? %>
   <p class="empty-state">No world wonder in this game was contested by more than one city.</p>
 <% else %>
-  <p class="note">
-    A race is every world wonder more than one city was building. A contender
-    <strong>lost</strong> it if still building on the turn it fell, and
-    <strong>abandoned</strong> it if it had moved on earlier.
-  </p>
-  <table class="wonder-races">
-    <thead>
-      <tr>
-        <th>Wonder</th>
-        <th>Done</th>
-        <th>Won by</th>
-        <th>Finish</th>
-        <th>Lost by</th>
-        <th>Turns on it</th>
-        <th>Production in</th>
-        <th>Turns left</th>
-        <th>Outcome</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @wonder_races[:races].each do |race| %>
-        <% race[:contenders].each_with_index do |contender, index| %>
-          <tr>
-            <% if index.zero? %>
-              <% span = race[:contenders].size %>
-              <td rowspan="<%= span %>"><%= race[:wonder_name] %></td>
-              <td rowspan="<%= span %>"><%= race[:completed_turn] %></td>
-              <td rowspan="<%= span %>"><%= race[:winner][:civ] %> (<%= race[:winner][:city] %>)</td>
-              <td rowspan="<%= span %>"><%= race[:winner_finish].to_s.tr("_", " ") %></td>
-            <% end %>
-            <td><%= contender[:civ] %> (<%= contender[:city] %>)</td>
-            <td><%= contender[:turns_building] %></td>
-            <td><%= contender[:production_invested] %></td>
-            <td><%= contender[:turns_left_when_last_seen] || "&mdash;".html_safe %></td>
-            <td><%= contender[:outcome] %></td>
-          </tr>
+  <details class="disclosure">
+    <summary>Wonder races table</summary>
+    <p class="note">
+      A race is every world wonder more than one city was building. A contender
+      <strong>lost</strong> it if still building on the turn it fell, and
+      <strong>abandoned</strong> it if it had moved on earlier.
+    </p>
+    <table class="wonder-races">
+      <thead>
+        <tr>
+          <th>Wonder</th>
+          <th>Done</th>
+          <th>Won by</th>
+          <th>Finish</th>
+          <th>Lost by</th>
+          <th>Turns on it</th>
+          <th>Production in</th>
+          <th>Turns left</th>
+          <th>Outcome</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @wonder_races[:races].each do |race| %>
+          <% race[:contenders].each_with_index do |contender, index| %>
+            <tr>
+              <% if index.zero? %>
+                <% span = race[:contenders].size %>
+                <td rowspan="<%= span %>"><%= race[:wonder_name] %></td>
+                <td rowspan="<%= span %>"><%= race[:completed_turn] %></td>
+                <td rowspan="<%= span %>"><%= race[:winner][:civ] %> (<%= race[:winner][:city] %>)</td>
+                <td rowspan="<%= span %>"><%= race[:winner_finish].to_s.tr("_", " ") %></td>
+              <% end %>
+              <td><%= contender[:civ] %> (<%= contender[:city] %>)</td>
+              <td><%= contender[:turns_building] %></td>
+              <td><%= contender[:production_invested] %></td>
+              <td><%= contender[:turns_left_when_last_seen] || "&mdash;".html_safe %></td>
+              <td><%= contender[:outcome] %></td>
+            </tr>
+          <% end %>
         <% end %>
-      <% end %>
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </details>
 <% end %>
 
 <%= section_heading("Military", "military") %>
 <% if @army_rows.empty? %>
   <p class="empty-state">No military data in this game's snapshots.</p>
 <% else %>
-  <table class="army">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Turn</th>
-        <th>Units</th>
-        <th>Might</th>
-        <th>Power</th>
-        <th>Power per unit</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @army_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Military table</summary>
+    <table class="army">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:turn] %></td>
-          <td><%= row[:units] || "&mdash;".html_safe %></td>
-          <td><%= row[:might] || "&mdash;".html_safe %></td>
-          <td><%= row[:army_power] || "&mdash;".html_safe %></td>
-          <td><%= row[:power_per_unit] || "&mdash;".html_safe %></td>
+          <th>Civ</th>
+          <th>Turn</th>
+          <th>Units</th>
+          <th>Might</th>
+          <th>Power</th>
+          <th>Power per unit</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p><%= link_to "See how these armies were built", game_army_path(@game) %></p>
+      </thead>
+      <tbody>
+        <% @army_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:turn] %></td>
+            <td><%= row[:units] || "&mdash;".html_safe %></td>
+            <td><%= row[:might] || "&mdash;".html_safe %></td>
+            <td><%= row[:army_power] || "&mdash;".html_safe %></td>
+            <td><%= row[:power_per_unit] || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how these armies were built", game_army_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("Cultural Standing", "cultural-standing") %>
 <% if @cultural_rows.empty? %>
   <p class="empty-state">No tourism data in this game's snapshots.</p>
 <% else %>
-  <table class="cultural">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Tourism</th>
-        <th>Civs Influential On</th>
-        <th>Influential/Dominant On</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @cultural_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Cultural standing table</summary>
+    <table class="cultural">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:tourism] || "&mdash;".html_safe %></td>
-          <td><%= row[:civs_influential_on] || "&mdash;".html_safe %></td>
-          <td><%= row[:influential_on].presence&.join(", ") || "&mdash;".html_safe %></td>
+          <th>Civ</th>
+          <th>Tourism</th>
+          <th>Civs Influential On</th>
+          <th>Influential/Dominant On</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p><%= link_to "See how cultural standing changed over time", game_cultural_path(@game) %></p>
+      </thead>
+      <tbody>
+        <% @cultural_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:tourism] || "&mdash;".html_safe %></td>
+            <td><%= row[:civs_influential_on] || "&mdash;".html_safe %></td>
+            <td><%= row[:influential_on].presence&.join(", ") || "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how cultural standing changed over time", game_cultural_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("World Congress", "world-congress") %>
 <% if @congress_summary.nil? %>
   <p class="empty-state">No World Congress data in this game's events.</p>
 <% else %>
-  <p class="meta">
-    Host: <strong><%= @congress_summary[:host] || "none yet" %></strong>
-    &middot; Votes needed for diplomatic victory: <strong><%= @congress_summary[:votes_needed] || "unknown" %></strong>
-  </p>
-  <table class="congress">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Delegate Votes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @congress_summary[:rows].each do |row| %>
+  <details class="disclosure">
+    <summary>World congress table</summary>
+    <p class="meta">
+      Host: <strong><%= @congress_summary[:host] || "none yet" %></strong>
+      &middot; Votes needed for diplomatic victory: <strong><%= @congress_summary[:votes_needed] || "unknown" %></strong>
+    </p>
+    <table class="congress">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:votes] %></td>
+          <th>Civ</th>
+          <th>Delegate Votes</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p><%= link_to "See host changes, votes and resolutions over time", game_congress_path(@game) %></p>
+      </thead>
+      <tbody>
+        <% @congress_summary[:rows].each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:votes] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See host changes, votes and resolutions over time", game_congress_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("Victory Progress", "victory-progress") %>
 <% if @victory_progress_rows.empty? %>
   <p class="empty-state">No domination or space-race data in this game's snapshots.</p>
 <% else %>
-  <table class="victory-progress">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Capitals Held</th>
-        <th>Spaceship Parts</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @victory_progress_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Victory progress table</summary>
+    <table class="victory-progress">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:capitals_held] || "&mdash;".html_safe %></td>
-          <td><%= row[:parts_assembled] ? "#{row[:parts_assembled]} / 6" : "&mdash;".html_safe %></td>
+          <th>Civ</th>
+          <th>Capitals Held</th>
+          <th>Spaceship Parts</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p><%= link_to "See capitals and spaceship assembly over time", game_victory_progress_path(@game) %></p>
+      </thead>
+      <tbody>
+        <% @victory_progress_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:capitals_held] || "&mdash;".html_safe %></td>
+            <td><%= row[:parts_assembled] ? "#{row[:parts_assembled]} / 6" : "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See capitals and spaceship assembly over time", game_victory_progress_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("Espionage", "espionage") %>
 <% if @espionage_rows.empty? %>
   <p class="empty-state">No espionage activity in this game's events.</p>
 <% else %>
-  <table class="espionage">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Spies Made</th>
-        <th>Spies Lost</th>
-        <th>Missions</th>
-        <th>Garrisoned</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @espionage_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Espionage table</summary>
+    <table class="espionage">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:made] %></td>
-          <td><%= row[:lost] %></td>
-          <td><%= row[:missions] %></td>
-          <td><%= row[:garrisoned] ? "Yes" : "No" %></td>
+          <th>Civ</th>
+          <th>Spies Made</th>
+          <th>Spies Lost</th>
+          <th>Missions</th>
+          <th>Garrisoned</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <p><%= link_to "See how the spies moved", game_espionage_path(@game) %></p>
+      </thead>
+      <tbody>
+        <% @espionage_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:made] %></td>
+            <td><%= row[:lost] %></td>
+            <td><%= row[:missions] %></td>
+            <td><%= row[:garrisoned] ? "Yes" : "No" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how the spies moved", game_espionage_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("Diplomatic Ties", "diplomatic-ties") %>
 <% if @diplomatic_tie_rows.empty? %>
   <p class="empty-state">No embassy, open borders, friendship, pact or trade agreement recorded in this game's events.</p>
 <% else %>
-  <table class="diplomatic-ties">
-    <thead>
-      <tr>
-        <th>Civs</th>
-        <th>Type</th>
-        <th>From</th>
-        <th>To</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @diplomatic_tie_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Diplomatic ties table</summary>
+    <table class="diplomatic-ties">
+      <thead>
         <tr>
-          <td><%= row[:civs].join(" &ndash; ").html_safe %></td>
-          <td><%= row[:type].tr("_", " ") %></td>
-          <td><%= row[:from_turn] %></td>
-          <td><%= row[:to_turn] || "ongoing" %></td>
+          <th>Civs</th>
+          <th>Type</th>
+          <th>From</th>
+          <th>To</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @diplomatic_tie_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civs].join(" &ndash; ").html_safe %></td>
+            <td><%= row[:type].tr("_", " ") %></td>
+            <td><%= row[:from_turn] %></td>
+            <td><%= row[:to_turn] || "ongoing" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
 <% end %>
 
 <%= section_heading("Trade Routes", "trade-routes") %>
 <% if @trade_route_destination_rows.empty? %>
   <p class="empty-state">No trade route activity in this game's events.</p>
 <% else %>
-  <table class="trade-routes">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Own (food)</th>
-        <th>Own (production)</th>
-        <th>To City-States</th>
-        <th>To Majors</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @trade_route_destination_rows.each do |row| %>
-        <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:own_food] || 0 %></td>
-          <td><%= row[:own_production] || 0 %></td>
-          <td><%= row[:city_state] %></td>
-          <td><%= row[:major] %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <% if @trade_route_one_sided_rows.any? %>
-    <h3>One-Sided Routes</h3>
-    <p class="note">A civ feeding a rival's gold, science or tourism without ever seeing a return.</p>
-    <table class="trade-routes-one-sided">
+  <details class="disclosure">
+    <summary>Trade routes table</summary>
+    <table class="trade-routes">
       <thead>
         <tr>
           <th>Civ</th>
-          <th>Other Civ</th>
-          <th>Route</th>
-          <th>Turn</th>
-          <th>Yield</th>
-          <th>Civ's Cut</th>
-          <th>Other's Cut</th>
+          <th>Own (food)</th>
+          <th>Own (production)</th>
+          <th>To City-States</th>
+          <th>To Majors</th>
         </tr>
       </thead>
       <tbody>
-        <% @trade_route_one_sided_rows.each do |row| %>
+        <% @trade_route_destination_rows.each do |row| %>
           <tr>
             <td><%= row[:civ] %></td>
-            <td><%= row[:other_civ] %></td>
-            <td><%= row[:from_city] %> &rarr; <%= row[:to_city] %></td>
-            <td><%= row[:turn] %></td>
-            <td><%= row[:yield] %></td>
-            <td><%= row[:civ_value] %></td>
-            <td><%= row[:other_civ_value] %></td>
+            <td><%= row[:own_food] || 0 %></td>
+            <td><%= row[:own_production] || 0 %></td>
+            <td><%= row[:city_state] %></td>
+            <td><%= row[:major] %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
-  <% end %>
+    <p><%= link_to "See how many routes ran at once over time", game_trade_routes_path(@game) %></p>
+    <% if @trade_route_one_sided_rows.any? %>
+      <h3>One-Sided Routes</h3>
+      <p class="note">A civ feeding a rival's gold, science or tourism without ever seeing a return.</p>
+      <table class="trade-routes-one-sided">
+        <thead>
+          <tr>
+            <th>Civ</th>
+            <th>Other Civ</th>
+            <th>Route</th>
+            <th>Turn</th>
+            <th>Yield</th>
+            <th>Civ's Cut</th>
+            <th>Other's Cut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @trade_route_one_sided_rows.each do |row| %>
+            <tr>
+              <td><%= row[:civ] %></td>
+              <td><%= row[:other_civ] %></td>
+              <td><%= row[:from_city] %> &rarr; <%= row[:to_city] %></td>
+              <td><%= row[:turn] %></td>
+              <td><%= row[:yield] %></td>
+              <td><%= row[:civ_value] %></td>
+              <td><%= row[:other_civ_value] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </details>
 <% end %>
 
 <%= section_heading("Religion", "religion") %>
 <% if @religion_hold_rows.empty? %>
   <p class="empty-state">No city religious conversions in this game's events.</p>
 <% else %>
-  <table class="religion-holds">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>City</th>
-        <th>Religion</th>
-        <th>From</th>
-        <th>To</th>
-        <th>Settled</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @religion_hold_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Religion table</summary>
+    <table class="religion-holds">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:city] %></td>
-          <td><%= religion_name(row[:religion]) %></td>
-          <td><%= row[:from_turn] %></td>
-          <td><%= row[:to_turn] %></td>
-          <td><%= row[:settled] ? "Yes" : "No" %></td>
+          <th>Civ</th>
+          <th>City</th>
+          <th>Religion</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Settled</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <h3>Missionary and Inquisitor Use</h3>
-  <table class="religion-uses">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Missionary Uses</th>
-        <th>Inquisitor Uses</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @religion_use_rows.each do |row| %>
+      </thead>
+      <tbody>
+        <% @religion_hold_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:city] %></td>
+            <td><%= religion_name(row[:religion]) %></td>
+            <td><%= row[:from_turn] %></td>
+            <td><%= row[:to_turn] %></td>
+            <td><%= row[:settled] ? "Yes" : "No" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <h3>Missionary and Inquisitor Use</h3>
+    <table class="religion-uses">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:missionary_uses] %></td>
-          <td><%= row[:inquisitor_uses] %></td>
+          <th>Civ</th>
+          <th>Missionary Uses</th>
+          <th>Inquisitor Uses</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @religion_use_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:missionary_uses] %></td>
+            <td><%= row[:inquisitor_uses] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
 <% end %>
 
 <%= section_heading("Yield Attribution", "yield-attribution") %>
 <% if @yield_attribution_rows.empty? %>
   <p class="empty-state">No yield source breakdown in this game's snapshots.</p>
 <% else %>
-  <p class="note">Latest checkpoint per civ and yield. Shortfall is the reported total minus the named sources.</p>
-  <table class="yield-attribution">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Yield</th>
-        <th>Turn</th>
-        <th>Total</th>
-        <th>Sources</th>
-        <th>Shortfall</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @yield_attribution_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Yield attribution table</summary>
+    <p class="note">Latest checkpoint per civ and yield. Shortfall is the reported total minus the named sources.</p>
+    <table class="yield-attribution">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:yield_name] %></td>
-          <td><%= row[:turn] %></td>
-          <td><%= row[:total] %></td>
-          <td><%= row[:sources].map { |source, value| "#{source}: #{value}" }.join(", ") %></td>
-          <td><%= row[:shortfall] %></td>
+          <th>Civ</th>
+          <th>Yield</th>
+          <th>Turn</th>
+          <th>Total</th>
+          <th>Sources</th>
+          <th>Shortfall</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @yield_attribution_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:yield_name] %></td>
+            <td><%= row[:turn] %></td>
+            <td><%= row[:total] %></td>
+            <td><%= row[:sources].map { |source, value| "#{source}: #{value}" }.join(", ") %></td>
+            <td><%= row[:shortfall] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how yield sources changed over time", game_yield_attribution_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("Resource Shortages", "resource-shortages") %>
 <% if @resource_shortage_rows.empty? %>
   <p class="empty-state">No strategic resource deficits in this game's snapshots.</p>
 <% else %>
-  <p class="note">A computed exposure to LEKMOD's combat penalty, never an observed loss.</p>
-  <table class="resource-shortages">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>Turn</th>
-        <th>Resource</th>
-        <th>Total</th>
-        <th>Used</th>
-        <th>Deficit</th>
-        <th>Penalty</th>
-        <th>Exposed Units</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @resource_shortage_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>Resource shortages table</summary>
+    <p class="note">A computed exposure to LEKMOD's combat penalty, never an observed loss.</p>
+    <table class="resource-shortages">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:turn] %></td>
-          <td><%= resource_name(row[:resource]) %></td>
-          <td><%= row[:total] %></td>
-          <td><%= row[:used] %></td>
-          <td><%= number_to_percentage(row[:deficit_fraction] * 100, precision: 1) %></td>
-          <td><%= row[:penalty] %></td>
-          <td><%= row[:exposed_units].map { |unit| unit_name(unit) }.join(", ") %></td>
+          <th>Civ</th>
+          <th>Turn</th>
+          <th>Resource</th>
+          <th>Total</th>
+          <th>Used</th>
+          <th>Deficit</th>
+          <th>Penalty</th>
+          <th>Exposed Units</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @resource_shortage_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:turn] %></td>
+            <td><%= resource_name(row[:resource]) %></td>
+            <td><%= row[:total] %></td>
+            <td><%= row[:used] %></td>
+            <td><%= number_to_percentage(row[:deficit_fraction] * 100, precision: 1) %></td>
+            <td><%= row[:penalty] %></td>
+            <td><%= row[:exposed_units].map { |unit| unit_name(unit) }.join(", ") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
 <% end %>
 
 <%= section_heading("Deals", "deals") %>
 <% if @deal_match_rows.empty? && @deal_unattributed_import_rows.empty? %>
   <p class="empty-state">No resource import/export data in this game's snapshots.</p>
 <% else %>
-  <p class="note">Inferred from import/export co-occurrence, never an observed CvDeal.</p>
-  <table class="deals">
-    <thead>
-      <tr>
-        <th>Resource</th>
-        <th>Exporter</th>
-        <th>Importer</th>
-        <th>From</th>
-        <th>To</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @deal_match_rows.each do |row| %>
-        <tr>
-          <td><%= resource_name(row[:resource]) %></td>
-          <td><%= row[:exporter] %></td>
-          <td><%= row[:importer] %></td>
-          <td><%= row[:from_turn] %></td>
-          <td><%= row[:to_turn] %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <% if @deal_unattributed_import_rows.any? %>
-    <h3>Unattributed Imports</h3>
-    <p class="note">An import with no major exporting the same resource the same turn - most likely a city-state ally's gift.</p>
-    <table class="deals-unattributed">
+  <details class="disclosure">
+    <summary>Deals table</summary>
+    <p class="note">Inferred from import/export co-occurrence, never an observed CvDeal.</p>
+    <table class="deals">
       <thead>
         <tr>
-          <th>Civ</th>
           <th>Resource</th>
-          <th>Turn</th>
-          <th>Amount</th>
+          <th>Exporter</th>
+          <th>Importer</th>
+          <th>From</th>
+          <th>To</th>
         </tr>
       </thead>
       <tbody>
-        <% @deal_unattributed_import_rows.each do |row| %>
+        <% @deal_match_rows.each do |row| %>
           <tr>
-            <td><%= row[:civ] %></td>
             <td><%= resource_name(row[:resource]) %></td>
-            <td><%= row[:turn] %></td>
-            <td><%= row[:amount] %></td>
+            <td><%= row[:exporter] %></td>
+            <td><%= row[:importer] %></td>
+            <td><%= row[:from_turn] %></td>
+            <td><%= row[:to_turn] %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
-  <% end %>
+    <% if @deal_unattributed_import_rows.any? %>
+      <h3>Unattributed Imports</h3>
+      <p class="note">An import with no major exporting the same resource the same turn - most likely a city-state ally's gift.</p>
+      <table class="deals-unattributed">
+        <thead>
+          <tr>
+            <th>Civ</th>
+            <th>Resource</th>
+            <th>Turn</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @deal_unattributed_import_rows.each do |row| %>
+            <tr>
+              <td><%= row[:civ] %></td>
+              <td><%= resource_name(row[:resource]) %></td>
+              <td><%= row[:turn] %></td>
+              <td><%= row[:amount] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </details>
 <% end %>
 
 <%= section_heading("City-States", "city-states") %>
 <% if @city_state_trait_rows.empty? %>
   <p class="empty-state">No city-state snapshots in this game's events.</p>
 <% else %>
-  <table class="city-state-traits">
-    <thead>
-      <tr>
-        <th>City-State</th>
-        <th>Trait</th>
-        <th>Personality</th>
-        <th>Unique Unit</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @city_state_trait_rows.each do |row| %>
+  <details class="disclosure">
+    <summary>City-states table</summary>
+    <table class="city-state-traits">
+      <thead>
         <tr>
-          <td><%= row[:city_state] %></td>
-          <td><%= minor_civ_trait_name(row[:trait]) %></td>
-          <td><%= minor_civ_personality_name(row[:personality]) %></td>
-          <td><%= row[:unique_unit] ? unit_name(row[:unique_unit]) : "&mdash;".html_safe %></td>
+          <th>City-State</th>
+          <th>Trait</th>
+          <th>Personality</th>
+          <th>Unique Unit</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <h3>Alliances</h3>
-  <table class="city-state-alliances">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>City-State</th>
-        <th>From</th>
-        <th>Until</th>
-        <th>Origin</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @city_state_alliance_rows.each do |row| %>
+      </thead>
+      <tbody>
+        <% @city_state_trait_rows.each do |row| %>
+          <tr>
+            <td><%= row[:city_state] %></td>
+            <td><%= minor_civ_trait_name(row[:trait]) %></td>
+            <td><%= minor_civ_personality_name(row[:personality]) %></td>
+            <td><%= row[:unique_unit] ? unit_name(row[:unique_unit]) : "&mdash;".html_safe %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <h3>Alliances</h3>
+    <table class="city-state-alliances">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:city_state] %></td>
-          <td><%= row[:from_turn] %></td>
-          <td><%= row[:until_turn] || "ongoing" %></td>
-          <td><%= row[:origin] %></td>
+          <th>Civ</th>
+          <th>City-State</th>
+          <th>From</th>
+          <th>Until</th>
+          <th>Origin</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <h3>Influence Attribution</h3>
-  <p class="note"><code>unexplained</code> covers gold gifts, quests and coups - none of them logged.</p>
-  <table class="city-state-attribution">
-    <thead>
-      <tr>
-        <th>Civ</th>
-        <th>City-State</th>
-        <th>Gain</th>
-        <th>Decay</th>
-        <th>Rigs</th>
-        <th>Explained</th>
-        <th>Unexplained</th>
-        <th>Trade Routes</th>
-        <th>Merchant Confederacy</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @city_state_attribution_rows.each do |row| %>
+      </thead>
+      <tbody>
+        <% @city_state_alliance_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:city_state] %></td>
+            <td><%= row[:from_turn] %></td>
+            <td><%= row[:until_turn] || "ongoing" %></td>
+            <td><%= row[:origin] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <h3>Influence Attribution</h3>
+    <p class="note"><code>unexplained</code> covers gold gifts, quests and coups - none of them logged.</p>
+    <table class="city-state-attribution">
+      <thead>
         <tr>
-          <td><%= row[:civ] %></td>
-          <td><%= row[:city_state] %></td>
-          <td><%= row[:gain] %></td>
-          <td><%= row[:decay] %></td>
-          <td><%= row[:rigs] %></td>
-          <td><%= row[:explained] %></td>
-          <td><%= row[:unexplained] %></td>
-          <td><%= row[:cs_routes] %></td>
-          <td><%= row[:merchant_confederacy] ? "Yes" : "No" %></td>
+          <th>Civ</th>
+          <th>City-State</th>
+          <th>Gain</th>
+          <th>Decay</th>
+          <th>Rigs</th>
+          <th>Explained</th>
+          <th>Unexplained</th>
+          <th>Trade Routes</th>
+          <th>Merchant Confederacy</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @city_state_attribution_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= row[:city_state] %></td>
+            <td><%= row[:gain] %></td>
+            <td><%= row[:decay] %></td>
+            <td><%= row[:rigs] %></td>
+            <td><%= row[:explained] %></td>
+            <td><%= row[:unexplained] %></td>
+            <td><%= row[:cs_routes] %></td>
+            <td><%= row[:merchant_confederacy] ? "Yes" : "No" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p><%= link_to "See how standing with each city-state changed over time", game_city_states_path(@game) %></p>
+  </details>
 <% end %>
 
 <%= section_heading("Key Moments", "key-moments") %>

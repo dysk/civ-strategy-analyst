@@ -1,0 +1,46 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Yield Attribution</h1>
+<p class="subtitle">
+  What built each yield, sampled every
+  <%= YieldAttributionHistoriesController::SAMPLE_INTERVAL %> turns and at the last turn recorded.
+</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No yield source breakdown in this game's snapshots.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:civ] %></h2>
+
+    <% history[:yields].each do |yield_history| %>
+      <h3><%= yield_history[:yield_name].to_s.titleize %></h3>
+
+      <table class="yield-attribution-history">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Total</th>
+            <th>Sources</th>
+            <th>Shortfall</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% yield_history[:series].each do |entry| %>
+            <tr>
+              <td><%= entry[:turn] %></td>
+              <td><%= entry[:total] %></td>
+              <td><%= entry[:sources].map { |source, value| "#{source}: #{value}" }.join(", ") %></td>
+              <td><%= entry[:shortfall] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+
+  <p class="note">
+    Shortfall is the reported total minus the named sources, never folded into
+    any one source, so a flat modifier with no source label of its own stays
+    visible instead of hidden inside a normalised percentage.
+  </p>
+<% end %>

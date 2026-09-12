@@ -1,0 +1,42 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>City-States</h1>
+<p class="subtitle">
+  Standing with each city-state, sampled every
+  <%= CityStateHistoriesController::SAMPLE_INTERVAL %> turns and at the last turn recorded.
+</p>
+
+<% if @histories.empty? %>
+  <p class="empty-state">No city-state snapshots in this game's events.</p>
+<% else %>
+  <% @histories.each do |history| %>
+    <h2><%= history[:city_state] %></h2>
+
+    <% history[:civs].each do |civ_history| %>
+      <h3><%= civ_history[:civ] %></h3>
+
+      <table class="city-state-standing">
+        <thead>
+          <tr>
+            <th>Turn</th>
+            <th>Influence</th>
+            <th>Level</th>
+            <th>Per Turn</th>
+            <th>Protected</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% civ_history[:series].each do |entry| %>
+            <tr>
+              <td><%= entry[:turn] %></td>
+              <td><%= entry[:influence] || "&mdash;".html_safe %></td>
+              <td><%= entry[:level] || "&mdash;".html_safe %></td>
+              <td><%= entry[:per_turn] || "&mdash;".html_safe %></td>
+              <td><%= entry[:protected] ? "Yes" : "No" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+<% end %>

@@ -22,6 +22,9 @@ Rails.application.routes.draw do
     resource :congress, only: [ :show ], controller: "congress_histories"
     resource :victory_progress, only: [ :show ], controller: "victory_progress_histories"
     resource :espionage, only: [ :show ], controller: "espionage_operations"
+    resource :trade_routes, only: [ :show ], controller: "trade_route_histories"
+    resource :yield_attribution, only: [ :show ], controller: "yield_attribution_histories"
+    resource :city_states, only: [ :show ], controller: "city_state_histories"
   end
 
   # Defines the root path route ("/")

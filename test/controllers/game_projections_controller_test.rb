@@ -783,10 +783,76 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
 
     get game_projections_url(game)
 
-    %w[early-game wonder-races military cultural-standing world-congress
-       victory-progress key-moments].each do |id|
+    %w[capital-distances buffer-cities empire-geometry early-game wonder-races military
+       cultural-standing world-congress victory-progress espionage diplomatic-ties
+       trade-routes religion yield-attribution resource-shortages deals city-states
+       key-moments].each do |id|
       assert_select "h2##{id} a.heading-anchor[href=?]", "##{id}"
     end
+  end
+
+  test "show keeps every populated table behind a collapsed disclosure" do
+    game = Game.create!(name: "Fully Collapsed Game", map_width: 46)
+    %w[Rome Greece Persia].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 1, 10, 10)
+    city(game, "Greece", 1, 30, 10)
+    snapshot(game, "Rome", 10, military_might: 100, military_units: 2, tourism: 40, capitals: %w[Rome],
+      resources: [ { "resource" => "RESOURCE_WINE", "total" => 1, "used" => 0, "import" => 1, "export" => 0 } ],
+      yield_sources: { science: { cities: 5 } }, science: 5)
+    congress_snapshot(game, 10, host: "Rome", delegates: [ { "civ" => "Rome", "votes" => 1 } ], votes_needed: 12)
+    spy_event(game, "spy_created", "Rome", 10, spy: "ROME_1", agent: 1)
+    event(game, "Rome", "embassy_established", 6, "civ" => "Rome", "other_civ" => "Greece")
+    event(game, "Rome", "trade_route_established", 10, "from_city" => "Roma", "to_city" => "Ostia",
+          "to_civ" => "Rome", "type" => "food", "turns_left" => 15)
+    event(game, "Rome", "city_converted", 50, "city" => "Roma", "religion" => "TXT_KEY_RELIGION_HINDUISM")
+    snapshot(game, "Persia", 81, resources: [ { "resource" => "RESOURCE_HORSE", "total" => 0, "used" => 1 } ])
+    event(game, nil, "session_started", 0, "city_states" => [ { "civ" => "Ljubljana", "trait" => "cultured" } ])
+    event(game, nil, "city_state_snapshot", 48, "city_state" => "Ljubljana",
+          "relations" => [ { "civ" => "Rome", "influence" => 5, "per_turn" => 1.25 } ])
+
+    get game_projections_url(game)
+
+    assert_response :success
+    %w[table.capital-distances table.geometry table.early-game table.army table.cultural table.congress
+       table.victory-progress table.espionage table.diplomatic-ties table.trade-routes table.religion-holds
+       table.yield-attribution table.resource-shortages table.deals table.city-state-traits].each do |selector|
+      disclosure = disclosure_wrapping(selector)
+      assert disclosure, "#{selector} is not inside a details.disclosure"
+      assert_nil disclosure["open"], "#{selector} is expanded by default"
+    end
+  end
+
+  test "show links to the history behind the trade routes table" do
+    game = Game.create!(name: "Trade Route Link Game")
+    game.players.create!(civ: "India")
+    event(game, "India", "trade_route_established", 10, "from_city" => "Delhi", "to_city" => "Mumbai",
+          "to_civ" => "India", "type" => "food", "turns_left" => 15)
+
+    get game_projections_url(game)
+
+    assert_select "a[href=?]", game_trade_routes_path(game)
+  end
+
+  test "show links to the history behind the yield attribution table" do
+    game = Game.create!(name: "Yield Attribution Link Game")
+    game.players.create!(civ: "India")
+    snapshot(game, "India", 10, science: 40, yield_sources: { science: { cities: 40 } })
+
+    get game_projections_url(game)
+
+    assert_select "a[href=?]", game_yield_attribution_path(game)
+  end
+
+  test "show links to the history behind the city-states table" do
+    game = Game.create!(name: "City-State Link Game")
+    game.players.create!(civ: "India")
+    event(game, nil, "session_started", 0, "city_states" => [ { "civ" => "Ljubljana", "trait" => "cultured" } ])
+    event(game, nil, "city_state_snapshot", 48, "city_state" => "Ljubljana",
+          "relations" => [ { "civ" => "India", "influence" => 5, "per_turn" => 1.25 } ])
+
+    get game_projections_url(game)
+
+    assert_select "a[href=?]", game_city_states_path(game)
   end
 
   private
