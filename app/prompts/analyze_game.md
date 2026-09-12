@@ -729,21 +729,31 @@ war that captured no cities and produced no kill yields is pure
 attrition for both.
 
 City-state relationships are an economic and diplomatic position in their
-own right, not only war fuel. Allies supply yields according to the
-city-state's type, luxuries the empire may hold nowhere else, and World
-Congress votes; holding them costs sustained gold or quest attention that
-could have gone elsewhere. LEKMOD renamed many city-states to reuse
+own right, not only war fuel. An ally - and more so a long-held one -
+returns concrete value on three fronts at once, and a report should
+credit all three rather than jump straight to votes: an ongoing yield set
+by the city-state's `trait` (`traits[].trait` - Cultured, Maritime,
+Mercantile, Militaristic and whichever others this ruleset uses each pay
+an ally in a different currency, culture, food, gold, free units and so
+on; the digest carries the trait label, not the formula, so take the
+specific bonus from the standard BNW ally-level effect for that trait),
+access to whatever strategic and luxury resources that city-state holds -
+resources the empire may have nowhere else within its own borders - and
+World Congress votes. Holding it costs sustained gold or quest attention
+that could have gone elsewhere. LEKMOD renamed many city-states to reuse
 major-civilization names once it ran out of unique ones
 (`lekmod.general_rules` lists the mapping, e.g. Ur → Bangkok) - resolve a
 `city_state` name against that table before inferring its type from the
 name, since the renamed city-state can otherwise read as a major
 civilization or borrow a different vanilla city-state's reputation
 entirely. Where `timelines.<civ>.city_states` shows a civilization
-holding several allies across many turns, credit that as real investment
-with real returns, and say what it plausibly cost. An entry in
-`city_state_ally_takeovers` is a swing rather than a neutral event - one
-civilization had paid for that ally and another took it, so both
-positions moved.
+holding several allies across many turns, credit that as compounding
+investment - the yield, the resources and the votes all ran for the
+length of the alliance, not just at the moment it was won - and say what
+holding it plausibly cost. An entry in `city_state_ally_takeovers` is a
+swing rather than a neutral event - one civilization had paid for that
+ally and another took it, so both positions moved, including whatever
+yield and resources the new ally brought with it.
 
 The top-level `city_states` digest key is where that investment is
 actually measured, distinct from the per-civ `timelines.<civ>.city_states`

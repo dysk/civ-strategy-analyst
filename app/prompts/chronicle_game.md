@@ -430,6 +430,17 @@ means, so write that a free city stood with one people and not why,
 unless the years around it - a war fought in its name, an agent sent to
 shake it loose - already say so.
 
+An alliance was never only a banner and a vote in the Congress - the free
+city paid it in kind for as long as it held, in the goods and strengths
+its own trait gave. `traits[].trait` names that free city's kind - a
+Cultured one paid in culture, a Maritime one in food, a Mercantile one in
+gold, a Militaristic one in soldiers, and so for whichever kind it was -
+besides whatever strategic or luxury good only that place held. A realm
+that kept an ally for a generation drew on that the whole time, not once
+at the winning of it; write a long alliance as a standing resource the
+allied realm could count on, and a rare good held by a free city as
+reason enough a rival wanted that loyalty for itself.
+
 A free city taken by force is narrated the same as any other city
 changing hands, under `city_captured` above; write no distinction
 between a free city's fall and a great realm's.
