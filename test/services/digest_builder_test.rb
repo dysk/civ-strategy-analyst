@@ -525,6 +525,28 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ applicable: false, reason: :no_resource_data }, DigestBuilder.new(@game).call[:resource_shortages])
   end
 
+  test "includes matched resource swaps between majors and imports with no matching exporter" do
+    snapshot("Rome", 19, resources: [ { "resource" => "RESOURCE_WINE", "total" => 1, "used" => 0, "import" => 1, "export" => 0 } ])
+    snapshot("Greece", 19, resources: [ { "resource" => "RESOURCE_WINE", "total" => 2, "used" => 0, "import" => 0, "export" => 1 } ])
+    snapshot("Rome", 61, resources: [ { "resource" => "RESOURCE_SILVER", "total" => 1, "used" => 0, "import" => 1, "export" => 0 } ])
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal true, digest[:deals][:applicable]
+    assert_equal(
+      [ { resource: "RESOURCE_WINE", exporter: "Greece", importer: "Rome", from_turn: 19, to_turn: 19 } ],
+      digest[:deals][:matches]
+    )
+    assert_equal(
+      [ { civ: "Rome", resource: "RESOURCE_SILVER", turn: 61, amount: 1 } ],
+      digest[:deals][:unattributed_imports]
+    )
+  end
+
+  test "deals degrades to inapplicable when the log carries no resources data" do
+    assert_equal({ applicable: false, reason: :no_resource_data }, DigestBuilder.new(@game).call[:deals])
+  end
+
   test "includes raw resolution lifecycles, for the LLM to cross-reference against lekmod.resolutions" do
     event(nil, "resolution_proposed", 10, resolution: "RESOLUTION_WORLD_FAIR", proposer: "Rome", repeal: false)
     event(nil, "resolution_passed", 15, resolution: "RESOLUTION_WORLD_FAIR")

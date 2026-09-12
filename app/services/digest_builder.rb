@@ -46,6 +46,7 @@ class DigestBuilder
       trade_routes: trade_routes,
       yield_attribution: yield_attribution,
       resource_shortages: resource_shortages,
+      deals: deals,
       unit_names: unit_names,
       spy_names: spy_names,
       cultural: cultural_by_civ,
@@ -369,6 +370,18 @@ class DigestBuilder
     return { applicable: false, reason: :no_resource_data } unless shortages.applicable?
 
     { applicable: true, by_civ: civs.index_with { |civ| shortages.deficits(civ) } }
+  end
+
+  # CvDeal is unreachable from Lua, so both lists here are inference from
+  # `snapshot.resources[]`, never an observed deal - see Deals. Whole-game
+  # lists, the same rule trade_routes' one_sided and espionage's tenures
+  # already follow: neither is a per-turn-per-civ series, so neither needs
+  # checkpoint sampling.
+  def deals
+    reconstruction = Deals.for(@game)
+    return { applicable: false, reason: :no_resource_data } unless reconstruction.applicable?
+
+    { applicable: true, matches: reconstruction.matches, unattributed_imports: reconstruction.unattributed_imports }
   end
 
   def lekmod
