@@ -205,6 +205,58 @@ class ReligionTest < ActiveSupport::TestCase
     assert_not Religion.new(@game).holds("India").first[:settled]
   end
 
+  # Neither unit's spread action fires a hook at all (docs/religion.md); the
+  # only trace is their own unit_lost, since both kill(true) themselves
+  # right after acting. An absent killed_by is that self-kill; a present one
+  # means an enemy did it, so nothing was actually spread.
+  test "missionary_uses infers a use from a missionary's unlaid death" do
+    unit_lost(80, "India", "UNIT_MISSIONARY", city: "Delhi", x: 12, y: 4)
+
+    assert_equal [ { turn: 80, city: "Delhi", x: 12, y: 4, inferred: true } ],
+                 Religion.new(@game).missionary_uses("India")
+  end
+
+  test "missionary_uses excludes a missionary killed by an enemy" do
+    unit_lost(80, "India", "UNIT_MISSIONARY", city: "Delhi", killed_by: "Rome")
+
+    assert_equal [], Religion.new(@game).missionary_uses("India")
+  end
+
+  test "inquisitor_uses infers a use from an inquisitor's unlaid death, the same as a missionary" do
+    unit_lost(90, "India", "UNIT_INQUISITOR", city: "Vijayanagara")
+
+    assert_equal [ { turn: 90, city: "Vijayanagara", x: nil, y: nil, inferred: true } ],
+                 Religion.new(@game).inquisitor_uses("India")
+  end
+
+  test "inquisitor_uses excludes an inquisitor killed by an enemy" do
+    unit_lost(90, "India", "UNIT_INQUISITOR", killed_by: "Rome")
+
+    assert_equal [], Religion.new(@game).inquisitor_uses("India")
+  end
+
+  test "missionary_uses and inquisitor_uses don't leak into each other" do
+    unit_lost(80, "India", "UNIT_MISSIONARY")
+    unit_lost(90, "India", "UNIT_INQUISITOR")
+
+    assert_equal [ 80 ], Religion.new(@game).missionary_uses("India").map { |u| u[:turn] }
+    assert_equal [ 90 ], Religion.new(@game).inquisitor_uses("India").map { |u| u[:turn] }
+  end
+
+  test "missionary_uses filters to the given civ" do
+    unit_lost(80, "India", "UNIT_MISSIONARY")
+    unit_lost(85, "Tibet", "UNIT_MISSIONARY")
+
+    assert_equal [ 80 ], Religion.new(@game).missionary_uses("India").map { |u| u[:turn] }
+  end
+
+  test "missionary_uses is ordered earliest first" do
+    unit_lost(90, "India", "UNIT_MISSIONARY")
+    unit_lost(80, "India", "UNIT_MISSIONARY")
+
+    assert_equal [ 80, 90 ], Religion.new(@game).missionary_uses("India").map { |u| u[:turn] }
+  end
+
   private
 
   def converted(turn, civ, city, religion)
@@ -220,5 +272,16 @@ class ReligionTest < ActiveSupport::TestCase
     payload["religion"] = religion if religion
     @game.game_events.create!(seq: @seq, session_index: 0, turn: turn,
                               event_type: "city_snapshot", civ: civ, payload: payload)
+  end
+
+  def unit_lost(turn, civ, unit, city: nil, x: nil, y: nil, killed_by: nil)
+    @seq += 1
+    payload = { "event" => "unit_lost", "turn" => turn, "civ" => civ, "unit" => unit }
+    payload["city"] = city if city
+    payload["x"] = x if x
+    payload["y"] = y if y
+    payload["killed_by"] = killed_by if killed_by
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn,
+                              event_type: "unit_lost", civ: civ, payload: payload)
   end
 end

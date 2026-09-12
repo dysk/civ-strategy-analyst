@@ -37,7 +37,23 @@ class Religion
     all_holds.select { |hold| hold[:civ] == civ }
   end
 
+  # Neither unit's spread fires a hook of its own (docs/religion.md) - both
+  # kill(true) themselves right after acting, so an absent killed_by on their
+  # own unit_lost is that self-kill, the only trace a use leaves. A present
+  # killed_by means an enemy ended the unit first, so nothing was spread.
+  def missionary_uses(civ) = uses(civ, "UNIT_MISSIONARY")
+
+  def inquisitor_uses(civ) = uses(civ, "UNIT_INQUISITOR")
+
   private
+
+  def uses(civ, unit_type)
+    @log.of_type("unit_lost")
+      .select { |event| event.civ == civ && event.payload["unit"] == unit_type && !event.payload["killed_by"] }
+      .sort_by(&:turn)
+      .map { |event| { turn: event.turn, city: event.payload["city"], x: event.payload["x"],
+                        y: event.payload["y"], inferred: true } }
+  end
 
   def conversions = @conversions ||= @log.of_type("city_converted")
 
