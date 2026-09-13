@@ -624,9 +624,12 @@ Remaining iterations (each: failing tests → review → implementation):
   (2 scouts, first tech Mining, unhappy turns, Library/University
   population thresholds, city count and worker ratio, caravans to the
   capital, wonder targets, wide city spacing).
-- Replacing the tall/wide placeholder with the four opening-branch groups
-  (Tradition/Liberty/Honor/Piety), each carrying its own threshold table
-  keyed off `OpeningStrategy#branch`.
+
+All rows above are now implemented (see `docs/ideal-opening.md`).
+`OpeningStrategy#playstyle` answers tall/wide directly — there is no
+separate Tradition/Liberty/Honor/Piety threshold table planned;
+`#branch` is used only for the exceptions that genuinely need it (e.g.
+Liberty's National College timing).
 
 ## Plan: import at the logger's new volume (implemented)
 

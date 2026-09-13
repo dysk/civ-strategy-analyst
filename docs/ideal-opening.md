@@ -44,11 +44,13 @@ The checklist, as given:
 - close, even minimum-distance city placement works well
 - with Liberty, National College is built after finishing the tree
 
-Tall/wide is a placeholder. The plan is to replace it with four
-opening-branch groups — Tradition, Liberty, Honor, Piety — each carrying
-its own version of these thresholds. Everything below is designed so that
-swap is cheap: no rule here is wired to "tall" or "wide" as a hardcoded
-label.
+Tall/wide, not the opening branch, is the axis these thresholds actually
+vary along — `OpeningStrategy#playstyle` answers that question directly,
+and every threshold below reads it rather than a hardcoded "tall"/"wide"
+label. The opening branch (`#branch`) still matters for genuine
+per-branch exceptions, such as Liberty's National College timing below,
+but those get added as they're found rather than through a parallel
+Tradition/Liberty/Honor/Piety table.
 
 ## Classifying the opening without asking for it
 
@@ -371,12 +373,11 @@ losses out for free. Returns `{ turn:, workers:, cities:, ratio: }`,
 
 ## What's left
 
-Every row in the "Per-criterion feasibility" table above is now
-implemented, including the tall/wide split via `OpeningStrategy#playstyle`.
-What's still missing is the planned Tradition/Liberty/Honor/Piety
-per-branch threshold *table* itself (the finer-grained one `playstyle` was
-never meant to replace, only to feed). `first_tech`, `opening_scouts`,
-`closed_opening`, worker theft, National College, city spacing,
-`playstyle`, `good_wonders`, `caravans_to_capital`, and `workers_per_city`
-are all branch-agnostic or already keyed off `#branch`/`#playstyle`, so
-that table stays cheap to add.
+Every row in the "Per-criterion feasibility" table above is implemented,
+including the tall/wide split via `OpeningStrategy#playstyle`. There is
+no separate Tradition/Liberty/Honor/Piety threshold table planned —
+`playstyle` is the final answer to tall/wide, not a stopgap feeding a
+finer-grained one. `#branch` stays available for the exceptions that
+genuinely need it, National College's Liberty case being the one found so
+far; any future exception gets added the same way, directly against
+`#branch`, rather than through a parallel per-branch table.
