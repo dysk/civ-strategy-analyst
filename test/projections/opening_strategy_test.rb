@@ -420,6 +420,46 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal({ turn: nil, cities: nil, mean_spacing: nil }, strategy.city_spacing("Chile"))
   end
 
+  # docs/ideal-opening.md "Workers per city" - only ever recoverable as an
+  # empire-wide ratio, sampled at the same early-game boundary city_spacing
+  # uses. Counted off unit_created rather than unit_trained: a produced
+  # worker fires both events on the same turn, so unit_trained would double
+  # count it, where OrderOfBattle's unit_created/unit_lost ledger already
+  # nets losses out and is shared with the war-casualties machinery.
+  test "workers_per_city reports the worker-to-city ratio at the early-game boundary" do
+    boundary("Chile", 20)
+    found_cities("Chile", 4)
+    6.times { |i| event("Chile", "unit_created", 5 + i, unit: "UNIT_WORKER", x: 1, y: 1) }
+
+    assert_equal({ turn: 20, workers: 6, cities: 4, ratio: 1.5 }, strategy.workers_per_city("Chile"))
+  end
+
+  test "workers_per_city ignores a worker created after the boundary" do
+    boundary("Chile", 20)
+    found_cities("Chile", 2)
+    event("Chile", "unit_created", 10, unit: "UNIT_WORKER", x: 1, y: 1)
+    event("Chile", "unit_created", 25, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal({ turn: 20, workers: 1, cities: 2, ratio: 0.5 }, strategy.workers_per_city("Chile"))
+  end
+
+  test "workers_per_city nets out a worker lost before the boundary" do
+    boundary("Chile", 20)
+    found_cities("Chile", 1)
+    event("Chile", "unit_created", 5, unit: "UNIT_WORKER", x: 1, y: 1)
+    event("Chile", "unit_created", 6, unit: "UNIT_WORKER", x: 1, y: 1)
+    event("Chile", "unit_lost", 10, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal({ turn: 20, workers: 1, cities: 1, ratio: 1.0 }, strategy.workers_per_city("Chile"))
+  end
+
+  test "workers_per_city has a nil ratio for a civ that never founded a city" do
+    boundary("Chile", 20)
+    event("Chile", "unit_created", 5, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal({ turn: 20, workers: 1, cities: nil, ratio: nil }, strategy.workers_per_city("Chile"))
+  end
+
   # docs/ideal-opening.md's tall/wide split. City count at the early-game
   # boundary is the primary signal - it's what the checklist's own bands
   # (tall 4-6, wide 6-10) actually measure. Opening branch only steps in

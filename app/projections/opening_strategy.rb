@@ -133,6 +133,21 @@ class OpeningStrategy
     entry.slice(:turn, :cities, :mean_spacing)
   end
 
+  # docs/ideal-opening.md "Workers per city" - only ever recoverable as an
+  # empire-wide ratio (the log has no per-city worker assignment), sampled
+  # at the same early-game boundary city_spacing uses. Counted off
+  # OrderOfBattle rather than unit_trained: a produced worker fires both
+  # unit_trained and unit_created on the same turn, so summing them would
+  # double count it, where OrderOfBattle's unit_created/unit_lost ledger
+  # already nets losses out for free.
+  def workers_per_city(civ)
+    boundary_turn = EarlyGame.for(@game).for_civ(civ)[:end_turn]
+    cities = city_spacing(civ)[:cities]
+    workers = order_of_battle.at(boundary_turn, civ)["UNIT_WORKER"] || 0
+
+    { turn: boundary_turn, workers: workers, cities: cities, ratio: cities && workers.to_f / cities }
+  end
+
   # docs/ideal-opening.md's tall/wide split. City count at the early-game
   # boundary is the primary signal, since it's what the checklist's own
   # bands (tall 4-6, wide 6-10) actually measure. The shared boundary at 6
@@ -245,6 +260,8 @@ class OpeningStrategy
   def geometry = @geometry ||= EmpireGeometry.for(@game)
 
   def city_census = @city_census ||= CityCensus.for(@game)
+
+  def order_of_battle = @order_of_battle ||= OrderOfBattle.for(@game)
 
   def buildings_of(civ, building_ids)
     @timeline.buildings(civ).select { |b| building_ids.include?(b[:building]) }

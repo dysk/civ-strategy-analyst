@@ -1,9 +1,9 @@
 # Ideal opening — feasibility and detection plan
 
-Status: **iteration 1 implemented** (2026-09-13) — `OpeningStrategy`
-(`app/projections/opening_strategy.rb`) classifies the branch a civ opened
-into and how long it took to close it. Everything else below is still
-planning. This is stage 4 of
+Status: **every per-criterion feasibility row implemented** (2026-09-13) —
+`OpeningStrategy` (`app/projections/opening_strategy.rb`) now covers the
+full checklist below, see "What's left" for what remains structurally.
+This is stage 4 of
 `docs/early-game-boundary.md` ("a reference model of an ideal opening"),
 deliberately left out of scope there so it could be designed against
 evidence once the boundary itself existed. It supersedes that document's
@@ -96,7 +96,7 @@ None of it requires a change to `civ-narrative-logger`.
 | No Library under population 6 | `building_constructed` (`BUILDING_LIBRARY`) + `CityCensus#snapshot(civ, turn)` | flag when that city's population at the build turn is below 6 |
 | University at population 10 or more | `building_constructed` (`BUILDING_UNIVERSITY`, plus `EarlyGame::REPLACED_BY`-style civ variants) + `CityCensus` | population of the building city at the build turn |
 | City count (tall 4–6 / wide 6–10) | `city_founded`/`city_captured`/`city_lost` | straightforward count over time — implemented as `OpeningStrategy#playstyle`, see "Classifying the opening" |
-| Workers per city | `unit_trained`/`unit_created` (`UNIT_WORKER`) ÷ city count at that turn | empire-wide ratio only — the log has no per-city worker assignment |
+| Workers per city | `OrderOfBattle`'s `unit_created`/`unit_lost` ledger for `UNIT_WORKER`, ÷ city count at that turn | empire-wide ratio only (see "Known gaps") — implemented as `OpeningStrategy#workers_per_city` |
 | Caravans feeding the capital | `trade_route_established`, `type == "food"`, `to_city == capital` | already close to what `TradeRoutes#by_destination` computes (own routes by type) |
 | Good wonders | `building_constructed` where `wonder == "world"` | implemented as `OpeningStrategy#good_wonders`, see "Good wonder targets" |
 | Wide: close city spacing | `EmpireGeometry#series(civ)` | already computed — each entry's `mean_spacing` is the empire-wide average distance from a city to its nearest neighbour, via the same `HexGrid` distance `CapitalProximity` uses |
@@ -359,19 +359,24 @@ a civ that lacks them. Returns `{ capital:, routes:, first_turn: }`, where
 `first_turn` is the turn the first one landed — nil-shaped when the civ
 never founded a city.
 
+**Implemented**: `OpeningStrategy#workers_per_city` (Workers per city, in
+both the "Tall" and "Wide" sections). Only ever recoverable as an
+empire-wide ratio — see "Known gaps" — sampled at the same early-game
+boundary `city_spacing` uses. Counted off `OrderOfBattle#at(turn, civ)`
+rather than `unit_trained`: a produced worker fires both `unit_trained`
+and `unit_created` on the same turn, so summing the two would double count
+it, where `OrderOfBattle`'s `unit_created`/`unit_lost` ledger already nets
+losses out for free. Returns `{ turn:, workers:, cities:, ratio: }`,
+`ratio` and `cities` nil for a civ that never founded a city.
+
 ## What's left
 
-Everything else in the "Per-criterion feasibility" table above is still
-unimplemented:
-
-- Workers per city (empire-wide ratio only — see "Known gaps")
-
-And structurally: the tall/wide split is no longer a placeholder — see
-`OpeningStrategy#playstyle` above. What's still missing is the planned
-Tradition/Liberty/Honor/Piety per-branch threshold *table* itself (the
-finer-grained one `playstyle` was never meant to replace, only to feed).
-`first_tech`, `opening_scouts`, `closed_opening`, worker theft, National
-College, city spacing, `playstyle`, `good_wonders`, and
-`caravans_to_capital` are all branch-agnostic or already keyed off
-`#branch`/`#playstyle`, so that table stays cheap to add — it mainly
-affects the still-unimplemented worker-ratio criterion.
+Every row in the "Per-criterion feasibility" table above is now
+implemented, including the tall/wide split via `OpeningStrategy#playstyle`.
+What's still missing is the planned Tradition/Liberty/Honor/Piety
+per-branch threshold *table* itself (the finer-grained one `playstyle` was
+never meant to replace, only to feed). `first_tech`, `opening_scouts`,
+`closed_opening`, worker theft, National College, city spacing,
+`playstyle`, `good_wonders`, `caravans_to_capital`, and `workers_per_city`
+are all branch-agnostic or already keyed off `#branch`/`#playstyle`, so
+that table stays cheap to add.
