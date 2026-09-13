@@ -696,6 +696,64 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal [], strategy.universities("Chile")
   end
 
+  # docs/ideal-opening.md "Tall: caravans feeding the capital as early as
+  # possible". The capital is the civ's first founded city.
+  test "caravans_to_capital reports the turn of the first food route to the capital" do
+    capital_founded("Chile", "Santiago")
+    established("Chile", 20, from_city: "Valparaiso", to_city: "Santiago", to_civ: "Chile",
+                 type: "food", turns_left: 15)
+
+    result = strategy.caravans_to_capital("Chile")
+
+    assert_equal "Santiago", result[:capital]
+    assert_equal 20, result[:first_turn]
+  end
+
+  test "caravans_to_capital reports every matching route, earliest first" do
+    capital_founded("Chile", "Santiago")
+    established("Chile", 30, from_city: "Concepcion", to_city: "Santiago", to_civ: "Chile",
+                 type: "food", turns_left: 15)
+    established("Chile", 20, from_city: "Valparaiso", to_city: "Santiago", to_civ: "Chile",
+                 type: "food", turns_left: 15)
+
+    result = strategy.caravans_to_capital("Chile")
+
+    assert_equal [ 20, 30 ], result[:routes].map { |r| r[:turn] }
+    assert_equal 20, result[:first_turn]
+  end
+
+  test "caravans_to_capital ignores a production route to the capital" do
+    capital_founded("Chile", "Santiago")
+    established("Chile", 20, from_city: "Valparaiso", to_city: "Santiago", to_civ: "Chile",
+                 type: "production", turns_left: 15)
+
+    assert_equal [], strategy.caravans_to_capital("Chile")[:routes]
+  end
+
+  test "caravans_to_capital ignores a food route sent to a city other than the capital" do
+    capital_founded("Chile", "Santiago")
+    established("Chile", 20, from_city: "Santiago", to_city: "Valparaiso", to_civ: "Chile",
+                 type: "food", turns_left: 15)
+
+    assert_equal [], strategy.caravans_to_capital("Chile")[:routes]
+  end
+
+  test "caravans_to_capital ignores a food route sent abroad" do
+    capital_founded("Chile", "Santiago")
+    established("Chile", 20, from_city: "Valparaiso", to_city: "Lima", to_civ: "Peru",
+                 type: "food", turns_left: 15)
+
+    assert_equal [], strategy.caravans_to_capital("Chile")[:routes]
+  end
+
+  test "caravans_to_capital is nil-shaped for a civ that never founded a city" do
+    result = strategy.caravans_to_capital("Chile")
+
+    assert_nil result[:capital]
+    assert_nil result[:first_turn]
+    assert_equal [], result[:routes]
+  end
+
   private
 
   def happiness(civ, turn, value)
@@ -723,6 +781,14 @@ class OpeningStrategyTest < ActiveSupport::TestCase
 
   def university(civ, turn, city)
     event(civ, "building_constructed", turn, building: "BUILDING_UNIVERSITY", city: city)
+  end
+
+  def capital_founded(civ, city)
+    event(civ, "city_founded", 0, city: city)
+  end
+
+  def established(civ, turn, extra)
+    event(civ, "trade_route_established", turn, extra)
   end
 
   def city_snapshot(civ, turn, city, population)

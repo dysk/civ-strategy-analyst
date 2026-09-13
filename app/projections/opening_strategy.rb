@@ -216,7 +216,31 @@ class OpeningStrategy
     end
   end
 
+  # docs/ideal-opening.md "Tall: caravans feeding the capital as early as
+  # possible". The capital is the civ's first founded city, per the
+  # checklist's own notion of one - not CapitalProximity's, which is
+  # gated on having map coordinates logged and would silently drop a
+  # civ that lacks them for a question that has nothing to do with
+  # geometry.
+  def caravans_to_capital(civ)
+    capital = capital_city(civ)
+    routes = capital ? food_routes_to(civ, capital) : []
+
+    { capital: capital, routes: routes, first_turn: routes.first&.fetch(:turn) }
+  end
+
   private
+
+  def capital_city(civ)
+    @game.event_log.of_type("city_founded").find { |e| e.civ == civ }&.payload&.fetch("city", nil)
+  end
+
+  def food_routes_to(civ, capital)
+    @game.event_log.of_type("trade_route_established")
+      .select { |e| e.civ == civ && e.payload["type"] == "food" && e.payload["to_civ"] == civ && e.payload["to_city"] == capital }
+      .map { |e| { turn: e.turn, from_city: e.payload["from_city"] } }
+      .sort_by { |r| r[:turn] }
+  end
 
   def geometry = @geometry ||= EmpireGeometry.for(@game)
 

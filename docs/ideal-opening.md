@@ -348,20 +348,30 @@ duplicating that list, and returns every University built with its
 population and an `on_target` flag (`population >= 10`), `nil` when no
 population snapshot covers the build turn.
 
+**Implemented**: `OpeningStrategy#caravans_to_capital` (Tall: caravans
+feeding the capital, back in "Tall (4–6 cities)"). The capital is the
+civ's first `city_founded` city, read directly rather than through
+`CapitalProximity`, whose own capital lookup is gated on having map
+coordinates logged — irrelevant to this question and would silently drop
+a civ that lacks them. Returns `{ capital:, routes:, first_turn: }`, where
+`routes` is every established `type == "food"` route whose `to_civ` and
+`to_city` both name the civ's own capital, earliest first, and
+`first_turn` is the turn the first one landed — nil-shaped when the civ
+never founded a city.
+
 ## What's left
 
 Everything else in the "Per-criterion feasibility" table above is still
 unimplemented:
 
 - Workers per city (empire-wide ratio only — see "Known gaps")
-- Caravans feeding the capital
 
 And structurally: the tall/wide split is no longer a placeholder — see
 `OpeningStrategy#playstyle` above. What's still missing is the planned
 Tradition/Liberty/Honor/Piety per-branch threshold *table* itself (the
 finer-grained one `playstyle` was never meant to replace, only to feed).
 `first_tech`, `opening_scouts`, `closed_opening`, worker theft, National
-College, city spacing, `playstyle`, and `good_wonders` are all
-branch-agnostic or already keyed off `#branch`/`#playstyle`, so that table
-stays cheap to add — it mainly affects the still-unimplemented worker-ratio
-criterion.
+College, city spacing, `playstyle`, `good_wonders`, and
+`caravans_to_capital` are all branch-agnostic or already keyed off
+`#branch`/`#playstyle`, so that table stays cheap to add — it mainly
+affects the still-unimplemented worker-ratio criterion.
