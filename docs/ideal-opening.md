@@ -36,7 +36,8 @@ The checklist, as given:
   67/100, see "National College timing"**
 - caravans feeding food to the capital as early as possible
 - good wonder targets: Temple of Artemis, Great Library, Oracle, Petra,
-  Chichen Itza, Leaning Tower of Pisa
+  Chichen Itza, Leaning Tower of Pisa — **superseded below by the
+  three-bucket split, see "Good wonder targets"**
 
 **Wide (6–10 cities):**
 - 1–1.5 workers per city
@@ -94,10 +95,10 @@ None of it requires a change to `civ-narrative-logger`.
 | Never/minimize unhappy turns | `snapshot.happiness` (empire `GetExcessHappiness()`), via `MetricSeries#values("happiness", civ)` | count turns with `happiness < 0` inside the early-game window |
 | No Library under population 6 | `building_constructed` (`BUILDING_LIBRARY`) + `CityCensus#snapshot(civ, turn)` | flag when that city's population at the build turn is below 6 |
 | University at population 10–12 | `building_constructed` (`BUILDING_UNIVERSITY`, plus `EarlyGame::REPLACED_BY`-style civ variants) + `CityCensus` | population of the building city at the build turn |
-| City count (tall 4–6 / wide 6–10) | `city_founded`/`city_captured`/`city_lost` | straightforward count over time |
+| City count (tall 4–6 / wide 6–10) | `city_founded`/`city_captured`/`city_lost` | straightforward count over time — implemented as `OpeningStrategy#playstyle`, see "Classifying the opening" |
 | Workers per city | `unit_trained`/`unit_created` (`UNIT_WORKER`) ÷ city count at that turn | empire-wide ratio only — the log has no per-city worker assignment |
 | Caravans feeding the capital | `trade_route_established`, `type == "food"`, `to_city == capital` | already close to what `TradeRoutes#by_destination` computes (own routes by type) |
-| Good wonders | `building_constructed` where `wonder == "world"` | already covered by `Wonders`/`WonderRaces` |
+| Good wonders | `building_constructed` where `wonder == "world"` | implemented as `OpeningStrategy#good_wonders`, see "Good wonder targets" |
 | Wide: close city spacing | `EmpireGeometry#series(civ)` | already computed — each entry's `mean_spacing` is the empire-wide average distance from a city to its nearest neighbour, via the same `HexGrid` distance `CapitalProximity` uses |
 | National College timing | `building_constructed` (`BUILDING_NATIONAL_COLLEGE` + civ-unique variants, e.g. `BUILDING_ISRAEL_NATIONAL_COLLEGE`) | see below |
 
@@ -296,16 +297,7 @@ since the checklist treats spacing as an effect of playing wide, not a
 cause of it, and Honor/Piety's own flexibility rules out branch as a
 general-purpose signal beyond that one tie-break.
 
-## What's left
-
-Everything else in the "Per-criterion feasibility" table above is still
-unimplemented:
-
-- Never/minimize unhappy turns
-- No Library under population 6
-- University built at population 10–12
-- Workers per city (empire-wide ratio only — see "Known gaps")
-- Caravans feeding the capital
+### Good wonder targets
 
 **Implemented**: `OpeningStrategy#good_wonders`. The checklist's wonder
 list is really three buckets, not one:
@@ -328,6 +320,17 @@ known to apply. `#good_wonders(civ)` returns `{ targets:, built: }` —
 `PlayerTimeline#wonders`) that land on one of those targets. A wonder
 built from the wrong style's list — Stonehenge for a tall civ — is on
 neither, and doesn't count.
+
+## What's left
+
+Everything else in the "Per-criterion feasibility" table above is still
+unimplemented:
+
+- Never/minimize unhappy turns
+- No Library under population 6
+- University built at population 10–12
+- Workers per city (empire-wide ratio only — see "Known gaps")
+- Caravans feeding the capital
 
 And structurally: the tall/wide split is no longer a placeholder — see
 `OpeningStrategy#playstyle` above. What's still missing is the planned
