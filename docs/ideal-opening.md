@@ -282,6 +282,20 @@ a city founded after the opening already closed doesn't count toward how
 the opening was played. Nil-shaped (`turn`/`cities`/`mean_spacing` all
 `nil`) for a civ that never founded a city.
 
+**Implemented**: `OpeningStrategy#playstyle` — the tall/wide classification
+the structural section above calls for, ahead of the opening-branch groups
+it's meant to precede. City count at the early-game boundary
+(`city_spacing`'s `cities`) is the primary signal, since it's what the
+checklist's own bands (tall 4–6, wide 6–10) actually measure: below 6 is
+`:tall`, above 6 is `:wide`. The shared boundary at exactly 6 falls back to
+the opening branch, but only for Tradition (`:tall`) and Liberty
+(`:wide`) — Honor and Piety are played both ways in this mod, so a tied
+count under either stays `nil` rather than guessed at. `mean_spacing` and
+`branch` ride along in the result as context; neither feeds the verdict,
+since the checklist treats spacing as an effect of playing wide, not a
+cause of it, and Honor/Piety's own flexibility rules out branch as a
+general-purpose signal beyond that one tie-break.
+
 ## What's left
 
 Everything else in the "Per-criterion feasibility" table above is still
@@ -290,18 +304,39 @@ unimplemented:
 - Never/minimize unhappy turns
 - No Library under population 6
 - University built at population 10–12
-- City count against the tall/wide band
 - Workers per city (empire-wide ratio only — see "Known gaps")
 - Caravans feeding the capital
-- Good wonder targets (this one may already be free: cross-check against
-  the existing `Wonders`/`WonderRaces` projections before writing anything
-  new)
+- Good wonder targets
 
-And structurally: the tall/wide split is still a placeholder for the
-planned Tradition/Liberty/Honor/Piety per-branch threshold table. All the
-implemented criteria above (`first_tech`, `opening_scouts`, `closed_opening`,
-worker theft, National College, city spacing) are branch-agnostic or
-already keyed off `OpeningStrategy#branch`, so that swap stays cheap when
-it happens — it mainly affects the still-unimplemented city-count and
-worker-ratio criteria, plus wonders, which are the ones actually keyed to
-tall/wide today.
+### Good wonder targets — split by style, not by branch
+
+The checklist's wonder list is tall-only; wide has its own, different list,
+and a few wonders don't care about style at all. Three buckets, not one:
+
+- **Universal** — Temple of Artemis, Oracle, Great Lighthouse, Colossus.
+  The last two are already gated by the game itself: a coastal city is
+  required to build them, so a completed one is proof of coastal placement
+  on its own, with no separate coastal check needed.
+- **Tall** — Great Library, Petra, Chichen Itza, Leaning Tower of Pisa,
+  Hanging Gardens.
+- **Wide** — Pyramids, Stonehenge.
+
+Style comes from `OpeningStrategy#playstyle`, not `#branch` directly — a
+civ that opened Liberty but only settled 5 cities played tall, and should
+be graded against the tall list. `WonderRaces`/`Wonders` already resolve a
+`building_constructed` event to a wonder id and display name; this only
+needs `completions` filtered to a civ, joined against whichever bucket
+`playstyle(civ)[:style]` selects (plus the universal bucket, unconditionally).
+
+Left open: what to report for a civ `playstyle` leaves unresolved (Honor
+or Piety at exactly 6 cities). Grading only against the universal bucket
+in that case is the obvious default — worth confirming before writing it.
+
+And structurally: the tall/wide split is no longer a placeholder — see
+`OpeningStrategy#playstyle` above. What's still missing is the planned
+Tradition/Liberty/Honor/Piety per-branch threshold *table* itself (the
+finer-grained one `playstyle` was never meant to replace, only to feed).
+`first_tech`, `opening_scouts`, `closed_opening`, worker theft, National
+College, city spacing, and `playstyle` are all branch-agnostic or already
+keyed off `#branch`/`#playstyle`, so that table stays cheap to add — it
+mainly affects worker-ratio and the still-unwritten wonder criterion above.

@@ -420,7 +420,95 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal({ turn: nil, cities: nil, mean_spacing: nil }, strategy.city_spacing("Chile"))
   end
 
+  # docs/ideal-opening.md's tall/wide split. City count at the early-game
+  # boundary is the primary signal - it's what the checklist's own bands
+  # (tall 4-6, wide 6-10) actually measure. Opening branch only steps in
+  # to break the shared boundary at 6 cities, and only for the two
+  # branches with a settled style in this mod.
+  test "playstyle classifies tall from city count alone" do
+    boundary("Chile", 20)
+    found_cities("Chile", 5)
+
+    assert_equal :tall, strategy.playstyle("Chile")[:style]
+  end
+
+  test "playstyle classifies wide from city count alone" do
+    boundary("Chile", 20)
+    found_cities("Chile", 8)
+
+    assert_equal :wide, strategy.playstyle("Chile")[:style]
+  end
+
+  test "playstyle breaks a tied city count of 6 toward tall for a Tradition opening" do
+    boundary("Chile", 20)
+    found_cities("Chile", 6)
+    event("Chile", "policy_branch_adopted", 3, branch: "POLICY_BRANCH_TRADITION")
+
+    assert_equal :tall, strategy.playstyle("Chile")[:style]
+  end
+
+  test "playstyle breaks a tied city count of 6 toward wide for a Liberty opening" do
+    boundary("Chile", 20)
+    found_cities("Chile", 6)
+    event("Chile", "policy_branch_adopted", 3, branch: "POLICY_BRANCH_LIBERTY")
+
+    assert_equal :wide, strategy.playstyle("Chile")[:style]
+  end
+
+  # Honor and Piety are played both tall and wide in this mod, so neither
+  # settles a tied city count - the verdict stays nil rather than guessed.
+  test "playstyle leaves a tied city count of 6 unresolved for a Honor opening" do
+    boundary("Chile", 20)
+    found_cities("Chile", 6)
+    event("Chile", "policy_branch_adopted", 3, branch: "POLICY_BRANCH_HONOR")
+
+    assert_nil strategy.playstyle("Chile")[:style]
+  end
+
+  test "playstyle leaves a tied city count of 6 unresolved for a Piety opening" do
+    boundary("Chile", 20)
+    found_cities("Chile", 6)
+    event("Chile", "policy_branch_adopted", 3, branch: "POLICY_BRANCH_PIETY")
+
+    assert_nil strategy.playstyle("Chile")[:style]
+  end
+
+  test "playstyle leaves a tied city count of 6 unresolved with no opening branch at all" do
+    boundary("Chile", 20)
+    found_cities("Chile", 6)
+
+    assert_nil strategy.playstyle("Chile")[:style]
+  end
+
+  test "playstyle reports city_count, mean_spacing, and branch alongside the verdict" do
+    boundary("Chile", 20)
+    found_cities("Chile", 5)
+    event("Chile", "policy_branch_adopted", 3, branch: "POLICY_BRANCH_PIETY")
+
+    result = strategy.playstyle("Chile")
+
+    assert_equal 5, result[:city_count]
+    assert_equal "POLICY_BRANCH_PIETY", result[:branch]
+    assert_not_nil result[:mean_spacing]
+  end
+
+  test "playstyle is unresolved for a civ that never founded a city" do
+    result = strategy.playstyle("Chile")
+
+    assert_nil result[:style]
+    assert_nil result[:city_count]
+  end
+
   private
+
+  def boundary(civ, turn)
+    event(nil, "tech_researched", turn - 5, civs: [ civ ], tech: "TECH_EDUCATION")
+    event(civ, "building_constructed", turn, building: "BUILDING_WORKSHOP", city: "Capital")
+  end
+
+  def found_cities(civ, count)
+    count.times { |i| event(civ, "city_founded", i + 1, x: 10 + i, y: 10) }
+  end
 
   def strategy
     @strategy ||= OpeningStrategy.new(@game)

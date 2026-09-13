@@ -133,9 +133,35 @@ class OpeningStrategy
     entry.slice(:turn, :cities, :mean_spacing)
   end
 
+  # docs/ideal-opening.md's tall/wide split. City count at the early-game
+  # boundary is the primary signal, since it's what the checklist's own
+  # bands (tall 4-6, wide 6-10) actually measure. The shared boundary at 6
+  # cities falls back to the opening branch, but only for the two branches
+  # with a settled style in this mod - Tradition tall, Liberty wide. Honor
+  # and Piety are played both ways, so a tie there stays unresolved rather
+  # than guessed. mean_spacing rides along for context; it never decides
+  # the verdict, since the checklist treats it as an effect of wide play,
+  # not a cause of it.
+  STYLE_BY_TIEBREAK_BRANCH = { "POLICY_BRANCH_TRADITION" => :tall, "POLICY_BRANCH_LIBERTY" => :wide }.freeze
+
+  def playstyle(civ)
+    spacing = city_spacing(civ)
+    count = spacing[:cities]
+
+    { style: style_for(civ, count), city_count: count, mean_spacing: spacing[:mean_spacing], branch: branch(civ) }
+  end
+
   private
 
   def geometry = @geometry ||= EmpireGeometry.for(@game)
+
+  def style_for(civ, count)
+    return unless count
+    return :tall if count < 6
+    return :wide if count > 6
+
+    STYLE_BY_TIEBREAK_BRANCH[branch(civ)]
+  end
 
   def national_college_target_turn
     GameSpeed.for(@game).turns(NATIONAL_COLLEGE_TARGET_STANDARD_TURNS)
