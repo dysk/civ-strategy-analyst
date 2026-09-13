@@ -173,6 +173,19 @@ class OpeningStrategy
     { targets: targets, built: built }
   end
 
+  # docs/ideal-opening.md "General, any opening": never go unhappy, or at
+  # minimum minimize the number of unhappy turns. Counted against the same
+  # early-game boundary city_spacing uses, so a dip after the opening
+  # already closed doesn't count toward how the opening was played.
+  def unhappy_turns(civ)
+    boundary_turn = EarlyGame.for(@game).for_civ(civ)[:end_turn]
+    turns = MetricSeries.for(@game).values("happiness", civ)
+      .select { |turn, value| turn <= boundary_turn && !value.nil? && value.negative? }
+      .map(&:first)
+
+    { count: turns.size, turns: turns }
+  end
+
   private
 
   def geometry = @geometry ||= EmpireGeometry.for(@game)

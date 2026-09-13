@@ -321,12 +321,21 @@ known to apply. `#good_wonders(civ)` returns `{ targets:, built: }` —
 built from the wrong style's list — Stonehenge for a tall civ — is on
 neither, and doesn't count.
 
+**Implemented**: `OpeningStrategy#unhappy_turns` (never/minimize unhappy
+turns, back in "General, any opening"). Counts `MetricSeries#values("happiness",
+civ)` entries that are negative, sampled up to the same early-game boundary
+`city_spacing` uses, so a dip after the opening already closed doesn't
+count toward how the opening was played. A snapshot's turn stands for the
+run since the previous one rather than every unsampled turn in between, so
+`count` is a count of unhappy snapshots, not a count of unhappy game
+turns. Returns `{ count:, turns: }`, zero-shaped for a civ with no
+happiness snapshots at all.
+
 ## What's left
 
 Everything else in the "Per-criterion feasibility" table above is still
 unimplemented:
 
-- Never/minimize unhappy turns
 - No Library under population 6
 - University built at population 10–12
 - Workers per city (empire-wide ratio only — see "Known gaps")

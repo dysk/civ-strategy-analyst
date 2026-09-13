@@ -558,7 +558,48 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal [], strategy.good_wonders("Chile")[:built]
   end
 
+  # docs/ideal-opening.md "General, any opening": never go unhappy, or at
+  # minimum minimize the number of unhappy turns - counted against the same
+  # early-game boundary EarlyGame uses to mark the end of the opening.
+  test "unhappy_turns counts snapshot turns with negative happiness inside the boundary" do
+    boundary("Chile", 20)
+    happiness("Chile", 5, -2)
+    happiness("Chile", 10, -3)
+    happiness("Chile", 15, 5)
+
+    assert_equal({ count: 2, turns: [ 5, 10 ] }, strategy.unhappy_turns("Chile"))
+  end
+
+  # A dip after the opening already closed says nothing about how the
+  # opening was played.
+  test "unhappy_turns ignores a negative happiness snapshot after the boundary" do
+    boundary("Chile", 20)
+    happiness("Chile", 25, -5)
+
+    assert_equal({ count: 0, turns: [] }, strategy.unhappy_turns("Chile"))
+  end
+
+  test "unhappy_turns is zero when happiness never dips below zero" do
+    boundary("Chile", 20)
+    happiness("Chile", 5, 0)
+    happiness("Chile", 10, 8)
+
+    assert_equal({ count: 0, turns: [] }, strategy.unhappy_turns("Chile"))
+  end
+
+  test "unhappy_turns is zero-shaped for a civ with no happiness snapshots" do
+    boundary("Chile", 20)
+
+    assert_equal({ count: 0, turns: [] }, strategy.unhappy_turns("Chile"))
+  end
+
   private
+
+  def happiness(civ, turn, value)
+    @seq += 1
+    payload = { "event" => "snapshot", "turn" => turn, "civ" => civ, "happiness" => value }
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: turn, event_type: "snapshot", civ: civ, payload: payload)
+  end
 
   def boundary(civ, turn)
     event(nil, "tech_researched", turn - 5, civs: [ civ ], tech: "TECH_EDUCATION")
