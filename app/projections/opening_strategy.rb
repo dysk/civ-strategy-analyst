@@ -101,6 +101,24 @@ class OpeningStrategy
       turns_early: built && target - built[:turn], turns_after_finisher: nil }
   end
 
+  # docs/ideal-opening.md "General, any opening": open with 2 scouts. Grades
+  # the civ's first OPENING_ITEMS_WINDOW production outputs (units trained
+  # and buildings constructed, merged by turn) by how many of them, and
+  # which ones, were scouts - a civ-unique replacement (WarCasualties'
+  # SCOUT_UNITS, reused rather than duplicated) counts the same as
+  # UNIT_SCOUT. interrupted_by names whatever sits between the first two
+  # scouts when the opening isn't a clean back-to-back pair, so a report
+  # can say what displaced the second scout instead of just that it did.
+  OPENING_ITEMS_WINDOW = 4
+
+  def opening_scouts(civ)
+    items = first_built_items(civ)
+    scout_indices = items.each_index.select { |i| scout?(items[i]) }
+
+    { category: scout_category(scout_indices), scout_count: scout_indices.size,
+      interrupted_by: interrupted_by(items, scout_indices), items: items }
+  end
+
   private
 
   def national_college_target_turn
@@ -125,5 +143,35 @@ class OpeningStrategy
 
   def finished_at(civ, finisher_policy)
     @timeline.policies(civ).find { |entry| entry[:type] == :policy_adopted && entry[:name] == finisher_policy }
+  end
+
+  def first_built_items(civ)
+    units = @game.event_log.of_type("unit_trained").select { |e| e.civ == civ }
+      .map { |e| { turn: e.turn, kind: :unit, id: e.payload["unit"] } }
+    buildings = @timeline.buildings(civ).map { |b| { turn: b[:turn], kind: :building, id: b[:building] } }
+
+    (units + buildings).sort_by { |item| item[:turn] }.first(OPENING_ITEMS_WINDOW)
+  end
+
+  def scout?(item)
+    item[:kind] == :unit && WarCasualties::SCOUT_UNITS.include?(item[:id])
+  end
+
+  def scout_category(scout_indices)
+    if scout_indices[0..1] == [ 0, 1 ]
+      :opened_with_two_scouts
+    elsif scout_indices.size >= 2
+      :two_scouts_interrupted
+    elsif scout_indices.size == 1
+      :one_scout
+    else
+      :no_scouts
+    end
+  end
+
+  def interrupted_by(items, scout_indices)
+    return nil if scout_indices[0..1] == [ 0, 1 ] || scout_indices.size < 2
+
+    items[(scout_indices[0] + 1)...scout_indices[1]]
   end
 end

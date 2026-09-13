@@ -88,7 +88,7 @@ None of it requires a change to `civ-narrative-logger`.
 
 | Criterion | Data source | Detection |
 |---|---|---|
-| Open with 2 scouts | `unit_trained`/`unit_created`, `unit == "UNIT_SCOUT"` | count scout creations before the first settler moves out / early turn window |
+| Open with 2 scouts | `unit_trained` + `building_constructed`, merged by turn | grade the first 4 things built by how many, and which, are scouts (`WarCasualties::SCOUT_UNITS`) — see "Open with 2 scouts" below |
 | First tech is Mining | `PlayerTimeline#techs(civ)` | first entry's `tech == "TECH_MINING"` |
 | Close the opening tree fast | `policy_adopted` where `policy` matches `POLICY_*_FINISHER` (confirmed ids in `db/lekmod/34.15/ids.yml`, e.g. `POLICY_TRADITION_FINISHER`, `POLICY_LIBERTY_FINISHER`) | finisher turn minus the branch's `policy_branch_adopted` turn |
 | Never/minimize unhappy turns | `snapshot.happiness` (empire `GetExcessHappiness()`), via `MetricSeries#values("happiness", civ)` | count turns with `happiness < 0` inside the early-game window |
@@ -248,3 +248,55 @@ than Liberty it compares the build turn against
 `GameSpeed.for(@game).turns(100)` and reports `turns_early`; for Liberty it
 instead reports `turns_after_finisher` against `closed_opening(civ)`, nil
 until the tree actually closes.
+
+**Implemented**: `OpeningStrategy#first_tech` (first tech is Mining, back
+in "General, any opening"). Reads `PlayerTimeline#techs(civ)`, the merged
+research-and-ruins list the feasibility table already names, and returns
+the earliest entry's tech id, or `nil` if the civ has none logged. A hut
+tech ahead of any deliberate research is skipped as a windfall rather than
+a choice, except when that hut tech is Mining itself, which satisfies the
+checklist's actual goal (revealing Iron early) regardless of how it
+arrived.
+
+**Implemented**: `OpeningStrategy#opening_scouts` (open with 2 scouts, back
+in "General, any opening"). Grades the civ's first `OPENING_ITEMS_WINDOW`
+(4) production outputs — `unit_trained` and `building_constructed`, merged
+by turn — by how many of them were scouts: `:opened_with_two_scouts` when
+the first two are both scouts, `:two_scouts_interrupted` when a second
+scout still lands in the window but not back-to-back (a shrine wedged in
+between might mean a deliberate pantheon rush rather than a mistake),
+`:one_scout`, or `:no_scouts`. A civ-unique scout replacement counts the
+same as `UNIT_SCOUT`, reusing `WarCasualties::SCOUT_UNITS` rather than
+duplicating that list. Returns the full first-4 `items` list alongside the
+verdict, plus `interrupted_by` — whatever sits between the first two
+scouts when the run isn't clean — so a report can name the culprit instead
+of just flagging that something interrupted it.
+
+Deliberately left out: the Aztec Jaguar, a warrior replacement sometimes
+used as a scout substitute by intent. The log can't distinguish that
+intent from an ordinary early Jaguar build, so it isn't counted as a
+scout — noted here rather than guessed at in code.
+
+## What's left
+
+Everything else in the "Per-criterion feasibility" table above is still
+unimplemented:
+
+- Never/minimize unhappy turns
+- No Library under population 6
+- University built at population 10–12
+- City count against the tall/wide band
+- Workers per city (empire-wide ratio only — see "Known gaps")
+- Caravans feeding the capital
+- Good wonder targets (this one may already be free: cross-check against
+  the existing `Wonders`/`WonderRaces` projections before writing anything
+  new)
+- Wide: close city spacing (no projection yet — see "Known gaps")
+
+And structurally: the tall/wide split is still a placeholder for the
+planned Tradition/Liberty/Honor/Piety per-branch threshold table. All the
+implemented criteria above (`first_tech`, `opening_scouts`, `closed_opening`,
+worker theft, National College) are branch-agnostic or already keyed off
+`OpeningStrategy#branch`, so that swap stays cheap when it happens — it
+mainly affects the still-unimplemented city-count, worker-ratio, and
+wonder criteria, which are the ones actually keyed to tall/wide today.

@@ -290,6 +290,108 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_nil strategy.national_college("Chile")[:turns_after_finisher]
   end
 
+  # docs/ideal-opening.md "General, any opening": open with 2 scouts. Looks
+  # at the first four things the civ builds (unit_trained and
+  # building_constructed merged by turn) and grades how many of them, and
+  # which ones, were scouts.
+  test "opening_scouts reports opened_with_two_scouts when the first two things built are scouts" do
+    event("Chile", "unit_trained", 4, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "unit_trained", 7, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "unit_trained", 13, unit: "UNIT_WORKER", city: "Santiago")
+
+    assert_equal(
+      { category: :opened_with_two_scouts, scout_count: 2, interrupted_by: nil,
+        items: [
+          { turn: 4, kind: :unit, id: "UNIT_SCOUT" },
+          { turn: 7, kind: :unit, id: "UNIT_SCOUT" },
+          { turn: 13, kind: :unit, id: "UNIT_WORKER" }
+        ] },
+      strategy.opening_scouts("Chile")
+    )
+  end
+
+  # A shrine between the two scouts still gets a second scout into the
+  # window - a broken-up scout run rather than no scout run, and possibly
+  # a deliberate pantheon rush rather than a mistake. interrupted_by names
+  # exactly what came between the two scouts, so a report can say "shrine"
+  # rather than making the reader work it out from the raw items list.
+  test "opening_scouts reports two_scouts_interrupted when a scout run is broken up but a second scout still lands in the window" do
+    event("Chile", "unit_trained", 4, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "building_constructed", 6, building: "BUILDING_SHRINE", city: "Santiago")
+    event("Chile", "unit_trained", 10, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "unit_trained", 14, unit: "UNIT_WORKER", city: "Santiago")
+
+    result = strategy.opening_scouts("Chile")
+
+    assert_equal :two_scouts_interrupted, result[:category]
+    assert_equal 2, result[:scout_count]
+    assert_equal [ { turn: 6, kind: :building, id: "BUILDING_SHRINE" } ], result[:interrupted_by]
+  end
+
+  # Two items separate the scouts here, not one - interrupted_by carries
+  # both, in order.
+  test "opening_scouts reports every item between the two scouts in interrupted_by, not just the first" do
+    event("Chile", "unit_trained", 4, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "building_constructed", 6, building: "BUILDING_SHRINE", city: "Santiago")
+    event("Chile", "unit_trained", 8, unit: "UNIT_WARRIOR", city: "Santiago")
+    event("Chile", "unit_trained", 10, unit: "UNIT_SCOUT", city: "Santiago")
+
+    assert_equal(
+      [ { turn: 6, kind: :building, id: "BUILDING_SHRINE" }, { turn: 8, kind: :unit, id: "UNIT_WARRIOR" } ],
+      strategy.opening_scouts("Chile")[:interrupted_by]
+    )
+  end
+
+  test "opening_scouts reports one_scout when only one scout appears in the first four things built" do
+    event("Chile", "unit_trained", 4, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "unit_trained", 8, unit: "UNIT_WARRIOR", city: "Santiago")
+    event("Chile", "unit_trained", 12, unit: "UNIT_WORKER", city: "Santiago")
+    event("Chile", "building_constructed", 16, building: "BUILDING_MONUMENT", city: "Santiago")
+
+    assert_equal :one_scout, strategy.opening_scouts("Chile")[:category]
+    assert_nil strategy.opening_scouts("Chile")[:interrupted_by]
+  end
+
+  test "opening_scouts reports no_scouts when no scout appears in the first four things built" do
+    event("Chile", "unit_trained", 6, unit: "UNIT_WORKER", city: "Santiago")
+    event("Chile", "unit_trained", 12, unit: "UNIT_WARRIOR", city: "Santiago")
+    event("Chile", "building_constructed", 16, building: "BUILDING_MONUMENT", city: "Santiago")
+    event("Chile", "unit_trained", 20, unit: "UNIT_WORKER", city: "Santiago")
+
+    assert_equal :no_scouts, strategy.opening_scouts("Chile")[:category]
+    assert_equal 0, strategy.opening_scouts("Chile")[:scout_count]
+    assert_nil strategy.opening_scouts("Chile")[:interrupted_by]
+  end
+
+  # A scout arriving after the first four things built is outside the
+  # opening and doesn't count, even though it's the civ's only scout.
+  test "opening_scouts only looks at the first four things built" do
+    event("Chile", "unit_trained", 4, unit: "UNIT_WORKER", city: "Santiago")
+    event("Chile", "unit_trained", 8, unit: "UNIT_WARRIOR", city: "Santiago")
+    event("Chile", "unit_trained", 12, unit: "UNIT_WORKER", city: "Santiago")
+    event("Chile", "building_constructed", 16, building: "BUILDING_MONUMENT", city: "Santiago")
+    event("Chile", "unit_trained", 20, unit: "UNIT_SCOUT", city: "Santiago")
+
+    assert_equal :no_scouts, strategy.opening_scouts("Chile")[:category]
+  end
+
+  test "opening_scouts works with fewer than four things built" do
+    event("Chile", "unit_trained", 4, unit: "UNIT_SCOUT", city: "Santiago")
+    event("Chile", "unit_trained", 7, unit: "UNIT_SCOUT", city: "Santiago")
+
+    assert_equal :opened_with_two_scouts, strategy.opening_scouts("Chile")[:category]
+  end
+
+  # docs/ideal-opening.md's worker-theft SCOUT_UNITS list (Zabonah,
+  # Nubian Bow, Pathfinder) is reused rather than duplicated - a
+  # civ-unique replacement still opens with "2 scouts".
+  test "opening_scouts recognizes civ-unique scout replacements" do
+    event("Shoshone", "unit_trained", 4, unit: "UNIT_SHOSHONE_PATHFINDER", city: "Zuni")
+    event("Shoshone", "unit_trained", 7, unit: "UNIT_SHOSHONE_PATHFINDER", city: "Zuni")
+
+    assert_equal :opened_with_two_scouts, strategy.opening_scouts("Shoshone")[:category]
+  end
+
   private
 
   def strategy
