@@ -14,6 +14,15 @@ class OpeningStrategy
     opened(civ)&.fetch(:name)
   end
 
+  # docs/ideal-opening.md "General, any opening": first researched tech
+  # should be Mining. A hut tech ahead of any deliberate research is a
+  # windfall, not a choice, so it's skipped - unless it's Mining itself,
+  # which satisfies the goal (revealing Iron early) regardless of how it
+  # arrived.
+  def first_tech(civ)
+    @timeline.techs(civ).find { |entry| entry[:source] == :research || entry[:tech] == "TECH_MINING" }&.fetch(:tech)
+  end
+
   def closed_opening(civ)
     opening = opened(civ)
     return unless opening

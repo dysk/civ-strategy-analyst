@@ -25,6 +25,43 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal "POLICY_BRANCH_TRADITION", strategy.branch("Chile")
   end
 
+  # docs/ideal-opening.md "General, any opening": first researched tech
+  # should be Mining, to reveal Iron early.
+  test "first_tech reports the civ's earliest tech" do
+    event(nil, "tech_researched", 1, civs: %w[Chile], tech: "TECH_MINING")
+
+    assert_equal "TECH_MINING", strategy.first_tech("Chile")
+  end
+
+  test "first_tech is nil for a civ with no logged tech" do
+    assert_nil strategy.first_tech("Chile")
+  end
+
+  test "first_tech keeps the earliest tech, not one researched later" do
+    event(nil, "tech_researched", 1, civs: %w[Chile], tech: "TECH_MINING")
+    event(nil, "tech_researched", 5, civs: %w[Chile], tech: "TECH_POTTERY")
+
+    assert_equal "TECH_MINING", strategy.first_tech("Chile")
+  end
+
+  # Mining from a goody hut counts too - it satisfies "have Mining early"
+  # just as well as researching it deliberately would.
+  test "first_tech credits Mining that arrived via ruins ahead of any researched tech" do
+    event("Chile", "tech_from_ruins", 3, tech: "TECH_MINING")
+    event(nil, "tech_researched", 6, civs: %w[Chile], tech: "TECH_POTTERY")
+
+    assert_equal "TECH_MINING", strategy.first_tech("Chile")
+  end
+
+  # Any other hut tech is a windfall, not a research choice - it doesn't
+  # count as what the civ opened with.
+  test "first_tech ignores a non-Mining tech that arrived via ruins ahead of any researched tech" do
+    event("Chile", "tech_from_ruins", 3, tech: "TECH_POTTERY")
+    event(nil, "tech_researched", 6, civs: %w[Chile], tech: "TECH_MINING")
+
+    assert_equal "TECH_MINING", strategy.first_tech("Chile")
+  end
+
   test "closed_opening is nil for a civ that never opened a branch" do
     assert_nil strategy.closed_opening("Chile")
   end
