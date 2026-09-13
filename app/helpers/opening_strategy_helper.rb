@@ -86,7 +86,9 @@ module OpeningStrategyHelper
   end
 
   def opening_strategy_caravans(row)
-    turn = row[:caravans_to_capital][:first_turn]
-    turn ? turn.to_s : "&mdash;".html_safe
+    caravans = row[:caravans_to_capital]
+    return "&mdash;".html_safe unless caravans[:first_turn]
+
+    "#{caravans[:first_turn]} (×#{caravans[:routes].size})"
   end
 end

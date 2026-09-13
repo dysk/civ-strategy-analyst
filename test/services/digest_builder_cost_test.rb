@@ -162,7 +162,7 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
     event("Rome", "pantheon_founded", 3, city: "Rome Capital", belief: "BELIEF_GOD_OF_WAR")
     event("Rome", "religion_founded", 7, religion: "RELIGION_CHRISTIANITY", holy_city: "Rome Capital", beliefs: %w[BELIEF_TITHE])
     event("Rome", "policy_branch_adopted", 5, branch: "POLICY_BRANCH_TRADITION")
-    KeyMomentDetector::BRANCH_POLICIES["POLICY_BRANCH_TRADITION"].each_with_index do |policy, index|
+    LekmodBranchPolicies::BRANCHES["POLICY_BRANCH_TRADITION"].each_with_index do |policy, index|
       event("Rome", "policy_adopted", 6 + index, policy: policy)
     end
     event("Greece", "tech_researched", 4, team: 2, civs: %w[Greece], tech: "TECH_METAL_CASTING")

@@ -58,7 +58,9 @@ class DigestBuilderTest < ActiveSupport::TestCase
 
   test "includes opening strategy classification per civ" do
     event("Rome", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
-    event("Rome", "policy_adopted", 40, policy: "POLICY_TRADITION_FINISHER")
+    LekmodBranchPolicies::BRANCHES["POLICY_BRANCH_TRADITION"].each_with_index do |policy, index|
+      event("Rome", "policy_adopted", 20 + index * 5, policy: policy)
+    end
 
     digest = DigestBuilder.new(@game).call
 

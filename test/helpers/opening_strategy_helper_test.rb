@@ -116,11 +116,19 @@ class OpeningStrategyHelperTest < ActionView::TestCase
     assert_equal "&mdash;", opening_strategy_universities({ universities: [] })
   end
 
-  test "opening_strategy_caravans reports the turn the first caravan reached the capital" do
-    assert_equal "12", opening_strategy_caravans({ caravans_to_capital: { first_turn: 12 } })
+  test "opening_strategy_caravans reports the turn of the first caravan and how many arrived" do
+    row = { caravans_to_capital: { first_turn: 12, routes: [ { turn: 12 }, { turn: 20 }, { turn: 35 } ] } }
+
+    assert_equal "12 (×3)", opening_strategy_caravans(row)
+  end
+
+  test "opening_strategy_caravans reports a single caravan the same way as several" do
+    row = { caravans_to_capital: { first_turn: 12, routes: [ { turn: 12 } ] } }
+
+    assert_equal "12 (×1)", opening_strategy_caravans(row)
   end
 
   test "opening_strategy_caravans has nothing to report when no caravan ever arrived" do
-    assert_equal "&mdash;", opening_strategy_caravans({ caravans_to_capital: { first_turn: nil } })
+    assert_equal "&mdash;", opening_strategy_caravans({ caravans_to_capital: { first_turn: nil, routes: [] } })
   end
 end

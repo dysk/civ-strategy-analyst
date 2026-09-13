@@ -356,7 +356,9 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     game = Game.create!(name: "Opening Strategy Game")
     game.players.create!(civ: "Chile")
     event(game, "Chile", "policy_branch_adopted", 11, "branch" => "POLICY_BRANCH_TRADITION")
-    event(game, "Chile", "policy_adopted", 40, "policy" => "POLICY_TRADITION_FINISHER")
+    LekmodBranchPolicies::BRANCHES["POLICY_BRANCH_TRADITION"].each_with_index do |policy, index|
+      event(game, "Chile", "policy_adopted", 20 + index * 5, "policy" => policy)
+    end
     event(game, nil, "tech_researched", 5, "team" => 1, "civs" => [ "Chile" ], "tech" => "TECH_MINING")
 
     get game_projections_url(game)

@@ -23,15 +23,20 @@ class OpeningStrategy
     @timeline.techs(civ).find { |entry| entry[:source] == :research || entry[:tech] == "TECH_MINING" }&.fetch(:tech)
   end
 
+  # The game log never fires a distinct "finisher policy adopted" event, so
+  # a branch closes once all five of LekmodBranchPolicies::BRANCHES' member
+  # policies for it have been adopted - the same signal
+  # KeyMomentDetector#policy_branch_completions uses.
   def closed_opening(civ)
     opening = opened(civ)
     return unless opening
 
-    finisher_policy = finisher_policy_for(opening[:name])
-    finished = finished_at(civ, finisher_policy)
+    policies = LekmodBranchPolicies::BRANCHES.fetch(opening[:name], [])
+    adopted = @timeline.policies(civ).select { |e| e[:type] == :policy_adopted && policies.include?(e[:name]) }
+    finished_turn = adopted.map { |e| e[:turn] }.max if policies.any? && (policies - adopted.map { |e| e[:name] }).empty?
 
-    { branch: opening[:name], opened_turn: opening[:turn], finisher_policy: finisher_policy,
-      finished_turn: finished&.fetch(:turn), turns_to_close: finished && finished[:turn] - opening[:turn] }
+    { branch: opening[:name], opened_turn: opening[:turn],
+      finished_turn: finished_turn, turns_to_close: finished_turn && finished_turn - opening[:turn] }
   end
 
   # docs/ideal-opening.md "Worker theft — two independent paths", Path A: a
@@ -293,14 +298,6 @@ class OpeningStrategy
 
   def opened(civ)
     @timeline.policies(civ).find { |entry| entry[:type] == :branch_adopted }
-  end
-
-  def finisher_policy_for(branch)
-    branch.sub("POLICY_BRANCH_", "POLICY_") + "_FINISHER"
-  end
-
-  def finished_at(civ, finisher_policy)
-    @timeline.policies(civ).find { |entry| entry[:type] == :policy_adopted && entry[:name] == finisher_policy }
   end
 
   def first_built_items(civ)

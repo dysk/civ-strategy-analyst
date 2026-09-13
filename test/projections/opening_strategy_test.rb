@@ -66,53 +66,73 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_nil strategy.closed_opening("Chile")
   end
 
-  test "closed_opening reports turns_to_close once the branch's finisher is adopted" do
+  # The game log never fires a distinct "finisher policy adopted" event
+  # under any id - KeyMomentDetector::BRANCH_POLICIES already establishes
+  # that a branch closes when all five of its ordinary policies have been
+  # adopted, and closed_opening reuses that same signal rather than
+  # guessing at a finisher policy id that doesn't appear in any log.
+  test "closed_opening reports turns_to_close once every branch policy is adopted" do
     event("Chile", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
-    event("Chile", "policy_adopted", 87, policy: "POLICY_TRADITION_FINISHER")
+    event("Chile", "policy_adopted", 20, policy: "POLICY_LEGALISM")
+    event("Chile", "policy_adopted", 40, policy: "POLICY_LANDED_ELITE")
+    event("Chile", "policy_adopted", 60, policy: "POLICY_MONARCHY")
+    event("Chile", "policy_adopted", 75, policy: "POLICY_OLIGARCHY")
+    event("Chile", "policy_adopted", 87, policy: "POLICY_ARISTOCRACY")
 
     assert_equal(
-      { branch: "POLICY_BRANCH_TRADITION", opened_turn: 11, finisher_policy: "POLICY_TRADITION_FINISHER",
-        finished_turn: 87, turns_to_close: 76 },
+      { branch: "POLICY_BRANCH_TRADITION", opened_turn: 11, finished_turn: 87, turns_to_close: 76 },
       strategy.closed_opening("Chile")
     )
   end
 
-  test "closed_opening leaves finished_turn and turns_to_close nil while the tree is still open" do
+  test "closed_opening leaves finished_turn and turns_to_close nil while any branch policy remains unadopted" do
     event("Chile", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
+    event("Chile", "policy_adopted", 20, policy: "POLICY_LEGALISM")
+    event("Chile", "policy_adopted", 40, policy: "POLICY_LANDED_ELITE")
+    event("Chile", "policy_adopted", 60, policy: "POLICY_MONARCHY")
+    event("Chile", "policy_adopted", 75, policy: "POLICY_OLIGARCHY")
 
     result = strategy.closed_opening("Chile")
 
-    assert_equal "POLICY_TRADITION_FINISHER", result[:finisher_policy]
     assert_nil result[:finished_turn]
     assert_nil result[:turns_to_close]
   end
 
-  # A policy from the same branch is not the branch closing - only its
-  # own finisher is.
-  test "closed_opening ignores an ordinary policy from the same branch" do
+  # A policy adopted under a different branch never counts toward this
+  # branch's five.
+  test "closed_opening ignores a policy adopted under a different branch" do
     event("Chile", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
-    event("Chile", "policy_adopted", 20, policy: "POLICY_ARISTOCRACY")
+    event("Chile", "policy_adopted", 20, policy: "POLICY_LEGALISM")
+    event("Chile", "policy_adopted", 25, policy: "POLICY_WARRIOR_CODE")
 
     assert_nil strategy.closed_opening("Chile")[:finished_turn]
   end
 
-  # The finisher id is derived from the branch name rather than looked up
-  # in a per-branch table, so a branch whose finisher is missing from a
-  # given mod version's ids.yml (Liberty, in db/lekmod/34.15) still
-  # resolves correctly - ids.yml carries display names, not whether an
-  # event was logged.
-  test "closed_opening derives the finisher policy id for Liberty" do
+  test "closed_opening reports turns_to_close for a Liberty opening" do
     event("Bolivia", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
-    event("Bolivia", "policy_adopted", 90, policy: "POLICY_LIBERTY_FINISHER")
+    event("Bolivia", "policy_adopted", 10, policy: "POLICY_REPUBLIC")
+    event("Bolivia", "policy_adopted", 30, policy: "POLICY_COLLECTIVE_RULE")
+    event("Bolivia", "policy_adopted", 50, policy: "POLICY_CITIZENSHIP")
+    event("Bolivia", "policy_adopted", 70, policy: "POLICY_REPRESENTATION")
+    event("Bolivia", "policy_adopted", 90, policy: "POLICY_MERITOCRACY")
 
     assert_equal 84, strategy.closed_opening("Bolivia")[:turns_to_close]
   end
 
-  test "closed_opening derives the finisher policy id for Honor and Piety" do
+  test "closed_opening reports turns_to_close for Honor and Piety openings" do
     event("Rome", "policy_branch_adopted", 30, branch: "POLICY_BRANCH_HONOR")
-    event("Rome", "policy_adopted", 95, policy: "POLICY_HONOR_FINISHER")
+    event("Rome", "policy_adopted", 35, policy: "POLICY_WARRIOR_CODE")
+    event("Rome", "policy_adopted", 50, policy: "POLICY_PROFESSIONAL_ARMY")
+    event("Rome", "policy_adopted", 65, policy: "POLICY_MILITARY_CASTE")
+    event("Rome", "policy_adopted", 80, policy: "POLICY_DISCIPLINE")
+    event("Rome", "policy_adopted", 95, policy: "POLICY_MILITARY_TRADITION")
+
     event("Egypt", "policy_branch_adopted", 40, branch: "POLICY_BRANCH_PIETY")
-    event("Egypt", "policy_adopted", 140, policy: "POLICY_PIETY_FINISHER")
+    event("Egypt", "policy_adopted", 50, policy: "POLICY_ORGANIZED_RELIGION")
+    event("Egypt", "policy_adopted", 70, policy: "POLICY_REFORMATION")
+    event("Egypt", "policy_adopted", 90, policy: "POLICY_MANDATE_OF_HEAVEN")
+    event("Egypt", "policy_adopted", 110, policy: "POLICY_FREE_RELIGION")
+    event("Egypt", "policy_adopted", 140, policy: "POLICY_THEOCRACY")
 
     assert_equal 65, strategy.closed_opening("Rome")[:turns_to_close]
     assert_equal 100, strategy.closed_opening("Egypt")[:turns_to_close]
@@ -266,7 +286,11 @@ class OpeningStrategyTest < ActiveSupport::TestCase
   # is turns after the finisher, not turns from game start.
   test "national_college reports turns_after_finisher for a Liberty opening" do
     event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
-    event("Chile", "policy_adopted", 90, policy: "POLICY_LIBERTY_FINISHER")
+    event("Chile", "policy_adopted", 10, policy: "POLICY_REPUBLIC")
+    event("Chile", "policy_adopted", 30, policy: "POLICY_COLLECTIVE_RULE")
+    event("Chile", "policy_adopted", 50, policy: "POLICY_CITIZENSHIP")
+    event("Chile", "policy_adopted", 70, policy: "POLICY_REPRESENTATION")
+    event("Chile", "policy_adopted", 90, policy: "POLICY_MERITOCRACY")
     event("Chile", "building_constructed", 95, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
 
     assert_equal(
@@ -277,7 +301,11 @@ class OpeningStrategyTest < ActiveSupport::TestCase
 
   test "national_college reports a negative turns_after_finisher when built before the Liberty tree closes" do
     event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
-    event("Chile", "policy_adopted", 90, policy: "POLICY_LIBERTY_FINISHER")
+    event("Chile", "policy_adopted", 10, policy: "POLICY_REPUBLIC")
+    event("Chile", "policy_adopted", 30, policy: "POLICY_COLLECTIVE_RULE")
+    event("Chile", "policy_adopted", 50, policy: "POLICY_CITIZENSHIP")
+    event("Chile", "policy_adopted", 70, policy: "POLICY_REPRESENTATION")
+    event("Chile", "policy_adopted", 90, policy: "POLICY_MERITOCRACY")
     event("Chile", "building_constructed", 80, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
 
     assert_equal(-10, strategy.national_college("Chile")[:turns_after_finisher])
@@ -285,6 +313,7 @@ class OpeningStrategyTest < ActiveSupport::TestCase
 
   test "national_college leaves turns_after_finisher nil for a Liberty tree not yet closed" do
     event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
+    event("Chile", "policy_adopted", 10, policy: "POLICY_REPUBLIC")
     event("Chile", "building_constructed", 80, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
 
     assert_nil strategy.national_college("Chile")[:turns_after_finisher]
