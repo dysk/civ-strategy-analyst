@@ -81,10 +81,76 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal 100, strategy.closed_opening("Egypt")[:turns_to_close]
   end
 
+  # docs/ideal-opening.md "Worker theft — two independent paths", Path A:
+  # a war declared on a city-state whose first casualty is its worker,
+  # taken alive rather than killed.
+  test "worker_raids reports a war that opened by capturing a city-state worker" do
+    session_started(city_states: %w[Zurich])
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Chile], defender_team: 2, defender_civs: %w[Zurich])
+    event("Zurich", "unit_lost", 42, unit: "UNIT_WORKER", killed_by: "Chile")
+    event(nil, "peace_made", 44, team_a: 1, team_a_civs: %w[Chile], team_b: 2, team_b_civs: %w[Zurich])
+
+    assert_equal(
+      [ { city_state: "Zurich", declared_turn: 40, captured_turn: 42, peace_turn: 44 } ],
+      strategy.worker_raids("Chile")
+    )
+  end
+
+  test "worker_raids leaves peace_turn nil for a raid that never made peace" do
+    session_started(city_states: %w[Zurich])
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Chile], defender_team: 2, defender_civs: %w[Zurich])
+    event("Zurich", "unit_lost", 42, unit: "UNIT_WORKER", killed_by: "Chile")
+
+    assert_nil strategy.worker_raids("Chile").first[:peace_turn]
+  end
+
+  # The war precondition matters: a war against a full civilization that
+  # happens to cost it a worker is not a city-state raid.
+  test "worker_raids ignores a war against a civilization that is not a city-state" do
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Chile], defender_team: 2, defender_civs: %w[Greece])
+    event("Greece", "unit_lost", 42, unit: "UNIT_WORKER", killed_by: "Chile")
+
+    assert_equal [], strategy.worker_raids("Chile")
+  end
+
+  test "worker_raids ignores a war the civ fought as defender" do
+    session_started(city_states: %w[Zurich])
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Zurich], defender_team: 2, defender_civs: %w[Chile])
+    event("Zurich", "unit_lost", 42, unit: "UNIT_WORKER", killed_by: "Chile")
+
+    assert_equal [], strategy.worker_raids("Chile")
+  end
+
+  test "worker_raids ignores a war against a city-state where nothing changed hands" do
+    session_started(city_states: %w[Zurich])
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Chile], defender_team: 2, defender_civs: %w[Zurich])
+    event(nil, "peace_made", 44, team_a: 1, team_a_civs: %w[Chile], team_b: 2, team_b_civs: %w[Zurich])
+
+    assert_equal [], strategy.worker_raids("Chile")
+  end
+
+  # A soldier traded first makes this a real war against the city-state,
+  # not a declare-war-grab-worker-make-peace raid, even though a worker
+  # was taken later in the same war.
+  test "worker_raids ignores a war whose first casualty was a soldier, not the worker" do
+    session_started(city_states: %w[Zurich])
+    event(nil, "war_declared", 40, attacker_team: 1, attacker_civs: %w[Chile], defender_team: 2, defender_civs: %w[Zurich])
+    event(nil, "unit_killed", 41, killer: "Zurich", victim: "Chile", unit: "UNIT_WARRIOR")
+    event("Zurich", "unit_lost", 42, unit: "UNIT_WORKER", killed_by: "Chile")
+
+    assert_equal [], strategy.worker_raids("Chile")
+  end
+
   private
 
   def strategy
     @strategy ||= OpeningStrategy.new(@game)
+  end
+
+  def session_started(city_states:)
+    @seq += 1
+    payload = { "event" => "session_started", "turn" => 0, "city_states" => city_states.map { |civ| { "civ" => civ } } }
+    @game.game_events.create!(seq: @seq, session_index: 0, turn: 0, event_type: "session_started", payload: payload)
   end
 
   def event(civ, event_type, turn, extra = {})

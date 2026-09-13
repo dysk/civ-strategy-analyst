@@ -218,7 +218,17 @@ classification above exists to carry.
 ## Suggested next step
 
 Iteration 1 (the finisher-policy turn, via `OpeningStrategy`) is done —
-see "Classifying the opening" above and `docs/plan.md`. The war-raid
-worker capture (Path A above) is the next cleanest starting point, since
-it also reads entirely off a projection that already exists
-(`WarCasualties`).
+see "Classifying the opening" above and `docs/plan.md`.
+
+**Implemented**: `OpeningStrategy#worker_raids` (Path A above). One
+adjustment from the pseudocode: `PlayerTimeline#wars(civ)` hands out a
+one-sided `{turn_declared, opponents, role}` shape, not the
+`{turn, attacker_civs, defender_civs}` shape `WarCasualties` reads, so
+`worker_raids` rebuilds the latter from the civ and its opponents before
+calling `first_blood`. Everything else matches the doc: only wars where
+the civ is `:attacker`, only where the opponent is in
+`game.city_state_civs`, and only where `first_blood` names a captured
+`UNIT_WORKER` — a soldier traded first makes it a real war, not a raid.
+
+Bullying (Path B) is the next cleanest starting point, then National
+College timing.
