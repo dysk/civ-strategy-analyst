@@ -98,7 +98,7 @@ None of it requires a change to `civ-narrative-logger`.
 | Workers per city | `unit_trained`/`unit_created` (`UNIT_WORKER`) ÷ city count at that turn | empire-wide ratio only — the log has no per-city worker assignment |
 | Caravans feeding the capital | `trade_route_established`, `type == "food"`, `to_city == capital` | already close to what `TradeRoutes#by_destination` computes (own routes by type) |
 | Good wonders | `building_constructed` where `wonder == "world"` | already covered by `Wonders`/`WonderRaces` |
-| Wide: close city spacing | `city_founded` (x, y) for the civ's own cities + `HexGrid` (already used by `CapitalProximity`) | no projection exists yet; mechanical extension of `CapitalProximity`'s own pattern to same-civ pairs instead of cross-civ pairs |
+| Wide: close city spacing | `EmpireGeometry#series(civ)` | already computed — each entry's `mean_spacing` is the empire-wide average distance from a city to its nearest neighbour, via the same `HexGrid` distance `CapitalProximity` uses |
 | National College timing | `building_constructed` (`BUILDING_NATIONAL_COLLEGE` + civ-unique variants, e.g. `BUILDING_ISRAEL_NATIONAL_COLLEGE`) | see below |
 
 ## Worker theft — two independent paths
@@ -202,10 +202,6 @@ classification above exists to carry.
 
 ## Known gaps
 
-- **Own-city spacing** (the wide criterion) has no projection yet. Nothing
-  blocks writing one — same coordinates, same `HexGrid` class
-  `CapitalProximity` already uses, just paired within one civ's own cities
-  instead of across civs.
 - **Workers per city** is only ever an empire-wide ratio (`worker count ÷
   city count` at a turn). The game does not log which city a worker is
   assigned to, so no per-city figure is recoverable.
@@ -291,7 +287,8 @@ unimplemented:
 - Good wonder targets (this one may already be free: cross-check against
   the existing `Wonders`/`WonderRaces` projections before writing anything
   new)
-- Wide: close city spacing (no projection yet — see "Known gaps")
+- Wide: close city spacing (already computed by `EmpireGeometry#series`,
+  just needs wiring into `OpeningStrategy`)
 
 And structurally: the tall/wide split is still a placeholder for the
 planned Tradition/Liberty/Honor/Piety per-branch threshold table. All the
