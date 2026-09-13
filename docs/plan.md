@@ -588,7 +588,7 @@ from `india-diplo`, and the three open questions (annex boundary, third-party
 ally, what makes a control change a moment rather than churn) are in the
 "Proposed extension" section of `docs/buffer-city.md`.
 
-## Plan: ideal opening — feasibility and detection (in progress)
+## Plan: ideal opening — feasibility and detection (implemented; A/B pending a real log)
 
 Status: iteration 1 implemented 2026-09-13 (commit `9594588`), planned in
 detail in `docs/ideal-opening.md`. `OpeningStrategy`
@@ -630,6 +630,36 @@ All rows above are now implemented (see `docs/ideal-opening.md`).
 separate Tradition/Liberty/Honor/Piety threshold table planned;
 `#branch` is used only for the exceptions that genuinely need it (e.g.
 Liberty's National College timing).
+
+**Digest + prompt, implemented 2026-09-13.** `OpeningStrategy` sat
+unwired since the iteration above — every method tested directly, nothing
+reading it through `DigestBuilder`. `opening_strategy` is now a top-level
+digest key alongside `early_game`, one entry per civ bundling every
+checklist method (`branch`, `closed_opening`, `first_tech`,
+`opening_scouts`, `worker_raids`, `bullied_workers`, `national_college`,
+`playstyle`, `good_wonders`, `workers_per_city`, `unhappy_turns`,
+`early_libraries`, `universities`, `caravans_to_capital`). `city_spacing`
+isn't a separate field — `playstyle` already carries its `mean_spacing`,
+the only part of it the checklist reads. `DigestBuilderCostTest` gained
+`OpeningStrategy` in `PROJECTIONS` (one construction per digest, same as
+every other projection); its flat per-civ size moved the cost fixture from
+187 to 263 bytes/turn/civ, so `MAX_DIGEST_BYTES_PER_TURN_PER_CIV` moved
+from 250 to 350, keeping the same headroom ratio — a fixed cost matters
+more on the fixture's twenty turns than it will on a real, longer game.
+
+The prompt gains two additions, following the same pattern as
+`early_game`: a paragraph in "How to weigh the signals" teaching the
+digest shape and, in particular, that `playstyle.style` (not `branch`)
+picks which style-specific band of the checklist applies to
+`good_wonders`, `workers_per_city` and `caravans_to_capital`, and that a
+checklist miss with a timeline explanation (a shrine between the opening
+two scouts, a niche start) is not automatically a defect; and a paragraph
+in "Per-Player Strategic Verdict" folding `opening_strategy.<civ>` into
+the existing early-game assessment as the "how well" beside `early_game`'s
+"when," rather than a new report section. No new heading — the prompt's
+own hard constraint against adding sections applies here too. The A/B is
+pending a fresh `bin/civ analyze` run, same as every other feature above —
+`analyses.digest` is a frozen snapshot.
 
 ## Plan: import at the logger's new volume (implemented)
 

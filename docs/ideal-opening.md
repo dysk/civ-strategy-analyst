@@ -1,8 +1,11 @@
 # Ideal opening — feasibility and detection plan
 
-Status: **every per-criterion feasibility row implemented** (2026-09-13) —
-`OpeningStrategy` (`app/projections/opening_strategy.rb`) now covers the
-full checklist below, see "What's left" for what remains structurally.
+Status: **every per-criterion feasibility row implemented, and wired into
+the digest and prompt** (2026-09-13) — `OpeningStrategy`
+(`app/projections/opening_strategy.rb`) covers the full checklist below,
+and `DigestBuilder` exposes it as the top-level `opening_strategy` digest
+key (see `docs/plan.md`'s "Digest + prompt" note for the wiring detail);
+see "What's left" for what remains structurally.
 This is stage 4 of
 `docs/early-game-boundary.md` ("a reference model of an ideal opening"),
 deliberately left out of scope there so it could be designed against

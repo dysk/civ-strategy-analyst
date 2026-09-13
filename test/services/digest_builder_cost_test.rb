@@ -30,12 +30,20 @@ class DigestBuilderCostTest < ActiveSupport::TestCase
   # prevent: a section carrying a row per city per turn scales with the
   # product and crosses this immediately, while one carrying a row per war,
   # per race or per capture does not move it at all.
-  MAX_DIGEST_BYTES_PER_TURN_PER_CIV = 250
+  #
+  # `opening_strategy` (docs/ideal-opening.md) is the same kind of section as
+  # `victory_progress` or `city_states`: flat, one entry per civ, unrelated
+  # to how many turns the game runs. It moves this fixture from 187 to 263
+  # because twenty turns is little to divide a flat cost by; on a real,
+  # longer game it barely registers. 350 keeps the same headroom over 263
+  # that 250 kept over 187.
+  MAX_DIGEST_BYTES_PER_TURN_PER_CIV = 350
   PROJECTIONS = [
     MetricSeries, PlayerTimeline, SpaceshipTimeline, MapBounds, EarlyGame,
     CapitalsTimeline, CapitalProximity, BufferCities, InfluenceTimeline,
     CongressTimeline, EmpireGeometry, ArmyComposition, WonderRaces, CityValue,
-    Espionage, TradeRoutes, YieldAttribution, ResearchBeelines, ResourceShortages, Deals, Religion
+    Espionage, TradeRoutes, YieldAttribution, ResearchBeelines, ResourceShortages, Deals, Religion,
+    OpeningStrategy
   ].freeze
 
   # Capital distances are measured twice on purpose: once on the wrapped map,

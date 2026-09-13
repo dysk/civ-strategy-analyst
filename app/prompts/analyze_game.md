@@ -201,6 +201,42 @@ deadline is scaled by `game_speed`, a quick game running at two thirds of
 standard - so read them only against the other civilizations in this
 game.
 
+`opening_strategy` grades each civilization against a checklist of known-good
+Civ 5 openings, inside the same window `early_game.<civ>.end_turn` closes:
+`branch` is the policy branch it opened into, and `closed_opening` gives
+`opened_turn`, `finished_turn` and `turns_to_close` for that branch's
+finisher policy - both null for a civilization that never adopted one.
+`playstyle.style` (`"tall"`, `"wide"`, or null when a tie at exactly six
+cities leaves it undecided) is not itself a verdict, but it picks which of
+the checklist's two style-specific bands applies to everything else in this
+section: `good_wonders.targets` is the universal wonder list plus whichever
+style's list playstyle names (a wonder built off the other style's list
+doesn't count); `workers_per_city.ratio` should be read against roughly 1-1.5
+for wide and 2 for tall; `caravans_to_capital` only matters for a tall
+opening, since wide play does not lean on feeding a capital. A null style
+grades against the universal wonder list only, and says nothing about worker
+ratio or caravans - neither band is known to apply.
+
+The rest reports plain facts, not pre-made judgments, and several of the
+checklist's own rules carry an explicit exception the timeline can confirm
+or fail to confirm: `opening_scouts.category` (`opened_with_two_scouts`,
+`two_scouts_interrupted`, `one_scout`, `no_scouts`) and `first_tech` not
+being Mining are only worth flagging as a miss when nothing else in the
+timeline explains the choice - `opening_scouts.interrupted_by` names what
+was built instead, and a shrine or an early unique unit there can be a
+deliberate pantheon rush or a niche start rather than a mistake.
+`worker_raids` and `bullied_workers` are two independent ways a civilization
+stole a city-state's worker; an empty list means it didn't, not that the
+data is missing. `national_college` compares `built_turn` against
+`target_turn` (turns_early positive means ahead of the turn-100/turn-67
+target) for every branch except Liberty, where the checklist expects it only
+once the tree closes, so `turns_after_finisher` is the figure to read there
+instead, and stays null until `closed_opening.finished_turn` is set.
+`unhappy_turns`, `early_libraries` (a Library under population 6) and
+`universities` (population at the turn a University finished, against a
+target of 10) are counts and lists to weigh alongside everything else in
+the early-game assessment, not moments in their own right.
+
 Some events are races rather than accumulations: only the civilization
 that arrives first collects the full value, and second place is worth
 much less. Founding a pantheon and a religion (`pantheon_foundings` and
@@ -1328,6 +1364,17 @@ window holds nothing - a `game_end` boundary on a log a few turns long,
 or a civilization with no events before its boundary - say the data does
 not cover its opening rather than assembling an assessment out of later
 turns.
+
+Weigh that same window against `opening_strategy.<civ>` - the branch opened
+and how long it took to close, whether it opened with two scouts and
+researched Mining first (or had a timeline reason not to), whether it stole
+a city-state's worker, `national_college` against its target, and, once
+`playstyle.style` is known, the style-appropriate wonder targets, worker
+ratio and (for a tall opening) caravans to the capital. This is the "how
+well" to `early_game`'s "when" - state the checklist facts that stand out
+in either direction, not every field, and never let a null `playstyle.style`
+or a checklist item without a timeline explanation read as a defect on its
+own.
 
 Where `buffer_cities` is applicable and the civilization has a neighbour
 within `neighbour_distance` hexes, that assessment should also say

@@ -56,6 +56,37 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal :game_end, digest[:early_game]["Greece"][:reason]
   end
 
+  test "includes opening strategy classification per civ" do
+    event("Rome", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
+    event("Rome", "policy_adopted", 40, policy: "POLICY_TRADITION_FINISHER")
+
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal %w[Rome Greece], digest[:opening_strategy].keys
+    rome = digest[:opening_strategy]["Rome"]
+    assert_equal "POLICY_BRANCH_TRADITION", rome[:branch]
+    assert_equal 40, rome[:closed_opening][:finished_turn]
+    assert_equal 29, rome[:closed_opening][:turns_to_close]
+  end
+
+  test "opening strategy is nil-shaped for a civ that never opened a policy branch" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_nil digest[:opening_strategy]["Greece"][:branch]
+    assert_nil digest[:opening_strategy]["Greece"][:closed_opening]
+  end
+
+  test "opening strategy per civ carries every checklist field" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_equal(
+      %i[branch closed_opening first_tech opening_scouts worker_raids bullied_workers
+         national_college playstyle good_wonders workers_per_city unhappy_turns
+         early_libraries universities caravans_to_capital],
+      digest[:opening_strategy]["Rome"].keys
+    )
+  end
+
   test "includes a pre-sorted final standings ranking by score" do
     snapshot("Rome", 10, score: 300)
     snapshot("Greece", 10, score: 500)

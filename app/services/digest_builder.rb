@@ -35,6 +35,7 @@ class DigestBuilder
       outcome: outcome,
       standings: standings,
       early_game: early_game.series,
+      opening_strategy: opening_strategy_by_civ,
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
       capital_proximity: CapitalProximity.for(@game).call,
@@ -75,6 +76,33 @@ class DigestBuilder
   end
 
   def early_game = EarlyGame.for(@game)
+
+  # docs/ideal-opening.md's checklist, per civ. city_spacing isn't listed
+  # separately - playstyle already carries its mean_spacing, and that's the
+  # only part of it the checklist reads.
+  def opening_strategy_by_civ
+    strategy = OpeningStrategy.for(@game)
+    civs.index_with { |civ| opening_strategy_for(strategy, civ) }
+  end
+
+  def opening_strategy_for(strategy, civ)
+    {
+      branch: strategy.branch(civ),
+      closed_opening: strategy.closed_opening(civ),
+      first_tech: strategy.first_tech(civ),
+      opening_scouts: strategy.opening_scouts(civ),
+      worker_raids: strategy.worker_raids(civ),
+      bullied_workers: strategy.bullied_workers(civ),
+      national_college: strategy.national_college(civ),
+      playstyle: strategy.playstyle(civ),
+      good_wonders: strategy.good_wonders(civ),
+      workers_per_city: strategy.workers_per_city(civ),
+      unhappy_turns: strategy.unhappy_turns(civ),
+      early_libraries: strategy.early_libraries(civ),
+      universities: strategy.universities(civ),
+      caravans_to_capital: strategy.caravans_to_capital(civ)
+    }
+  end
 
   def map_bounds = MapBounds.for(@game)
 
