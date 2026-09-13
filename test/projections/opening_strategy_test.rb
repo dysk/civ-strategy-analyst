@@ -141,6 +141,47 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal [], strategy.worker_raids("Chile")
   end
 
+  # docs/ideal-opening.md "Worker theft — two independent paths", Path B:
+  # no war needed, just a bullied city-state - the mod's fixed -50
+  # influence penalty for bullying a unit, corroborated by a worker
+  # actually appearing for the civ around that turn.
+  test "bullied_workers reports a friendship drop matching the worker-bully penalty" do
+    event("Chile", "city_state_friendship_changed", 55, city_state: "Zurich", old_friendship: 30, new_friendship: -20)
+    event("Chile", "unit_created", 55, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal(
+      [ { turn: 55, city_state: "Zurich", delta: -50 } ],
+      strategy.bullied_workers("Chile")
+    )
+  end
+
+  test "bullied_workers matches a delta within tolerance of the fixed penalty" do
+    event("Chile", "city_state_friendship_changed", 55, city_state: "Zurich", old_friendship: 30, new_friendship: -18)
+    event("Chile", "unit_created", 56, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal(-48, strategy.bullied_workers("Chile").first[:delta])
+  end
+
+  test "bullied_workers ignores a friendship drop that doesn't match the worker-bully penalty" do
+    event("Chile", "city_state_friendship_changed", 55, city_state: "Zurich", old_friendship: 30, new_friendship: 15)
+    event("Chile", "unit_created", 55, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal [], strategy.bullied_workers("Chile")
+  end
+
+  test "bullied_workers ignores a matching delta with no corroborating worker" do
+    event("Chile", "city_state_friendship_changed", 55, city_state: "Zurich", old_friendship: 30, new_friendship: -20)
+
+    assert_equal [], strategy.bullied_workers("Chile")
+  end
+
+  test "bullied_workers ignores a worker that appeared too many turns away from the friendship drop" do
+    event("Chile", "city_state_friendship_changed", 55, city_state: "Zurich", old_friendship: 30, new_friendship: -20)
+    event("Chile", "unit_created", 60, unit: "UNIT_WORKER", x: 1, y: 1)
+
+    assert_equal [], strategy.bullied_workers("Chile")
+  end
+
   private
 
   def strategy

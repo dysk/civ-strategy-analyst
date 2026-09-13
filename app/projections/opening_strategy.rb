@@ -47,7 +47,35 @@ class OpeningStrategy
     end
   end
 
+  # docs/ideal-opening.md "Worker theft — two independent paths", Path B:
+  # no war needed, just a city-state bullied for a unit. The mod's bully
+  # penalties are fixed constants (-15 influence for gold, -50 for a
+  # unit), so a friendship delta near -50 is checked against that exact
+  # number rather than calibrated from the game's own data. Corroborated
+  # against a worker actually appearing for the civ around that turn,
+  # since a friendship swing near -50 could in principle come from
+  # something else entirely.
+  BULLY_WORKER_PENALTY = -50
+  TOLERANCE = 3
+  CORROBORATION_WINDOW = 1
+
+  def bullied_workers(civ)
+    @timeline.city_states(civ).select { |entry| entry[:type] == :friendship_changed }.filter_map do |entry|
+      delta = entry[:new_friendship] - entry[:old_friendship]
+      next unless (delta - BULLY_WORKER_PENALTY).abs <= TOLERANCE
+      next unless worker_appeared?(civ, entry[:turn])
+
+      { turn: entry[:turn], city_state: entry[:city_state], delta: delta }
+    end
+  end
+
   private
+
+  def worker_appeared?(civ, turn)
+    @game.event_log.of_type("unit_created").any? do |event|
+      event.civ == civ && event.payload["unit"] == "UNIT_WORKER" && (event.turn - turn).abs <= CORROBORATION_WINDOW
+    end
+  end
 
   def war_casualties = @war_casualties ||= WarCasualties.for(@game)
 

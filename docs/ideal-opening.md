@@ -230,5 +230,14 @@ the civ is `:attacker`, only where the opponent is in
 `game.city_state_civs`, and only where `first_blood` names a captured
 `UNIT_WORKER` — a soldier traded first makes it a real war, not a raid.
 
-Bullying (Path B) is the next cleanest starting point, then National
-College timing.
+**Implemented**: `OpeningStrategy#bullied_workers` (Path B above), reading
+`PlayerTimeline#city_states` rather than the raw log directly, since it
+already parses `city_state_friendship_changed` into the
+`{turn, city_state, old_friendship, new_friendship}` shape this needs.
+Matches a friendship delta within `TOLERANCE` of the fixed `-50` bully
+penalty, then requires a `UNIT_WORKER` `unit_created` for the civ within
+one turn as corroboration — the delta band alone can't rule out some
+other friendship swing landing in the same range by coincidence.
+
+Both worker-theft paths from the checklist are now implemented. National
+College timing is the next cleanest per-criterion item.
