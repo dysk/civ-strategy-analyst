@@ -21,12 +21,9 @@ class OpeningStrategyHelperTest < ActionView::TestCase
     assert_equal "&mdash;", opening_strategy_closed({ closed_opening: nil })
   end
 
-  test "opening_strategy_first_tech names the tech plainly when it is Mining" do
+  test "opening_strategy_first_tech names whatever tech came first" do
     assert_equal "Mining", opening_strategy_first_tech({ first_tech: "TECH_MINING" })
-  end
-
-  test "opening_strategy_first_tech flags a first tech other than Mining" do
-    assert_equal "Pottery (not Mining)", opening_strategy_first_tech({ first_tech: "TECH_POTTERY" })
+    assert_equal "Pottery", opening_strategy_first_tech({ first_tech: "TECH_POTTERY" })
   end
 
   test "opening_strategy_first_tech has nothing to name for a civ with no logged tech" do
@@ -75,6 +72,12 @@ class OpeningStrategyHelperTest < ActionView::TestCase
     row = { national_college: { built_turn: 58, target_turn: 67, turns_early: 9, turns_after_finisher: nil } }
 
     assert_equal "t. 58 (9 early)", opening_strategy_national_college(row)
+  end
+
+  test "opening_strategy_national_college reports a negative turns_early as turns late" do
+    row = { national_college: { built_turn: 159, target_turn: 67, turns_early: -92, turns_after_finisher: nil } }
+
+    assert_equal "t. 159 (92 late)", opening_strategy_national_college(row)
   end
 
   test "opening_strategy_national_college reports turns after the finisher for a Liberty opening" do

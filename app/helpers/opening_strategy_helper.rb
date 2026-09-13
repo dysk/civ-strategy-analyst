@@ -27,8 +27,7 @@ module OpeningStrategyHelper
     tech = row[:first_tech]
     return "&mdash;".html_safe unless tech
 
-    label = strip_prefix_and_titleize(tech, "TECH_")
-    tech == "TECH_MINING" ? label : "#{label} (not Mining)"
+    strip_prefix_and_titleize(tech, "TECH_")
   end
 
   def opening_strategy_scouts(row)
@@ -60,9 +59,13 @@ module OpeningStrategyHelper
     college = row[:national_college]
     return "&mdash;".html_safe unless college[:built_turn]
     return "t. #{college[:built_turn]} (#{college[:turns_after_finisher]} after finisher)" if college[:turns_after_finisher]
-    return "t. #{college[:built_turn]} (#{college[:turns_early]} early)" if college[:turns_early]
+    return "t. #{college[:built_turn]} (#{national_college_early_label(college[:turns_early])})" if college[:turns_early]
 
     "t. #{college[:built_turn]}"
+  end
+
+  def national_college_early_label(turns_early)
+    turns_early.negative? ? "#{-turns_early} late" : "#{turns_early} early"
   end
 
   def opening_strategy_wonders(row)
