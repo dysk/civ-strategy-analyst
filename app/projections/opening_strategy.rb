@@ -119,7 +119,23 @@ class OpeningStrategy
       interrupted_by: interrupted_by(items, scout_indices), items: items }
   end
 
+  # docs/ideal-opening.md "Wide: close city spacing" - EmpireGeometry
+  # already computes mean_spacing on every founding or capture; this
+  # samples it as of the same early-game boundary EarlyGame uses to mark
+  # the end of the opening, so a city founded after the opening already
+  # closed doesn't count toward how the opening was played.
+  def city_spacing(civ)
+    boundary_turn = EarlyGame.for(@game).for_civ(civ)[:end_turn]
+    entry = geometry.series(civ).select { |e| e[:turn] <= boundary_turn }.last
+
+    return { turn: nil, cities: nil, mean_spacing: nil } unless entry
+
+    entry.slice(:turn, :cities, :mean_spacing)
+  end
+
   private
+
+  def geometry = @geometry ||= EmpireGeometry.for(@game)
 
   def national_college_target_turn
     GameSpeed.for(@game).turns(NATIONAL_COLLEGE_TARGET_STANDARD_TURNS)

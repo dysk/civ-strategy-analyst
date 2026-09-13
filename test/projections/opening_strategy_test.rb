@@ -392,6 +392,34 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal :opened_with_two_scouts, strategy.opening_scouts("Shoshone")[:category]
   end
 
+  # docs/ideal-opening.md "Wide: close city spacing" - EmpireGeometry
+  # already computes mean_spacing on every founding or capture; this
+  # samples it as of the same early-game boundary EarlyGame uses to mark
+  # the end of the opening.
+  test "city_spacing reports mean_spacing as of the early-game boundary" do
+    event(nil, "tech_researched", 15, civs: %w[Chile], tech: "TECH_EDUCATION")
+    event("Chile", "building_constructed", 20, building: "BUILDING_WORKSHOP", city: "Santiago")
+    event("Chile", "city_founded", 1, x: 10, y: 10)
+    event("Chile", "city_founded", 5, x: 14, y: 10)
+
+    assert_equal({ turn: 5, cities: 2, mean_spacing: 4.0 }, strategy.city_spacing("Chile"))
+  end
+
+  # A city founded after the opening already closed says nothing about how
+  # the opening was played.
+  test "city_spacing ignores a city founded after the early-game boundary" do
+    event(nil, "tech_researched", 15, civs: %w[Chile], tech: "TECH_EDUCATION")
+    event("Chile", "building_constructed", 20, building: "BUILDING_WORKSHOP", city: "Santiago")
+    event("Chile", "city_founded", 1, x: 10, y: 10)
+    event("Chile", "city_founded", 30, x: 14, y: 10)
+
+    assert_equal({ turn: 1, cities: 1, mean_spacing: nil }, strategy.city_spacing("Chile"))
+  end
+
+  test "city_spacing is nil-shaped for a civ that never founded a city" do
+    assert_equal({ turn: nil, cities: nil, mean_spacing: nil }, strategy.city_spacing("Chile"))
+  end
+
   private
 
   def strategy

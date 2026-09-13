@@ -273,6 +273,15 @@ used as a scout substitute by intent. The log can't distinguish that
 intent from an ordinary early Jaguar build, so it isn't counted as a
 scout — noted here rather than guessed at in code.
 
+**Implemented**: `OpeningStrategy#city_spacing` (Wide: close city spacing,
+above). No new detection — `EmpireGeometry#series(civ)` already computes
+`mean_spacing` on every founding or capture. This samples that series at
+the same early-game boundary `EarlyGame#for_civ` uses to mark the end of
+the opening (`end_turn`), taking the last entry at or before that turn, so
+a city founded after the opening already closed doesn't count toward how
+the opening was played. Nil-shaped (`turn`/`cities`/`mean_spacing` all
+`nil`) for a civ that never founded a city.
+
 ## What's left
 
 Everything else in the "Per-criterion feasibility" table above is still
@@ -287,13 +296,12 @@ unimplemented:
 - Good wonder targets (this one may already be free: cross-check against
   the existing `Wonders`/`WonderRaces` projections before writing anything
   new)
-- Wide: close city spacing (already computed by `EmpireGeometry#series`,
-  just needs wiring into `OpeningStrategy`)
 
 And structurally: the tall/wide split is still a placeholder for the
 planned Tradition/Liberty/Honor/Piety per-branch threshold table. All the
 implemented criteria above (`first_tech`, `opening_scouts`, `closed_opening`,
-worker theft, National College) are branch-agnostic or already keyed off
-`OpeningStrategy#branch`, so that swap stays cheap when it happens — it
-mainly affects the still-unimplemented city-count, worker-ratio, and
-wonder criteria, which are the ones actually keyed to tall/wide today.
+worker theft, National College, city spacing) are branch-agnostic or
+already keyed off `OpeningStrategy#branch`, so that swap stays cheap when
+it happens — it mainly affects the still-unimplemented city-count and
+worker-ratio criteria, plus wonders, which are the ones actually keyed to
+tall/wide today.
