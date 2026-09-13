@@ -203,19 +203,37 @@ game.
 
 `opening_strategy` grades each civilization against a checklist of known-good
 Civ 5 openings, inside the same window `early_game.<civ>.end_turn` closes:
-`branch` is the policy branch it opened into, and `closed_opening` gives
-`opened_turn`, `finished_turn` and `turns_to_close` for that branch's
-finisher policy - both null for a civilization that never adopted one.
+`branch` is the policy branch it opened into. No branch is inherently the
+better opening - each can be played well or badly - so `branch` on its own
+is a fact to report, not a verdict; it names only the branch ID, not which
+policies inside it were taken or in what order; read `timelines.<civ>`'s
+policy events alongside it for that. `closed_opening` gives `opened_turn`,
+`finished_turn` and `turns_to_close` - simply `finished_turn` minus
+`opened_turn` - for that branch's finisher policy, both null for a
+civilization that never adopted one. The mechanism is uniform across every
+branch this ruleset uses: each has exactly one finisher policy and none is
+structurally faster or slower to close, so a difference in `turns_to_close`
+between two civilizations reflects how each played its opening, not which
+branch it chose.
 `playstyle.style` (`"tall"`, `"wide"`, or null when a tie at exactly six
 cities leaves it undecided) is not itself a verdict, but it picks which of
 the checklist's two style-specific bands applies to everything else in this
 section: `good_wonders.targets` is the universal wonder list plus whichever
 style's list playstyle names (a wonder built off the other style's list
-doesn't count); `workers_per_city.ratio` should be read against roughly 1-1.5
-for wide and 2 for tall; `caravans_to_capital` only matters for a tall
-opening, since wide play does not lean on feeding a capital. A null style
-grades against the universal wonder list only, and says nothing about worker
-ratio or caravans - neither band is known to apply.
+doesn't count). Judge these the same way as wonders generally - by fit and
+opportunity cost, not by how many appear on the list - and weigh that cost
+more heavily here than later in the game: a wonder built in the opening
+competed directly against a settler or a worker at the moment an empire can
+least afford to divert production from either.
+`workers_per_city.ratio` should be read against roughly 1-1.5
+for wide and 2 for tall. `caravans_to_capital` only matters for a tall
+opening, since wide play does not lean on feeding a capital; it carries the
+full list of `routes` (each a `turn` and `from_city`) rather than a bare
+count, plus `first_turn` for the earliest one. At least one such route is
+the baseline expectation for a tall opening, and more is better - each
+additional caravan is more food compounding into the capital's growth. A
+null style grades against the universal wonder list only, and says nothing
+about worker ratio or caravans - neither band is known to apply.
 
 The rest reports plain facts, not pre-made judgments, and several of the
 checklist's own rules carry an explicit exception the timeline can confirm
@@ -226,16 +244,35 @@ timeline explains the choice - `opening_scouts.interrupted_by` names what
 was built instead, and a shrine or an early unique unit there can be a
 deliberate pantheon rush or a niche start rather than a mistake.
 `worker_raids` and `bullied_workers` are two independent ways a civilization
-stole a city-state's worker; an empty list means it didn't, not that the
-data is missing. `national_college` compares `built_turn` against
-`target_turn` (turns_early positive means ahead of the turn-100/turn-67
-target) for every branch except Liberty, where the checklist expects it only
-once the tree closes, so `turns_after_finisher` is the figure to read there
-instead, and stays null until `closed_opening.finished_turn` is set.
-`unhappy_turns`, `early_libraries` (a Library under population 6) and
-`universities` (population at the turn a University finished, against a
-target of 10) are counts and lists to weigh alongside everything else in
-the early-game assessment, not moments in their own right.
+stole a city-state's worker - a strong aggressive opening move, since a
+stolen worker is a free unit that saves the hammers of building one; an
+empty list means it didn't, not that the data is missing.
+
+`national_college` compares `built_turn` against `target_turn` - turn 67 on
+a quick-speed game, turn 100 on any other speed - for every branch except
+Liberty, where the checklist expects it only once the tree closes, so
+`turns_after_finisher` is the figure to read there instead, and stays null
+until `closed_opening.finished_turn` is set. Earlier is better in both
+readings: for `turns_early`, positive means ahead of target and the larger
+the number the stronger the early science investment; for
+`turns_after_finisher`, a small number means the college went up close
+behind the finisher, a large one means the civilization ran without it for
+a long stretch after Liberty closed.
+
+`unhappy_turns`, `early_libraries` and `universities` are counts and lists
+to weigh alongside everything else in the early-game assessment, not
+moments in their own right. Fewer `unhappy_turns` is better, with 0 the
+ideal; a turn or two is not automatically a mismanaged empire, since it can
+be the mark of a deliberate rush to claim a city site ahead of a rival
+rather than of careless growth. `early_libraries` (a Library under
+population 6) is a premature, costly decision - production spent on the
+building before the city had grown enough to make full use of it, at the
+expense of growth or a settler it could have bought instead. `universities`
+gives the population at the turn a University finished, against a target
+of 10: population at or above 10 by completion is desired, since that is
+roughly the point a city has citizens to spare from working tiles for
+specialists, making the building worth its investment sooner rather than
+sitting underused in a city too small to staff it.
 
 Some events are races rather than accumulations: only the civilization
 that arrives first collects the full value, and second place is worth
