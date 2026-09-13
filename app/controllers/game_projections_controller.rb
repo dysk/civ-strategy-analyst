@@ -9,6 +9,7 @@ class GameProjectionsController < ApplicationController
     @geometry_rows = geometry_rows
     @early_game_rows = early_game.series.values
     @early_game_deadline_turn = early_game.deadline_turn
+    @opening_strategy_rows = opening_strategy_rows
     @key_moment_groups = key_moment_groups
     @wonder_races = wonder_races_view
     @army_rows = army_rows
@@ -51,6 +52,37 @@ class GameProjectionsController < ApplicationController
   end
 
   def early_game = EarlyGame.for(@game)
+
+  # docs/ideal-opening.md's checklist, one row per civ. worker_raids and
+  # bullied_workers collapse into a single count here - the projections
+  # page names how many workers were stolen, not the two paths that can do
+  # it; the digest carries both lists in full for the model to read.
+  def opening_strategy_rows
+    strategy = OpeningStrategy.for(@game)
+
+    @game.players.order(:id).map do |player|
+      opening_strategy_row(strategy, player.civ)
+    end
+  end
+
+  def opening_strategy_row(strategy, civ)
+    {
+      civ: civ,
+      branch: strategy.branch(civ),
+      closed_opening: strategy.closed_opening(civ),
+      first_tech: strategy.first_tech(civ),
+      opening_scouts: strategy.opening_scouts(civ),
+      playstyle: strategy.playstyle(civ),
+      worker_theft: strategy.worker_raids(civ).size + strategy.bullied_workers(civ).size,
+      national_college: strategy.national_college(civ),
+      good_wonders: strategy.good_wonders(civ),
+      workers_per_city: strategy.workers_per_city(civ),
+      unhappy_turns: strategy.unhappy_turns(civ),
+      early_libraries: strategy.early_libraries(civ),
+      universities: strategy.universities(civ),
+      caravans_to_capital: strategy.caravans_to_capital(civ)
+    }
+  end
 
   # One row per losing contender, plus the winner's own row, so a wonder
   # with two rivals reads top to bottom.

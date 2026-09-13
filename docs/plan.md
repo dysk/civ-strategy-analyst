@@ -661,6 +661,24 @@ own hard constraint against adding sections applies here too. The A/B is
 pending a fresh `bin/civ analyze` run, same as every other feature above —
 `analyses.digest` is a frozen snapshot.
 
+**UI, implemented 2026-09-13.** The digest page (`analyses#digest`)
+needed no change - it renders every key of `@analysis.digest` generically,
+so `opening_strategy` already appears there. The projections page
+(`GameProjectionsController#show`) is not generic; it gained a new
+"Opening Strategy" section, `<h2 id="opening-strategy">` placed between
+Early Game and Wonder Races, following Early Game's own precedent of a
+single-row-per-civ table rather than a dedicated drill-down page - there
+is no series over time here either. `opening_strategy_rows` builds one row
+per civ from `OpeningStrategy.for(@game)`, collapsing `worker_raids` and
+`bullied_workers` into one `worker_theft` count for the table (the digest
+still carries both lists in full for the model). `OpeningStrategyHelper`
+formats each cell - a branch name, a turns-early/turns-after-finisher
+figure, a built/target fraction - with `"&mdash;"` for a checklist item
+that never applied, never a verdict of its own. Verified rendered against
+game #21: Babylon's National College at turn 43 reads "24 early" against
+the quick-speed target of 67, matching `docs/ideal-opening.md`'s own
+worked example.
+
 ## Plan: import at the logger's new volume (implemented)
 
 `civ-narrative-logger` is adding stock fields to `snapshot` and a

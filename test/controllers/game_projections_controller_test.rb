@@ -352,6 +352,23 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
+  test "show grades each civilization's opening against the ideal-opening checklist" do
+    game = Game.create!(name: "Opening Strategy Game")
+    game.players.create!(civ: "Chile")
+    event(game, "Chile", "policy_branch_adopted", 11, "branch" => "POLICY_BRANCH_TRADITION")
+    event(game, "Chile", "policy_adopted", 40, "policy" => "POLICY_TRADITION_FINISHER")
+    event(game, nil, "tech_researched", 5, "team" => 1, "civs" => [ "Chile" ], "tech" => "TECH_MINING")
+
+    get game_projections_url(game)
+
+    assert_response :success
+    assert_equal(
+      [ "Chile", "—", "Tradition", "29 (t. 40)", "Mining", "no scouts", "—", "—",
+        "0/4", "—", "0", "0", "—", "—" ],
+      css_select("table.opening-strategy tbody tr").first.css("td").map(&:text)
+    )
+  end
+
   test "show displays what each civilization's army is made of" do
     game = Game.create!(name: "Army Game")
     game.players.create!(civ: "Rome")
@@ -820,7 +837,7 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
 
     get game_projections_url(game)
 
-    %w[capital-distances buffer-cities empire-geometry early-game wonder-races military
+    %w[capital-distances buffer-cities empire-geometry early-game opening-strategy wonder-races military
        cultural-standing world-congress victory-progress espionage diplomatic-ties
        trade-routes religion yield-attribution resource-shortages deals city-states
        key-moments].each do |id|
@@ -851,10 +868,10 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     get game_projections_url(game)
 
     assert_response :success
-    %w[table.capital-distances table.geometry table.early-game table.army table.city-census table.cultural
-       table.congress table.victory-progress table.espionage table.diplomatic-ties table.trade-routes
-       table.religion-holds table.yield-attribution table.resource-shortages table.deals
-       table.city-state-traits].each do |selector|
+    %w[table.capital-distances table.geometry table.early-game table.opening-strategy table.army
+       table.city-census table.cultural table.congress table.victory-progress table.espionage
+       table.diplomatic-ties table.trade-routes table.religion-holds table.yield-attribution
+       table.resource-shortages table.deals table.city-state-traits].each do |selector|
       disclosure = disclosure_wrapping(selector)
       assert disclosure, "#{selector} is not inside a details.disclosure"
       assert_nil disclosure["open"], "#{selector} is expanded by default"

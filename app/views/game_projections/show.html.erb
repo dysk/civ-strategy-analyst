@@ -168,6 +168,60 @@
   </details>
 <% end %>
 
+<%= section_heading("Opening Strategy", "opening-strategy") %>
+<% if @opening_strategy_rows.empty? %>
+  <p class="empty-state">No players in this game.</p>
+<% else %>
+  <details class="disclosure">
+    <summary>Opening strategy table</summary>
+    <p class="note">
+      Checklist facts from docs/ideal-opening.md, inside each civ's own early
+      game window. Not a verdict: a miss with a reason visible elsewhere in
+      the timeline (a niche start, a pantheon rush) is not a defect.
+    </p>
+    <table class="opening-strategy">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>Style</th>
+          <th>Branch</th>
+          <th>Closed</th>
+          <th>First Tech</th>
+          <th>Scouts</th>
+          <th>Worker Theft</th>
+          <th>Nat'l College</th>
+          <th>Good Wonders</th>
+          <th>Workers/City</th>
+          <th>Unhappy Turns</th>
+          <th>Early Libraries</th>
+          <th>Universities</th>
+          <th>Caravans</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @opening_strategy_rows.each do |row| %>
+          <tr>
+            <td><%= row[:civ] %></td>
+            <td><%= opening_strategy_style(row) %></td>
+            <td><%= opening_strategy_branch(row) %></td>
+            <td><%= opening_strategy_closed(row) %></td>
+            <td><%= opening_strategy_first_tech(row) %></td>
+            <td><%= opening_strategy_scouts(row) %></td>
+            <td><%= opening_strategy_worker_theft(row) %></td>
+            <td><%= opening_strategy_national_college(row) %></td>
+            <td><%= opening_strategy_wonders(row) %></td>
+            <td><%= opening_strategy_workers_per_city(row) %></td>
+            <td><%= row[:unhappy_turns][:count] %></td>
+            <td><%= row[:early_libraries].size %></td>
+            <td><%= opening_strategy_universities(row) %></td>
+            <td><%= opening_strategy_caravans(row) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
+<% end %>
+
 <%= section_heading("Wonder Races", "wonder-races") %>
 <% if !@wonder_races[:applicable] %>
   <p class="empty-state">Wonder races need per-city snapshots, which this game's log does not carry.</p>
