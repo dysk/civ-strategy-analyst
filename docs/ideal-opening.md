@@ -28,7 +28,7 @@ The checklist, as given:
   specific niche build
 - never go unhappy, or at minimum minimize the number of unhappy turns
 - no Library in a city under population 6, unless rushing National College
-- aim for population 10–12 in the city finishing University
+- aim for population 10 or more in the city finishing University
 
 **Tall (4–6 cities):**
 - 2 workers per city
@@ -94,7 +94,7 @@ None of it requires a change to `civ-narrative-logger`.
 | Close the opening tree fast | `policy_adopted` where `policy` matches `POLICY_*_FINISHER` (confirmed ids in `db/lekmod/34.15/ids.yml`, e.g. `POLICY_TRADITION_FINISHER`, `POLICY_LIBERTY_FINISHER`) | finisher turn minus the branch's `policy_branch_adopted` turn |
 | Never/minimize unhappy turns | `snapshot.happiness` (empire `GetExcessHappiness()`), via `MetricSeries#values("happiness", civ)` | count turns with `happiness < 0` inside the early-game window |
 | No Library under population 6 | `building_constructed` (`BUILDING_LIBRARY`) + `CityCensus#snapshot(civ, turn)` | flag when that city's population at the build turn is below 6 |
-| University at population 10–12 | `building_constructed` (`BUILDING_UNIVERSITY`, plus `EarlyGame::REPLACED_BY`-style civ variants) + `CityCensus` | population of the building city at the build turn |
+| University at population 10 or more | `building_constructed` (`BUILDING_UNIVERSITY`, plus `EarlyGame::REPLACED_BY`-style civ variants) + `CityCensus` | population of the building city at the build turn |
 | City count (tall 4–6 / wide 6–10) | `city_founded`/`city_captured`/`city_lost` | straightforward count over time — implemented as `OpeningStrategy#playstyle`, see "Classifying the opening" |
 | Workers per city | `unit_trained`/`unit_created` (`UNIT_WORKER`) ÷ city count at that turn | empire-wide ratio only — the log has no per-city worker assignment |
 | Caravans feeding the capital | `trade_route_established`, `type == "food"`, `to_city == capital` | already close to what `TradeRoutes#by_destination` computes (own routes by type) |
@@ -331,13 +331,28 @@ run since the previous one rather than every unsampled turn in between, so
 turns. Returns `{ count:, turns: }`, zero-shaped for a civ with no
 happiness snapshots at all.
 
+**Implemented**: `OpeningStrategy#early_libraries` (no Library under
+population 6, back in "General, any opening"). Reads `BUILDING_LIBRARY`
+plus its civ-unique replacements (`BUILDING_AKKAD_LIBRARY`,
+`BUILDING_ROYAL_LIBRARY`), joins each against `CityCensus#snapshot` at the
+build turn, and returns only the violations — a Library with no population
+snapshot yet is skipped rather than flagged, since there's nothing to
+compare against. The "unless rushing National College" exception from the
+checklist isn't modeled here; this reports the raw fact, and a report
+layer can cross-reference `#national_college` if it needs the exception.
+
+**Implemented**: `OpeningStrategy#universities` (University at population
+10 or more, back in "General, any opening"). Reads `BUILDING_UNIVERSITY`
+plus `EarlyGame::REPLACED_BY.fetch("BUILDING_UNIVERSITY")` rather than
+duplicating that list, and returns every University built with its
+population and an `on_target` flag (`population >= 10`), `nil` when no
+population snapshot covers the build turn.
+
 ## What's left
 
 Everything else in the "Per-criterion feasibility" table above is still
 unimplemented:
 
-- No Library under population 6
-- University built at population 10–12
 - Workers per city (empire-wide ratio only — see "Known gaps")
 - Caravans feeding the capital
 

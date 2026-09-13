@@ -593,6 +593,109 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal({ count: 0, turns: [] }, strategy.unhappy_turns("Chile"))
   end
 
+  # docs/ideal-opening.md "General, any opening": no Library in a city
+  # under population 6, unless rushing National College.
+  test "early_libraries flags a Library built in a city under population 6" do
+    library("Chile", 30, "Santiago")
+    city_snapshot("Chile", 30, "Santiago", 5)
+
+    assert_equal(
+      [ { turn: 30, city: "Santiago", population: 5 } ],
+      strategy.early_libraries("Chile")
+    )
+  end
+
+  test "early_libraries ignores a Library built at population 6 or above" do
+    library("Chile", 30, "Santiago")
+    city_snapshot("Chile", 30, "Santiago", 6)
+
+    assert_equal [], strategy.early_libraries("Chile")
+  end
+
+  test "early_libraries carries the nearest population snapshot at or before the build turn" do
+    city_snapshot("Chile", 25, "Santiago", 4)
+    library("Chile", 30, "Santiago")
+
+    assert_equal 4, strategy.early_libraries("Chile").first[:population]
+  end
+
+  test "early_libraries ignores a Library with no population snapshot at or before the build turn" do
+    library("Chile", 30, "Santiago")
+
+    assert_equal [], strategy.early_libraries("Chile")
+  end
+
+  test "early_libraries recognizes a civ-unique Library replacement" do
+    event("Assyria", "building_constructed", 30, building: "BUILDING_ROYAL_LIBRARY", city: "Nineveh")
+    city_snapshot("Assyria", 30, "Nineveh", 5)
+
+    assert_equal(
+      [ { turn: 30, city: "Nineveh", population: 5 } ],
+      strategy.early_libraries("Assyria")
+    )
+  end
+
+  test "early_libraries reports only the early ones among several Libraries" do
+    library("Chile", 30, "Santiago")
+    city_snapshot("Chile", 30, "Santiago", 5)
+    library("Chile", 40, "Valparaiso")
+    city_snapshot("Chile", 40, "Valparaiso", 8)
+
+    assert_equal(
+      [ { turn: 30, city: "Santiago", population: 5 } ],
+      strategy.early_libraries("Chile")
+    )
+  end
+
+  # docs/ideal-opening.md "General, any opening": aim for population 10+
+  # in the city finishing University.
+  test "universities reports population and on_target true at population 10" do
+    university("Chile", 50, "Santiago")
+    city_snapshot("Chile", 50, "Santiago", 10)
+
+    assert_equal(
+      [ { turn: 50, city: "Santiago", population: 10, on_target: true } ],
+      strategy.universities("Chile")
+    )
+  end
+
+  test "universities reports on_target false for a population below 10" do
+    university("Chile", 50, "Santiago")
+    city_snapshot("Chile", 50, "Santiago", 8)
+
+    assert_equal false, strategy.universities("Chile").first[:on_target]
+  end
+
+  test "universities reports on_target true for a population above 10" do
+    university("Chile", 50, "Santiago")
+    city_snapshot("Chile", 50, "Santiago", 15)
+
+    assert_equal true, strategy.universities("Chile").first[:on_target]
+  end
+
+  test "universities recognizes a civ-unique University replacement" do
+    event("Siam", "building_constructed", 50, building: "BUILDING_WAT", city: "Ayutthaya")
+    city_snapshot("Siam", 50, "Ayutthaya", 11)
+
+    assert_equal(
+      [ { turn: 50, city: "Ayutthaya", population: 11, on_target: true } ],
+      strategy.universities("Siam")
+    )
+  end
+
+  test "universities leaves population and on_target nil with no population snapshot" do
+    university("Chile", 50, "Santiago")
+
+    result = strategy.universities("Chile").first
+
+    assert_nil result[:population]
+    assert_nil result[:on_target]
+  end
+
+  test "universities is empty for a civ that never built a University" do
+    assert_equal [], strategy.universities("Chile")
+  end
+
   private
 
   def happiness(civ, turn, value)
@@ -612,6 +715,21 @@ class OpeningStrategyTest < ActiveSupport::TestCase
 
   def wonder(civ, turn, building)
     event(civ, "building_constructed", turn, building: building, wonder: "world", city: "Capital")
+  end
+
+  def library(civ, turn, city)
+    event(civ, "building_constructed", turn, building: "BUILDING_LIBRARY", city: city)
+  end
+
+  def university(civ, turn, city)
+    event(civ, "building_constructed", turn, building: "BUILDING_UNIVERSITY", city: city)
+  end
+
+  def city_snapshot(civ, turn, city, population)
+    payload = { "event" => "city_snapshot", "turn" => turn, "civ" => civ, "city" => city, "population" => population }
+    @game.game_events.create!(
+      seq: @seq += 1, session_index: 0, turn: turn, event_type: "city_snapshot", civ: civ, payload: payload
+    )
   end
 
   def strategy

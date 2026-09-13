@@ -186,9 +186,49 @@ class OpeningStrategy
     { count: turns.size, turns: turns }
   end
 
+  # docs/ideal-opening.md "General, any opening": no Library in a city
+  # under population 6, unless rushing National College. Civ-unique Library
+  # replacements (Akkad, Assyria) count the same as the base building.
+  LIBRARY_BUILDINGS = %w[BUILDING_LIBRARY BUILDING_AKKAD_LIBRARY BUILDING_ROYAL_LIBRARY].freeze
+  LIBRARY_MIN_POPULATION = 6
+
+  def early_libraries(civ)
+    buildings_of(civ, LIBRARY_BUILDINGS).filter_map do |b|
+      population = population_at(civ, b[:city], b[:turn])
+      next unless population && population < LIBRARY_MIN_POPULATION
+
+      { turn: b[:turn], city: b[:city], population: population }
+    end
+  end
+
+  # docs/ideal-opening.md "General, any opening": aim for population 10 or
+  # more in the city finishing University. Reuses EarlyGame::REPLACED_BY's
+  # own University list rather than duplicating it.
+  UNIVERSITY_TARGET_POPULATION = 10
+
+  def universities(civ)
+    building_ids = [ "BUILDING_UNIVERSITY", *EarlyGame::REPLACED_BY.fetch("BUILDING_UNIVERSITY") ]
+
+    buildings_of(civ, building_ids).map do |b|
+      population = population_at(civ, b[:city], b[:turn])
+      { turn: b[:turn], city: b[:city], population: population,
+        on_target: population && population >= UNIVERSITY_TARGET_POPULATION }
+    end
+  end
+
   private
 
   def geometry = @geometry ||= EmpireGeometry.for(@game)
+
+  def city_census = @city_census ||= CityCensus.for(@game)
+
+  def buildings_of(civ, building_ids)
+    @timeline.buildings(civ).select { |b| building_ids.include?(b[:building]) }
+  end
+
+  def population_at(civ, city, turn)
+    city_census.snapshot(civ, turn).find { |c| c[:city] == city }&.fetch(:population)
+  end
 
   def style_for(civ, count)
     return unless count
