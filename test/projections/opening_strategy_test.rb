@@ -182,6 +182,77 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal [], strategy.bullied_workers("Chile")
   end
 
+  # docs/ideal-opening.md "National College timing": turn 100 on standard
+  # speed, reusing GameSpeed rather than a hardcoded per-speed constant.
+  test "national_college reports turns_early when built ahead of the standard-speed target" do
+    event("Chile", "building_constructed", 90, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
+
+    assert_equal(
+      { built_turn: 90, target_turn: 100, turns_early: 10, turns_after_finisher: nil },
+      strategy.national_college("Chile")
+    )
+  end
+
+  test "national_college reports a negative turns_early when built past the target" do
+    event("Chile", "building_constructed", 120, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
+
+    assert_equal(-20, strategy.national_college("Chile")[:turns_early])
+  end
+
+  # turn 67 on quick speed is the same 2/3 factor GameSpeed already applies
+  # elsewhere, not a separate hardcoded number.
+  test "national_college scales the target turn to quick speed" do
+    @game.update!(game_speed: "GAMESPEED_QUICK")
+    event("Chile", "building_constructed", 60, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
+
+    result = strategy.national_college("Chile")
+
+    assert_equal 67, result[:target_turn]
+    assert_equal 7, result[:turns_early]
+  end
+
+  test "national_college recognizes a civ-unique replacement building" do
+    event("Israel", "building_constructed", 95, building: "BUILDING_ISRAEL_NATIONAL_COLLEGE", city: "Jerusalem")
+
+    assert_equal 95, strategy.national_college("Israel")[:built_turn]
+  end
+
+  test "national_college leaves built_turn and turns_early nil when never built" do
+    assert_equal(
+      { built_turn: nil, target_turn: 100, turns_early: nil, turns_after_finisher: nil },
+      strategy.national_college("Chile")
+    )
+  end
+
+  # docs/ideal-opening.md: for a Liberty opening the checklist expects the
+  # National College only after the tree closes, so the meaningful figure
+  # is turns after the finisher, not turns from game start.
+  test "national_college reports turns_after_finisher for a Liberty opening" do
+    event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
+    event("Chile", "policy_adopted", 90, policy: "POLICY_LIBERTY_FINISHER")
+    event("Chile", "building_constructed", 95, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
+
+    assert_equal(
+      { built_turn: 95, target_turn: nil, turns_early: nil, turns_after_finisher: 5 },
+      strategy.national_college("Chile")
+    )
+  end
+
+  test "national_college reports a negative turns_after_finisher when built before the Liberty tree closes" do
+    event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
+    event("Chile", "policy_adopted", 90, policy: "POLICY_LIBERTY_FINISHER")
+    event("Chile", "building_constructed", 80, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
+
+    assert_equal(-10, strategy.national_college("Chile")[:turns_after_finisher])
+  end
+
+  test "national_college leaves turns_after_finisher nil for a Liberty tree not yet closed" do
+    event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
+    event("Chile", "building_constructed", 80, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
+
+    assert_nil strategy.national_college("Chile")[:turns_after_finisher]
+  end
+
   private
 
   def strategy

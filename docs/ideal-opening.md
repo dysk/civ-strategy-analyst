@@ -239,5 +239,12 @@ penalty, then requires a `UNIT_WORKER` `unit_created` for the civ within
 one turn as corroboration — the delta band alone can't rule out some
 other friendship swing landing in the same range by coincidence.
 
-Both worker-theft paths from the checklist are now implemented. National
-College timing is the next cleanest per-criterion item.
+Both worker-theft paths from the checklist are now implemented.
+
+**Implemented**: `OpeningStrategy#national_college` (National College
+timing, above). `BUILDING_ISRAEL_NATIONAL_COLLEGE` is the only civ-unique
+replacement found in `db/lekmod/35.3/buildings.yml`. For any opening other
+than Liberty it compares the build turn against
+`GameSpeed.for(@game).turns(100)` and reports `turns_early`; for Liberty it
+instead reports `turns_after_finisher` against `closed_opening(civ)`, nil
+until the tree actually closes.

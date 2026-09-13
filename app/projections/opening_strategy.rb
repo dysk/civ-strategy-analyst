@@ -69,7 +69,34 @@ class OpeningStrategy
     end
   end
 
+  # docs/ideal-opening.md "National College timing": turn 100 on standard
+  # speed (67 on quick, via the same GameSpeed factor EarlyGame's deadline
+  # uses), measured from game start - except for a Liberty opening, where
+  # the checklist expects it only after the tree closes, so the meaningful
+  # figure there is turns after the finisher instead.
+  NATIONAL_COLLEGE_TARGET_STANDARD_TURNS = 100
+  NATIONAL_COLLEGE_BUILDINGS = %w[BUILDING_NATIONAL_COLLEGE BUILDING_ISRAEL_NATIONAL_COLLEGE].freeze
+
+  def national_college(civ)
+    built = @timeline.buildings(civ).find { |b| NATIONAL_COLLEGE_BUILDINGS.include?(b[:building]) }
+
+    if branch(civ) == "POLICY_BRANCH_LIBERTY"
+      finisher_turn = closed_opening(civ)[:finished_turn]
+      turns_after_finisher = built && finisher_turn && built[:turn] - finisher_turn
+      return { built_turn: built&.fetch(:turn), target_turn: nil, turns_early: nil,
+               turns_after_finisher: turns_after_finisher }
+    end
+
+    target = national_college_target_turn
+    { built_turn: built&.fetch(:turn), target_turn: target,
+      turns_early: built && target - built[:turn], turns_after_finisher: nil }
+  end
+
   private
+
+  def national_college_target_turn
+    GameSpeed.for(@game).turns(NATIONAL_COLLEGE_TARGET_STANDARD_TURNS)
+  end
 
   def worker_appeared?(civ, turn)
     @game.event_log.of_type("unit_created").any? do |event|
