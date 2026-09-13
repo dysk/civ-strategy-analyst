@@ -588,6 +588,46 @@ from `india-diplo`, and the three open questions (annex boundary, third-party
 ally, what makes a control change a moment rather than churn) are in the
 "Proposed extension" section of `docs/buffer-city.md`.
 
+## Plan: ideal opening — feasibility and detection (in progress)
+
+Status: iteration 1 implemented 2026-09-13 (commit `9594588`), planned in
+detail in `docs/ideal-opening.md`. `OpeningStrategy`
+(`app/projections/opening_strategy.rb`) classifies the branch a civ
+opened into (`#branch`, off `PlayerTimeline#policies`' first
+`:branch_adopted` entry) and how long it took to close it
+(`#closed_opening`: `opened_turn`, `finisher_policy`, `finished_turn`,
+`turns_to_close`). The finisher policy id is derived from the branch name
+rather than looked up in a per-branch table — `POLICY_BRANCH_TRADITION` →
+`POLICY_TRADITION_FINISHER` — which also covers Liberty correctly even
+though `db/lekmod/34.15/ids.yml` has no `POLICY_LIBERTY_FINISHER` entry
+(only 35.3 does); ids.yml carries display names, not whether an event was
+logged, so the plan doc's claim that 34.15 "confirms" that id was wrong.
+
+Context: a checklist of known-good Civ 5 openings (2 scouts, Mining
+first, steal workers, close the opening tree fast, never go unhappy, no
+early Library, University at population 10-12, plus tall/wide-specific
+thresholds) can only fire correctly once the civ's actual opening is
+known — half the checklist's rules carry an "unless a specific strategy"
+clause. `OpeningStrategy` is the classification join every later
+per-branch threshold will read.
+
+Remaining iterations (each: failing tests → review → implementation):
+
+- Worker theft, Path A (war-declared-on-a-city-state → captured
+  `UNIT_WORKER`, via `WarCasualties#first_blood`/`#scale`) and Path B
+  (bullying, via `city_state_friendship_changed`'s fixed -50 penalty) —
+  the plan doc already sketches both method bodies.
+- National College timing against `GameSpeed.for(@game).turns(100)`
+  (turn 67 quick / 100 standard), branch-aware for Liberty
+  (turns-after-finisher instead of turns-from-game-start).
+- The remaining per-criterion table rows in `docs/ideal-opening.md`
+  (2 scouts, first tech Mining, unhappy turns, Library/University
+  population thresholds, city count and worker ratio, caravans to the
+  capital, wonder targets, wide city spacing).
+- Replacing the tall/wide placeholder with the four opening-branch groups
+  (Tradition/Liberty/Honor/Piety), each carrying its own threshold table
+  keyed off `OpeningStrategy#branch`.
+
 ## Plan: import at the logger's new volume (implemented)
 
 `civ-narrative-logger` is adding stock fields to `snapshot` and a
