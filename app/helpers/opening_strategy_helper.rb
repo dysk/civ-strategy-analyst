@@ -35,6 +35,18 @@ module OpeningStrategyHelper
     SCOUT_LABELS.fetch(row[:opening_scouts][:category])
   end
 
+  def opening_strategy_items(row)
+    items = row[:opening_scouts][:items]
+    return "&mdash;".html_safe if items.empty?
+
+    items.map { |item| "t#{item[:turn]} #{opening_strategy_item_name(item)}" }.join(", ")
+  end
+
+  def opening_strategy_item_name(item)
+    prefix = item[:kind] == :unit ? "UNIT_" : "BUILDING_"
+    strip_prefix_and_titleize(item[:id], prefix)
+  end
+
   def opening_strategy_style(row)
     style = row[:playstyle][:style]
     style ? style.to_s.titleize : "&mdash;".html_safe

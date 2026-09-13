@@ -40,6 +40,20 @@ class OpeningStrategyHelperTest < ActionView::TestCase
     assert_equal "no scouts", opening_strategy_scouts({ opening_scouts: { category: :no_scouts } })
   end
 
+  test "opening_strategy_items lists the first built items with their turn and kind" do
+    row = { opening_scouts: { items: [
+      { turn: 1, kind: :unit, id: "UNIT_SCOUT" },
+      { turn: 1, kind: :unit, id: "UNIT_SCOUT" },
+      { turn: 5, kind: :building, id: "BUILDING_MONUMENT" }
+    ] } }
+
+    assert_equal "t1 Scout, t1 Scout, t5 Monument", opening_strategy_items(row)
+  end
+
+  test "opening_strategy_items has nothing to list for a civ that built nothing" do
+    assert_equal "&mdash;", opening_strategy_items({ opening_scouts: { items: [] } })
+  end
+
   test "opening_strategy_style titleizes the playstyle" do
     assert_equal "Tall", opening_strategy_style({ playstyle: { style: :tall } })
     assert_equal "Wide", opening_strategy_style({ playstyle: { style: :wide } })

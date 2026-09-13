@@ -363,9 +363,24 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal(
-      [ "Chile", "—", "Tradition", "29 (t. 40)", "Mining", "no scouts", "—", "—",
+      [ "Chile", "—", "Tradition", "29 (t. 40)", "Mining", "no scouts", "—", "—", "—",
         "0/4", "—", "0", "0", "—", "—" ],
       css_select("table.opening-strategy tbody tr").first.css("td").map(&:text)
+    )
+  end
+
+  test "show lists the first four things a civilization built" do
+    game = Game.create!(name: "Opening Build Game")
+    game.players.create!(civ: "Chile")
+    event(game, "Chile", "unit_trained", 1, "unit" => "UNIT_SCOUT")
+    event(game, "Chile", "unit_trained", 1, "unit" => "UNIT_SCOUT")
+    event(game, "Chile", "building_constructed", 5, "building" => "BUILDING_MONUMENT")
+
+    get game_projections_url(game)
+
+    assert_equal(
+      "t1 Scout, t1 Scout, t5 Monument",
+      css_select("table.opening-strategy tbody tr").first.css("td")[6].text
     )
   end
 
