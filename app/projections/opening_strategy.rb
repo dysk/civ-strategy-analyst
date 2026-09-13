@@ -151,6 +151,28 @@ class OpeningStrategy
     { style: style_for(civ, count), city_count: count, mean_spacing: spacing[:mean_spacing], branch: branch(civ) }
   end
 
+  # docs/ideal-opening.md "Good wonder targets": the checklist's wonder
+  # list is really two lists, tall and wide, plus a handful that don't
+  # care about style at all - Great Lighthouse and Colossus are already
+  # gated by the game to a coastal city, so a completed one is proof of
+  # coastal placement on its own. Which style list applies comes from
+  # playstyle, not branch directly, so a Liberty civ that only settled 5
+  # cities is still graded against the tall list. An unresolved style
+  # (Honor/Piety tied at 6) grades against the universal bucket only -
+  # neither style list is known to apply.
+  GOOD_WONDERS = {
+    universal: %w[BUILDING_TEMPLE_ARTEMIS BUILDING_ORACLE BUILDING_GREAT_LIGHTHOUSE BUILDING_COLOSSUS],
+    tall: %w[BUILDING_GREAT_LIBRARY BUILDING_PETRA BUILDING_CHICHEN_ITZA BUILDING_LEANING_TOWER BUILDING_HANGING_GARDEN],
+    wide: %w[BUILDING_PYRAMID BUILDING_STONEHENGE]
+  }.freeze
+
+  def good_wonders(civ)
+    targets = GOOD_WONDERS[:universal] + GOOD_WONDERS.fetch(playstyle(civ)[:style], [])
+    built = @timeline.wonders(civ).map { |wonder| wonder[:building] } & targets
+
+    { targets: targets, built: built }
+  end
+
   private
 
   def geometry = @geometry ||= EmpireGeometry.for(@game)

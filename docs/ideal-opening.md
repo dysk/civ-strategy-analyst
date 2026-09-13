@@ -306,12 +306,9 @@ unimplemented:
 - University built at population 10–12
 - Workers per city (empire-wide ratio only — see "Known gaps")
 - Caravans feeding the capital
-- Good wonder targets
 
-### Good wonder targets — split by style, not by branch
-
-The checklist's wonder list is tall-only; wide has its own, different list,
-and a few wonders don't care about style at all. Three buckets, not one:
+**Implemented**: `OpeningStrategy#good_wonders`. The checklist's wonder
+list is really three buckets, not one:
 
 - **Universal** — Temple of Artemis, Oracle, Great Lighthouse, Colossus.
   The last two are already gated by the game itself: a coastal city is
@@ -321,22 +318,23 @@ and a few wonders don't care about style at all. Three buckets, not one:
   Hanging Gardens.
 - **Wide** — Pyramids, Stonehenge.
 
-Style comes from `OpeningStrategy#playstyle`, not `#branch` directly — a
-civ that opened Liberty but only settled 5 cities played tall, and should
-be graded against the tall list. `WonderRaces`/`Wonders` already resolve a
-`building_constructed` event to a wonder id and display name; this only
-needs `completions` filtered to a civ, joined against whichever bucket
-`playstyle(civ)[:style]` selects (plus the universal bucket, unconditionally).
-
-Left open: what to report for a civ `playstyle` leaves unresolved (Honor
-or Piety at exactly 6 cities). Grading only against the universal bucket
-in that case is the obvious default — worth confirming before writing it.
+Which style bucket applies comes from `#playstyle`, not `#branch` directly
+— a civ that opened Liberty but only settled 5 cities is graded against
+the tall list. An unresolved style (Honor/Piety tied at exactly 6 cities)
+grades against the universal bucket only, since neither style list is
+known to apply. `#good_wonders(civ)` returns `{ targets:, built: }` —
+`targets` is the universal bucket plus whichever style list applies,
+`built` is the subset of the civ's actual wonders (via
+`PlayerTimeline#wonders`) that land on one of those targets. A wonder
+built from the wrong style's list — Stonehenge for a tall civ — is on
+neither, and doesn't count.
 
 And structurally: the tall/wide split is no longer a placeholder — see
 `OpeningStrategy#playstyle` above. What's still missing is the planned
 Tradition/Liberty/Honor/Piety per-branch threshold *table* itself (the
 finer-grained one `playstyle` was never meant to replace, only to feed).
 `first_tech`, `opening_scouts`, `closed_opening`, worker theft, National
-College, city spacing, and `playstyle` are all branch-agnostic or already
-keyed off `#branch`/`#playstyle`, so that table stays cheap to add — it
-mainly affects worker-ratio and the still-unwritten wonder criterion above.
+College, city spacing, `playstyle`, and `good_wonders` are all
+branch-agnostic or already keyed off `#branch`/`#playstyle`, so that table
+stays cheap to add — it mainly affects the still-unimplemented worker-ratio
+criterion.

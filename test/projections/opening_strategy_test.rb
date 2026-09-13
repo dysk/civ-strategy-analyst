@@ -499,6 +499,65 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_nil result[:city_count]
   end
 
+  # docs/ideal-opening.md "Good wonder targets": the checklist's wonder
+  # list splits tall from wide, plus a universal bucket for wonders that
+  # don't care about style at all. Which style bucket applies comes from
+  # playstyle, not branch directly.
+  test "good_wonders grades a tall civ against the universal and tall buckets" do
+    boundary("Chile", 20)
+    found_cities("Chile", 5)
+    wonder("Chile", 10, "BUILDING_TEMPLE_ARTEMIS")
+    wonder("Chile", 12, "BUILDING_GREAT_LIBRARY")
+
+    result = strategy.good_wonders("Chile")
+
+    assert_includes result[:targets], "BUILDING_TEMPLE_ARTEMIS"
+    assert_includes result[:targets], "BUILDING_GREAT_LIBRARY"
+    refute_includes result[:targets], "BUILDING_PYRAMID"
+    assert_equal %w[BUILDING_TEMPLE_ARTEMIS BUILDING_GREAT_LIBRARY], result[:built]
+  end
+
+  test "good_wonders grades a wide civ against the universal and wide buckets" do
+    boundary("Chile", 20)
+    found_cities("Chile", 8)
+    wonder("Chile", 10, "BUILDING_COLOSSUS")
+    wonder("Chile", 12, "BUILDING_PYRAMID")
+
+    result = strategy.good_wonders("Chile")
+
+    assert_includes result[:targets], "BUILDING_COLOSSUS"
+    assert_includes result[:targets], "BUILDING_PYRAMID"
+    refute_includes result[:targets], "BUILDING_GREAT_LIBRARY"
+    assert_equal %w[BUILDING_COLOSSUS BUILDING_PYRAMID], result[:built]
+  end
+
+  # Honor and Piety don't settle a tied city count, so neither the tall
+  # nor the wide list applies - only the universal bucket does.
+  test "good_wonders only grades against the universal bucket when style is unresolved" do
+    boundary("Chile", 20)
+    found_cities("Chile", 6)
+    event("Chile", "policy_branch_adopted", 3, branch: "POLICY_BRANCH_HONOR")
+    wonder("Chile", 10, "BUILDING_ORACLE")
+    wonder("Chile", 12, "BUILDING_GREAT_LIBRARY")
+
+    result = strategy.good_wonders("Chile")
+
+    assert_includes result[:targets], "BUILDING_ORACLE"
+    refute_includes result[:targets], "BUILDING_GREAT_LIBRARY"
+    refute_includes result[:targets], "BUILDING_PYRAMID"
+    assert_equal %w[BUILDING_ORACLE], result[:built]
+  end
+
+  # A wonder from the wrong style's list still isn't a target, even
+  # though it was built.
+  test "good_wonders excludes a wonder that was built but isn't on an applicable list" do
+    boundary("Chile", 20)
+    found_cities("Chile", 5)
+    wonder("Chile", 10, "BUILDING_STONEHENGE")
+
+    assert_equal [], strategy.good_wonders("Chile")[:built]
+  end
+
   private
 
   def boundary(civ, turn)
@@ -508,6 +567,10 @@ class OpeningStrategyTest < ActiveSupport::TestCase
 
   def found_cities(civ, count)
     count.times { |i| event(civ, "city_founded", i + 1, x: 10 + i, y: 10) }
+  end
+
+  def wonder(civ, turn, building)
+    event(civ, "building_constructed", turn, building: building, wonder: "world", city: "Capital")
   end
 
   def strategy
