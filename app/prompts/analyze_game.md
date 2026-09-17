@@ -242,7 +242,12 @@ or fail to confirm: `opening_scouts.category` (`opened_with_two_scouts`,
 being Mining are only worth flagging as a miss when nothing else in the
 timeline explains the choice - `opening_scouts.interrupted_by` names what
 was built instead, and a shrine or an early unique unit there can be a
-deliberate pantheon rush or a niche start rather than a mistake.
+deliberate pantheon rush or a niche start rather than a mistake. Two scouts
+matter because early exploration finds huts, scouts good city sites, reveals
+the surrounding terrain for judging expansion and an opening tech and policy
+path, and meets neighbors and city-states sooner. Mining first matters because it
+reveals hidden Iron and unlocks high-production hill tiles, both of which
+feed directly into early city growth and settler production.
 `worker_raids` and `bullied_workers` are two independent ways a civilization
 stole a city-state's worker - a strong aggressive opening move, since a
 stolen worker is a free unit that saves the hammers of building one; an
