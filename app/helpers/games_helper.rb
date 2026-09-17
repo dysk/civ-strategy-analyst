@@ -54,4 +54,12 @@ module GamesHelper
   def outcome_winner_names(game, outcome)
     game.winner_civs.presence&.join(", ") || outcome[:winner_civ]
   end
+
+  # A log with no t_log at all - from before the logger recorded one - has
+  # nothing to show, same as a blank yield share.
+  def format_play_duration(seconds)
+    return "&mdash;".html_safe unless seconds
+
+    format("%dh %02dm", seconds / 3600, (seconds % 3600) / 60)
+  end
 end

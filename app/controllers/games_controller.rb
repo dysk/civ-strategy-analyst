@@ -11,6 +11,7 @@ class GamesController < ApplicationController
   def show
     @game = Game.find(params[:id])
     @outcome = OutcomeResolver.new(@game).call
+    @duration = GameDuration.for(@game)
     @standings = MetricSeries.for(@game).final_ranking("score")
     @map_bounds = MapBounds.for(@game)
     @buffer_cities = BufferCities.for(@game).call

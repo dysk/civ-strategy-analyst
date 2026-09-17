@@ -6,12 +6,21 @@ class Game < ApplicationRecord
   validates :name, presence: true
 
   PANGAEA = /pangaea|oval/i
+  MAP_SCRIPT_PREFIX = /\AAssets\\Maps\\?/i
 
   # Pangaea puts every player on one landmass with ocean at the map's edges,
   # so the seam the coordinates wrap across is neither a route an army can
   # march nor a place a border can reach: the world has a real east and west.
   def pangaea?
     map_script.to_s.match?(PANGAEA)
+  end
+
+  # The logger records the script's full path under the game's install, which
+  # is the same on everyone's machine and says nothing the file name doesn't.
+  # Stripped here, rather than at import, so a game imported before this
+  # existed reads the same as one imported after.
+  def map_script
+    super&.sub(MAP_SCRIPT_PREFIX, "")
   end
 
   # The minor civilizations, named by the logger when the session started.

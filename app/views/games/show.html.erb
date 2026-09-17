@@ -5,6 +5,12 @@
   <%= @game.map_script %> &middot; <%= @game.map_size %> &middot; <%= @game.game_speed %> &middot;
   max turns: <%= @game.max_turns %>
 </p>
+<p class="subtitle">
+  <%= @duration.turns_played %> turns played
+  <% if @duration.seconds_played %>
+    &middot; <%= format_play_duration(@duration.seconds_played) %>
+  <% end %>
+</p>
 <p>
   <%= link_to "View raw event data", game_events_path(@game) %> &middot;
   <%= link_to "All projections", game_projections_path(@game) %>

@@ -31,6 +31,22 @@ class GameTest < ActiveSupport::TestCase
     refute_predicate Game.new(name: "Test Game"), :pangaea?
   end
 
+  test "strips the Assets\\Maps prefix the log recorded the map script under" do
+    game = Game.new(name: "Test Game", map_script: 'Assets\\Maps\\Lekmap v6.2\\LekmapOvalLegacy.lua')
+
+    assert_equal 'Lekmap v6.2\\LekmapOvalLegacy.lua', game.map_script
+  end
+
+  test "leaves a map script alone when it carries no Assets\\Maps prefix" do
+    game = Game.new(name: "Test Game", map_script: "Continents")
+
+    assert_equal "Continents", game.map_script
+  end
+
+  test "has no map script when the log recorded none" do
+    assert_nil Game.new(name: "Test Game").map_script
+  end
+
   test "names the city-states the logger listed when the session started" do
     game = Game.create!(name: "City-State Game")
     session_started(game, city_states: %w[Zurich Harappa])
