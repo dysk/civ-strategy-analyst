@@ -14,5 +14,5 @@ RubyLLM.configure do |config|
   # is ours, refreshed on demand — see the README.
   config.model_registry_file = Rails.root.join("config/models.json")
 
-  config.default_model = ENV.fetch("CIV_ANALYST_MODEL", "claude-opus-5")
+  config.default_model = ENV.fetch("CIV_ANALYST_MODEL", "claude-opus-5-5")
 end
