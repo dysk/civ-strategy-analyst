@@ -115,7 +115,6 @@ class GameProjectionsController < ApplicationController
       [ "Policies and Ideologies", { "Ideology Unlocks" => moments.ideology_unlocks,
                                      "Policy Branch Adoptions" => moments.policy_branch_adoptions,
                                      "Policy Branch Completions" => moments.policy_branch_completions } ],
-      [ "Ideology Adoptions", { nil => moments.ideology_adoptions } ],
       [ "Tenet Adoptions", { nil => moments.tenet_adoptions } ],
       [ "Army Power Swings", { nil => moments.army_power_swings } ],
       [ "Happiness", { "Happiness Swings" => moments.happiness_swings,

@@ -310,25 +310,9 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     )
   end
 
-  test "ideology_adoptions reports which ideology each civ adopted, ignoring non-ideology branches" do
-    event("Rome", "policy_branch_adopted", 200, branch: "POLICY_BRANCH_FREEDOM")
-    event("Greece", "policy_branch_adopted", 210, branch: "POLICY_BRANCH_ORDER")
-    event("Egypt", "policy_branch_adopted", 190, branch: "POLICY_BRANCH_TRADITION")
-
-    moments = detector.ideology_adoptions
-
-    assert_equal(
-      [
-        { type: :ideology_adopted, turn: 200, civ: "Rome", ideology: "POLICY_BRANCH_FREEDOM" },
-        { type: :ideology_adopted, turn: 210, civ: "Greece", ideology: "POLICY_BRANCH_ORDER" }
-      ],
-      moments
-    )
-  end
-
   test "tenet_adoptions reports policies picked after a civ adopts an ideology, tagged with which ideology" do
     event("Rome", "policy_adopted", 180, policy: "POLICY_LEGALISM")          # before the ideology, not a tenet
-    event("Rome", "policy_branch_adopted", 200, branch: "POLICY_BRANCH_FREEDOM")
+    event("Rome", "policy_branch_unlocked", 200, branch: "POLICY_BRANCH_FREEDOM")
     event("Rome", "policy_adopted", 205, policy: "POLICY_CIVIL_SOCIETY")     # tenet
     event("Rome", "policy_adopted", 220, policy: "POLICY_UNIVERSAL_SUFFRAGE") # tenet
     event("Greece", "policy_adopted", 50, policy: "POLICY_REPUBLIC")         # never adopts an ideology
@@ -342,6 +326,16 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
       ],
       moments
     )
+  end
+
+  test "tenet_adoptions tags a tenet taken after an ideology switch with the new ideology" do
+    event("Rome", "policy_branch_unlocked", 200, branch: "POLICY_BRANCH_FREEDOM")
+    event("Rome", "policy_branch_unlocked", 230, branch: "POLICY_BRANCH_ORDER")
+    event("Rome", "policy_adopted", 235, policy: "POLICY_SOCIALIST_REALISM")
+
+    moment = detector.tenet_adoptions.sole
+
+    assert_equal "POLICY_BRANCH_ORDER", moment[:ideology]
   end
 
   test "policy_branch_adoptions reports which branch each civ adopted, excluding ideology branches" do

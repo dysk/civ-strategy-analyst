@@ -41,7 +41,6 @@ module KeyMomentsHelper
     religion_enhanced: ->(m) { "#{m[:civ]} enhanced #{religion_name(m[:religion])} with #{Array(m[:beliefs]).join(", ")}" },
     reformation_added: ->(m) { "#{m[:civ]} added the reformation belief #{m[:belief]} to #{religion_name(m[:religion])}" },
     ideology_unlocked: ->(m) { "#{m[:civ]} unlocked #{m[:ideology]}" },
-    ideology_adopted: ->(m) { "#{m[:civ]} adopted #{m[:ideology]}" },
     tenet_adopted: ->(m) { "#{m[:civ]} adopted the #{m[:ideology]} tenet #{m[:tenet]}" },
     policy_branch_adopted: ->(m) { "#{m[:civ]} adopted #{m[:branch]}" },
     policy_branch_completed: ->(m) { "#{m[:civ]} completed #{m[:branch]}" },

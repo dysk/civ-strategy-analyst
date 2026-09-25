@@ -106,22 +106,17 @@ class KeyMomentDetector
       .map { |e| { type: :ideology_unlocked, turn: e.turn, civ: e.civ, ideology: e.payload["branch"] } }
   end
 
-  def ideology_adoptions
-    of_type("policy_branch_adopted")
-      .select { |e| IDEOLOGY_BRANCHES.include?(e.payload["branch"]) }
-      .sort_by(&:turn)
-      .map { |e| { type: :ideology_adopted, turn: e.turn, civ: e.civ, ideology: e.payload["branch"] } }
-  end
-
+  # Choosing an ideology logs only its branch unlocking, so a tenet belongs to
+  # the latest ideology its civ unlocked on or before the tenet's turn.
   def tenet_adoptions
-    ideology_by_civ = ideology_adoptions.index_by { |moment| moment[:civ] }
+    unlocks_by_civ = ideology_unlocks.group_by { |moment| moment[:civ] }
 
-    of_type("policy_adopted")
-      .select { |e| ideology_by_civ[e.civ] && e.turn >= ideology_by_civ[e.civ][:turn] }
-      .sort_by(&:turn)
-      .map do |e|
-        { type: :tenet_adopted, turn: e.turn, civ: e.civ, ideology: ideology_by_civ[e.civ][:ideology], tenet: e.payload["policy"] }
-      end
+    of_type("policy_adopted").sort_by(&:turn).filter_map do |e|
+      ideology = unlocks_by_civ.fetch(e.civ, []).select { |unlock| unlock[:turn] <= e.turn }.last
+      next unless ideology
+
+      { type: :tenet_adopted, turn: e.turn, civ: e.civ, ideology: ideology[:ideology], tenet: e.payload["policy"] }
+    end
   end
 
   def policy_branch_adoptions

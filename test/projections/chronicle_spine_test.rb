@@ -118,6 +118,12 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_equal [ :world_wonder ], spine.entries.sole[:moments].map { |moment| moment[:type] }
   end
 
+  test "an ideology chosen is chronicle material" do
+    event("Rome", "policy_branch_unlocked", 150, branch: "POLICY_BRANCH_FREEDOM")
+
+    assert_equal [ :ideology_unlocked ], spine.entries.sole[:moments].map { |moment| moment[:type] }
+  end
+
   test "a national wonder is not chronicle material" do
     event("Rome", "building_constructed", 45, building: "BUILDING_NATIONAL_COLLEGE", city: "Rome", wonder: "national")
 
