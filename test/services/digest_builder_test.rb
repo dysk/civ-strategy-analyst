@@ -318,28 +318,83 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_includes digest[:key_moments].keys, :religion_enhancements
     assert_includes digest[:key_moments].keys, :reformations
     assert_includes digest[:key_moments].keys, :ideology_unlocks
-    assert_includes digest[:key_moments].keys, :ideology_adoptions
-    assert_includes digest[:key_moments].keys, :tenet_adoptions
-    assert_includes digest[:key_moments].keys, :policy_branch_adoptions
     assert_includes digest[:key_moments].keys, :policy_branch_completions
     assert_includes digest[:key_moments].keys, :nuclear_detonations
     assert_includes digest[:key_moments].keys, :city_state_ally_takeovers
     assert_includes digest[:key_moments].keys, :influence_level_reached
     assert_includes digest[:key_moments].keys, :cultural_victory_imminent
-    assert_includes digest[:key_moments].keys, :congress_host_changes
     assert_includes digest[:key_moments].keys, :united_nations_formed
     assert_includes digest[:key_moments].keys, :diplomatic_victory_imminent
-    assert_includes digest[:key_moments].keys, :resolutions_passed
     assert_includes digest[:key_moments].keys, :capital_control_changes
     assert_includes digest[:key_moments].keys, :apollo_completions
     assert_includes digest[:key_moments].keys, :spaceship_part_assemblies
     assert_includes digest[:key_moments].keys, :science_victory_imminent
-    assert_includes digest[:key_moments].keys, :wonder_races
-    assert_includes digest[:key_moments].keys, :wonder_races_lost
     assert_includes digest[:key_moments].keys, :city_state_conquered
     assert_includes digest[:key_moments].keys, :research_rushes
     assert_includes digest[:key_moments].keys, :great_people_first_of_kind
-    assert_includes digest[:key_moments].keys, :great_people_lost
+  end
+
+  test "key moments leave out what another digest key already carries" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_empty digest[:key_moments].keys & %i[
+      wonder_races wonder_races_lost policy_branch_adoptions great_people_lost
+      congress_host_changes resolutions_passed ideology_adoptions tenet_adoptions
+    ]
+  end
+
+  test "timelines leave wars and religion to the key moments" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_empty digest[:timelines]["Rome"].keys & %i[wars religion]
+  end
+
+  test "a war key moment carries the ties standing between the two sides when it was declared" do
+    event("Rome", "embassy_established", 6, other_civ: "Greece")
+    event("Greece", "embassy_established", 6, other_civ: "Rome")
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+
+    war = DigestBuilder.new(@game).call[:key_moments][:wars].sole
+
+    assert_equal(
+      [ { type: "embassy", from_turn: 6, to_turn: 10, civs: %w[Rome Greece] } ],
+      war[:ties_at_declaration]
+    )
+  end
+
+  test "a city-state timeline keeps only friendship when the alliance spans carry the rest" do
+    event(nil, "city_state_snapshot", 5, city_state: "Geneva",
+          relations: [ { "civ" => "Rome", "influence" => 10, "per_turn" => -1.0 } ])
+    event("Rome", "city_state_friendship_changed", 6, city_state: "Geneva", friends: true, old_friendship: 20, new_friendship: 35)
+    event("Rome", "city_state_alliance_changed", 8, city_state: "Geneva", allied: true, old_friendship: 50, new_friendship: 65)
+    event(nil, "city_state_ally_changed", 8, city_state: "Geneva", old_ally: nil, new_ally: "Rome")
+
+    timeline = DigestBuilder.new(@game).call[:timelines]["Rome"][:city_states]
+
+    assert_equal [ :friendship_changed ], timeline.map { |entry| entry[:type] }
+  end
+
+  test "a city-state timeline keeps its alliances when the log carries no city-state snapshots" do
+    event("Rome", "city_state_friendship_changed", 6, city_state: "Geneva", friends: true, old_friendship: 20, new_friendship: 35)
+    event(nil, "city_state_ally_changed", 8, city_state: "Geneva", old_ally: nil, new_ally: "Rome")
+
+    timeline = DigestBuilder.new(@game).call[:timelines]["Rome"][:city_states]
+
+    assert_equal %i[friendship_changed ally_gained], timeline.map { |entry| entry[:type] }
+  end
+
+  test "early game names neither the civ nor the deadline the game settings already carry" do
+    digest = DigestBuilder.new(@game).call
+
+    assert_empty digest[:early_game]["Rome"].keys & %i[civ deadline_turn]
+  end
+
+  test "opening strategy names the branch once, at its top level" do
+    event("Rome", "policy_branch_adopted", 11, branch: "POLICY_BRANCH_TRADITION")
+
+    rome = DigestBuilder.new(@game).call[:opening_strategy]["Rome"]
+
+    assert_equal [ nil, nil ], [ rome[:playstyle][:branch], rome[:closed_opening][:branch] ]
   end
 
   test "carries the contested wonder races in full" do
@@ -356,6 +411,20 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal 1, races.size
     assert_equal "BUILDING_LOUVRE", races.first[:wonder]
     assert_equal "Greece", races.first[:contenders].sole[:civ]
+  end
+
+  test "a contender that lost a wonder race carries how close the race was" do
+    (6..9).each do |t|
+      event("Greece", "city_snapshot", t, city: "Athens", producing: "BUILDING_LOUVRE",
+            producing_kind: "wonder", production_stored: 40 * t, production_turns_left: 12 - t)
+      event("Rome", "city_snapshot", t, city: "Rome", producing: "BUILDING_LOUVRE",
+            producing_kind: "wonder", production_stored: 60 * t, production_turns_left: 10 - t)
+    end
+    event("Rome", "building_constructed", 10, building: "BUILDING_LOUVRE", city: "Rome", wonder: "world")
+
+    contender = DigestBuilder.new(@game).call[:wonder_races].sole[:contenders].sole
+
+    assert_equal :close, contender[:scale]
   end
 
   test "carries espionage per civ" do

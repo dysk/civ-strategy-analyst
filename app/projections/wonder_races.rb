@@ -15,6 +15,8 @@ class WonderRaces
   extend Projection
 
   LOST_WINDOW = 1
+  CLOSE_TURNS_LEFT = 4
+  HEAVY_INVESTMENT = 200
 
   # A turn is an acceleration when its stored production stands this far clear
   # of the build's own typical turn. Calibrated on the 23 turns in the two
@@ -105,11 +107,22 @@ class WonderRaces
     snapshots = builder[:snapshots]
     turns = snapshots.map(&:turn).uniq
 
-    { civ: builder[:civ], city: builder[:city],
-      first_seen_turn: turns.first, last_seen_turn: turns.last, turns_building: turns.size,
-      production_invested: snapshots.last.payload["production_stored"].to_i,
-      turns_left_when_last_seen: snapshots.last.payload["production_turns_left"],
-      outcome: (completed_turn - turns.last <= LOST_WINDOW ? :lost : :abandoned) }
+    row = { civ: builder[:civ], city: builder[:city],
+            first_seen_turn: turns.first, last_seen_turn: turns.last, turns_building: turns.size,
+            production_invested: snapshots.last.payload["production_stored"].to_i,
+            turns_left_when_last_seen: snapshots.last.payload["production_turns_left"],
+            outcome: (completed_turn - turns.last <= LOST_WINDOW ? :lost : :abandoned) }
+    row[:outcome] == :lost ? row.merge(scale: loss_scale(row)) : row
+  end
+
+  # A race the game still rated many turns off when it fell is a lighter
+  # fact than one decided on the last turn - unless the loser had sunk a
+  # wonder's worth of production into it regardless.
+  def loss_scale(row)
+    turns_left = row[:turns_left_when_last_seen]
+    close = (turns_left && turns_left <= CLOSE_TURNS_LEFT) || row[:production_invested] >= HEAVY_INVESTMENT
+
+    close ? :close : :distant
   end
 
   # What the contender could see of the winner's city while a decision was

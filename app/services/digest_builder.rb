@@ -34,7 +34,7 @@ class DigestBuilder
       roster: roster,
       outcome: outcome,
       standings: standings,
-      early_game: early_game.series,
+      early_game: early_game_by_civ,
       opening_strategy: opening_strategy_by_civ,
       metrics: metrics_by_civ,
       timelines: timelines_by_civ,
@@ -77,6 +77,11 @@ class DigestBuilder
 
   def early_game = EarlyGame.for(@game)
 
+  # The civ is the key and the deadline sits in the game settings.
+  def early_game_by_civ
+    early_game.series.transform_values { |boundary| boundary.except(:civ, :deadline_turn) }
+  end
+
   # docs/ideal-opening.md's checklist, per civ. city_spacing isn't listed
   # separately - playstyle already carries its mean_spacing, and that's the
   # only part of it the checklist reads.
@@ -88,13 +93,13 @@ class DigestBuilder
   def opening_strategy_for(strategy, civ)
     {
       branch: strategy.branch(civ),
-      closed_opening: strategy.closed_opening(civ),
+      closed_opening: strategy.closed_opening(civ)&.except(:branch),
       first_tech: strategy.first_tech(civ),
       opening_scouts: strategy.opening_scouts(civ),
       worker_raids: strategy.worker_raids(civ),
       bullied_workers: strategy.bullied_workers(civ),
       national_college: strategy.national_college(civ),
-      playstyle: strategy.playstyle(civ),
+      playstyle: strategy.playstyle(civ).except(:branch),
       good_wonders: strategy.good_wonders(civ),
       workers_per_city: strategy.workers_per_city(civ),
       unhappy_turns: strategy.unhappy_turns(civ),
@@ -178,8 +183,6 @@ class DigestBuilder
         cities: timeline.cities(civ),
         techs: timeline.techs(civ),
         policies: timeline.policies(civ),
-        religion: timeline.religion(civ),
-        wars: timeline.wars(civ),
         irrelevance: timeline.irrelevance(civ),
         great_people: timeline.great_people(civ),
         great_people_born: timeline.great_people_born(civ),
@@ -187,7 +190,7 @@ class DigestBuilder
         eras: timeline.eras(civ),
         golden_ages: timeline.golden_ages(civ),
         wonders: timeline.wonders(civ),
-        city_states: timeline.city_states(civ),
+        city_states: city_state_timeline(timeline, civ),
         geometry: geometry.series(civ),
         city_count_mismatches: geometry.discrepancies(civ)
       }
@@ -227,6 +230,35 @@ class DigestBuilder
   def phase_split(expends, midpoint)
     matches = expends.select { |g| yield(g) }
     { early: matches.count { |g| g[:turn] <= midpoint }, late: matches.count { |g| g[:turn] > midpoint } }
+  end
+
+  ALLIANCE_EVENTS = %i[alliance_changed ally_gained ally_lost].freeze
+
+  # Alliances live in `city_states` as spans whenever the log carries
+  # city-state snapshots; the timeline then keeps only friendship.
+  def city_state_timeline(timeline, civ)
+    events = timeline.city_states(civ)
+    return events unless CityStateStanding.for(@game).applicable?
+
+    events.reject { |event| ALLIANCE_EVENTS.include?(event[:type]) }
+  end
+
+  # The ties PlayerTimeline finds standing on the declaration turn, one set
+  # per attacker, named by both sides of the pair.
+  def wars_with_ties(wars)
+    timeline = PlayerTimeline.for(@game)
+
+    wars.map { |war| war.merge(ties_at_declaration: ties_at_declaration(timeline, war)) }
+  end
+
+  def ties_at_declaration(timeline, war)
+    war[:attacker_civs].flat_map do |civ|
+      timeline.wars(civ)
+              .select { |period| period[:role] == :attacker && period[:turn_declared] == war[:turn] }
+              .flat_map { |period| period[:ties_at_declaration] }
+              .map { |tie| tie.except(:with).merge(civs: [ civ, tie[:with] ]) }
+              .uniq
+    end
   end
 
   def cultural_by_civ
@@ -269,7 +301,7 @@ class DigestBuilder
     detector = KeyMomentDetector.new(@game)
 
     {
-      wars: detector.wars,
+      wars: wars_with_ties(detector.wars),
       buffer_city_losses: detector.buffer_city_losses,
       influence_level_reached: detector.influence_level_reached,
       cultural_victory_imminent: detector.cultural_victory_imminent,
@@ -280,9 +312,6 @@ class DigestBuilder
       religion_enhancements: detector.religion_enhancements,
       reformations: detector.reformations,
       ideology_unlocks: detector.ideology_unlocks,
-      ideology_adoptions: detector.ideology_adoptions,
-      tenet_adoptions: detector.tenet_adoptions,
-      policy_branch_adoptions: detector.policy_branch_adoptions,
       policy_branch_completions: detector.policy_branch_completions,
       army_power_swings: detector.army_power_swings,
       happiness_swings: detector.happiness_swings,
@@ -297,21 +326,16 @@ class DigestBuilder
       snowballs_food: detector.snowballs("food"),
       nuclear_detonations: detector.nuclear_detonations,
       city_state_ally_takeovers: detector.city_state_ally_takeovers,
-      congress_host_changes: detector.congress_host_changes,
       united_nations_formed: detector.united_nations_formed,
       diplomatic_victory_imminent: detector.diplomatic_victory_imminent,
-      resolutions_passed: detector.resolutions_passed,
       capital_control_changes: detector.capital_control_changes,
       apollo_completions: detector.apollo_completions,
       spaceship_part_assemblies: detector.spaceship_part_assemblies,
       science_victory_imminent: detector.science_victory_imminent,
       players_declared_irrelevant: detector.players_declared_irrelevant,
-      wonder_races: detector.wonder_races,
-      wonder_races_lost: detector.wonder_races_lost,
       city_state_conquered: detector.city_state_conquered,
       research_rushes: detector.research_rushes,
-      great_people_first_of_kind: detector.great_people_first_of_kind,
-      great_people_lost: detector.great_people_lost
+      great_people_first_of_kind: detector.great_people_first_of_kind
     }
   end
 
