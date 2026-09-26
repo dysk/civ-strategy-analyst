@@ -786,17 +786,44 @@ Which religion held each city's majority, and for how long.
 ## yield_attribution
 
 Where each civilization's science, culture, faith and tourism came from,
-per checkpoint. Each yield is `{total, sources, shortfall}`.
+per checkpoint. It is evidence for the verdicts, not a subject of its own.
+Use it to say what a strategy actually ran on, and to test a claimed cause
+of a rise or fall.
 
-- `sources` holds `cities` plus whichever of `city_states`/`minor_civs`,
-  `happiness`, `religion` or `deficit` applied. `city_states` (under
-  science) and `minor_civs` (under culture and faith) are the same thing,
-  income from friendly or allied city-states.
-- `deficit` under science is a named shortfall from research upkeep.
-- `shortfall` is `total` minus the named parts. A golden age's flat bonus
-  and similar modifiers land here, so report it beside the parts.
-- A high city-state share corroborates how much of a civilization's
-  city-state standing was paying for something.
+Each yield is `{total, sources, shortfall}`. A source appears only when it
+is non-zero.
+
+| Yield | Source | What it is |
+|---|---|---|
+| science | `cities` | Science produced in the civilization's own cities |
+| science | `city_states` | Scholasticism (science from allied city-states, less from friends, rising with era) and the Underground Sect reformation (science per foreign follower of the civilization's religion). Zero without either, however many allies it holds |
+| science | `happiness` | The Rationalism finisher: +10% of city science while happiness is not negative |
+| science | `deficit` | Bankruptcy. When treasury plus gold per turn falls below zero, the missing gold comes out of science |
+| faith | `cities` | Faith produced in its cities |
+| faith | `minor_civs` | Faith from friendly and allied religious city-states |
+| faith | `religion` | Founder beliefs that pay the whole empire |
+| culture | `cities` | Culture produced in its cities |
+| culture | `traits` | Morocco's culture per trade partner |
+| culture | `religion` | Founder beliefs, including a percentage modifier that also multiplies the city and trait culture before it |
+| culture | `minor_civs` | Culture from friendly and allied cultured city-states |
+| tourism | `cities` | Tourism produced in its cities |
+| tourism | `religion` | Founder beliefs that pay tourism |
+
+- `shortfall` is `total` minus the named parts, and it has causes of its
+  own. A golden age raises culture by 20% outside the named parts. So does
+  the World's Fair culture boost. Science never falls below zero, so a deep
+  `deficit` leaves a positive shortfall. Anarchy zeroes the total while the
+  parts remain. Report the gap beside the parts, and read a culture
+  shortfall against `timelines.<civ>.golden_ages`.
+- Science `city_states` and culture/faith `minor_civs` are different
+  mechanisms. The first is a policy or belief payout. The second is the
+  bonus a city-state's trait gives its friends and allies.
+- A civilization's culture `religion` share includes a multiplier on its
+  own cities, so it overstates what the religion produced on its own.
+- `deficit` measures how deep a bankruptcy ran. A civilization showing it
+  was paying for more than its economy could carry, usually an army or a
+  wide empire's upkeep. Read it with `gold`, `gold_per_turn` and
+  `gross_gold` in `metrics`.
 
 ## resource_shortages
 
@@ -969,13 +996,16 @@ was won. Say what holding it plausibly cost in gold or quest attention.
 
 ## Dependencies
 
-Read `yield_attribution` as a trend. A civilization whose city-state share
-of a yield drops sharply, especially alongside a
+Read `yield_attribution` as a trend. A civilization whose `minor_civs`
+share of culture or faith drops sharply, especially alongside a
 `city_state_ally_takeovers` or `city_state_conquered` moment, probably lost
-an income source it leaned on. Trade-route income can collapse when a war
-cuts the routes. Compare `trade_routes.by_civ.<civ>.concurrency` with the
-wars. A faith total can hollow out when `religion` holds are lost. A
-captured capital is a windfall for one side and a collapse for the other.
+an income source it leaned on. A drop in science `city_states` means the
+same only for a civilization with Scholasticism. A sudden `deficit` marks
+an economy that broke, and its science broke with it. Trade-route income
+can collapse when a war cuts the routes. Compare
+`trade_routes.by_civ.<civ>.concurrency` with the wars. A faith total can
+hollow out when `religion` holds are lost. A captured capital is a windfall
+for one side and a collapse for the other.
 
 ## Accuracy of numbers
 
