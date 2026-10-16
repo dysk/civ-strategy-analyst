@@ -265,9 +265,19 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { type: :great_person_lost, turn: 60, civ: "Rome", great_person: "UNIT_GREAT_GENERAL",
-          kind: :general, killed_by: "Greece", city: nil, located: nil } ],
+          kind: :general, killed_by: "Greece", city: nil, located: nil, confidence: nil } ],
       detector.great_people_lost
     )
+  end
+
+  # The hook names a killer on the loss for a captured civilian alone, so
+  # without the reconciler's killer this death left no moment at all.
+  test "great_people_lost reports a death only a reconciled log attributes" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_MUSICIAN", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+
+    assert_equal [ [ "Barbarians", :inferred ] ],
+                 detector.great_people_lost.map { |m| m.values_at(:killed_by, :confidence) }
   end
 
   test "great_people_lost carries where the great person fell" do

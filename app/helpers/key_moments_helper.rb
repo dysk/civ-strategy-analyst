@@ -77,7 +77,9 @@ module KeyMomentsHelper
     great_person_first_of_kind: ->(m) {
       "#{m[:civs].join(", ")} #{m[:civs].one? ? "was" : "were"} first to raise a Great #{m[:kind].to_s.capitalize}"
     },
-    great_person_lost: ->(m) { "#{possessive(m[:civ])} Great #{m[:kind].to_s.capitalize} was killed by #{m[:killed_by]}" },
+    great_person_lost: ->(m) {
+      "#{possessive(m[:civ])} Great #{m[:kind].to_s.capitalize} was killed by #{m[:killed_by]}#{by_elimination(m)}"
+    },
     wonder_race: ->(m) { "#{m[:wonder_name]} became a contested build: #{m[:winner]} against #{m[:contenders].join(", ")}" },
     wonder_race_lost: ->(m) {
       rushed = " — #{m[:winner]} finished it ahead of a hard build" if m[:winner_finish] == :ahead_of_estimate
@@ -85,6 +87,12 @@ module KeyMomentsHelper
         "#{rushed}#{full_view_clause(m)}"
     }
   }.freeze
+
+  # No record named this killer; the attribution follows from every other
+  # rule failing. The sentence says so rather than asserting it flatly.
+  def by_elimination(moment)
+    " (attributed by elimination)" if moment[:confidence] == :inferred
+  end
 
   # This is where espionage reaches a reader who never opens the page, and it
   # must not overstate what the log shows: the turns of vision, never the

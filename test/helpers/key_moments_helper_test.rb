@@ -262,6 +262,14 @@ class KeyMomentsHelperTest < ActionView::TestCase
     assert_equal "Turn 140: England's Great General was killed by Netherlands", key_moment_sentence(moment)
   end
 
+  test "says when a great person's killer was named by elimination alone" do
+    moment = { type: :great_person_lost, turn: 140, civ: "England", great_person: "UNIT_MUSICIAN",
+               kind: :musician, killed_by: "Barbarians", confidence: :inferred }
+
+    assert_equal "Turn 140: England's Great Musician was killed by Barbarians (attributed by elimination)",
+                 key_moment_sentence(moment)
+  end
+
   test "marks a lost great person as a downward moment" do
     assert_match(/trend--down/, key_moment_trend({ type: :great_person_lost, turn: 140 }))
   end

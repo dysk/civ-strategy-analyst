@@ -394,6 +394,20 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_operator losses["Rome"][:weight], :>, losses["Greece"][:weight]
   end
 
+  # How a death was attributed belongs in the prose, never in what the
+  # moment is worth: a general cut down by raiders is the same ruined
+  # investment as one cut down by a rival's army.
+  test "a death attributed by elimination weighs the same as one a record named" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+    event("Greece", "unit_lost", 100, unit: "UNIT_GREAT_GENERAL", cause: "killed",
+          killer: "Rome", confidence: "confirmed")
+
+    losses = all_moments.select { |m| m[:type] == :great_person_lost }.index_by { |m| m[:civ] }
+
+    assert_equal losses["Greece"][:weight], losses["Rome"][:weight]
+  end
+
   test "losing any other great person is lighter than losing a general" do
     event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece")
     event("Greece", "unit_lost", 100, unit: "UNIT_SCIENTIST", killed_by: "Rome")

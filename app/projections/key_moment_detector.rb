@@ -66,7 +66,7 @@ class KeyMomentDetector
       timeline.great_people(civ).select { |g| g[:fate] == :killed }.map do |g|
         { type: :great_person_lost, turn: g[:turn], civ: civ, great_person: g[:great_person],
           kind: PlayerTimeline::GREAT_PERSON_UNITS[g[:great_person]], killed_by: g[:killed_by],
-          city: g[:city], located: g[:located] }
+          city: g[:city], located: g[:located], confidence: g[:confidence] }
       end
     end.sort_by { |moment| moment[:turn] }
   end
