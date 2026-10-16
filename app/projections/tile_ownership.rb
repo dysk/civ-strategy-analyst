@@ -1,0 +1,112 @@
+# Which city holds a plot, and how we know. The log attributes most tiles
+# itself - `plot_acquired` and `plot_bought` both name the city - so this
+# reads ownership out of the log instead of inferring it from geometry.
+# `docs/tile-ownership.md` has the measurements and the stages still to come.
+#
+# Cities are joined by name, the only handle an acquisition gives. Two cities
+# named alike therefore read as one, which a player can arrange and almost
+# never does; "the battle was at Delhi" stays true either way.
+class TileOwnership
+  REPLAYED_EVENTS = %w[city_founded plot_acquired plot_bought city_captured city_destroyed].freeze
+
+  def self.for(game)
+    game.projection(self) { new(game, grid: HexGrid.new(width: MapBounds.for(game).width)) }
+  end
+
+  def initialize(game, grid:)
+    @grid = grid
+    @events = REPLAYED_EVENTS.flat_map { |type| game.event_log.of_type(type) }.sort_by(&:seq)
+  end
+
+  # The city holding `plot` at the end of `turn`, or nil where the log never
+  # put the plot in anybody's hands. A capture or a razing therefore counts
+  # for the whole turn it happened on.
+  def owner(plot, turn:)
+    replay
+    holder = Array(@history[plot]).reverse_each.find { |held_from, _| held_from <= turn }&.last
+    holder&.merge(source: :owned)
+  end
+
+  private
+
+  # Ownership moves during a game, so the index is a replay in log order
+  # rather than one table: `@held` is the live picture, `@history` is every
+  # change each plot went through, and `@plots` is what a city would lose.
+  def replay
+    @replay ||= begin
+      @held = {}
+      @history = {}
+      @plots = Hash.new { |plots, city| plots[city] = [] }
+
+      @events.each { |event| apply(event) }
+      true
+    end
+  end
+
+  def apply(event)
+    case event.event_type
+    when "city_founded" then found(event)
+    when "plot_acquired", "plot_bought" then claim(plot_of(event), event.turn, holder_of(event))
+    when "city_captured" then capture(event)
+    when "city_destroyed" then raze(event)
+    end
+  end
+
+  # A city takes the plot it stands on and the ring around it. No other
+  # centre can be nearer than three hexes, so that ring is unambiguously its
+  # own - but a plot another city already holds stays where it is, the way
+  # the game leaves settled borders alone.
+  def found(event)
+    centre = plot_of(event)
+    return unless centre
+
+    holder = holder_of(event)
+    claim(centre, event.turn, holder)
+    @grid.neighbours(centre).each { |plot| claim(plot, event.turn, holder) unless @held[plot] }
+  end
+
+  def claim(plot, turn, holder)
+    return unless plot && holder[:city]
+
+    previous = @held[plot]
+    return if previous == holder
+
+    @plots[previous[:city]].delete(plot) if previous
+    @held[plot] = holder
+    @plots[holder[:city]] << plot
+    record(plot, turn, holder)
+  end
+
+  # A capture moves the city's whole territory, name and all, to its taker.
+  def capture(event)
+    city, new_owner = event.payload.values_at("city", "new_owner")
+    return unless city && new_owner
+
+    holder = { city: city, civ: new_owner }
+    @plots[city].each do |plot|
+      @held[plot] = holder
+      record(plot, event.turn, holder)
+    end
+  end
+
+  # Razing releases the land with no event naming the plots, and the log can
+  # fire the destruction twice for the same city, so this has to hold up on a
+  # city that is already gone.
+  def raze(event)
+    @plots.delete(event.payload["city"])&.each do |plot|
+      @held.delete(plot)
+      record(plot, event.turn, nil)
+    end
+  end
+
+  def record(plot, turn, holder)
+    (@history[plot] ||= []) << [ turn, holder ]
+  end
+
+  def holder_of(event) = { city: event.payload["city"], civ: event.civ }
+
+  def plot_of(event)
+    x, y = event.payload.values_at("x", "y")
+    [ x, y ] if x && y
+  end
+end

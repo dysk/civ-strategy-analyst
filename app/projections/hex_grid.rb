@@ -6,6 +6,11 @@ class HexGrid
   # more than 22.5 degrees away from it.
   DIAGONAL_RATIO = Math.tan(Math::PI / 8)
 
+  # The ring of six, as hexspace deltas. Read back out as offset
+  # coordinates they lean west above and below an even row and east above
+  # and below an odd one.
+  RING = [ [ 1, 0 ], [ -1, 0 ], [ 0, 1 ], [ 0, -1 ], [ 1, -1 ], [ -1, 1 ] ].freeze
+
   def initialize(width:)
     @width = width
   end
@@ -19,6 +24,13 @@ class HexGrid
     else
       [ dx.abs, dy.abs ].max
     end
+  end
+
+  # The six plots a hex away, across the map seam where the plot sits on an
+  # edge.
+  def neighbours(plot)
+    hx = hexspace_x(plot)
+    RING.map { |dx, dy| offset_plot(hx + dx, plot.last + dy) }
   end
 
   # How far `point` lies off the line through `from` and `to`, in hexes.
@@ -61,6 +73,12 @@ class HexGrid
     return if dx.zero? || dx.abs < DIAGONAL_RATIO * dy.abs
 
     dx.positive? ? "E" : "W"
+  end
+
+  # Hexspace back to the coordinates the log writes, wrapped into the map.
+  def offset_plot(hx, y)
+    x = hx + (y / 2)
+    [ @width ? x % @width : x, y ]
   end
 
   # Each row sits half a hex right of the one below it; undoing that stagger

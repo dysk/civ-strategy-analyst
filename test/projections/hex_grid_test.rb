@@ -88,4 +88,26 @@ class HexGridTest < ActiveSupport::TestCase
   test "a line of no length leaves the offset at zero" do
     assert_equal 0.0, @grid.offset_from_line([ 10, 20 ], [ 10, 20 ], [ 15, 25 ])
   end
+
+  test "the ring around a plot is the six plots a hex away" do
+    assert_equal [ 1 ] * 6, @grid.neighbours([ 10, 10 ]).map { |plot| @grid.distance([ 10, 10 ], plot) }
+  end
+
+  test "the ring leans west on an even row" do
+    assert_equal(
+      [ [ 9, 9 ], [ 9, 10 ], [ 9, 11 ], [ 10, 9 ], [ 10, 11 ], [ 11, 10 ] ],
+      @grid.neighbours([ 10, 10 ]).sort
+    )
+  end
+
+  test "the stagger leans the ring east on an odd row" do
+    assert_equal(
+      [ [ 10, 10 ], [ 10, 12 ], [ 11, 10 ], [ 11, 11 ], [ 11, 12 ], [ 9, 11 ] ].sort,
+      @grid.neighbours([ 10, 11 ]).sort
+    )
+  end
+
+  test "a ring on the eastern edge reaches across the map seam" do
+    assert_includes @grid.neighbours([ 45, 10 ]), [ 0, 10 ]
+  end
 end
