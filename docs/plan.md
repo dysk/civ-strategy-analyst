@@ -147,21 +147,22 @@ instructions.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
-- **Tile→city resolution** — designed, not yet implemented. No projection
-  resolves a bare `x`/`y` to the city that owns the tile, so six event types
-  (`improvement_built`, `unit_lost`, `unit_created`, `improvement_pillaged`,
-  `natural_wonder_discovered`, `trade_route_plundered`) say what happened and
-  never where. `docs/tile-ownership.md` is the full design, measured against
-  three real logs.
+- **Tile→city resolution** — stage one implemented (`ce21624`), with nothing
+  consuming it yet. Six event types (`improvement_built`, `unit_lost`,
+  `unit_created`, `improvement_pillaged`, `natural_wonder_discovered`,
+  `trade_route_plundered`) say what happened and never where.
+  `docs/tile-ownership.md` is the full design and holds the measurements.
   This entry's original sketch had the lookup backwards, because the log
-  attributes most tiles itself. `plot_acquired` and `plot_bought` are
-  imported, read by nothing, and both name the owning city, which together
-  with a founded city's centre and ring 1 — unambiguous, since no two live
-  cities sit closer than three hexes — answers 90 to 98 percent of the
-  unattributed rows exactly.
-  `HexGrid#distance` is the fallback for the remaining 1 to 6 percent, and
-  every answer carries how it was arrived at so a consumer can tell a fact
-  from an inference.
+  attributes most tiles itself. `plot_acquired` and `plot_bought` are both
+  imported and both name the owning city, which together with a founded
+  city's centre and ring 1 — unambiguous, since no two live cities sit closer
+  than three hexes — answers 74 to 88 percent of the unattributed rows
+  exactly. `TileOwnership#owner(plot, turn:)` is that read, dated to the end
+  of the asked turn and tagged `source: :owned`.
+  Adjacency, nearest-city geometry and a cutoff beyond which no place is
+  named are the stages still to come, and they share the 12 to 26 percent
+  stage one hands on. Every answer carries how it was arrived at so a
+  consumer can tell a fact from an inference.
   Four known users: naming the city for a targeted great-person expend
   (`PlayerTimeline#expended_row`, currently nil), a place name for a battle or
   great-person death in `ChronicleSpine`, a city for an inferred missionary or

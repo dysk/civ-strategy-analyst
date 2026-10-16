@@ -1,14 +1,25 @@
 # Which city a tile belongs to
 
-Design for one projection, to review before writing failing tests for it,
-the same way `docs/city-state-influence.md` and `docs/espionage.md` preceded
-theirs. `docs/plan.md` keeps the project-wide iteration history and records
-this as an unimplemented idea under "Tile→city resolution".
+Design for one projection. `docs/plan.md` keeps the project-wide iteration
+history and recorded this as an unimplemented idea under "Tile→city
+resolution".
 
 That entry proposes a nearest-owned-city lookup built on `HexGrid#distance`.
 Measurement says geometry is the fallback and not the mechanism — the log
-attributes nine tenths of the tiles outright, and what is left is a far
-smaller problem than the entry assumes.
+attributes three quarters to nine tenths of the tiles outright, and what is
+left is a far smaller problem than the entry assumes.
+
+**Stage one ships** as `TileOwnership` (2026-10-16). `owner(plot, turn:)`
+returns `{ city:, civ:, source: :owned }` for a plot the log places in
+somebody's hands by the end of that turn, and nil for every other plot,
+which is where stages two to four will go. Every count below is measured
+through that projection on the imported india-diplo, chile-vs-vietnam and
+babylon-domination games.
+
+One gap stage one leaves. A city founded before the log begins gets no
+centre and no ring, so it enters the index only when it first acquires a
+plot. Logs that start mid-game are the ones this costs, and the fix is a
+read of the opening snapshot rather than anything geometric.
 
 ## Context
 
@@ -63,7 +74,8 @@ settling distance, and the logs confirm it — the smallest gap between the
 centres of two coexisting cities is **3** hexes in india-diplo and **4** in
 chile-vs-vietnam. At a gap of 3, every tile adjacent to one centre is at
 least 2 from any other, so a city's own ring of six is unambiguously its own
-and belongs in the index from the founding turn.
+and belongs in the index from the founding turn. A plot another city already
+holds stays with it, the way the game leaves settled borders alone.
 
 Ring 2 is not. The same gap of 3 puts a tile two hexes from one centre one
 hex from the other, which makes it the second city's ring 1. From ring 2
@@ -97,34 +109,43 @@ row with no city:
 
 | stage | india-diplo | chile-vs-vietnam | babylon-domination |
 |---|---|---|---|
-| 1, in the index | 1500 | 556 | 736 |
-| 2, adjacent to one city | 7 | 26 | 30 |
-| 2, adjacent to several plots of one civ | 2 | 17 | 5 |
-| 2, adjacent to two or more rivals | 8 | 0 | 8 |
-| 3, geometry decides | 20 | 21 | 46 |
-| 4, beyond a cutoff of 5 hexes | 6 | 0 | 31 |
-| rows in total | 1537 | 620 | 825 |
+| 1, in the index | 1337 | 496 | 614 |
+| 2, adjacent to one city | 68 | 50 | 77 |
+| 2, adjacent to several plots of one civ | 5 | 10 | 4 |
+| 2, adjacent to two or more rivals | 15 | 6 | 4 |
+| 3, geometry decides | 66 | 47 | 56 |
+| 4, beyond a cutoff of 5 hexes | 23 | 9 | 70 |
+| rows in total | 1514 | 618 | 825 |
 
-Stage 1 answers 90 to 98 percent of them exactly, and geometry is left with
-1 to 6 percent. A plot adjacent to two rivals' tiles is a border hex, which
-is the most interesting answer the lookup can give and should reach the
-chronicle as one rather than being collapsed to a single name, but it is
-sixteen rows across three games and no feature should be built around it.
+Stage 1 answers 74 to 88 percent of them exactly and geometry is left with 4
+to 9 percent.
+
+An earlier draft of this table credited stage 1 with 90 to 98 percent,
+because the probe behind it built one index out of the whole log and
+answered a turn-50 question with a tile bought on turn 200. Dating the index
+costs stage 1 about ten points, and the plots it hands on are ones that were
+genuinely nobody's at the time — of india-diplo's 177, 112 are claimed later
+in the game, 29 belonged to somebody at another time and 36 to nobody ever.
+
+A plot adjacent to two rivals' tiles is a border hex, which is the most
+interesting answer the lookup can give and should reach the chronicle as one
+rather than being collapsed to a single name, but it is 25 rows across three
+games and no feature should be built around it.
 
 The **cutoff** keeps stage 3 from naming a city for a battle in open
 wilderness. Beyond it the answer is `:nowhere` and no place is named. Five
 hexes is a starting proposal and not a measurement, in the same spirit as
-`CityStateStanding::RIG_GAIN` — it catches 6 of india-diplo's 20 geometric
-rows, 31 of babylon-domination's 46 and none at all in chile-vs-vietnam, the
-spread being how far from anybody's borders each game's wars were fought.
-Settle the number against a second log before fixing it.
+`CityStateStanding::RIG_GAIN` — it rejects 23 of india-diplo's 89 geometric
+candidates, 9 of chile-vs-vietnam's 56 and 70 of babylon-domination's 126,
+the spread being how far from anybody's borders each game's wars were
+fought. Settle the number when stage 3 is built.
 
 ## Ties are returned, not broken
 
-Equidistant cities come back together. The whole question covers eleven rows
-across the three logs — two two-way ties and one three-way in india-diplo,
-four two-way and one three-way in chile-vs-vietnam, two two-way and one
-three-way in babylon-domination.
+Equidistant cities come back together. The whole question covers 30 rows
+across the three logs — 7 two-way ties and 5 three-way in india-diplo, 11
+two-way and 1 three-way in chile-vs-vietnam, 5 two-way and 1 three-way in
+babylon-domination.
 
 A deterministic tiebreak by name or by founding turn would give a stable
 answer that is not a true one, which is worse than no answer. For the
@@ -133,12 +154,14 @@ Delhi. For a field that needs exactly one name, a tie stays nil.
 
 ## Candidates are never narrowed to the combatants
 
-A death resolved to a tile is often on land belonging to neither side.
+A death resolved to a tile can be on land belonging to neither side.
 Measured on deaths that carry `killed_by` and resolve through stage 1 or 2,
-the owner is a third party in 6 of 40 cases in india-diplo, 2 of 22 in
-chile-vs-vietnam and 7 of 33 in babylon-domination. Units cross other civs'
-land on open borders, and city-state territory sits between empires, so the
-land under a battle is a fact about diplomacy rather than about the battle.
+the owner is a third party in 2 of 29 cases in india-diplo, 2 of 16 in
+chile-vs-vietnam and none of babylon-domination's 17. Units cross other
+civs' land on open borders and city-state territory sits between empires, so
+the land under a battle is a fact about diplomacy rather than about the
+battle — but on these numbers it is a rare one, and the case against
+filtering rests on the paragraph below rather than on them.
 
 Filtering candidate cities to the civs involved is worse than useless when
 `killed_by` is absent, which is the common case — 386 of india-diplo's 552
@@ -161,6 +184,13 @@ same city, in both logs that carry it at all, so removal must be idempotent.
 A destroyed city's plots are released with no event naming them, so they drop
 out of the index and fall through to stage 3, which is the correct reading —
 the land is nobody's.
+
+A lookup is answered with the state the turn ended in, the convention
+snapshots already follow here. A unit dying on the turn its city changed
+hands therefore reads as standing on the taker's land, and one dying on the
+turn its city was razed reads as standing nowhere. Deaths on a city centre
+are 20 rows across five logs and exactly one of them falls on such a turn,
+so the turn is a good enough handle and consumers need not carry a `seq`.
 
 ## Citadels
 
