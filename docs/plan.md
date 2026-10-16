@@ -147,16 +147,27 @@ instructions.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
-- **Tile→city resolution** — raised while reviewing great people: no projection
-  resolves a bare `x`/`y` (as `improvement_built`, `unit_lost`, `unit_created` carry)
-  to the city that owns the tile; the nearest precedent, `PlayerTimeline#valuation`,
-  matches by city *name* already present in the event payload, never by geometry.
-  A civ's founded/captured plots plus `HexGrid#distance` would give a
-  nearest-owned-city-to-a-tile lookup as a small, reusable primitive. Two known
-  users if it's ever built: naming the city for a targeted great-person expend
-  (`PlayerTimeline#great_people`, currently left nil), and giving `ChronicleSpine`
-  a place name for a battle death (`unit_killed`/`unit_lost` carry `x`/`y` but no
-  city) instead of narrating combat with no location at all.
+- **Tile→city resolution** — designed, not yet implemented. No projection
+  resolves a bare `x`/`y` to the city that owns the tile, so six event types
+  (`improvement_built`, `unit_lost`, `unit_created`, `improvement_pillaged`,
+  `natural_wonder_discovered`, `trade_route_plundered`) say what happened and
+  never where. `docs/tile-ownership.md` is the full design, measured against
+  three real logs.
+  This entry's original sketch had the lookup backwards, because the log
+  attributes most tiles itself. `plot_acquired` and `plot_bought` are
+  imported, read by nothing, and both name the owning city, which together
+  with a founded city's centre and ring 1 — unambiguous, since no two live
+  cities sit closer than three hexes — answers 90 to 98 percent of the
+  unattributed rows exactly.
+  `HexGrid#distance` is the fallback for the remaining 1 to 6 percent, and
+  every answer carries how it was arrived at so a consumer can tell a fact
+  from an inference.
+  Four known users: naming the city for a targeted great-person expend
+  (`PlayerTimeline#expended_row`, currently nil), a place name for a battle or
+  great-person death in `ChronicleSpine`, a city for an inferred missionary or
+  inquisitor use in `Religion#uses` — which is what lets a religious hold be
+  set against its one candidate cause — and the owner of a pillaged
+  improvement, today unknowable.
 
 ## Plan: injecting LEKMOD data into the digest (fully realized)
 
