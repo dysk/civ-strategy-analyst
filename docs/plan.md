@@ -2167,3 +2167,53 @@ Not done: re-reconciling the three older example logs, which would move
 test baselines across several projections and is its own change. Until
 then `india-diplo`, `espionage-test` and `run-b-test` take every fallback
 path, which is what keeps them worth testing against.
+
+## Plan: what the barbarian inference is worth (implemented)
+
+Status: **Implemented 2026-10-17.** Not a planned iteration — a defect
+found while explaining the figures the previous entry shipped.
+
+`barbarian_losses` reported 55 losses for Babylon in
+`babylon-domination`, every one of them `inferred`. They are its own war
+dead. `unit_killed` names Babylon as a victim 3 times in that log and as
+a killer 59 times, because the hook fires on the host's own machine, so
+every death the combat record missed fell through the reconciler's rules
+into the branch that names barbarians by elimination. 52 of the 55 fall
+on turn 129 or later, the turn Babylon opened its first war, and the
+types are the late-game front line — 7 Great War Infantry, 5 riflemen, 4
+artillery, 4 cannon — with a fired nuclear missile and two archaeologists
+among them, which are consumed rather than killed and reveal a second gap
+in the same branch.
+
+Two rules now hold it back, both applied to the inferred losses alone,
+since a loss the hook itself named barbarians on stands whatever else was
+happening:
+
+1. **Coverage.** A civilization whose inferred deaths outnumber the ones
+   the combat record names by more than `MAX_INFERRED_PER_RECORDED = 4`
+   has no readable barbarian figure, and all of its inferred losses are
+   set aside. The other civilizations across the two reconciled logs sit
+   between 1.6 and 2.6 inferred per recorded death; Babylon sits at 18.
+2. **Its own wars.** An inferred loss that fell inside one of that
+   civilization's wars, city-state wars included, is war dead. A war
+   explains a death the record missed better than a raid does.
+
+Both counts are reported in `set_aside` (`war_dead`,
+`no_combat_record`) rather than dropped, so a `losses: 0` cannot be read
+as a quiet frontier, and the prompt says both figures are the tool's own
+caution and never losses to add to anything.
+
+Measured after: Babylon's 55 all set aside, no civilization the record
+covers loses more than one to the war rule in `babylon-domination`, and
+in `chile-vs-vietnam` Vietnam loses 11, Bolivia and the Iroquois 6 each.
+
+`README.md`'s "Feed it raw logs" section was written when nothing read
+`cause`, and said so. It now records what `UnitLosses` reads, which two
+example logs take that path, and that its own argument — that the
+barbarian inference belongs in a projection where it can be tested and
+corrected — is what caught this.
+
+Left upstream, in `civ-narrative-logger`: `UNIT_NUCLEAR_MISSILE` and
+`UNIT_ARCHAEOLOGIST` belong in `consumed_types`, and the by-elimination
+branch should not fire for a civilization at war at all. Until then the
+analyst corrects it on the way in.

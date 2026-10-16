@@ -104,25 +104,26 @@ given. The logger repo ships `tools/pipeline.sh`, which chains
 `filter-major.sh` (drops lines naming no major nation). Both exist to squeeze a
 game into an LLM's context window when you hand it the log directly. This app
 has no such limit — it imports to Postgres and puts questions to it through
-projections — and the prep costs it information it can use:
+projections — so run neither before importing:
 
 - `filter-major.sh` removes every unit event owned by a city-state or by the
   barbarians. Measured on one raw log: 5999 lines in, 4514 out, 197
   `unit_created` and 140 `unit_lost` gone. Majors' rosters survive intact, but
   a minor's army can never be counted afterwards.
-- `reconcile-unit-lost.jq` labels a captured worker `cause: "killed"`,
-  collapsing the capture-versus-kill distinction `WarCasualties` is built on.
-  Nothing here reads `cause` at all; what the projections use is the raw
-  `killed_by` field, which the script leaves alone.
+- `reconcile-unit-lost.jq` is lossless by comparison — it only adds fields —
+  but the one thing it adds that the raw log cannot state is an inference —
+  that an otherwise unexplained loss was a barbarian kill. That inference
+  belongs in a projection, where it can be tested and corrected, and it needed
+  correcting. The combat record is written from the host's machine and barely
+  names the host's own deaths, so for the human player the inference collects
+  its war dead instead; `WarCasualties` sets those aside and says so.
 
-The jq script does infer one thing the raw log cannot state — that an otherwise
-unexplained combat loss was a barbarian kill. That inference belongs in a
-projection, where it can be tested and changed, rather than in a filter that
-runs before the import.
-
-The three files in `examples/` predate this decision and are pipeline output:
-they carry `cause` fields no projection reads. Harmless, but don't take them as
-a model for what an import should look like.
+Where a log does carry the fields, `UnitLosses` reads them, because `cause`
+settles three per-unit questions nothing else can — which removals were
+expends, which were a caravan's last trip, and who killed a unit the hook
+named no killer on. `babylon-domination.jsonl` and `chile-vs-vietnam.jsonl` are
+pipeline output and take that path; the three later logs are raw and take the
+fallbacks, which is what keeps both paths tested. A new import should be raw.
 
 **Analyze a game:**
 
