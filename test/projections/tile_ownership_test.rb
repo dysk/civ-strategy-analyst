@@ -260,6 +260,33 @@ class TileOwnershipTest < ActiveSupport::TestCase
     assert_equal({ city: "Onondaga", civ: "India", source: :nearest }, tiles.owner([ 32, 29 ], turn: 152))
   end
 
+  test "the losing civ's record of a capture razes nothing" do
+    founded("Iroquois", "Onondaga", 1, 29, 29)
+    acquired("Iroquois", "Onondaga", 4, 31, 29)
+    captured("Onondaga", 152, 29, 29, from: "Iroquois", to: "India")
+    destroyed("Iroquois", "Onondaga", 153, 29, 29)
+
+    assert_equal({ city: "Onondaga", civ: "India", source: :owned }, tiles.owner([ 31, 29 ], turn: 160))
+  end
+
+  test "a city the loser wrote off is still a centre to measure from" do
+    founded("Iroquois", "Onondaga", 1, 29, 29)
+    captured("Onondaga", 152, 29, 29, from: "Iroquois", to: "India")
+    destroyed("Iroquois", "Onondaga", 153, 29, 29)
+
+    assert_equal({ city: "Onondaga", civ: "India", source: :nearest }, tiles.owner([ 32, 29 ], turn: 160))
+  end
+
+  test "the civ holding the city is the one whose razing counts" do
+    founded("Iroquois", "Onondaga", 1, 29, 29)
+    acquired("Iroquois", "Onondaga", 4, 31, 29)
+    captured("Onondaga", 152, 29, 29, from: "Iroquois", to: "India")
+    destroyed("Iroquois", "Onondaga", 153, 29, 29)
+    destroyed("India", "Onondaga", 158, 29, 29)
+
+    assert_nil tiles.owner([ 31, 29 ], turn: 160)
+  end
+
   private
 
   def tiles

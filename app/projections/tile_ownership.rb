@@ -141,11 +141,24 @@ class TileOwnership
   # Razing releases the land with no event naming the plots, and the log can
   # fire the destruction twice for the same city, so this has to hold up on a
   # city that is already gone.
+  #
+  # Most `city_destroyed` rows are not razings at all. Each one follows a
+  # capture of the same plot within a turn, and the ones carrying the losing
+  # civ are that civ's record of losing the city - Onondaga files 33 more
+  # snapshots under India after being "destroyed", Mecca buys 25 more plots
+  # under Babylon. A razing carries the civ that holds the city.
   def raze(event)
-    @plots.delete(event.payload["city"])&.each do |plot|
+    city = event.payload["city"]
+    return unless event.civ == holding_civ(city)
+
+    @plots.delete(city)&.each do |plot|
       @held.delete(plot)
       record(plot, event.turn, nil)
     end
+  end
+
+  def holding_civ(city)
+    @plots.fetch(city, []).filter_map { |plot| @held[plot] }.first&.dig(:civ)
   end
 
   def record(plot, turn, holder)
