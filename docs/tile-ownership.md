@@ -49,8 +49,7 @@ something happened is currently unanswerable. Counts from
 | `natural_wonder_discovered` | 20 / 20 |
 | `trade_route_plundered` | 3 / 3 |
 
-Known consumers. `Religion#uses` and `PlayerTimeline#expended_row` are
-wired up; the rest are not:
+Known consumers. All but the last are wired up:
 
 - **`PlayerTimeline#expended_row`** handed out `city: nil` for every
   targeted great-person expend, because the pairing to `improvement_built`
@@ -58,10 +57,12 @@ wired up; the rest are not:
   event. Placed since 2026-10-16. Only a planted improvement leaves a plot,
   so this reaches 55 of the 239 expends in the logs, 54 of them on the
   expending civ's own land.
-- **`ChronicleSpine`** narrates a great person's death, and a battle death,
-  with no location at all. `PlayerTimeline`'s lost rows carry `located:
-  :logged` where the log named a city, which is 142 of the 244 great-person
-  deaths; the other 102 carry a plot and wait for this.
+- **`ChronicleSpine`** narrated a war with no geography at all. A war
+  moment now carries `fought_at` and `fought_on`, built from where the
+  dead of both sides fell, which places 96 to 100 percent of a war's
+  losses. A great person killed in the field is placed the same way, which
+  is three rows in four logs - the great-person `unit_lost` rows are
+  mostly an expend's own echo and never become a loss.
 - **`Religion#uses`** returned `city`, `x` and `y` for an inferred
   missionary or inquisitor use, and the `city` was nil for 109 of the 116
   uses in the logs. A hold beginning near such a plot is the projection's

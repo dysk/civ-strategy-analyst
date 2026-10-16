@@ -506,6 +506,14 @@ Detected moments, each a list. Most entries carry `type`, `turn` and
   (`civilian`/`soldier`/`scout`). A war that opens on a captured worker and
   costs nothing else was a raid for labour, an economic act. A war opening
   on a scout says nothing.
+- `theatre` (absent for a bloodless war) says where the war was fought:
+  `cities` counts how many of the dead fell on each city's land and
+  `lands` how many fell on each civ's, heaviest first. Whose soil holds
+  the dead separates an invasion from a defence, whatever the declaration
+  says. Two caveats. A loss names no war of its own, so two wars running
+  at once over the same civilization share their dead. A plot not inside
+  anybody's borders is credited to the nearest city, so a count is the
+  shape of a front and not a map reference.
 - `forces` (absent for bloodless wars) gives per side: `opening` and
   `closing` rosters (they include workers and caravans, so read them as
   inventories), `raised` (built during the war), `upgraded`,

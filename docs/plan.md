@@ -164,8 +164,9 @@ instructions.
   pillages in india-diplo from the `.jsonl` while the imported game holds
   57.
 - **Tile→city resolution** — stages one to three implemented (`ce21624`,
-  `f7b38c1`, `842fd1f`, `9ecf7a9`), read so far by `Religion#uses`
-  (`dbb7306`) and `PlayerTimeline#expended_row` (`2c6e367`). Six event types (`improvement_built`, `unit_lost`,
+  `f7b38c1`, `842fd1f`, `9ecf7a9`), read by `Religion#uses` (`dbb7306`),
+  `PlayerTimeline#expended_row` (`2c6e367`) and the chronicle's war moment
+  (`684fa44`). Six event types (`improvement_built`, `unit_lost`,
   `unit_created`, `improvement_pillaged`, `natural_wonder_discovered`,
   `trade_route_plundered`) say what happened and never where.
   `docs/tile-ownership.md` is the full design and holds the measurements.
@@ -188,10 +189,11 @@ instructions.
   than a razing, which the replay tells apart by the civ they carry.
   `Religion#uses` reads it, which is what lets a religious hold be set
   against its one candidate cause - 39 holds across four logs now have one -
-  and `PlayerTimeline#expended_row` names the city a planted academy,
-  manufactory or citadel went to. Two users are still waiting: a place name
-  for a battle or great-person death in `ChronicleSpine`, and the owner of a
-  pillaged improvement, today unknowable.
+  `PlayerTimeline#expended_row` names the city a planted academy,
+  manufactory or citadel went to, and a war moment carries `fought_at` and
+  `fought_on`, read off where the dead of both sides fell. One user is
+  still waiting: the owner of a pillaged improvement, in its own entry
+  above.
 
 ## Plan: injecting LEKMOD data into the digest (fully realized)
 

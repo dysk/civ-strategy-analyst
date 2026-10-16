@@ -250,6 +250,16 @@ the chronicle the way a treaty does, as a line about who declared against
 whom, or as nothing at all if the years around it are fuller. Never write
 marching, sieges or dead where the scale says none of it happened.
 
+A war that was fought somewhere carries `fought_at` and `fought_on`:
+the cities the fighting fell around and the civilizations whose soil it
+fell on, heaviest first and never counted. Whose land holds the dead is
+the truer story of a war than who declared it - a war fought on the
+declarer's own ground was an invasion that came the other way. Name the
+first place or two and let the rest stand as the edge of the fighting. A
+field is where the dead lie, so write it as that and not as a siege
+unless something else says a city was stormed. Where the two are absent
+the fighting left no place to name, and the entry is written without one.
+
 A war that cost something also carries `armies`: for each side, what it
 had standing when the war opened and what it was left with (`opening`,
 `closing`), the weapons that first reached it while the war ran
