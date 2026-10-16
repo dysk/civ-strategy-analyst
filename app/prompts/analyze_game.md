@@ -335,10 +335,19 @@ contention (see `players_declared_irrelevant` under key moments).
 each birth (`great_person`, `turn`, `city`). `great_people` records what
 became of each one:
 
-- `fate` is `expended`, `killed` (with `killed_by`) or `disbanded`. `city`,
-  `civ` and `located` place it - the ground a planted improvement went on,
-  or the ground a killed one fell on - and `located` grades the claim
-  (`logged`, `owned`, `adjacent`, `nearest`).
+- `fate` is `expended`, `killed` (with `killed_by`, which can name
+  `Barbarians`) or `disbanded`. `city`, `civ` and `located` place it - the
+  ground a planted improvement went on, or the ground a killed one fell on
+  - and `located` grades the claim (`logged`, `owned`, `adjacent`,
+  `nearest`).
+- `confidence` on a death says how the killer was established. `confirmed`
+  means a record named them. `inferred` means no record did and the name
+  follows by elimination, which in practice means barbarians. A death with
+  no `confidence` at all comes from a log whose losses were never
+  attributed, and there `disbanded` may be an unrecorded death rather than
+  a great person dismissed - never rest a verdict on a single disbandment
+  in such a game. Where `confidence` is present, `disbanded` means what it
+  says.
 - For an expended one, `action` is the choice. A scientist, engineer,
   merchant, prophet, musician, general or admiral can plant a permanent
   improvement: `academy`, `manufactory`, `customs_house`, `holy_site`,
@@ -536,7 +545,9 @@ Detected moments, each a list. Most entries carry `type`, `turn` and
   their types (civilians lost and taken). Only combat deaths and captures
   count. The types say what fell, never what killed it. Read the two sides'
   `loss_types` against each other. Riflemen dying to a side that lost
-  nothing explains an outcome better than any power figure.
+  nothing explains an outcome better than any power figure. A unit lost to
+  barbarians crossed no front and is counted in `barbarian_losses`, never
+  in a toll, so a toll holds only what one of these two sides did.
 - `first_blood` is the first thing the war cost: `civ` (who lost it),
   `unit`, `by`, `fate` (`killed`/`captured`) and `kind`
   (`civilian`/`soldier`/`scout`). A war that opens on a captured worker and
@@ -706,6 +717,25 @@ ground it fell on is colour, not a condition: these killings happen on
 neutral land and inside the owner's own borders as readily as on the
 victim's, and `located` says only how confidently the record places it.
 Other kinds lost this way belong inside the war that took them.
+
+## barbarian_losses
+
+Per civilization: `losses` (units the barbarians took), `loss_types`, the
+`turns` they fell on, and `inferred` - how many of those losses no record
+attributed, leaving elimination to name the killer. `applicable: false`
+with `reason: no_attributed_losses` means this log's losses were never
+attributed, which is not the same as a game without barbarians. Never
+remark on its absence.
+
+Barbarians are terrain, not a rival. Never give them an intent, a strategy
+or a campaign, and never narrate a run of them as a war. A heavy early
+toll is a start position that cost military production a safer one would
+not have asked for, and that is the only verdict it supports. A heavy
+toll on one civilization beside light ones on its neighbours is worth a
+clause wherever the report already explains that civilization's military
+spending. Most of a tally is usually `inferred`: that is firm enough to
+set one civilization's losses against another's, and too soft to hang a
+sentence on any single loss.
 
 ## wonder_races
 

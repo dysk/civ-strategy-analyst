@@ -435,7 +435,8 @@ that already exists for other reasons.
 
 A `great_person_lost` moment is a genius killed in battle rather than spent
 on the work they were raised for - `kind` says what they were, `killed_by`
-the people whose army did it. A general lost this way is a battle loss and
+the people whose army did it, which may be `Barbarians` and no realm at
+all. A general lost this way is a battle loss and
 a ruined investment at once, and earns an entry the way a border town
 falling does. A musician lost this way earns one too, for a different
 reason: a musician was carried toward a rival's cities to win that realm's
@@ -451,6 +452,13 @@ in an age of plenty is a different sentence from an age that arrived on its
 own. Where a people's own abilities or chosen tenets stretched such an age,
 say it ran longer than its neighbours' did; never say how many years any of
 it lasted.
+
+Where such a death is marked `inferred`, no record named the hand that
+dealt it and the name follows from every other explanation failing. Write
+it the way the chronicle writes anything it half-knows - the genius fell,
+raiders are the likely cause, the record does not say. Never name a rival
+realm as the killer there, and never let a passage turn on an inferred
+death alone.
 
 Where the record cannot say what a genius was spent on, the chronicle says
 they were spent and stops. Inventing the deed is the one thing worse than
