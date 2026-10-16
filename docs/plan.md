@@ -2213,7 +2213,15 @@ example logs take that path, and that its own argument — that the
 barbarian inference belongs in a projection where it can be tested and
 corrected — is what caught this.
 
-Left upstream, in `civ-narrative-logger`: `UNIT_NUCLEAR_MISSILE` and
-`UNIT_ARCHAEOLOGIST` belong in `consumed_types`, and the by-elimination
-branch should not fire for a civilization at war at all. Until then the
-analyst corrects it on the way in.
+Fixed upstream the same day. `consumed_types` in
+`civ-narrative-logger` gained `UNIT_NUCLEAR_MISSILE` and
+`UNIT_GUIDED_MISSILE` — the mod's only two units with `Suicide = true`,
+which is what names that set rather than memory — and
+`UNIT_ARCHAEOLOGIST`, spent on the site it digs. Re-running the tool over
+`babylon-domination.jsonl` changes exactly those three rows to `used_up`
+and nothing else, so the file is left as it is: regenerating a fixture
+moves test baselines across several projections and is its own change.
+
+Still upstream is the by-elimination branch itself, which should not fire
+for a civilization at war at all. Until it stops, the analyst corrects it
+on the way in, which is where that correction can be measured anyway.
