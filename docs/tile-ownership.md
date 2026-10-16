@@ -70,7 +70,9 @@ wired up; the rest are not:
   the 116 carry a city and 39 holds across four logs have a named candidate
   cause.
 - **`improvement_pillaged`** is the only record of enemy infrastructure
-  being destroyed, and today nobody can say whose city lost the mine.
+  being destroyed, and today nobody can say whose city lost the mine. No
+  projection reads the event at all, so this one is a new reading rather
+  than a field to fill - recorded as an idea in `docs/plan.md`.
 
 ## The log attributes tiles itself
 

@@ -147,6 +147,22 @@ instructions.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
+- **Pillaging is logged and read by nothing** — `improvement_pillaged` is
+  imported (`import_game.rb:16`) and no projection touches it. The row
+  carries the raider's civ, its unit, the turn and a plot: 57 rows in
+  india-diplo, 44 in espionage-test, 26 in chile-vs-vietnam, 11 in
+  babylon-domination. It names neither the victim nor what was destroyed, so
+  a mine, a farm, a fort and a road all look the same.
+  `TileOwnership#owner` supplies the victim, which turns a bare coordinate
+  into "an Iroquois Mohawk pillaged India's land by Vijayanagara on turn
+  76". What was destroyed could only come from pairing the plot with an
+  earlier `improvement_built` on it, which reaches improvements built inside
+  the logged game and no others.
+  Where it belongs is open. Pillaging is an act of war, so `WarCasualties`
+  or the chronicle's war axis is a likelier home than a projection of its
+  own. Worth checking at the same time: `docs/tile-ownership.md` counts 63
+  pillages in india-diplo from the `.jsonl` while the imported game holds
+  57.
 - **Tile→city resolution** — stages one to three implemented (`ce21624`,
   `f7b38c1`, `842fd1f`, `9ecf7a9`), read so far by `Religion#uses`
   (`dbb7306`) and `PlayerTimeline#expended_row` (`2c6e367`). Six event types (`improvement_built`, `unit_lost`,
