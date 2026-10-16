@@ -1,11 +1,12 @@
 class DigestBuilder
   CHECKPOINT_INTERVAL = 25
 
-  # The action families PlayerTimeline classifies an expend into: a planted
-  # improvement keeps paying out for the turns left in the game, an instant
-  # use pays out once.
-  INFRASTRUCTURE_ACTIONS = PlayerTimeline::TARGETED_ACTIONS.values.map { |v| v[:action] }.freeze
-  CONSUMPTION_ACTIONS = PlayerTimeline::UNTARGETED_ACTIONS.values.uniq.freeze
+  # How long a golden age an artist begins runs at this game's speed, from
+  # <GoldenAgeTurns> on the mod's UNIT_ARTIST row. The prompt reads the one
+  # number rather than deriving it, because a golden age scales by its own
+  # factor and not by the pace of turns.
+  ARTIST_GOLDEN_AGE_STANDARD_TURNS = 8
+
   SNAPSHOT_METRICS = %w[
     score science culture gold gold_per_turn faith happiness
     military_might military_units population cities techs
@@ -69,6 +70,7 @@ class DigestBuilder
     {
       name: @game.name, map_script: @game.map_script, map_size: @game.map_size,
       game_speed: @game.game_speed, max_turns: @game.max_turns, start_era: @game.start_era,
+      golden_age_base_turns: GameSpeed.for(@game).golden_age_turns(ARTIST_GOLDEN_AGE_STANDARD_TURNS),
       map_width: map_bounds.width, map_height: map_bounds.height,
       map_width_estimated: map_bounds.estimated?,
       early_game_deadline_turn: early_game.deadline_turn
@@ -198,9 +200,9 @@ class DigestBuilder
   end
 
   # Volume by kind (who specialized in what), and how each expend split
-  # against the midpoint of the game as actually played - infrastructure
-  # before it still had turns to pay for itself, consumption after is the
-  # ordinary late-game use. EarlyGame's own boundary (Education/Metal
+  # against the midpoint of the game as actually played - permanent yield
+  # before it still had turns to pay for itself, a one-off use after is the
+  # ordinary late-game trade. EarlyGame's own boundary (Education/Metal
   # Casting) is the wrong reference here: a great person is typically the
   # product of policies and culture that arrive well past that milestone,
   # so almost every expend would land in "late" regardless of when it
@@ -216,10 +218,22 @@ class DigestBuilder
     expends = timeline.great_people(civ).select { |g| g[:fate] == :expended }
 
     {
-      by_kind: expends.group_by { |g| PlayerTimeline::GREAT_PERSON_UNITS[g[:great_person]] }.transform_values(&:size),
-      infrastructure: phase_split(expends, midpoint) { |g| INFRASTRUCTURE_ACTIONS.include?(g[:action]) },
-      consumption: phase_split(expends, midpoint) { |g| CONSUMPTION_ACTIONS.include?(g[:action]) }
+      by_kind: expends.group_by { |g| kind_of(g) }.transform_values(&:size),
+      permanent: phase_split(expends, midpoint) { |g| PlayerTimeline::PERMANENT_ACTIONS.include?(g[:action]) },
+      one_off: phase_split(expends, midpoint) { |g| PlayerTimeline::ONE_OFF_ACTIONS.include?(g[:action]) },
+      unresolved: phase_split(expends, midpoint) { |g| unresolved?(g) }
     }
+  end
+
+  # A unit the catalogue does not know keys by its own id, so the mod's next
+  # unique great person reads as noise instead of vanishing into a nil key.
+  def kind_of(expend)
+    PlayerTimeline::GREAT_PERSON_UNITS[expend[:great_person]] || expend[:great_person]
+  end
+
+  def unresolved?(expend)
+    !PlayerTimeline::PERMANENT_ACTIONS.include?(expend[:action]) &&
+      !PlayerTimeline::ONE_OFF_ACTIONS.include?(expend[:action])
   end
 
   def game_midpoint

@@ -18,7 +18,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
 
     assert_equal(
       { name: "Digest Test Game", map_script: "TestMap", map_size: "SMALL",
-        game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT",
+        game_speed: "QUICK", max_turns: 40, start_era: "ERA_ANCIENT", golden_age_base_turns: 6,
         map_width: nil, map_height: nil, map_width_estimated: false, early_game_deadline_turn: 100 },
       digest[:game]
     )
@@ -199,28 +199,70 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal [], digest[:timelines]["Greece"][:cities]
   end
 
-  test "great_people_profile splits infrastructure and consumption at the midpoint of the game as played" do
+  test "great_people_profile splits permanent, one-off and unresolved at the midpoint of the game as played" do
     snapshot("Rome", 40, score: 10) # last logged turn 40, so the midpoint sits at 20
 
     event("Rome", "great_person_expended", 15, great_person: "UNIT_SCIENTIST")
     event("Rome", "improvement_built", 15, improvement: "IMPROVEMENT_ACADEMY", x: 1, y: 1)
-    event("Rome", "great_person_expended", 25, great_person: "UNIT_WRITER")
+    event("Rome", "great_person_expended", 25, great_person: "UNIT_SCIENTIST")
+    event("Rome", "great_person_expended", 30, great_person: "UNIT_WRITER")
 
     digest = DigestBuilder.new(@game).call
     profile = digest[:timelines]["Rome"][:great_people_profile]
 
-    assert_equal({ scientist: 1, writer: 1 }, profile[:by_kind])
-    assert_equal({ early: 1, late: 0 }, profile[:infrastructure])
-    assert_equal({ early: 0, late: 1 }, profile[:consumption])
+    assert_equal({ scientist: 2, writer: 1 }, profile[:by_kind])
+    assert_equal({ early: 1, late: 0 }, profile[:permanent])
+    assert_equal({ early: 0, late: 1 }, profile[:one_off])
+    assert_equal({ early: 0, late: 1 }, profile[:unresolved])
+  end
+
+  # A great work is a permanent yield that never touches a tile, which the
+  # old planted-against-instant split counted as consumption.
+  test "great_people_profile counts an artist's great work as permanent yield" do
+    snapshot("Rome", 40, score: 10)
+
+    event("Rome", "great_person_expended", 15, great_person: "UNIT_ARTIST")
+
+    profile = DigestBuilder.new(@game).call[:timelines]["Rome"][:great_people_profile]
+
+    assert_equal({ early: 1, late: 0 }, profile[:permanent])
+  end
+
+  test "great_people_profile counts an artist's golden age as a one-off" do
+    snapshot("Rome", 40, score: 10)
+
+    event("Rome", "great_person_expended", 15, great_person: "UNIT_ARTIST")
+    event("Rome", "golden_age_started", 15)
+
+    profile = DigestBuilder.new(@game).call[:timelines]["Rome"][:great_people_profile]
+
+    assert_equal({ early: 1, late: 0 }, profile[:one_off])
+  end
+
+  test "great_people_profile keys a great person the catalogue doesn't know by its own id" do
+    snapshot("Rome", 40, score: 10)
+
+    event("Rome", "great_person_expended", 15, great_person: "UNIT_SOMETHING_NEW")
+
+    profile = DigestBuilder.new(@game).call[:timelines]["Rome"][:great_people_profile]
+
+    assert_equal({ "UNIT_SOMETHING_NEW" => 1 }, profile[:by_kind])
   end
 
   test "great_people_profile is empty-shaped for a civ with no great-person activity" do
     digest = DigestBuilder.new(@game).call
 
     assert_equal(
-      { by_kind: {}, infrastructure: { early: 0, late: 0 }, consumption: { early: 0, late: 0 } },
+      { by_kind: {}, permanent: { early: 0, late: 0 }, one_off: { early: 0, late: 0 },
+        unresolved: { early: 0, late: 0 } },
       digest[:timelines]["Greece"][:great_people_profile]
     )
+  end
+
+  # A golden age scales by GoldenAgePercent, not by the pace of turns, so
+  # the prompt reads the length instead of deriving it from the speed.
+  test "the game section carries how long an artist's golden age runs at this speed" do
+    assert_equal 6, DigestBuilder.new(@game).call[:game][:golden_age_base_turns]
   end
 
   test "flags a map width it had to infer from the plots" do

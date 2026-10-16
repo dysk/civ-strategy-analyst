@@ -179,7 +179,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :bulb, city: nil, located: nil,
-          killed_by: nil } ],
+          civ: nil, killed_by: nil } ],
       timeline.great_people("Rome")
     )
   end
@@ -191,11 +191,11 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal :academy, timeline.great_people("Rome").first[:action]
   end
 
-  test "great_people leaves an expend untargeted when the same-turn improvement doesn't match the kind" do
+  test "great_people leaves an expend unplanted when the same-turn improvement doesn't match the kind" do
     event("Rome", "great_person_expended", 40, great_person: "UNIT_MUSICIAN")
     event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 5, y: 5)
 
-    assert_equal :concert_tour, timeline.great_people("Rome").first[:action]
+    assert_equal :instant, timeline.great_people("Rome").first[:action]
   end
 
   test "great_people separates three same-turn expends by kind against three same-turn improvements" do
@@ -204,11 +204,11 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     event("India", "great_person_expended", 122, great_person: "UNIT_MUSICIAN")
     event("India", "improvement_built", 122, improvement: "IMPROVEMENT_MANUFACTORY", x: 1, y: 1)
     event("India", "improvement_built", 122, improvement: "IMPROVEMENT_ACADEMY", x: 2, y: 2)
-    event("India", "improvement_built", 122, improvement: "IMPROVEMENT_CONCERT_HALL", x: 3, y: 3)
+    event("India", "improvement_built", 122, improvement: "IMPROVEMENT_CONCERT", x: 3, y: 3)
 
     actions = timeline.great_people("India").index_by { |g| g[:great_person] }.transform_values { |g| g[:action] }
 
-    assert_equal({ "UNIT_ENGINEER" => :manufactory, "UNIT_SCIENTIST" => :academy, "UNIT_MUSICIAN" => :concert_tour }, actions)
+    assert_equal({ "UNIT_ENGINEER" => :manufactory, "UNIT_SCIENTIST" => :academy, "UNIT_MUSICIAN" => :festival }, actions)
   end
 
   test "great_people treats the mod's civ-unique prophet analogues as prophets" do
@@ -231,6 +231,118 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal [ :citadel, nil ], actions
   end
 
+  test "great_people reads a musician's planted festival, which the mod lets it build" do
+    event("India", "great_person_expended", 122, great_person: "UNIT_MUSICIAN")
+    event("India", "improvement_built", 122, improvement: "IMPROVEMENT_CONCERT", x: 1, y: 1)
+
+    assert_equal :festival, timeline.great_people("India").first[:action]
+  end
+
+  test "great_people reads an admiral's dock under a civ's own name for it" do
+    event("Chile", "great_person_expended", 149, great_person: "UNIT_GREAT_ADMIRAL")
+    event("Chile", "improvement_built", 149, improvement: "IMPROVEMENT_CHILE_DOCK", x: 1, y: 1)
+
+    assert_equal :dock, timeline.great_people("Chile").first[:action]
+  end
+
+  test "great_people tells a prophet's two improvements apart" do
+    event("Lithuania", "great_person_expended", 60, great_person: "UNIT_PROPHET")
+    event("Lithuania", "improvement_built", 60, improvement: "IMPROVEMENT_SACRED_GROVE", x: 1, y: 1)
+
+    assert_equal :sacred_grove, timeline.great_people("Lithuania").first[:action]
+  end
+
+  # A landmark is the archaeologist's work, and the artist plants nothing.
+  test "great_people never reads an artist as planting a landmark" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_ARTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_LANDMARK", x: 1, y: 1)
+
+    assert_equal :great_work, timeline.great_people("Rome").first[:action]
+  end
+
+  test "great_people reads an artist expended the turn a golden age began as that golden age" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_ARTIST")
+    event("Rome", "golden_age_started", 40)
+
+    assert_equal :golden_age, timeline.great_people("Rome").first[:action]
+  end
+
+  test "great_people reads an artist expended with no golden age that turn as a great work" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_ARTIST")
+    event("Rome", "golden_age_started", 41)
+
+    assert_equal :great_work, timeline.great_people("Rome").first[:action]
+  end
+
+  test "great_people lets one golden age be claimed by one of two artists expended that turn" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_ARTIST")
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_ARTIST")
+    event("Rome", "golden_age_started", 40)
+
+    assert_equal [ :golden_age, :great_work ], timeline.great_people("Rome").map { |g| g[:action] }
+  end
+
+  test "great_people leaves another civ's golden age unclaimed by this one's artist" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_ARTIST")
+    event("Greece", "golden_age_started", 40)
+
+    assert_equal :great_work, timeline.great_people("Rome").first[:action]
+  end
+
+  # An expend that planted an improvement spent itself on the plot, so it
+  # must not take the age away from the artist expended beside it.
+  test "great_people gives a golden age to an artist over a prophet who planted that turn" do
+    event("Tibet", "great_person_expended", 64, great_person: "UNIT_DALAILAMA")
+    event("Tibet", "improvement_built", 64, improvement: "IMPROVEMENT_HOLY_SITE", x: 1, y: 1)
+    event("Tibet", "great_person_expended", 64, great_person: "UNIT_ARTIST")
+    event("Tibet", "golden_age_started", 64)
+
+    actions = timeline.great_people("Tibet").index_by { |g| g[:great_person] }.transform_values { |g| g[:action] }
+
+    assert_equal({ "UNIT_DALAILAMA" => :holy_site, "UNIT_ARTIST" => :golden_age }, actions)
+  end
+
+  test "great_people reads a writer's instant use as the pair the log cannot separate" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_WRITER")
+
+    assert_equal :instant, timeline.great_people("Rome").first[:action]
+  end
+
+  test "great_people reads the mod's unique artist, musician and merchant as their kinds" do
+    event("Italy", "great_person_expended", 40, great_person: "UNIT_ITALARTIST")
+    event("Italy", "golden_age_started", 40)
+    event("Cuba", "great_person_expended", 50, great_person: "UNIT_LEU_COMPARSA_FOLKLORICA")
+    event("Venice", "great_person_expended", 60, great_person: "UNIT_VENETIAN_MERCHANT")
+    event("Venice", "improvement_built", 60, improvement: "IMPROVEMENT_CUSTOMS_HOUSE", x: 1, y: 1)
+
+    assert_equal :golden_age, timeline.great_people("Italy").first[:action]
+    assert_equal :instant, timeline.great_people("Cuba").first[:action]
+    assert_equal :customs_house, timeline.great_people("Venice").first[:action]
+  end
+
+  test "great_people_born counts the mod's unique great people as births" do
+    event("Italy", "unit_created", 12, unit: "UNIT_ITALARTIST", city: "Roma")
+
+    assert_equal(
+      [ { turn: 12, great_person: "UNIT_ITALARTIST", city: "Roma" } ],
+      timeline.great_people_born("Italy")
+    )
+  end
+
+  test "a great person killed on a rival's ground names whose ground it was" do
+    event("Greece", "city_founded", 1, city: "Athens", x: 10, y: 10)
+    event("Rome", "unit_lost", 60, unit: "UNIT_MUSICIAN", killed_by: "Greece", x: 10, y: 11)
+
+    assert_equal [ "Athens", "Greece", :owned ], timeline.great_people("Rome").first.values_at(:city, :civ, :located)
+  end
+
+  test "a great person killed on nobody's ground names the nearest city's civ as an inference" do
+    event("Greece", "city_founded", 1, city: "Athens", x: 10, y: 10)
+    event("Rome", "unit_lost", 60, unit: "UNIT_MUSICIAN", killed_by: "Greece", x: 13, y: 10)
+
+    assert_equal [ "Athens", "Greece", :nearest ], timeline.great_people("Rome").first.values_at(:city, :civ, :located)
+  end
+
   # A targeted expend is the one great-person act that leaves a plot behind,
   # and the plot is the only thing that can say which city got the academy.
   test "a targeted expend names the city whose land the improvement went on" do
@@ -240,7 +352,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :academy, city: "Roma",
-        located: :owned, killed_by: nil },
+        located: :owned, civ: "Rome", killed_by: nil },
       timeline.great_people("Rome").first
     )
   end
@@ -270,7 +382,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { turn: 60, great_person: "UNIT_GREAT_GENERAL", fate: :killed, action: nil, city: "Roma", located: :logged,
-          killed_by: "Greece" } ],
+          civ: nil, killed_by: "Greece" } ],
       timeline.great_people("Rome")
     )
   end
@@ -287,7 +399,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { turn: 60, great_person: "UNIT_ENGINEER", fate: :disbanded, action: nil, city: nil, located: nil,
-          killed_by: nil } ],
+          civ: nil, killed_by: nil } ],
       timeline.great_people("Rome")
     )
   end

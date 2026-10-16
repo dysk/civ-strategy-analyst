@@ -171,15 +171,21 @@ class PlayerTimeline
 
   # The mod's great-person units, mapped to the kind they act as below.
   # UNIT_DALAILAMA, UNIT_FAKEPROPHET and UNIT_MABA are civilization-unique
-  # reskins of the Prophet - grouped with it here on that basis (they sit
-  # alongside UNIT_PROPHET in WarCasualties::CIVILIAN_UNITS), not confirmed
-  # against the mod's own unit table the way that list is.
+  # reskins of the Prophet, UNIT_ITALARTIST of the Artist,
+  # UNIT_LEU_COMPARSA_FOLKLORICA of the Musician and UNIT_VENETIAN_MERCHANT
+  # of the Merchant - all read off the mod's own Units and Unit_Builds
+  # tables, except the three prophet analogues, which sit alongside
+  # UNIT_PROPHET in WarCasualties::CIVILIAN_UNITS and are grouped on that
+  # basis.
   GREAT_PERSON_UNITS = {
     "UNIT_SCIENTIST" => :scientist,
     "UNIT_ENGINEER" => :engineer,
     "UNIT_MERCHANT" => :merchant,
+    "UNIT_VENETIAN_MERCHANT" => :merchant,
     "UNIT_ARTIST" => :artist,
+    "UNIT_ITALARTIST" => :artist,
     "UNIT_MUSICIAN" => :musician,
+    "UNIT_LEU_COMPARSA_FOLKLORICA" => :musician,
     "UNIT_WRITER" => :writer,
     "UNIT_PROPHET" => :prophet,
     "UNIT_MABA" => :prophet,
@@ -189,28 +195,46 @@ class PlayerTimeline
     "UNIT_GREAT_ADMIRAL" => :admiral
   }.freeze
 
-  # The tile improvement each kind can plant instead of an instant use.
-  # Writer, Musician and Admiral have no planted form.
-  TARGETED_ACTIONS = {
-    scientist: { improvement: "IMPROVEMENT_ACADEMY", action: :academy },
-    engineer: { improvement: "IMPROVEMENT_MANUFACTORY", action: :manufactory },
-    merchant: { improvement: "IMPROVEMENT_CUSTOMS_HOUSE", action: :customs_house },
-    prophet: { improvement: "IMPROVEMENT_HOLY_SITE", action: :holy_site },
-    artist: { improvement: "IMPROVEMENT_LANDMARK", action: :landmark },
-    general: { improvement: "IMPROVEMENT_CITADEL", action: :citadel }
+  # The improvements each kind can plant, from Unit_Builds joined to Builds
+  # in the mod's own tables. A kind can plant more than one improvement, and
+  # one action can answer to more than one improvement name where a
+  # civilization reskins it. A landmark belongs to the archaeologist, not to
+  # any great person; writer and artist plant nothing at all.
+  PLANTED_ACTIONS = {
+    scientist: { "IMPROVEMENT_ACADEMY" => :academy },
+    engineer: { "IMPROVEMENT_MANUFACTORY" => :manufactory },
+    merchant: { "IMPROVEMENT_CUSTOMS_HOUSE" => :customs_house },
+    prophet: { "IMPROVEMENT_HOLY_SITE" => :holy_site, "IMPROVEMENT_SACRED_GROVE" => :sacred_grove },
+    musician: { "IMPROVEMENT_CONCERT" => :festival },
+    general: { "IMPROVEMENT_CITADEL" => :citadel },
+    admiral: { "IMPROVEMENT_DOCK" => :dock, "IMPROVEMENT_CHILE_DOCK" => :dock }
   }.freeze
 
-  # The instant use when no matching improvement was planted the same turn.
-  # General and Admiral have none - a use that leaves no trace in the log.
-  UNTARGETED_ACTIONS = {
+  # The use that leaves no plot behind, where the log can name it. A writer
+  # and a musician each have two such uses the log cannot tell apart - a
+  # great work against a culture award, a great work against a concert tour
+  # - so they get :instant and the prompt names both readings. General and
+  # admiral have none at all.
+  UNPLANTED_ACTIONS = {
     scientist: :bulb,
     engineer: :hurry,
     merchant: :trade_mission,
     prophet: :religious_action,
     artist: :great_work,
-    writer: :treatise,
-    musician: :concert_tour
+    writer: :instant,
+    musician: :instant
   }.freeze
+
+  # The units that can begin a golden age, in the order they claim one.
+  GOLDEN_AGE_UNITS = [ "UNIT_ARTIST", "UNIT_ITALARTIST", "UNIT_LEU_COMPARSA_FOLKLORICA", "UNIT_DALAILAMA" ].freeze
+
+  # What an act pays, not whether it touched a tile. A great work is a
+  # permanent yield with no plot behind it, and a golden age pays once
+  # however long it runs. Anything else - :instant, or a nil action where a
+  # general or admiral left no trace - is unresolved, which is a limit of
+  # the record rather than a use of its own.
+  PERMANENT_ACTIONS = %i[academy manufactory customs_house holy_site sacred_grove festival citadel dock great_work].freeze
+  ONE_OFF_ACTIONS = %i[bulb hurry trade_mission religious_action golden_age].freeze
 
   # A planted improvement is the only great-person act that leaves a plot
   # behind, so it is the only one that can name a city. The plot sits on the
@@ -218,27 +242,65 @@ class PlayerTimeline
   # logs; a citadel is the one kind that can land on a rival's border, and
   # then the city it names is the one it was planted against.
   def expended_row(event)
-    kind = GREAT_PERSON_UNITS[event.payload["great_person"]]
-    planted = planted_improvement(kind, event.civ, event.turn)
+    planted = planted_improvement(GREAT_PERSON_UNITS[event.payload["great_person"]], event.civ, event.turn)
     place = planted && place_of(planted)
 
     { turn: event.turn, great_person: event.payload["great_person"], fate: :expended,
-      action: planted ? TARGETED_ACTIONS[kind][:action] : UNTARGETED_ACTIONS[kind],
-      city: place&.dig(:city), located: place&.dig(:source), killed_by: nil }
+      action: expended_action(event, planted), city: place&.dig(:city),
+      located: place&.dig(:source), civ: place&.dig(:civ), killed_by: nil }
+  end
+
+  def expended_action(event, planted)
+    kind = GREAT_PERSON_UNITS[event.payload["great_person"]]
+    return PLANTED_ACTIONS.dig(kind, planted.payload["improvement"]) if planted
+    return :golden_age if golden_age_claims(event.civ).include?(event.seq)
+
+    UNPLANTED_ACTIONS[kind]
   end
 
   # (turn, civ) coincidence, not an id - the log has no other way to say a
   # planted improvement belongs to a particular expend. Filtering candidate
-  # improvements to the one this kind can plant is what separates three
+  # improvements to the ones this kind can plant is what separates three
   # great people expended the same turn against three unrelated
   # improvements finished that same turn.
   def planted_improvement(kind, civ, turn)
-    targeted = TARGETED_ACTIONS[kind]
-    return unless targeted
+    plantable = PLANTED_ACTIONS[kind]
+    return unless plantable
 
     of_type("improvement_built").find do |e|
-      e.civ == civ && e.turn == turn && e.payload["improvement"] == targeted[:improvement]
+      e.civ == civ && e.turn == turn && plantable.key?(e.payload["improvement"])
     end
+  end
+
+  # A golden age leaves nothing on the expend that began it, so it is
+  # claimed by (turn, civ) coincidence the way a planted improvement is. 13
+  # of the 31 artist expends across the logs share a turn with one, against
+  # a 3.6% chance of a golden age starting on any given civ-turn, so the
+  # coincidence is the artist's doing in nearly all of them. Each
+  # golden_age_started is claimed once and by one expend, so two artists and
+  # one age give one golden_age and one great_work.
+  def golden_age_claims(civ)
+    @golden_age_claims ||= {}
+    @golden_age_claims[civ] ||= begin
+      ages = of_type("golden_age_started").select { |e| e.civ == civ }.group_by(&:turn)
+
+      golden_age_candidates(civ).flat_map do |turn, expends|
+        expends
+          .sort_by { |e| GOLDEN_AGE_UNITS.index(e.payload["great_person"]) }
+          .first(ages.fetch(turn, []).size)
+          .map(&:seq)
+      end.to_set
+    end
+  end
+
+  # An expend that planted an improvement spent itself on the plot, so it
+  # cannot have begun an age and must not claim one away from an artist
+  # expended the same turn.
+  def golden_age_candidates(civ)
+    of_type("great_person_expended")
+      .select { |e| e.civ == civ && GOLDEN_AGE_UNITS.include?(e.payload["great_person"]) }
+      .reject { |e| planted_improvement(GREAT_PERSON_UNITS[e.payload["great_person"]], civ, e.turn) }
+      .group_by(&:turn)
   end
 
   def place_of(event)
@@ -248,13 +310,17 @@ class PlayerTimeline
 
   def tiles = @tiles ||= TileOwnership.for(@game)
 
+  # `civ` is whose ground the great person stood on, not whose great person
+  # it was - the row already sits under its owner. `located` grades the
+  # claim: a logged city, land the civ held, land it bordered, or the
+  # nearest city the log can reach.
   def lost_row(event)
     killed_by, logged = event.payload.values_at("killed_by", "city")
     place = place_of(event) unless logged
 
     { turn: event.turn, great_person: event.payload["unit"],
       fate: killed_by ? :killed : :disbanded, action: nil, city: logged || place&.dig(:city),
-      located: logged ? :logged : place&.dig(:source), killed_by: killed_by }
+      located: logged ? :logged : place&.dig(:source), civ: place&.dig(:civ), killed_by: killed_by }
   end
 
   # What a capture cost the side that lost it: the city's share of that
