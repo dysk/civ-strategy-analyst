@@ -148,7 +148,7 @@ instructions.
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
 - **Tile→city resolution** — stages one to three implemented (`ce21624`,
-  `f7b38c1`, `842fd1f`), with nothing consuming them yet. Six event types (`improvement_built`, `unit_lost`,
+  `f7b38c1`, `842fd1f`, `9ecf7a9`), with nothing consuming them yet. Six event types (`improvement_built`, `unit_lost`,
   `unit_created`, `improvement_pillaged`, `natural_wonder_discovered`,
   `trade_route_plundered`) say what happened and never where.
   `docs/tile-ownership.md` is the full design and holds the measurements.
@@ -164,9 +164,11 @@ instructions.
   names more than one city.
   The nearest standing centre within five hexes answers most of what is
   left, tagged `source: :nearest`, and five hexes is the furthest the game
-  lets a city claim. Together the three stages name a place for 92 to 99
+  lets a city claim. Together the three stages name a place for 94 to 99
   percent of the rows, and every answer carries how it was arrived at so a
   consumer can tell a fact from an inference.
+  Most `city_destroyed` rows are the losing civ's record of a capture rather
+  than a razing, which the replay tells apart by the civ they carry.
   Four known users: naming the city for a targeted great-person expend
   (`PlayerTimeline#expended_row`, currently nil), a place name for a battle or
   great-person death in `ChronicleSpine`, a city for an inferred missionary or

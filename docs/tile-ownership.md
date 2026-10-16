@@ -25,7 +25,7 @@ both dated to the end of the turn they are asked about:
   neither, and its `source` is what tells a consumer the answer is there to
   be read off `candidates`.
 
-Together they answer 98.5, 98.5 and 92.2 percent of the rows that ask.
+Together they answer 98.5, 98.5 and 93.8 percent of the rows that ask.
 Every count below is measured through that projection on the imported
 india-diplo, chile-vs-vietnam and babylon-domination games.
 
@@ -124,26 +124,23 @@ row with no city:
 
 | stage | india-diplo | chile-vs-vietnam | babylon-domination |
 |---|---|---|---|
-| 1, in the index | 1337 | 496 | 614 |
-| 2, adjacent to one city | 68 | 50 | 77 |
-| 2, adjacent to several plots of one civ | 5 | 10 | 4 |
-| 2, adjacent to two or more rivals | 15 | 6 | 4 |
-| 3, geometry decides | 66 | 47 | 62 |
-| 4, beyond the reach of any city | 23 | 9 | 64 |
+| 1, in the index | 1360 | 496 | 660 |
+| 2, adjacent to one city | 57 | 50 | 61 |
+| 2, adjacent to several plots of one civ | 5 | 10 | 5 |
+| 2, adjacent to two or more rivals | 14 | 6 | 5 |
+| 3, geometry decides | 55 | 47 | 43 |
+| 4, beyond the reach of any city | 23 | 9 | 51 |
 | rows in total | 1514 | 618 | 825 |
 
-Babylon-domination's last two figures are held up by a defect rather than
-by geography — see the razings below.
-
-Stage 1 answers 74 to 88 percent of them exactly and geometry is left with 4
-to 9 percent.
+Stage 1 answers 80 to 90 percent of them exactly and geometry is left with 4
+to 6 percent.
 
 An earlier draft of this table credited stage 1 with 90 to 98 percent,
 because the probe behind it built one index out of the whole log and
 answered a turn-50 question with a tile bought on turn 200. Dating the index
-costs stage 1 about ten points, and the plots it hands on are ones that were
-genuinely nobody's at the time — of india-diplo's 177, 112 are claimed later
-in the game, 29 belonged to somebody at another time and 36 to nobody ever.
+costs stage 1 about eight points, and the plots it hands on are ones that
+were genuinely nobody's at the time — claimed later in the game, held by
+somebody at another time, or nobody's throughout.
 
 A plot adjacent to two rivals' tiles is a border hex, which is the most
 interesting answer the lookup can give and should reach the chronicle as one
@@ -217,10 +214,18 @@ babylon-domination and buys 25 more plots under Babylon. A real razing
 carries the *current owner's* civ, and after one the city files nothing
 ever again.
 
-The replay still reads the first kind as a razing and releases a live city's
-whole territory, which is the next thing to fix. Telling them apart needs no
-new reading — the replay already knows who holds the city, so the razing is
-the one whose civ is that holder.
+Telling them apart needs no new reading of the log, since the replay
+already knows who holds the city, so the razing is the one whose civ is
+that holder. Reading them apart moved 69 rows from an inference back to a
+fact and gave 13 more a place they had none for.
+
+Two cases that read like counter-examples are not. Cavite El Viejo is
+captured by Arabia on turn 87 of babylon-domination, written off by the
+Philippines the same turn, razed by Arabia on 93 and refounded by the
+Philippines on 98 one hex away. Tyre is captured by the Sioux on turn 124 of
+espionage-test, written off by Jerusalem that turn, razed by the Sioux on
+128 and refounded by Jerusalem on 142 four hexes away. The rows that keep
+naming them afterwards belong to the new cities.
 
 A lookup is answered with the state the turn ended in, the convention
 snapshots already follow here. A unit dying on the turn its city changed
