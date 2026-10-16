@@ -275,6 +275,13 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     )
   end
 
+  test "a great person killed in the field is placed by the land it fell on" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece", x: 10, y: 11)
+
+    assert_equal [ "Roma", :owned ], timeline.great_people("Rome").first.values_at(:city, :located)
+  end
+
   test "great_people reads a great person lost with no killer as disbanded" do
     event("Rome", "unit_lost", 60, unit: "UNIT_ENGINEER")
 

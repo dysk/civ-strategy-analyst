@@ -75,6 +75,20 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   # A declaration nobody acted on and a raid for a worker are not the
   # moment a war of conquest is, and the chronicle should not spend an
   # entry on them as though they were.
+  test "the chronicle is told where a war was fought, in order and without counts" do
+    at_war_over_the_border
+
+    war = all_moments.find { |moment| moment[:type] == :war }
+
+    assert_equal [ %w[Athens Roma], %w[Greece Rome] ], war.values_at(:fought_at, :fought_on)
+  end
+
+  test "the theatre's own tally is spent here and does not travel on" do
+    at_war_over_the_border
+
+    assert_nil all_moments.find { |moment| moment[:type] == :war }[:theatre]
+  end
+
   test "a raid weighs less than a war" do
     declare_war
     killed("Rome", "Greece", "UNIT_ARCHER", 11)
@@ -454,6 +468,15 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   def city_state_snapshot(name, turn, relations: {})
     event(nil, "city_state_snapshot", turn, city_state: name,
       relations: relations.map { |civ, (influence, per_turn)| { "civ" => civ, "influence" => influence, "per_turn" => per_turn } })
+  end
+
+  def at_war_over_the_border
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Greece", "city_founded", 2, city: "Athens", x: 16, y: 10)
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event("Rome", "unit_lost", 12, unit: "UNIT_ARCHER", killed_by: "Greece", x: 16, y: 11)
+    event("Rome", "unit_lost", 13, unit: "UNIT_ARCHER", killed_by: "Greece", x: 15, y: 10)
+    event("Greece", "unit_lost", 14, unit: "UNIT_WARRIOR", killed_by: "Rome", x: 10, y: 11)
   end
 
   def killed(killer, victim, unit, turn)

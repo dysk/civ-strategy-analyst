@@ -65,7 +65,8 @@ class KeyMomentDetector
     lost_by.flat_map do |civ|
       timeline.great_people(civ).select { |g| g[:fate] == :killed }.map do |g|
         { type: :great_person_lost, turn: g[:turn], civ: civ, great_person: g[:great_person],
-          kind: PlayerTimeline::GREAT_PERSON_UNITS[g[:great_person]], killed_by: g[:killed_by] }
+          kind: PlayerTimeline::GREAT_PERSON_UNITS[g[:great_person]], killed_by: g[:killed_by],
+          city: g[:city], located: g[:located] }
       end
     end.sort_by { |moment| moment[:turn] }
   end
@@ -409,9 +410,10 @@ class KeyMomentDetector
   def wars
     war_declarations.map do |war_declared, peace|
       war = declared_war(war_declared, peace)
+      scale = @casualties.scale(war)
 
       with_armies(war.merge(toll: @casualties.during(war), first_blood: @casualties.first_blood(war),
-                            scale: @casualties.scale(war)))
+                            scale: scale, theatre: (theatre(war) unless scale == :bloodless)))
     end
   end
 
@@ -514,6 +516,31 @@ class KeyMomentDetector
       attacker_civs: attacker_civs, defender_civs: defender_civs,
       cities_captured: cities_captured(attacker_civs + defender_civs, war_declared.turn, peace&.turn) }
   end
+
+  # Where the dead fell is the only thing the log can say about where a war
+  # was fought. A loss names no war of its own - only 3 percent carry a
+  # killer from the other side - so two wars running at once over the same
+  # civ count the same death twice, and a border hex counts for both cities
+  # it lies between. A war nothing was exchanged across borrows a field it
+  # never had, which is why a bloodless one is given none.
+  def theatre(war)
+    civs = war[:attacker_civs] + war[:defender_civs]
+
+    placed = of_type("unit_lost").filter_map do |event|
+      next unless civs.include?(event.civ) && in_window?(event.turn, war[:turn], war[:turn_peace])
+
+      plot = event.payload.values_at("x", "y")
+      tiles.candidates(plot, turn: event.turn) if plot.all?
+    end
+
+    { cities: tallied(placed, :cities), lands: tallied(placed, :civs) } if placed.any?
+  end
+
+  def tallied(placed, key)
+    placed.flat_map { |found| found[key] }.compact.tally.sort_by { |_name, count| -count }.to_h
+  end
+
+  def tiles = @tiles ||= TileOwnership.for(@game)
 
   def in_window?(turn, turn_declared, turn_peace)
     turn >= turn_declared && (turn_peace.nil? || turn <= turn_peace)

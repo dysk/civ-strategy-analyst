@@ -249,10 +249,12 @@ class PlayerTimeline
   def tiles = @tiles ||= TileOwnership.for(@game)
 
   def lost_row(event)
-    killed_by, city = event.payload.values_at("killed_by", "city")
+    killed_by, logged = event.payload.values_at("killed_by", "city")
+    place = place_of(event) unless logged
+
     { turn: event.turn, great_person: event.payload["unit"],
-      fate: killed_by ? :killed : :disbanded, action: nil, city: city,
-      located: (:logged if city), killed_by: killed_by }
+      fate: killed_by ? :killed : :disbanded, action: nil, city: logged || place&.dig(:city),
+      located: logged ? :logged : place&.dig(:source), killed_by: killed_by }
   end
 
   # What a capture cost the side that lost it: the city's share of that

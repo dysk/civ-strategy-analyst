@@ -38,6 +38,48 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
                  detector.wars.first[:first_blood])
   end
 
+  # Where the dead fell is the only thing the log can say about where a war
+  # was fought, and the plot is on nearly every loss.
+  test "wars counts the cities the fighting happened around" do
+    at_war_over_the_border
+
+    assert_equal({ "Athens" => 2, "Roma" => 1 }, detector.wars.first[:theatre][:cities])
+  end
+
+  test "wars counts whose soil the fighting happened on" do
+    at_war_over_the_border
+
+    assert_equal({ "Greece" => 2, "Rome" => 1 }, detector.wars.first[:theatre][:lands])
+  end
+
+  test "wars leaves the theatre out when no loss can be placed" do
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event("Rome", "unit_lost", 12, unit: "UNIT_ARCHER", killed_by: "Greece")
+
+    assert_nil detector.wars.first[:theatre]
+  end
+
+  # A loss names no war of its own, so a war running alongside another one
+  # would otherwise borrow its battlefield. Nothing was exchanged across
+  # this front at all, so there is no field to name.
+  test "wars gives a war nobody bled in no battlefield" do
+    at_war_over_the_border
+    event(nil, "war_declared", 11, attacker_team: 3, attacker_civs: %w[Rome], defender_team: 4, defender_civs: %w[Egypt])
+
+    bloodless = detector.wars.find { |war| war[:defender_civs] == %w[Egypt] }
+
+    assert_nil bloodless[:theatre]
+  end
+
+  test "wars shapes the theatre from the warring civs' own losses, inside the war" do
+    at_war_over_the_border
+    event("Egypt", "city_founded", 1, city: "Thebes", x: 30, y: 30)
+    event("Egypt", "unit_lost", 12, unit: "UNIT_SPEARMAN", killed_by: "Nubia", x: 30, y: 31)
+    event("Rome", "unit_lost", 5, unit: "UNIT_SCOUT", killed_by: "Barbarians", x: 30, y: 31)
+
+    assert_equal %w[Athens Roma], detector.wars.first[:theatre][:cities].keys
+  end
+
   test "wars leaves the toll empty when no side lost anything" do
     event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
     event("Greece", "unit_lost", 15, unit: "UNIT_CARAVAN")
@@ -223,9 +265,16 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { type: :great_person_lost, turn: 60, civ: "Rome", great_person: "UNIT_GREAT_GENERAL",
-          kind: :general, killed_by: "Greece" } ],
+          kind: :general, killed_by: "Greece", city: nil, located: nil } ],
       detector.great_people_lost
     )
+  end
+
+  test "great_people_lost carries where the great person fell" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece", x: 10, y: 11)
+
+    assert_equal [ "Roma", :owned ], detector.great_people_lost.first.values_at(:city, :located)
   end
 
   test "great_people_lost ignores an expend's own echo and a disbanded great person" do
@@ -1120,6 +1169,17 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
 
   def city_states(*civs)
     event(nil, "session_started", 0, city_states: civs.map { |civ| { "civ" => civ } })
+  end
+
+  # Rome and Greece three hexes apart, with two Romans falling on Athenian
+  # land and one Greek on Roman land.
+  def at_war_over_the_border
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Greece", "city_founded", 2, city: "Athens", x: 16, y: 10)
+    event(nil, "war_declared", 10, attacker_team: 1, attacker_civs: %w[Rome], defender_team: 2, defender_civs: %w[Greece])
+    event("Rome", "unit_lost", 12, unit: "UNIT_ARCHER", killed_by: "Greece", x: 16, y: 11)
+    event("Rome", "unit_lost", 13, unit: "UNIT_ARCHER", killed_by: "Greece", x: 15, y: 10)
+    event("Greece", "unit_lost", 14, unit: "UNIT_WARRIOR", killed_by: "Rome", x: 10, y: 11)
   end
 
   def event(civ, event_type, turn, extra = {})

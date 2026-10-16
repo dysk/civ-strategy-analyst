@@ -15,6 +15,7 @@ class ChronicleSpine
   CLUSTER_SPAN = 6
   QUIET_GAP = 8
   ANCHOR_WEIGHT = 3
+  THEATRE_PLACES = 3
 
   WEIGHTS = {
     nuclear_detonation: 8, capital_gained: 6, capital_lost: 6,
@@ -163,11 +164,20 @@ class ChronicleSpine
 
   def chronicled(war)
     toll = war[:toll]
-    told = war.except(:toll, :forces)
+    told = war.except(:toll, :forces, :theatre)
               .merge(casualties: bleeding(toll), losses_by_type: buried(toll),
-                     taken_by_type: taken(toll))
+                     taken_by_type: taken(toll), **fought(war[:theatre]))
 
     war[:forces] ? told.merge(armies: armies(war[:forces])) : told
+  end
+
+  # Where the fighting fell, heaviest first and never counted - the same
+  # discipline `bleeding` keeps for the casualties themselves.
+  def fought(theatre)
+    return {} unless theatre
+
+    { fought_at: theatre[:cities].keys.first(THEATRE_PLACES),
+      fought_on: theatre[:lands].keys.first(THEATRE_PLACES) }
   end
 
   # What stood on the field and what new thing reached it, and how much of
