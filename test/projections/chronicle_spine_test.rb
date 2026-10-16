@@ -383,6 +383,17 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
   end
 
+  # A concert tour spends stored tourism for one push on a rival's people,
+  # so a musician cut down before it weighs more than a scientist does.
+  test "losing a musician weighs more than losing a scientist" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_MUSICIAN", killed_by: "Greece")
+    event("Greece", "unit_lost", 100, unit: "UNIT_SCIENTIST", killed_by: "Rome")
+
+    losses = all_moments.select { |m| m[:type] == :great_person_lost }.index_by { |m| m[:civ] }
+
+    assert_operator losses["Rome"][:weight], :>, losses["Greece"][:weight]
+  end
+
   test "losing any other great person is lighter than losing a general" do
     event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", killed_by: "Greece")
     event("Greece", "unit_lost", 100, unit: "UNIT_SCIENTIST", killed_by: "Rome")

@@ -30,9 +30,12 @@ class ChronicleSpine
   }.freeze
 
   # A general lost to an enemy is a battle loss and a spent investment at
-  # once, so it anchors an entry the way a border town falling does.
-  # Every other kind is texture, the same weight as a spy's death.
-  GREAT_PERSON_LOST_WEIGHTS = { general: ANCHOR_WEIGHT, other: 1 }.freeze
+  # once, so it anchors an entry the way a border town falling does. A
+  # musician is the cultural front's version of it - a concert tour spends
+  # stored tourism for one large push on a rival's people, and the army that
+  # cut the musician down denied that push. Every other kind is texture, the
+  # same weight as a spy's death.
+  GREAT_PERSON_LOST_WEIGHTS = { general: ANCHOR_WEIGHT, musician: 3, other: 1 }.freeze
 
   # A war is worth what it cost. A declaration nobody acted on is an act of
   # diplomacy that the chronicle need not stop for, and a raid for a worker
