@@ -51,9 +51,24 @@ class Religion
     @log.of_type("unit_lost")
       .select { |event| event.civ == civ && event.payload["unit"] == unit_type && !event.payload["killed_by"] }
       .sort_by(&:turn)
-      .map { |event| { turn: event.turn, city: event.payload["city"], x: event.payload["x"],
-                        y: event.payload["y"], inferred: true } }
+      .map { |event| use(event) }
   end
+
+  # Where a use happened matters as much as that it happened, since a hold
+  # is only worth setting against a use near the same city. The loss record
+  # names a city for 7 of 116 uses across the logs, so the plot it carries
+  # is what places the rest - and 83 of those sit on somebody else's land,
+  # which is where a missionary does its work.
+  def use(event)
+    x, y = event.payload.values_at("x", "y")
+    logged = event.payload["city"]
+    place = tiles.owner([ x, y ], turn: event.turn) if x && y
+
+    { turn: event.turn, city: logged || place&.dig(:city), owner: place&.dig(:civ),
+      located: logged ? :logged : place&.dig(:source), x: x, y: y, inferred: true }
+  end
+
+  def tiles = @tiles ||= TileOwnership.for(@game)
 
   def conversions = @conversions ||= @log.of_type("city_converted")
 

@@ -212,8 +212,41 @@ class ReligionTest < ActiveSupport::TestCase
   test "missionary_uses infers a use from a missionary's unlaid death" do
     unit_lost(80, "India", "UNIT_MISSIONARY", city: "Delhi", x: 12, y: 4)
 
-    assert_equal [ { turn: 80, city: "Delhi", x: 12, y: 4, inferred: true } ],
+    assert_equal [ { turn: 80, city: "Delhi", owner: nil, located: :logged, x: 12, y: 4, inferred: true } ],
                  Religion.new(@game).missionary_uses("India")
+  end
+
+  # A use is only worth reading next to a hold if it carries a place, and
+  # the loss record almost never names one - 7 of 116 uses across the five
+  # logs. The plot it does carry is what names the city.
+  test "a use is placed by the land it happened on" do
+    founded("India", "Delhi", 1, 10, 10)
+    unit_lost(80, "India", "UNIT_MISSIONARY", x: 10, y: 11)
+
+    assert_equal [ { turn: 80, city: "Delhi", owner: "India", located: :owned, x: 10, y: 11, inferred: true } ],
+                 Religion.new(@game).missionary_uses("India")
+  end
+
+  test "a use on a rival's land names the rival's city, which is the common case" do
+    founded("Tibet", "Lhasa", 1, 20, 20)
+    unit_lost(80, "India", "UNIT_MISSIONARY", x: 20, y: 21)
+
+    assert_equal({ turn: 80, city: "Lhasa", owner: "Tibet", located: :owned, x: 20, y: 21, inferred: true },
+                 Religion.new(@game).missionary_uses("India").first)
+  end
+
+  test "a use outside everybody's borders is placed by the nearest city, as an inference" do
+    founded("India", "Delhi", 1, 10, 10)
+    unit_lost(80, "India", "UNIT_MISSIONARY", x: 13, y: 10)
+
+    assert_equal :nearest, Religion.new(@game).missionary_uses("India").first[:located]
+  end
+
+  test "a use nothing can place leaves the place open" do
+    unit_lost(80, "India", "UNIT_MISSIONARY", x: 13, y: 10)
+
+    assert_equal({ turn: 80, city: nil, owner: nil, located: nil, x: 13, y: 10, inferred: true },
+                 Religion.new(@game).missionary_uses("India").first)
   end
 
   test "missionary_uses excludes a missionary killed by an enemy" do
@@ -225,7 +258,7 @@ class ReligionTest < ActiveSupport::TestCase
   test "inquisitor_uses infers a use from an inquisitor's unlaid death, the same as a missionary" do
     unit_lost(90, "India", "UNIT_INQUISITOR", city: "Vijayanagara")
 
-    assert_equal [ { turn: 90, city: "Vijayanagara", x: nil, y: nil, inferred: true } ],
+    assert_equal [ { turn: 90, city: "Vijayanagara", owner: nil, located: :logged, x: nil, y: nil, inferred: true } ],
                  Religion.new(@game).inquisitor_uses("India")
   end
 
@@ -272,6 +305,14 @@ class ReligionTest < ActiveSupport::TestCase
     payload["religion"] = religion if religion
     @game.game_events.create!(seq: @seq, session_index: 0, turn: turn,
                               event_type: "city_snapshot", civ: civ, payload: payload)
+  end
+
+  def founded(civ, city, turn, x, y)
+    @seq += 1
+    @game.game_events.create!(
+      seq: @seq, session_index: 0, turn: turn, event_type: "city_founded", civ: civ,
+      payload: { "city" => city, "x" => x, "y" => y }
+    )
   end
 
   def unit_lost(turn, civ, unit, city: nil, x: nil, y: nil, killed_by: nil)
