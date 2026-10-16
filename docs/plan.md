@@ -2021,3 +2021,71 @@ spy pressure and holy-city passive pressure remain entirely unlogged, per
 the doc; no reconstruction is possible for any of the three. An end-to-end
 `bin/civ analyze`/`bin/civ chronicle` A/B is pending, the same as several
 other tranche features.
+
+## Plan: great people against the mod's own tables (implemented)
+
+Status: **Implemented 2026-10-17.** `docs/great-people.md`, in one pass
+rather than its eight separate cycles.
+
+`PlayerTimeline`'s great-person map was written from memory of BNW, and
+three of the twelve units were labelled wrong. Ground truth now comes from
+`Unit_Builds` joined to `Builds` in
+`/Users/dysk/projects/Lekmod/LEKMOD/Override/CIV5Units.xml`:
+`TARGETED_ACTIONS` became `PLANTED_ACTIONS`, a `kind -> {improvement =>
+action}` map, because a kind can plant more than one improvement (the
+prophet's sacred grove) and one action can answer to more than one
+improvement name where a civilization reskins it
+(`IMPROVEMENT_CHILE_DOCK`). The musician's festival and the admiral's dock
+joined it; the artist's landmark left, because `BUILD_LANDMARK` belongs to
+`UNIT_ARCHAEOLOGIST` alone and the artist plants nothing.
+
+Across the three reconstructable example logs the expends now read
+`festival: 2` (India, turns 122 and 133), `dock: 1` (Chile, turn 149) and
+`golden_age: 9`, none of which the old map could name. An artist expended
+the turn a `golden_age_started` fired for the same civilization is read as
+that golden age, claimed one-for-one so two artists and one age give one
+`golden_age` and one `great_work`; an expend that planted something cannot
+claim an age away from an artist beside it. The false-positive risk is in
+the method's own comment — 13 of 31 artist expends share a turn with an
+age, against a 3.6% chance per civ-turn.
+
+`UNIT_ITALARTIST`, `UNIT_LEU_COMPARSA_FOLKLORICA` and
+`UNIT_VENETIAN_MERCHANT` joined `GREAT_PERSON_UNITS`, and
+`great_people_profile.by_kind` now keys a unit the catalogue doesn't know by
+its own id, so the mod's next unique great person reads as noise instead of
+vanishing into a nil key. The writer's `treatise` and the musician's
+`concert_tour` became `:instant`: each was one of two uses the log cannot
+separate, and the code had been picking one outright for 39 expends.
+
+The profile's axis changed from `infrastructure`/`consumption` — which
+measured whether an act touched a tile — to `permanent`, `one_off` and
+`unresolved`, which measure what it pays. A great work is permanent yield
+with no plot behind it and had been counted as consumption. The early/late
+split on the played-length midpoint and its justification stand unchanged.
+
+`GameSpeed` gained `GOLDEN_AGE_FACTORS` and `golden_age_turns`, because a
+golden age scales by `GoldenAgePercent` and not by the general turn
+percentage — on quick speed an artist's eight turns becomes 6, where the
+turn factor would answer 5. `DigestBuilder` carries
+`golden_age_base_turns` in the `game` section so the prompt reads one
+number instead of deriving it. `GameSpeed::FACTORS` itself still holds
+`QUICK` alone, which is `docs/game-speed.md`'s own change.
+
+`lost_row` keeps the `civ` that `TileOwnership#owner` already returned, so
+a killed great person says whose ground it fell on with `located` grading
+the claim. `ChronicleSpine::GREAT_PERSON_LOST_WEIGHTS` gains `musician: 3`:
+a concert tour spends stored tourism for one push on a rival's people, and
+the army that cut the musician down denied it.
+
+Both prompts were rewritten against the new map — `analyze_game.md`'s field
+reference, its golden-age paragraph (which keeps the standing silence on
+how long an age lasted, the log carrying no end), its killed-great-person
+passage, its game section and its great-people verdict rule;
+`chronicle_game.md`'s great-people section gains the lost musician, the
+artist's golden age, and the instruction to say a genius was spent and stop
+where the record cannot say on what.
+
+Not done, left for later, all three from the plan's own "Later, not now":
+concert-tour detection from a single-rival influence jump after a musician
+`:instant`, a `script/extract_lekmod_unit_builds` to keep the map from
+drifting again, and archaeologists.
