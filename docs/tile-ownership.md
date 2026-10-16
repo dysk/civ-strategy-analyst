@@ -133,7 +133,7 @@ row with no city:
 | rows in total | 1514 | 618 | 825 |
 
 Stage 1 answers 80 to 90 percent of them exactly and geometry is left with 4
-to 6 percent.
+to 8 percent.
 
 An earlier draft of this table credited stage 1 with 90 to 98 percent,
 because the probe behind it built one index out of the whole log and
