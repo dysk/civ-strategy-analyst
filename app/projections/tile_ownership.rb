@@ -9,6 +9,12 @@
 class TileOwnership
   REPLAYED_EVENTS = %w[city_founded plot_acquired plot_bought city_captured city_destroyed].freeze
 
+  # How far geometry may reach for a name. A city cannot own a plot more than
+  # five hexes from its centre - the game's own acquire limit, and no claim in
+  # india-diplo, chile-vs-vietnam or babylon-domination breaks it - so beyond
+  # that a name would be an invention rather than an inference.
+  REACH = 5
+
   def self.for(game)
     game.projection(self) { new(game, grid: HexGrid.new(width: MapBounds.for(game).width)) }
   end
@@ -28,22 +34,40 @@ class TileOwnership
     { city: lone(found[:cities]), civ: lone(found[:civs]), source: found[:source] }
   end
 
-  # Every city the log lets us name for `plot` - the one holding it, or the
-  # ones holding the ring around it - and nil where it names none. A capture
-  # or a razing counts for the whole turn it happened on.
+  # Every city the log lets us name for `plot` - the one holding it, the ones
+  # holding the ring around it, or the nearest standing centres within reach -
+  # and nil for a plot too far out for any of them. A capture or a razing
+  # counts for the whole turn it happened on.
   def candidates(plot, turn:)
     replay
     holder = holder_at(plot, turn)
     return naming([ holder ], :owned) if holder
 
     around = @grid.neighbours(plot).filter_map { |neighbour| holder_at(neighbour, turn) }
-    naming(around, :adjacent) if around.any?
+    return naming(around, :adjacent) if around.any?
+
+    nearest = nearest_cities(plot, turn)
+    naming(nearest, :nearest) if nearest.any?
   end
 
   private
 
   def holder_at(plot, turn)
     Array(@history[plot]).reverse_each.find { |held_from, _| held_from <= turn }&.last
+  end
+
+  # Every city standing at `turn` whose centre is as near `plot` as the
+  # nearest is. Equally near cities all come back, since a tiebreak by name or
+  # by founding turn would read as a fact and would not be one.
+  def nearest_cities(plot, turn)
+    within_reach = @centres.filter_map { |centre|
+      holder = holder_at(centre, turn)
+      distance = @grid.distance(plot, centre)
+      [ distance, holder ] if holder && distance <= REACH
+    }
+    nearest = within_reach.map(&:first).min
+
+    within_reach.select { |distance, _| distance == nearest }.map(&:last)
   end
 
   def naming(holders, source)
@@ -59,6 +83,7 @@ class TileOwnership
     @replay ||= begin
       @held = {}
       @history = {}
+      @centres = []
       @plots = Hash.new { |plots, city| plots[city] = [] }
 
       @events.each { |event| apply(event) }
@@ -84,6 +109,7 @@ class TileOwnership
     return unless centre
 
     holder = holder_of(event)
+    @centres << centre unless @centres.include?(centre)
     claim(centre, event.turn, holder)
     @grid.neighbours(centre).each { |plot| claim(plot, event.turn, holder) unless @held[plot] }
   end

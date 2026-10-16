@@ -16,6 +16,12 @@ class TileOwnershipTest < ActiveSupport::TestCase
     assert_nil tiles.owner([ 20, 20 ], turn: 5)
   end
 
+  test "a plot out of the index is read as an inference, not as a holding" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_equal :nearest, tiles.owner([ 13, 10 ], turn: 1)[:source]
+  end
+
   test "a city owns the plot it stands on" do
     founded("India", "Delhi", 1, 10, 10)
 
@@ -120,16 +126,17 @@ class TileOwnershipTest < ActiveSupport::TestCase
     assert_equal({ city: "Delhi", civ: "India", source: :adjacent }, tiles.owner([ 12, 10 ], turn: 1))
   end
 
-  test "a plot the ring cannot name either belongs to nobody" do
-    founded("India", "Delhi", 1, 10, 10)
-
-    assert_nil tiles.owner([ 13, 10 ], turn: 1)
-  end
-
   test "a plot is beside nothing until the city next to it exists" do
     founded("India", "Delhi", 10, 10, 10)
 
     assert_nil tiles.owner([ 12, 10 ], turn: 9)
+  end
+
+  test "the ring beats the nearest centre" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 13, 10)
+
+    assert_equal({ city: nil, civ: nil, source: :adjacent }, tiles.owner([ 11, 9 ], turn: 2))
   end
 
   test "holding a plot beats standing next to one" do
@@ -180,6 +187,77 @@ class TileOwnershipTest < ActiveSupport::TestCase
     acquired("Tibet", "Lhasa", 5, 11, 11)
 
     assert_nil tiles.owner([ 10, 10 ], turn: 5)
+  end
+
+  test "a plot beyond everybody's borders is read off the nearest city centre" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_equal({ city: "Delhi", civ: "India", source: :nearest }, tiles.owner([ 13, 10 ], turn: 1))
+  end
+
+  test "the nearer centre wins" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 17, 10)
+
+    assert_equal({ city: "Delhi", civ: "India", source: :nearest }, tiles.owner([ 13, 10 ], turn: 2))
+  end
+
+  test "a plot five hexes out can still be named, the furthest a city ever claims" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_equal({ city: "Delhi", civ: "India", source: :nearest }, tiles.owner([ 15, 10 ], turn: 1))
+  end
+
+  test "a plot further out than any city can reach is nowhere" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_nil tiles.owner([ 16, 10 ], turn: 1)
+  end
+
+  test "two of a civ's centres equally near name the civ and leave the city open" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("India", "Agra", 2, 16, 10)
+
+    assert_equal({ city: nil, civ: "India", source: :nearest }, tiles.owner([ 13, 10 ], turn: 2))
+  end
+
+  test "two rivals equally near name neither of them" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 16, 10)
+
+    assert_equal({ city: nil, civ: nil, source: :nearest }, tiles.owner([ 13, 10 ], turn: 2))
+  end
+
+  test "equally near centres both stay as candidates" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 16, 10)
+
+    found = tiles.candidates([ 13, 10 ], turn: 2)
+
+    assert_equal(
+      { cities: [ "Delhi", "Lhasa" ], civs: [ "India", "Tibet" ], source: :nearest },
+      { cities: found[:cities].sort, civs: found[:civs].sort, source: found[:source] }
+    )
+  end
+
+  test "a city is no centre to measure from before it is founded" do
+    founded("India", "Delhi", 10, 10, 10)
+
+    assert_nil tiles.owner([ 13, 10 ], turn: 9)
+  end
+
+  test "a razed city is no centre to measure from either" do
+    founded("Iroquois", "Onondaga", 1, 29, 29)
+    destroyed("Iroquois", "Onondaga", 10, 29, 29)
+
+    assert_nil tiles.owner([ 32, 29 ], turn: 11)
+  end
+
+  test "a captured centre is measured as its new owner's" do
+    founded("Iroquois", "Onondaga", 1, 29, 29)
+    captured("Onondaga", 152, 29, 29, from: "Iroquois", to: "India")
+
+    assert_equal({ city: "Onondaga", civ: "India", source: :nearest }, tiles.owner([ 32, 29 ], turn: 152))
   end
 
   private
