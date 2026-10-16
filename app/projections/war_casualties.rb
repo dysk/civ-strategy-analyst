@@ -44,7 +44,20 @@ class WarCasualties
 
   BARBARIANS = "Barbarians"
 
+  # The combat record is not written from every civilization's point of
+  # view. unit_killed names Babylon as a victim 3 times across
+  # babylon-domination and as a killer 59 times, because the hook fires on
+  # the host's own machine, so all 55 of Babylon's war dead fell through
+  # the reconciler's rules into the branch that names barbarians by
+  # elimination. Where a civilization's inferred deaths outnumber the ones
+  # the record itself names several times over, that branch is answering a
+  # default rather than reading evidence. The other civilizations in the
+  # two reconciled logs sit between 1.6 and 2.6 inferred per recorded
+  # death; Babylon sits at 18.
+  MAX_INFERRED_PER_RECORDED = 4
+
   def initialize(game)
+    @game = game
     @unit_losses = UnitLosses.for(game)
     @casualties = casualties(game.event_log)
   end
@@ -75,7 +88,7 @@ class WarCasualties
 
     @casualties.select { |casualty| casualty[:by] == BARBARIANS }
       .group_by { |casualty| casualty[:civ] }
-      .transform_values { |losses| raided(losses) }
+      .transform_values { |losses| raids(losses) }
   end
 
   # A declaration nobody acted on, a raid for a worker and a war of
@@ -93,6 +106,7 @@ class WarCasualties
 
   def casualties(log)
     deaths = log.of_type("unit_killed").map { |event| death(event) }
+    @recorded_deaths = deaths.each_with_object(Hash.new(0)) { |one, by_civ| by_civ[one[:civ]] += 1 }
 
     # By turn, and only then by the order the log kept: an escort cut down
     # and the settler it guarded taken fall on the same turn, and which of
@@ -112,10 +126,42 @@ class WarCasualties
   # a log it never ran over carries none anywhere.
   def recorded_confidence = (:confirmed if @unit_losses.applicable?)
 
-  def raided(losses)
+  # A loss the hook named barbarians on stands however the game stood. An
+  # inferred one is kept only where the combat record covers this
+  # civilization at all, and where no war of its own explains the death
+  # better than a raid does.
+  def raids(losses)
+    civ = losses.first[:civ]
+    named, inferred = losses.partition { |casualty| casualty[:confidence] == :confirmed }
+    return tallied(named, war_dead: 0, unrecorded: inferred.size) unless covered?(civ, inferred.size)
+
+    raided, war_dead = inferred.partition { |casualty| !at_war?(civ, casualty[:turn]) }
+    tallied(named + raided, war_dead: war_dead.size, unrecorded: 0)
+  end
+
+  def tallied(losses, war_dead:, unrecorded:)
     { losses: losses.size, loss_types: by_type(losses),
       turns: losses.map { |casualty| casualty[:turn] }.uniq.sort,
-      inferred: losses.count { |casualty| casualty[:confidence] == :inferred } }
+      inferred: losses.count { |casualty| casualty[:confidence] == :inferred },
+      set_aside: { war_dead: war_dead, no_combat_record: unrecorded } }
+  end
+
+  def covered?(civ, inferred)
+    inferred <= @recorded_deaths[civ] * MAX_INFERRED_PER_RECORDED
+  end
+
+  # Its own wars, the ones against city-states included: a unit that fell
+  # inside one of them has a war to explain it, and the reconciler reaches
+  # for barbarians only because no record named the killer.
+  def at_war?(civ, turn)
+    wars_of(civ).any? do |war|
+      turn >= war[:turn_declared] && (war[:turn_peace].nil? || turn <= war[:turn_peace])
+    end
+  end
+
+  def wars_of(civ)
+    @wars_of ||= {}
+    @wars_of[civ] ||= PlayerTimeline.for(@game).wars(civ)
   end
 
   # A removal counts only where something named who took the unit - the

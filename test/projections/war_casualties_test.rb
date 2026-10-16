@@ -245,19 +245,73 @@ class WarCasualtiesTest < ActiveSupport::TestCase
   end
 
   test "tallies what the barbarians took, per civilization and outside any war" do
+    killed("Babylon", "Philippines", "UNIT_LANCER", turn: 205)
     lost("Philippines", "UNIT_WARRIOR", turn: 20, cause: "killed",
          killer: "Barbarians", confidence: "inferred")
     lost("Philippines", "UNIT_WORKER", turn: 24, killed_by: "Barbarians",
          cause: "killed", killer: "Barbarians", confidence: "confirmed")
-    lost("Babylon", "UNIT_SCOUT", turn: 30, cause: "killed",
-         killer: "Barbarians", confidence: "inferred")
 
     raids = WarCasualties.new(@game).barbarian_losses
 
     assert_equal({ losses: 2, loss_types: { "UNIT_WARRIOR" => 1, "UNIT_WORKER" => 1 },
-                   turns: [ 20, 24 ], inferred: 1 }, raids["Philippines"])
-    assert_equal 1, raids["Babylon"][:losses]
-    assert_equal 0, casualties_in(war)["Philippines"][:losses]
+                   turns: [ 20, 24 ], inferred: 1,
+                   set_aside: { war_dead: 0, no_combat_record: 0 } }, raids["Philippines"])
+    assert_equal 1, casualties_in(war)["Philippines"][:losses]
+  end
+
+  # The reconciler reaches for barbarians when no record named the killer,
+  # and a civilization's own war is the likelier explanation of a death the
+  # record missed.
+  test "sets aside an inferred loss that fell inside the civilization's own war" do
+    killed("Babylon", "Philippines", "UNIT_LANCER", turn: 100)
+    declare_war("Babylon", "Philippines", turn: 200)
+    lost("Philippines", "UNIT_WARRIOR", turn: 150, cause: "killed",
+         killer: "Barbarians", confidence: "inferred")
+    lost("Philippines", "UNIT_RIFLEMAN", turn: 205, cause: "killed",
+         killer: "Barbarians", confidence: "inferred")
+
+    raids = WarCasualties.new(@game).barbarian_losses["Philippines"]
+
+    assert_equal 1, raids[:losses]
+    assert_equal [ 150 ], raids[:turns]
+    assert_equal({ war_dead: 1, no_combat_record: 0 }, raids[:set_aside])
+  end
+
+  test "keeps a loss the hook itself named barbarians on, war or no war" do
+    killed("Babylon", "Philippines", "UNIT_LANCER", turn: 100)
+    declare_war("Babylon", "Philippines", turn: 200)
+    lost("Philippines", "UNIT_WORKER", turn: 205, killed_by: "Barbarians",
+         cause: "killed", killer: "Barbarians", confidence: "confirmed")
+
+    raids = WarCasualties.new(@game).barbarian_losses["Philippines"]
+
+    assert_equal 1, raids[:losses]
+    assert_equal({ war_dead: 0, no_combat_record: 0 }, raids[:set_aside])
+  end
+
+  # unit_killed fires on the host's machine and misses some civilizations'
+  # deaths entirely. Every one of those falls through to the reconciler's
+  # by-elimination branch, so for such a civilization the branch answers a
+  # default and the tally cannot take it.
+  test "sets aside every inferred loss of a civilization the combat record misses" do
+    4.times { |n| raided("Babylon", turn: 150 + n) }
+    lost("Babylon", "UNIT_WORKER", turn: 160, killed_by: "Barbarians",
+         cause: "killed", killer: "Barbarians", confidence: "confirmed")
+
+    raids = WarCasualties.new(@game).barbarian_losses["Babylon"]
+
+    assert_equal 1, raids[:losses]
+    assert_equal({ war_dead: 0, no_combat_record: 4 }, raids[:set_aside])
+  end
+
+  test "keeps the inferred losses of a civilization whose deaths the record does name" do
+    2.times { |n| killed("Philippines", "Babylon", "UNIT_LANCER", turn: 100 + n) }
+    4.times { |n| raided("Babylon", turn: 150 + n) }
+
+    raids = WarCasualties.new(@game).barbarian_losses["Babylon"]
+
+    assert_equal 4, raids[:losses]
+    assert_equal({ war_dead: 0, no_combat_record: 0 }, raids[:set_aside])
   end
 
   # Without reconciliation the only barbarian kill the log records is the
@@ -293,6 +347,15 @@ class WarCasualtiesTest < ActiveSupport::TestCase
   # combat death, which is what a capture looks like in the log.
   def captured(from, to, unit, turn:)
     lost(from, unit, turn: turn, killed_by: to)
+  end
+
+  def raided(civ, turn:)
+    lost(civ, "UNIT_RIFLEMAN", turn: turn, cause: "killed", killer: "Barbarians", confidence: "inferred")
+  end
+
+  def declare_war(attacker, defender, turn:)
+    event("war_declared", turn, "attacker_team" => 0, "defender_team" => 1,
+          "attacker_civs" => [ attacker ], "defender_civs" => [ defender ])
   end
 
   def lost(civ, unit, turn:, killed_by: nil, **reconciled)

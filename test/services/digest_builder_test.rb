@@ -847,6 +847,7 @@ class DigestBuilderTest < ActiveSupport::TestCase
   end
 
   test "carries what the barbarians cost each civilization, where the log attributes losses" do
+    event(nil, "unit_killed", 30, killer: "Greece", victim: "Rome", unit: "UNIT_SPEARMAN")
     event("Rome", "unit_lost", 20, unit: "UNIT_WARRIOR", cause: "killed",
           killer: "Barbarians", confidence: "inferred")
     event("Rome", "unit_lost", 24, unit: "UNIT_WORKER", killed_by: "Barbarians",
@@ -856,7 +857,18 @@ class DigestBuilderTest < ActiveSupport::TestCase
 
     assert raids[:applicable]
     assert_equal({ losses: 2, loss_types: { "UNIT_WARRIOR" => 1, "UNIT_WORKER" => 1 },
-                   turns: [ 20, 24 ], inferred: 1 }, raids[:by_civ]["Rome"])
+                   turns: [ 20, 24 ], inferred: 1,
+                   set_aside: { war_dead: 0, no_combat_record: 0 } }, raids[:by_civ]["Rome"])
+  end
+
+  test "sets aside a barbarian loss the combat record cannot vouch for" do
+    event("Rome", "unit_lost", 20, unit: "UNIT_WARRIOR", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+
+    raids = DigestBuilder.new(@game).call[:barbarian_losses]
+
+    assert_equal({ losses: 0, loss_types: {}, turns: [], inferred: 0,
+                   set_aside: { war_dead: 0, no_combat_record: 1 } }, raids[:by_civ]["Rome"])
   end
 
   test "says why there are no barbarian losses to carry on an unreconciled log" do

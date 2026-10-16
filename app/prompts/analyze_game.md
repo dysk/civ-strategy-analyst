@@ -727,15 +727,29 @@ with `reason: no_attributed_losses` means this log's losses were never
 attributed, which is not the same as a game without barbarians. Never
 remark on its absence.
 
+`set_aside` holds the losses this tool refused to call barbarian kills.
+`war_dead` counts unattributed losses that fell inside one of this
+civilization's own wars, where the war explains them better than a raid
+does. `no_combat_record` counts every unattributed loss of a civilization
+whose own deaths the game's combat record barely names - that record is
+written from one machine's point of view, and where it misses a
+civilization, all of that civilization's war dead would otherwise arrive
+as barbarian kills. Both figures are this tool's caution rather than
+events: never report them as losses and never add them to anything.
+
+A large `no_combat_record` means the barbarian figure for that
+civilization cannot be read at all. Say nothing about what barbarians
+cost it, and never take its `losses: 0` for a quiet frontier.
+
 Barbarians are terrain, not a rival. Never give them an intent, a strategy
 or a campaign, and never narrate a run of them as a war. A heavy early
 toll is a start position that cost military production a safer one would
 not have asked for, and that is the only verdict it supports. A heavy
 toll on one civilization beside light ones on its neighbours is worth a
 clause wherever the report already explains that civilization's military
-spending. Most of a tally is usually `inferred`: that is firm enough to
-set one civilization's losses against another's, and too soft to hang a
-sentence on any single loss.
+spending. Most of a readable tally is still `inferred`: firm enough to set
+one civilization's losses against another's, too soft to hang a sentence
+on any single loss.
 
 ## wonder_races
 
