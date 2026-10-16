@@ -56,28 +56,35 @@ Roughly 55% of a real log's rows reach no projection.
 
 ## Order of work
 
-Ranked by value against cost. Tranche 1 is specified below; the rest is
-context for the order, to be detailed when reached.
+Every feature below is implemented. The ranking stays as the record of why
+the order was what it was; each item names the projection that answers it
+and the date it went green. Each section further down carries its own
+status note and the deviations found while building it.
 
 **Tranche 1 — the city snapshot pays for itself**
-0. `game_ended` as the outcome (half a day, fixes a correctness gap)
-1. Population counted per city (small, and it changes the chronicle's rankings)
-2. The wonder race (the reason `city_snapshot` was logged at all)
-3. What a city was worth when it changed hands
+0. `game_ended` as the outcome — `OutcomeResolver`, 2026-09-07
+1. Population counted per city — `CityCensus`, 2026-09-07
+2. The wonder race — `WonderRaces`, 2026-09-07
+3. What a city was worth when it changed hands — `CityValue`, 2026-09-09
 
 **Tranche 2 — the diplomatic game**
-4. Espionage — the shared primitive, and it retro-fills tranche 1's
-   `rival_observed` (promoted from a paragraph inside 5; see the section for why)
-5. City-state influence and the vote (the india game is decided by exactly
-   this, and by nothing else that is logged)
-6. Diplomatic ties (logged, exact, read by nothing)
-7. Trade routes
+4. Espionage — `Espionage`, 2026-09-11 (promoted from a paragraph inside 5;
+   see the section for why, and for the `rival_observed` retro-fill)
+5. City-state influence and the vote — `CityStateStanding` over
+   `InfluenceTimeline`, 2026-09-11
+6. Diplomatic ties — `DiplomaticTies`, 2026-09-11
+7. Trade routes — `TradeRoutes`, 2026-09-11
 
 **Tranche 3 — intent and belief**
-8. Research beelines (`researching`)
-9. Yield attribution (`yield_sources`)
-10. Religion and conversion
-11. Resource-flow deal reconstruction (explicitly inferred)
+8. Research beelines — `ResearchBeelines`, 2026-09-12
+9. Yield attribution — `YieldAttribution`, 2026-09-11
+10. Religion and conversion — `Religion`, 2026-09-12
+11. Resource-flow deal reconstruction — `Deals`, 2026-09-12
+
+What each feature left open is recorded in its own section and in
+`docs/plan.md`. The one item spanning several of them is an end-to-end
+`bin/civ analyze` / `bin/civ chronicle` A/B against a real log, pending for
+the whole tranche-3 group.
 
 ---
 
@@ -418,6 +425,10 @@ first draft of this plan; measuring it moved it to the front, for the reason
 the next section opens with.
 
 ## 4. Espionage — the primitive that four features share
+
+**Implemented 2026-09-11** — `docs/plan.md`, *"espionage — the primitive
+that four features share"*, plus the three presentation iterations in
+*"espionage on the page"*, *"spy names"* and *"espionage in the chronicle"*.
 
 ### Why it is its own feature, and why it comes first
 
@@ -874,6 +885,9 @@ the page, the summary section and its link, and the full-view clause on the
 
 ## 5. City-state influence and the vote
 
+**Implemented 2026-09-11** — `CityStateStanding` over the existing
+`InfluenceTimeline`, per the design in `docs/city-state-influence.md`.
+
 India ended allied to **10 of 11** city-states and won on diplomacy. The first
 draft of this plan concluded that the victory was *"bought with spies, with
 caravans as a supporting flow."* **Measured, that is not what happened**, and
@@ -1107,11 +1121,16 @@ three-way split, `#one_sided` for the routes whose two yields are lopsided.
 
 # Tranche 3
 
-Further out, and specified more lightly on purpose: each of these should be
-re-measured against a second real log before it is designed in full, because
-india-diplo is one game with one human in it.
+Specified more lightly on purpose, because india-diplo is one game with one
+human in it. Each of these was re-measured against the other real logs before
+being designed in full, and each section below records where that measurement
+contradicted the first draft.
 
 ## 8. Research beelines, and the rush they add up to
+
+**Implemented 2026-09-12** — `docs/plan.md`, *"research beelines"*. All three
+"settle before implementing" points below were resolved against the real logs
+first; the section records what the answers turned out to be.
 
 `researching` + `research_turns_left` are on every snapshot and dropped today by
 `DigestBuilder::SNAPSHOT_METRICS`. It is the one field in the log that shows
@@ -1165,6 +1184,9 @@ band, so a near-miss reads as a near-miss.
 
 ## 9. Yield attribution
 
+**Implemented 2026-09-11** — `docs/plan.md`, *"yield attribution"*. The
+shortfall is reported, never normalised away, as this section demands.
+
 `snapshot.yield_sources` splits science, faith, culture and tourism into
 cities / city-states / happiness / religion / research agreements / deficit.
 Turns a curve into a mechanism, and it is cheap — it rides a snapshot read that
@@ -1180,6 +1202,9 @@ held against the influence the alliances cost.
 
 ## 10. Religion and conversion
 
+**Implemented 2026-09-12** — `docs/plan.md`, *"religion and conversion"*, per
+the design in `docs/religion.md`.
+
 644 `city_converted`, plus `from_pressure` / `to_pressure` on trade routes, plus
 `religion` and `religion_followers` per city snapshot. A whole axis of the game
 that is currently invisible. The pressure fields make this the third consumer of
@@ -1191,7 +1216,8 @@ source and all five example logs. The headline finding: `city_converted`
 only fires when a city *gains* a full religion, never when it loses one to
 atheism or pantheon, so the event stream alone cannot even reconstruct a
 city's current state, and most of the rows it does carry are population
-churn rather than an actual change of majority. Not implemented yet.
+churn rather than an actual change of majority, so `Religion#holds` rebuilds
+the majority from maximal runs and cross-checks them against `city_snapshot`.
 
 ## 11. Deal reconstruction, labelled as inference
 
