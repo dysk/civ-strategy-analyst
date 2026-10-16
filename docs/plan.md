@@ -2089,3 +2089,81 @@ Not done, left for later, all three from the plan's own "Later, not now":
 concert-tour detection from a single-rival influence jump after a musician
 `:instant`, a `script/extract_lekmod_unit_builds` to keep the map from
 drifting again, and archaeologists.
+
+## Plan: reading cause and confidence on unit_lost (implemented)
+
+Status: **Implemented 2026-10-17.** `docs/loss-cause.md`, in one pass
+rather than its six separate cycles. Step 6 landed in
+`civ-narrative-logger` as its own commit.
+
+`unit_lost` fires on every unit removal and the in-game hook cannot say
+why, so `PlayerTimeline` and `WarCasualties` each guessed around it.
+`civ-narrative-logger`'s `tools/reconcile-unit-lost.jq` already writes
+`cause`, `confidence` and `killer` by joining the whole file afterwards,
+and two of the five example logs carry them on every row —
+`babylon-domination` and `chile-vs-vietnam`. The new `UnitLosses`
+projection is the single reader, with `applicable?` saying whether this
+log was reconciled at all, because presence is per-file and
+all-or-nothing.
+
+`UnitLosses` treats a great person outside the reconciler's own
+`great_person_types` list as unclassified. That list holds the vanilla
+nine, so an expended Dalai Lama matched no rule and arrived as
+`killed/inferred` with `killer: "Barbarians"` — a wrong answer where
+silence was available. Fixed upstream too, but a log reconciled before
+that fix still carries it.
+
+`great_people` asks `UnitLosses` first and keeps the same-turn echo rule
+as the fallback, named as such in its comment. Austria's scientist, killed
+by Babylon on turn 192 while Austria expended an engineer, now survives as
+`fate: :killed` — the one row in 111 the echo rule discarded wrongly. A
+death the hook left without `killed_by` reads as a kill rather than a
+disbandment, since the reconciler names the killer, and the row carries
+`confidence` so the prose can hedge.
+
+`WarCasualties` admits a casualty whose taker came from `killer`, and
+drops a removal the log calls `expended`, `used_up` or `founded_city`
+before any count sees it. Measured against the old algorithm on all three
+reconstructable logs: `india-diplo` is byte-identical (never reconciled),
+and the two reconciled logs gain 130 and 67 barbarian kills plus the two
+caravans taken with Mecca, which `cause: city_captured` names as captures
+where `CIVILIAN_UNITS` would have called them deaths. Nothing was dropped,
+so no war toll lost a casualty.
+
+`barbarian_losses` is a tally per civilization outside `#during`, carried
+beside the wars in the digest rather than inside one, since barbarians
+fight no war. It is also the only place an inferred casualty can appear —
+`across_the_front?` admits a casualty only when the killer sits on the
+other side of a war between majors, and no war has barbarians as a side —
+so it is the only place that counts `inferred`, and `first_blood` was left
+without a `confidence` it could only ever report as `confirmed`. The plan's
+step 5.1 draft had put that paragraph on the toll; measurement moved it.
+Empty on an unreconciled log, where the only recorded barbarian kill is
+the one that took a civilian, and a tally of those alone would read as the
+whole.
+
+`KeyMomentDetector#great_people_lost` now reports a great person killed
+with no `killed_by` at all, which was invisible, and carries `confidence`.
+`ChronicleSpine` weighs an inferred kill the same as a confirmed one, with
+a test to hold it there. `KeyMomentsHelper`'s sentence says "attributed by
+elimination" rather than asserting a barbarian killer flatly to a reader
+who never opens the page.
+
+Prompts: `analyze_game.md` gains a `confidence` bullet under
+`great_people`, a sentence on the toll saying a barbarian loss crosses no
+front, and a `barbarian_losses` section that says what a barbarian run can
+support as a verdict — a start position that cost military production, and
+nothing with intent behind it. `chronicle_game.md` gains the inferred
+death, written the way the chronicle writes anything it half-knows, and
+`killed_by` may now be no realm at all.
+
+Upstream, `reconcile-unit-lost.jq` gained the six civ-unique great people
+and four one-job civilians (`UNIT_VENEZ_CARAVAN`,
+`UNIT_VENEZ_CARGO_SHIP`, `UNIT_MAURYA_MISSIONARY`, `UNIT_INQUISITOR`,
+the last of which is vanilla and was simply missing), with the fixture
+covering a Dalai Lama expend and a spent inquisitor.
+
+Not done: re-reconciling the three older example logs, which would move
+test baselines across several projections and is its own change. Until
+then `india-diplo`, `espionage-test` and `run-b-test` take every fallback
+path, which is what keeps them worth testing against.
