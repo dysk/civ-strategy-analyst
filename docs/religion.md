@@ -306,11 +306,9 @@ position poll happens to record.
   (`GetGoldWhenCityAdopts`, `:4582-4601`). Both are as unreachable from Lua
   as `CvDeal`, and neither leaves any trace in the log at all.
 
-## A proposed shape for the projection
+## The shape of the projection
 
-Not implemented yet — this is the design to review before writing failing
-tests for it, the same way `docs/city-state-influence.md` and
-`docs/espionage.md` preceded their projections.
+Implemented as `Religion`, with the per-use place added on 2026-10-16.
 
 - **`Religion#holds(civ)`** — per-city maximal runs built from the
   deduplicated `city_converted` stream (restricted to `game.players`),
@@ -326,8 +324,14 @@ tests for it, the same way `docs/city-state-influence.md` and
   read through the existing `TradeRoutes` projection rather than a new one.
 - **`Religion#missionary_uses(civ)` / `#inquisitor_uses(civ)`** — inferred
   from `unit_lost` rows with no `killed_by`, for `UNIT_MISSIONARY` and
-  `UNIT_INQUISITOR`, each flagged `inferred: true` and carrying whatever
-  `city`/`x`/`y` the loss record happens to hold.
+  `UNIT_INQUISITOR`, each flagged `inferred: true` and placed on the map
+  through `TileOwnership`. The loss record names a city for 7 of the 116
+  uses in the logs; the plot it carries places 101 more. Each row holds
+  `city`, `owner` — 83 of those uses are on another civ's land, which is
+  where a missionary works — and `located`, which is `:logged` for a city
+  the log named and `:owned`, `:adjacent` or `:nearest` for one the index
+  or geometry named. `inferred` stays on the use itself, a different
+  uncertainty from the place.
 - **Digest and prompt guidance**: a hold's start is never labelled with a
   single cause among the five channels above. A hold beginning within a
   turn or two of an inferred missionary/inquisitor use, or during an active

@@ -49,7 +49,7 @@ something happened is currently unanswerable. Counts from
 | `natural_wonder_discovered` | 20 / 20 |
 | `trade_route_plundered` | 3 / 3 |
 
-Known consumers, each already blocked on exactly this:
+Known consumers. `Religion#uses` is wired up; the rest are not:
 
 - **`PlayerTimeline#expended_row`** (`player_timeline.rb:218`) hands out
   `city: nil` for every targeted great-person expend. The pairing to
@@ -58,11 +58,13 @@ Known consumers, each already blocked on exactly this:
   plot it carries never reaches the row.
 - **`ChronicleSpine`** narrates a great person's death, and a battle death,
   with no location at all.
-- **`Religion#uses`** (`religion.rb:54`) returns `city`, `x` and `y` for an
-  inferred missionary or inquisitor use, and the `city` is usually nil. This
-  is not cosmetic. A hold beginning near such a plot is the projection's one
-  candidate cause, and without a place name it cannot be set against the
-  hold at all.
+- **`Religion#uses`** returned `city`, `x` and `y` for an inferred
+  missionary or inquisitor use, and the `city` was nil for 109 of the 116
+  uses in the logs. A hold beginning near such a plot is the projection's
+  one candidate cause, so without a place name it could not be set against
+  the hold at all. Placed through this projection since 2026-10-16, 108 of
+  the 116 carry a city and 39 holds across four logs have a named candidate
+  cause.
 - **`improvement_pillaged`** is the only record of enemy infrastructure
   being destroyed, and today nobody can say whose city lost the mine.
 
