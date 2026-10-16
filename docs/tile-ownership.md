@@ -49,15 +49,19 @@ something happened is currently unanswerable. Counts from
 | `natural_wonder_discovered` | 20 / 20 |
 | `trade_route_plundered` | 3 / 3 |
 
-Known consumers. `Religion#uses` is wired up; the rest are not:
+Known consumers. `Religion#uses` and `PlayerTimeline#expended_row` are
+wired up; the rest are not:
 
-- **`PlayerTimeline#expended_row`** (`player_timeline.rb:218`) hands out
-  `city: nil` for every targeted great-person expend. The pairing to
-  `improvement_built` by `(turn, civ)` already exists at `:230`, but
-  `expend_action` tests it with `.any?` and drops the matched event, so the
-  plot it carries never reaches the row.
+- **`PlayerTimeline#expended_row`** handed out `city: nil` for every
+  targeted great-person expend, because the pairing to `improvement_built`
+  by `(turn, civ)` tested its candidate with `.any?` and dropped the matched
+  event. Placed since 2026-10-16. Only a planted improvement leaves a plot,
+  so this reaches 55 of the 239 expends in the logs, 54 of them on the
+  expending civ's own land.
 - **`ChronicleSpine`** narrates a great person's death, and a battle death,
-  with no location at all.
+  with no location at all. `PlayerTimeline`'s lost rows carry `located:
+  :logged` where the log named a city, which is 142 of the 244 great-person
+  deaths; the other 102 carry a plot and wait for this.
 - **`Religion#uses`** returned `city`, `x` and `y` for an inferred
   missionary or inquisitor use, and the `city` was nil for 109 of the 116
   uses in the logs. A hold beginning near such a plot is the projection's
