@@ -42,6 +42,7 @@ class DigestBuilder
       capital_proximity: CapitalProximity.for(@game).call,
       buffer_cities: BufferCities.for(@game).call,
       key_moments: key_moments,
+      barbarian_losses: barbarian_losses,
       wonder_races: wonder_races,
       espionage: espionage,
       diplomatic_ties: diplomatic_ties,
@@ -401,6 +402,15 @@ class DigestBuilder
 
   # `one_sided` is a whole-game fact list, carried once rather than per civ -
   # same rule as espionage's tenures and coups.
+  # Barbarians belong to no war, so what they cost an empire is carried
+  # beside the wars rather than inside one. Only a log the reconciler has
+  # been over attributes a barbarian kill at all.
+  def barbarian_losses
+    return { applicable: false, reason: :no_attributed_losses } unless UnitLosses.for(@game).applicable?
+
+    { applicable: true, by_civ: WarCasualties.for(@game).barbarian_losses }
+  end
+
   def trade_routes
     routes = TradeRoutes.for(@game)
     return { applicable: false, reason: :no_trade_route_events } unless routes.applicable?

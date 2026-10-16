@@ -212,6 +212,63 @@ class WarCasualtiesTest < ActiveSupport::TestCase
     assert_equal :war, scale_of(war)
   end
 
+  # A reconciled log answers what the hook could not: which removals were
+  # deaths at all, and who dealt them where killed_by was never set.
+  test "counts a kill whose killer only the reconciled log names" do
+    lost("Philippines", "UNIT_RIFLEMAN", turn: 205, cause: "killed",
+         killer: "Babylon", confidence: "confirmed")
+
+    assert_equal 1, casualties_in(war)["Philippines"][:losses]
+  end
+
+  test "leaves a caravan the reconciler called used up out of every count" do
+    lost("Philippines", "UNIT_CARAVAN", turn: 205, cause: "used_up", confidence: "confirmed")
+
+    assert_equal 0, casualties_in(war)["Philippines"][:losses]
+    assert_equal 0, casualties_in(war)["Philippines"][:captured]
+  end
+
+  test "leaves a great person the reconciler called expended out of every count" do
+    lost("Philippines", "UNIT_SCIENTIST", turn: 205, cause: "expended", confidence: "confirmed")
+
+    assert_equal 0, casualties_in(war)["Philippines"][:captured]
+  end
+
+  # A soldier standing in a city that fell was taken with it, which
+  # CIVILIAN_UNITS alone would have read as a death.
+  test "reads a unit lost with its city as captured whatever it was" do
+    lost("Philippines", "UNIT_SPEARMAN", turn: 205, cause: "city_captured",
+         captured_by: "Babylon", confidence: "confirmed")
+
+    assert_equal 1, casualties_in(war)["Philippines"][:captured]
+    assert_equal 0, casualties_in(war)["Philippines"][:losses]
+  end
+
+  test "tallies what the barbarians took, per civilization and outside any war" do
+    lost("Philippines", "UNIT_WARRIOR", turn: 20, cause: "killed",
+         killer: "Barbarians", confidence: "inferred")
+    lost("Philippines", "UNIT_WORKER", turn: 24, killed_by: "Barbarians",
+         cause: "killed", killer: "Barbarians", confidence: "confirmed")
+    lost("Babylon", "UNIT_SCOUT", turn: 30, cause: "killed",
+         killer: "Barbarians", confidence: "inferred")
+
+    raids = WarCasualties.new(@game).barbarian_losses
+
+    assert_equal({ losses: 2, loss_types: { "UNIT_WARRIOR" => 1, "UNIT_WORKER" => 1 },
+                   turns: [ 20, 24 ], inferred: 1 }, raids["Philippines"])
+    assert_equal 1, raids["Babylon"][:losses]
+    assert_equal 0, casualties_in(war)["Philippines"][:losses]
+  end
+
+  # Without reconciliation the only barbarian kill the log records is the
+  # one that took a civilian, so a tally built from those alone would
+  # answer a fraction and read as the whole.
+  test "has no barbarian tally on a log that attributes no losses" do
+    lost("Philippines", "UNIT_WORKER", turn: 24, killed_by: "Barbarians")
+
+    assert_empty WarCasualties.new(@game).barbarian_losses
+  end
+
   private
 
   def scale_of(war) = WarCasualties.new(@game).scale(war)
@@ -238,8 +295,9 @@ class WarCasualtiesTest < ActiveSupport::TestCase
     lost(from, unit, turn: turn, killed_by: to)
   end
 
-  def lost(civ, unit, turn:, killed_by: nil)
-    event("unit_lost", turn, { "civ" => civ, "unit" => unit, "killed_by" => killed_by }.compact)
+  def lost(civ, unit, turn:, killed_by: nil, **reconciled)
+    event("unit_lost", turn,
+          { "civ" => civ, "unit" => unit, "killed_by" => killed_by }.compact.merge(reconciled.stringify_keys))
   end
 
   def created(civ, unit, turn:, x:, y:)

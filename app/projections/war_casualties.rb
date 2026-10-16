@@ -37,7 +37,15 @@ class WarCasualties
   # nothing.
   SCOUT_UNITS = %w[UNIT_SCOUT UNIT_SHOSHONE_PATHFINDER UNIT_NUBIAN_BOW UNIT_MC_ZABONAH].freeze
 
+  # The causes that leave a casualty, on a log that names causes at all.
+  # The ones left out - a great person spent, a settler founding a city, a
+  # caravan that finished its route - are removals, never deaths.
+  CASUALTY_CAUSES = %i[killed city_captured].freeze
+
+  BARBARIANS = "Barbarians"
+
   def initialize(game)
+    @unit_losses = UnitLosses.for(game)
     @casualties = casualties(game.event_log)
   end
 
@@ -54,6 +62,20 @@ class WarCasualties
     return unless opening
 
     opening.slice(:turn, :civ, :unit, :by, :fate).merge(kind: kind_of(opening[:unit]))
+  end
+
+  # What the barbarians took from each empire. They belong to no war, so
+  # these casualties cross no front and `during` never sees them, and
+  # nothing else counts them either - which is also why no war toll ever
+  # holds an inferred casualty, and `inferred` is reported here alone.
+  # Empty on a log without attributed losses, where a barbarian kill is
+  # recorded only when it took a civilian.
+  def barbarian_losses
+    return {} unless @unit_losses.applicable?
+
+    @casualties.select { |casualty| casualty[:by] == BARBARIANS }
+      .group_by { |casualty| casualty[:civ] }
+      .transform_values { |losses| raided(losses) }
   end
 
   # A declaration nobody acted on, a raid for a worker and a war of
@@ -81,19 +103,49 @@ class WarCasualties
   def death(event)
     killer, victim, unit = event.payload.values_at("killer", "victim", "unit")
 
-    { seq: event.seq, turn: event.turn, civ: victim, unit: unit, by: killer, fate: :killed }
+    { seq: event.seq, turn: event.turn, civ: victim, unit: unit, by: killer,
+      fate: :killed, confidence: recorded_confidence }
   end
 
-  # A unit that can fight cannot be taken, so the same record on a soldier
-  # is a death the combat log missed rather than a capture.
+  # The combat record is the game's own, so a death it holds was named
+  # rather than inferred. Confidence is the reconciler's field, though, and
+  # a log it never ran over carries none anywhere.
+  def recorded_confidence = (:confirmed if @unit_losses.applicable?)
+
+  def raided(losses)
+    { losses: losses.size, loss_types: by_type(losses),
+      turns: losses.map { |casualty| casualty[:turn] }.uniq.sort,
+      inferred: losses.count { |casualty| casualty[:confidence] == :inferred } }
+  end
+
+  # A removal counts only where something named who took the unit - the
+  # hook's own killed_by, or the killer a reconciled log worked out - and
+  # only where the cause is a death or a capture rather than a job
+  # finished. A unit that can fight cannot be taken, so the same record on
+  # a soldier is a death the combat log missed rather than a capture.
   def named_losses(log)
     log.of_type("unit_lost").filter_map do |event|
-      unit, taker = event.payload.values_at("unit", "killed_by")
-      next unless taker
+      unit = event.payload["unit"]
+      taker = @unit_losses.killer(event) || event.payload["killed_by"]
+      next unless taker && casualty?(event)
 
       { seq: event.seq, turn: event.turn, civ: event.civ, unit: unit, by: taker,
-        fate: CIVILIAN_UNITS.include?(unit) ? :captured : :killed }
+        fate: fate_of(event, unit), confidence: @unit_losses.confidence(event) }
     end
+  end
+
+  def casualty?(event)
+    cause = @unit_losses.cause(event)
+
+    cause.nil? || CASUALTY_CAUSES.include?(cause)
+  end
+
+  # Where a reconciled log says the city itself fell, the unit inside it
+  # was taken with it, whatever the unit was.
+  def fate_of(event, unit)
+    return :captured if @unit_losses.cause(event) == :city_captured
+
+    CIVILIAN_UNITS.include?(unit) ? :captured : :killed
   end
 
   # Both records fire for some deaths, so a loss the combat log already

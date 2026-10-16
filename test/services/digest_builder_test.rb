@@ -846,6 +846,26 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_empty lekmod_digest[:spy_names]
   end
 
+  test "carries what the barbarians cost each civilization, where the log attributes losses" do
+    event("Rome", "unit_lost", 20, unit: "UNIT_WARRIOR", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+    event("Rome", "unit_lost", 24, unit: "UNIT_WORKER", killed_by: "Barbarians",
+          cause: "killed", killer: "Barbarians", confidence: "confirmed")
+
+    raids = DigestBuilder.new(@game).call[:barbarian_losses]
+
+    assert raids[:applicable]
+    assert_equal({ losses: 2, loss_types: { "UNIT_WARRIOR" => 1, "UNIT_WORKER" => 1 },
+                   turns: [ 20, 24 ], inferred: 1 }, raids[:by_civ]["Rome"])
+  end
+
+  test "says why there are no barbarian losses to carry on an unreconciled log" do
+    event("Rome", "unit_lost", 24, unit: "UNIT_WORKER", killed_by: "Barbarians")
+
+    assert_equal({ applicable: false, reason: :no_attributed_losses },
+                 DigestBuilder.new(@game).call[:barbarian_losses])
+  end
+
   private
 
   def lekmod_digest
