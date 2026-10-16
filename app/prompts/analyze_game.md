@@ -102,6 +102,11 @@ Map, size, speed, start era and `max_turns`. `game_speed` scales every
 turn number: a quick game runs at about two thirds of standard. Compare
 turn numbers only within this game.
 
+`golden_age_base_turns` is how long a golden age an artist begins runs at
+this speed, before any ability, tenet or wonder stretches it. A golden age
+scales by a factor of its own, always closer to standard than the pace of
+turns is, so read this number rather than working it out.
+
 `max_turns` is the configured cap, not a forecast. Games are usually
 decided around two thirds of the way to it, so turns nominally left are
 not runway every civilization can count on.
@@ -330,31 +335,62 @@ contention (see `players_declared_irrelevant` under key moments).
 each birth (`great_person`, `turn`, `city`). `great_people` records what
 became of each one:
 
-- `fate` is `expended`, `killed` (with `killed_by`) or `disbanded`.
+- `fate` is `expended`, `killed` (with `killed_by`) or `disbanded`. `city`,
+  `civ` and `located` place it - the ground a planted improvement went on,
+  or the ground a killed one fell on - and `located` grades the claim
+  (`logged`, `owned`, `adjacent`, `nearest`).
 - For an expended one, `action` is the choice. A scientist, engineer,
-  merchant, prophet or artist either plants a permanent improvement
-  (`academy`, `manufactory`, `customs_house`, `holy_site`, `landmark`) or
-  takes an instant effect (`bulb`, `hurry`, `trade_mission`,
-  `religious_action`, `great_work`). A writer's `treatise` and a
-  musician's `concert_tour` are always instant. A general can plant a
-  `citadel`. An admiral has no planted form.
-- A general or admiral used without a citadel leaves `action` null. That is
-  a gap in the record, not a wasted great person.
-- A planted improvement pays every turn left in the game, so a late one has
-  few turns to earn back. An instant use pays in full at once.
+  merchant, prophet, musician, general or admiral can plant a permanent
+  improvement: `academy`, `manufactory`, `customs_house`, `holy_site`,
+  `sacred_grove` (Lithuania's prophet alone), `festival`, `citadel`, `dock`.
+  A scientist, engineer, merchant or prophet instead has an instant use:
+  `bulb`, `hurry`, `trade_mission`, `religious_action`.
+- An artist either makes a great work (`great_work`) or begins a golden age
+  (`golden_age`). It plants nothing - a landmark is an archaeologist's work,
+  not a great person's.
+- `instant` means the log cannot tell two uses apart, and it is a gap in the
+  record, never a verdict. A writer's `instant` is either a great work or a
+  one-off culture award drawn from the last turns of its own output. A
+  musician's is either a great work or a concert tour. Name both readings or
+  neither, and never pick the one that suits the argument.
+- A general or admiral that planted nothing leaves `action` null. That is
+  also a gap in the record, not a wasted great person.
+- A great work pays culture every turn it stands, and a musician's or
+  artist's also pays tourism. A planted improvement pays every turn left in
+  the game, so a late one has few turns to earn back. A golden age, a bulb,
+  a hurry, a trade mission and a concert tour pay once.
 
-`great_people_profile` counts expends `by_kind`, and splits
-`infrastructure` (planted) and `consumption` (instant) into `early`/`late`
-halves of the game as logged. A civilization still planting late has turns
-to recoup them. One that shifted entirely to instant uses late was banking
-returns before the end.
+`great_people_profile` counts expends `by_kind` and splits `permanent` (a
+planted improvement or a great work), `one_off` (a use that pays at once)
+and `unresolved` (an `instant` or a null action) into `early`/`late` halves
+of the game as logged. A civilization still building permanent yield late
+has turns to recoup it. One that shifted to one-off uses late was banking
+returns before the end. A large `unresolved` count is a limit of the record,
+and no verdict follows from it either way.
 
 **`eras`.** The turn each era was entered.
 
-**`golden_ages`.** The turn each golden age began, and nothing else. Never
-state or estimate how long one lasted. Use `lekmod.general_rules` for the
-effect, or describe a golden age as raised gold, culture and production.
-Long unhappy stretches and an absence of golden ages are usually one story.
+**`golden_ages`.** The turn each golden age began, and nothing else. The
+log never records a turn one ended, so never name one. Use
+`lekmod.general_rules` for the effect, or describe a golden age as raised
+gold, culture and production. Long unhappy stretches and an absence of
+golden ages are usually one story.
+
+A golden age whose turn matches an artist expend in `great_people` was that
+artist's doing, and `game.golden_age_base_turns` is how long an artist's age
+runs at this game's speed before anything stretches it - a golden age keeps
+a pace of its own, so never work it out from the speed yourself.
+`lekmod.ideologies` and `lekmod.civilizations` hold what stretches it:
+Universal Suffrage and Persia's Achaemenid Legacy each by half, Chichen
+Itza likewise, Italy's Pittore starting a turn longer than an ordinary
+artist and reaching half again with Chichen Itza or Universal Suffrage but
+no further with both, Italy's Rinascimento adding to an age already
+running. Name the base where nothing stretches it. Where something
+does, say a civilization bought a longer age than its rivals did and what
+paid for it, and never add the modifiers up into a total - they interact,
+they cap, and the record cannot confirm the result. Where a second golden
+age began while the first was plausibly still running, say the two ran
+together and that the overlap is unsettled.
 
 **`wonders`.** Each completed wonder with `city` and `class`. `world`
 wonders are unique and contested. `national` wonders race nobody, and most
@@ -659,9 +695,17 @@ The `marker` names a payoff and is not always accurate:
 **`great_people_first_of_kind`.** The first civilization (or tied
 civilizations, `civs`) to raise each kind of great person. Minor colour,
 worth a clause where it fits. A great person killed in battle is recorded
-in `timelines.<civ>.great_people` (`fate: killed`, `killed_by`). A lost
-general is a battle loss and a spent investment at once, worth its own
-line. Other kinds lost this way belong inside the war that took them.
+in `timelines.<civ>.great_people` (`fate: killed`, `killed_by`, with `civ`
+and `located` for the ground it fell on). A lost general is a battle loss
+and a spent investment at once, worth its own line. A lost musician is the
+same thing on the cultural front, because a concert tour spends stored
+tourism for a single large push on one rival's influence, and killing the
+musician cancels that push - read it against the owner's standing over the
+killer in `cultural` and the `tourism` curve either side of the turn. The
+ground it fell on is colour, not a condition: these killings happen on
+neutral land and inside the owner's own borders as readily as on the
+victim's, and `located` says only how confidently the record places it.
+Other kinds lost this way belong inside the war that took them.
 
 ## wonder_races
 
@@ -975,7 +1019,11 @@ as a cost. A wonder count is never evidence of a lead.
 ## Great people
 
 Judge a civilization by what its great people did, never by how many were
-born. One spent well beats three left to die.
+born. One spent well beats three left to die. Weigh the choice against the
+clock: permanent yield wants turns to pay for itself, a one-off use wants a
+game near its end or a crisis in front of it. An `instant` or a null
+`action` is the record's limit, so say the great person was spent and leave
+the use unnamed rather than guessing which it was.
 
 ## Ideology
 

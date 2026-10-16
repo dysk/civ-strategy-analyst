@@ -437,10 +437,24 @@ A `great_person_lost` moment is a genius killed in battle rather than spent
 on the work they were raised for - `kind` says what they were, `killed_by`
 the people whose army did it. A general lost this way is a battle loss and
 a ruined investment at once, and earns an entry the way a border town
-falling does; every other kind lost is a lighter loss, worth a clause in
-the passage about the war that took them. Write from `kind`, never from
-`great_person` - that field is the ruleset's own unit name, not a word for
-the page.
+falling does. A musician lost this way earns one too, for a different
+reason: a musician was carried toward a rival's cities to win that realm's
+people over in a single season of song, and the army that cut them down
+denied a victory of renown, not a victory of arms. Every other kind lost is
+a lighter loss, worth a clause in the passage about the war that took them.
+Write from `kind`, never from `great_person` - that field is the ruleset's
+own unit name, not a word for the page.
+
+A golden age that fell in the same year a people spent an artist was that
+artist's gift, and the chronicle may say so - a realm's own painter ushering
+in an age of plenty is a different sentence from an age that arrived on its
+own. Where a people's own abilities or chosen tenets stretched such an age,
+say it ran longer than its neighbours' did; never say how many years any of
+it lasted.
+
+Where the record cannot say what a genius was spent on, the chronicle says
+they were spent and stops. Inventing the deed is the one thing worse than
+omitting it.
 
 `great_people_profile.by_kind`, in each people's `timelines` entry, counts
 how many of each kind of genius it actually put to work - scientists
