@@ -147,8 +147,8 @@ instructions.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
-- **Tile→city resolution** — stage one implemented (`ce21624`), with nothing
-  consuming it yet. Six event types (`improvement_built`, `unit_lost`,
+- **Tile→city resolution** — stages one and two implemented (`ce21624`,
+  `f7b38c1`), with nothing consuming them yet. Six event types (`improvement_built`, `unit_lost`,
   `unit_created`, `improvement_pillaged`, `natural_wonder_discovered`,
   `trade_route_plundered`) say what happened and never where.
   `docs/tile-ownership.md` is the full design and holds the measurements.
@@ -158,11 +158,14 @@ instructions.
   city's centre and ring 1 — unambiguous, since no two live cities sit closer
   than three hexes — answers 74 to 88 percent of the unattributed rows
   exactly. `TileOwnership#owner(plot, turn:)` is that read, dated to the end
-  of the asked turn and tagged `source: :owned`.
-  Adjacency, nearest-city geometry and a cutoff beyond which no place is
-  named are the stages still to come, and they share the 12 to 26 percent
-  stage one hands on. Every answer carries how it was arrived at so a
-  consumer can tell a fact from an inference.
+  of the asked turn and tagged `source: :owned`. Reading the ring around a
+  plot nobody holds takes the pair to 85 to 94 percent, tagged
+  `source: :adjacent`, and `candidates` returns the whole set where the ring
+  names more than one city.
+  Nearest-city geometry and a cutoff beyond which no place is named are the
+  stages still to come, and they share the 6 to 15 percent left. Every
+  answer carries how it was arrived at so a consumer can tell a fact from an
+  inference.
   Four known users: naming the city for a targeted great-person expend
   (`PlayerTimeline#expended_row`, currently nil), a place name for a battle or
   great-person death in `ChronicleSpine`, a city for an inferred missionary or

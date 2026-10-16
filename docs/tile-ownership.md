@@ -9,14 +9,25 @@ Measurement says geometry is the fallback and not the mechanism — the log
 attributes three quarters to nine tenths of the tiles outright, and what is
 left is a far smaller problem than the entry assumes.
 
-**Stage one ships** as `TileOwnership` (2026-10-16). `owner(plot, turn:)`
-returns `{ city:, civ:, source: :owned }` for a plot the log places in
-somebody's hands by the end of that turn, and nil for every other plot,
-which is where stages two to four will go. Every count below is measured
-through that projection on the imported india-diplo, chile-vs-vietnam and
-babylon-domination games.
+**Stages one and two ship** as `TileOwnership` (2026-10-16). Two methods,
+both dated to the end of the turn they are asked about:
 
-One gap stage one leaves. A city founded before the log begins gets no
+- `candidates(plot, turn:)` returns `{ cities:, civs:, source: }` — every
+  city the log lets us name, which is the one holding the plot
+  (`source: :owned`) or the ones holding the ring around it
+  (`source: :adjacent`). It is nil when the log names none, and that nil is
+  where stages three and four will go.
+- `owner(plot, turn:)` returns `{ city:, civ:, source: }`, each field filled
+  only as far as the candidates agree. Two of a civ's cities beside a plot
+  name the civ and leave the city nil; a hex between two empires names
+  neither, and its `source` is what tells a consumer the answer is there to
+  be read off `candidates`.
+
+Together they answer 93.5, 90.9 and 84.7 percent of the rows that ask.
+Every count below is measured through that projection on the imported
+india-diplo, chile-vs-vietnam and babylon-domination games.
+
+One gap the index leaves. A city founded before the log begins gets no
 centre and no ring, so it enters the index only when it first acquires a
 plot. Logs that start mid-game are the ones this costs, and the fix is a
 read of the opening snapshot rather than anything geometric.
@@ -101,8 +112,10 @@ this with `unattributed_imports`, and `Religion` with `inferred: true`.
 | 4 | nothing within the cutoff | `:nowhere` |
 
 Adjacency means `HexGrid#distance == 1`, which is six plots whose offset
-deltas depend on the row's parity. A fixed eight-delta square neighbourhood
-is wrong here and inflates stage 2 at stage 3's expense.
+deltas depend on the row's parity — `HexGrid#neighbours` is that ring, and
+a founding claims it. A fixed eight-delta square neighbourhood is wrong here
+and inflates stage 2 at stage 3's expense, which a test pins so the mistake
+cannot come back quietly.
 
 How much work each stage does, over every `improvement_built` and `unit_lost`
 row with no city:
@@ -151,6 +164,11 @@ A deterministic tiebreak by name or by founding turn would give a stable
 answer that is not a true one, which is worse than no answer. For the
 chronicle, "between Delhi and Agra" carries more than an arbitrarily chosen
 Delhi. For a field that needs exactly one name, a tie stays nil.
+
+Stage 2 already works this way, so stage 3 needs no new machinery — it adds
+nearest centres to what `candidates` returns, and `owner` keeps filling a
+field only where they agree. Roughly one in five of the rows that reach
+geometry is a tie, measured on the live centres of the three logs.
 
 ## Candidates are never narrowed to the combatants
 
