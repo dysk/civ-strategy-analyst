@@ -147,8 +147,8 @@ instructions.
   `gold`, `faith`, `happiness`, `military_units`, `population`, `cities`, `techs`...),
   so adding a new metric to the analysis requires no code changes — just calling
   with a different string name.
-- **Tile→city resolution** — stages one and two implemented (`ce21624`,
-  `f7b38c1`), with nothing consuming them yet. Six event types (`improvement_built`, `unit_lost`,
+- **Tile→city resolution** — stages one to three implemented (`ce21624`,
+  `f7b38c1`, `842fd1f`), with nothing consuming them yet. Six event types (`improvement_built`, `unit_lost`,
   `unit_created`, `improvement_pillaged`, `natural_wonder_discovered`,
   `trade_route_plundered`) say what happened and never where.
   `docs/tile-ownership.md` is the full design and holds the measurements.
@@ -162,10 +162,11 @@ instructions.
   plot nobody holds takes the pair to 85 to 94 percent, tagged
   `source: :adjacent`, and `candidates` returns the whole set where the ring
   names more than one city.
-  Nearest-city geometry and a cutoff beyond which no place is named are the
-  stages still to come, and they share the 6 to 15 percent left. Every
-  answer carries how it was arrived at so a consumer can tell a fact from an
-  inference.
+  The nearest standing centre within five hexes answers most of what is
+  left, tagged `source: :nearest`, and five hexes is the furthest the game
+  lets a city claim. Together the three stages name a place for 92 to 99
+  percent of the rows, and every answer carries how it was arrived at so a
+  consumer can tell a fact from an inference.
   Four known users: naming the city for a targeted great-person expend
   (`PlayerTimeline#expended_row`, currently nil), a place name for a battle or
   great-person death in `ChronicleSpine`, a city for an inferred missionary or

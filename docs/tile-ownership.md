@@ -9,21 +9,23 @@ Measurement says geometry is the fallback and not the mechanism — the log
 attributes three quarters to nine tenths of the tiles outright, and what is
 left is a far smaller problem than the entry assumes.
 
-**Stages one and two ship** as `TileOwnership` (2026-10-16). Two methods,
+**Stages one to three ship** as `TileOwnership` (2026-10-16). Two methods,
 both dated to the end of the turn they are asked about:
 
 - `candidates(plot, turn:)` returns `{ cities:, civs:, source: }` — every
   city the log lets us name, which is the one holding the plot
-  (`source: :owned`) or the ones holding the ring around it
-  (`source: :adjacent`). It is nil when the log names none, and that nil is
-  where stages three and four will go.
+  (`source: :owned`), the ones holding the ring around it
+  (`source: :adjacent`) or the nearest standing centres within
+  `REACH` (`source: :nearest`). The fourth stage is that method returning
+  nil, which says no place is named rather than carrying a `:nowhere` tag
+  of its own.
 - `owner(plot, turn:)` returns `{ city:, civ:, source: }`, each field filled
   only as far as the candidates agree. Two of a civ's cities beside a plot
   name the civ and leave the city nil; a hex between two empires names
   neither, and its `source` is what tells a consumer the answer is there to
   be read off `candidates`.
 
-Together they answer 93.5, 90.9 and 84.7 percent of the rows that ask.
+Together they answer 98.5, 98.5 and 92.2 percent of the rows that ask.
 Every count below is measured through that projection on the imported
 india-diplo, chile-vs-vietnam and babylon-domination games.
 
@@ -126,9 +128,12 @@ row with no city:
 | 2, adjacent to one city | 68 | 50 | 77 |
 | 2, adjacent to several plots of one civ | 5 | 10 | 4 |
 | 2, adjacent to two or more rivals | 15 | 6 | 4 |
-| 3, geometry decides | 66 | 47 | 56 |
-| 4, beyond a cutoff of 5 hexes | 23 | 9 | 70 |
+| 3, geometry decides | 66 | 47 | 62 |
+| 4, beyond the reach of any city | 23 | 9 | 64 |
 | rows in total | 1514 | 618 | 825 |
+
+Babylon-domination's last two figures are held up by a defect rather than
+by geography — see the razings below.
 
 Stage 1 answers 74 to 88 percent of them exactly and geometry is left with 4
 to 9 percent.
@@ -145,13 +150,15 @@ interesting answer the lookup can give and should reach the chronicle as one
 rather than being collapsed to a single name, but it is 25 rows across three
 games and no feature should be built around it.
 
-The **cutoff** keeps stage 3 from naming a city for a battle in open
-wilderness. Beyond it the answer is `:nowhere` and no place is named. Five
-hexes is a starting proposal and not a measurement, in the same spirit as
-`CityStateStanding::RIG_GAIN` — it rejects 23 of india-diplo's 89 geometric
-candidates, 9 of chile-vs-vietnam's 56 and 70 of babylon-domination's 126,
-the spread being how far from anybody's borders each game's wars were
-fought. Settle the number when stage 3 is built.
+`REACH` keeps stage 3 from naming a city for a battle in open wilderness,
+and it is five hexes because the game says so. `MAXIMUM_ACQUIRE_PLOT_DISTANCE`
+is 5, so no city can ever hold a plot further out, and the logs agree
+exactly — across all three, every plot a city claimed sits at most five
+hexes from its own centre, with nothing at six or beyond. How far these
+rows sit from the nearest centre would have allowed a looser number, since
+india-diplo and chile-vs-vietnam both fall off a cliff after six, but
+babylon-domination decays instead of falling off and a rule the game
+enforces beats a cliff in a distribution.
 
 ## Ties are returned, not broken
 
@@ -197,11 +204,23 @@ city's whole set to the new owner, and a destruction removes it.
 exactly this purpose and keeps only plots, discarding the city names this
 needs.
 
-Two things the replay has to survive. `city_destroyed` can fire twice for the
-same city, in both logs that carry it at all, so removal must be idempotent.
-A destroyed city's plots are released with no event naming them, so they drop
-out of the index and fall through to stage 3, which is the correct reading —
-the land is nobody's.
+A destroyed city's plots are released with no event naming them, so they
+drop out of the index and fall through to stage 3, which is the correct
+reading — the land is nobody's.
+
+**`city_destroyed` does not mean the city died.** Every one of them in these
+logs follows a `city_captured` of the same plot by a turn or less, and the
+ones carrying the *losing* civ are that civ's record of losing the city, not
+a razing. Onondaga is "destroyed" on turn 153 of india-diplo and goes on to
+file 33 more snapshots under India. Mecca is "destroyed" on turn 145 of
+babylon-domination and buys 25 more plots under Babylon. A real razing
+carries the *current owner's* civ, and after one the city files nothing
+ever again.
+
+The replay still reads the first kind as a razing and releases a live city's
+whole territory, which is the next thing to fix. Telling them apart needs no
+new reading — the replay already knows who holds the city, so the razing is
+the one whose civ is that holder.
 
 A lookup is answered with the state the turn ended in, the convention
 snapshots already follow here. A unit dying on the turn its city changed
