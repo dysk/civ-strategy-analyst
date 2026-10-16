@@ -178,7 +178,8 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     event("Greece", "great_person_expended", 41, great_person: "UNIT_WRITER")
 
     assert_equal(
-      [ { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :bulb, city: nil, killed_by: nil } ],
+      [ { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :bulb, city: nil, located: nil,
+          killed_by: nil } ],
       timeline.great_people("Rome")
     )
   end
@@ -230,11 +231,46 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal [ :citadel, nil ], actions
   end
 
+  # A targeted expend is the one great-person act that leaves a plot behind,
+  # and the plot is the only thing that can say which city got the academy.
+  test "a targeted expend names the city whose land the improvement went on" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 10, y: 11)
+
+    assert_equal(
+      { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :academy, city: "Roma",
+        located: :owned, killed_by: nil },
+      timeline.great_people("Rome").first
+    )
+  end
+
+  test "an improvement outside everybody's borders places the expend as an inference" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 13, y: 10)
+
+    assert_equal [ "Roma", :nearest ], timeline.great_people("Rome").first.values_at(:city, :located)
+  end
+
+  # A citadel is the one great-person improvement that can land outside its
+  # builder's borders, and then the city it names is the one it was planted
+  # against.
+  test "a citadel on a rival's border names the rival's city" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Greece", "city_founded", 2, city: "Athens", x: 16, y: 10)
+    event("Rome", "great_person_expended", 70, great_person: "UNIT_GREAT_GENERAL")
+    event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_CITADEL", x: 14, y: 10)
+
+    assert_equal [ "Athens", :adjacent ], timeline.great_people("Rome").first.values_at(:city, :located)
+  end
+
   test "great_people reads a great person killed by an enemy" do
     event("Rome", "unit_lost", 60, unit: "UNIT_GREAT_GENERAL", city: "Roma", killed_by: "Greece")
 
     assert_equal(
-      [ { turn: 60, great_person: "UNIT_GREAT_GENERAL", fate: :killed, action: nil, city: "Roma", killed_by: "Greece" } ],
+      [ { turn: 60, great_person: "UNIT_GREAT_GENERAL", fate: :killed, action: nil, city: "Roma", located: :logged,
+          killed_by: "Greece" } ],
       timeline.great_people("Rome")
     )
   end
@@ -243,7 +279,8 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     event("Rome", "unit_lost", 60, unit: "UNIT_ENGINEER")
 
     assert_equal(
-      [ { turn: 60, great_person: "UNIT_ENGINEER", fate: :disbanded, action: nil, city: nil, killed_by: nil } ],
+      [ { turn: 60, great_person: "UNIT_ENGINEER", fate: :disbanded, action: nil, city: nil, located: nil,
+          killed_by: nil } ],
       timeline.great_people("Rome")
     )
   end

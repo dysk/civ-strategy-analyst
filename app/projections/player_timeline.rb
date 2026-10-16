@@ -212,10 +212,19 @@ class PlayerTimeline
     musician: :concert_tour
   }.freeze
 
+  # A planted improvement is the only great-person act that leaves a plot
+  # behind, so it is the only one that can name a city. The plot sits on the
+  # expending civ's own land in 54 of the 55 planted expends across the
+  # logs; a citadel is the one kind that can land on a rival's border, and
+  # then the city it names is the one it was planted against.
   def expended_row(event)
-    type = event.payload["great_person"]
-    { turn: event.turn, great_person: type, fate: :expended,
-      action: expend_action(GREAT_PERSON_UNITS[type], event.civ, event.turn), city: nil, killed_by: nil }
+    kind = GREAT_PERSON_UNITS[event.payload["great_person"]]
+    planted = planted_improvement(kind, event.civ, event.turn)
+    place = planted && place_of(planted)
+
+    { turn: event.turn, great_person: event.payload["great_person"], fate: :expended,
+      action: planted ? TARGETED_ACTIONS[kind][:action] : UNTARGETED_ACTIONS[kind],
+      city: place&.dig(:city), located: place&.dig(:source), killed_by: nil }
   end
 
   # (turn, civ) coincidence, not an id - the log has no other way to say a
@@ -223,21 +232,27 @@ class PlayerTimeline
   # improvements to the one this kind can plant is what separates three
   # great people expended the same turn against three unrelated
   # improvements finished that same turn.
-  def expend_action(kind, civ, turn)
+  def planted_improvement(kind, civ, turn)
     targeted = TARGETED_ACTIONS[kind]
-    return UNTARGETED_ACTIONS[kind] unless targeted
+    return unless targeted
 
-    planted = of_type("improvement_built").any? do |e|
+    of_type("improvement_built").find do |e|
       e.civ == civ && e.turn == turn && e.payload["improvement"] == targeted[:improvement]
     end
-
-    planted ? targeted[:action] : UNTARGETED_ACTIONS[kind]
   end
 
+  def place_of(event)
+    x, y = event.payload.values_at("x", "y")
+    tiles.owner([ x, y ], turn: event.turn) if x && y
+  end
+
+  def tiles = @tiles ||= TileOwnership.for(@game)
+
   def lost_row(event)
-    killed_by = event.payload["killed_by"]
+    killed_by, city = event.payload.values_at("killed_by", "city")
     { turn: event.turn, great_person: event.payload["unit"],
-      fate: killed_by ? :killed : :disbanded, action: nil, city: event.payload["city"], killed_by: killed_by }
+      fate: killed_by ? :killed : :disbanded, action: nil, city: city,
+      located: (:logged if city), killed_by: killed_by }
   end
 
   # What a capture cost the side that lost it: the city's share of that
