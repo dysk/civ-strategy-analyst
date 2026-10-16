@@ -31,7 +31,7 @@ class TileOwnershipTest < ActiveSupport::TestCase
   test "a founding claims no further than its own ring" do
     founded("India", "Delhi", 1, 10, 10)
 
-    assert_nil tiles.owner([ 12, 10 ], turn: 1)
+    assert_equal :adjacent, tiles.owner([ 12, 10 ], turn: 1)[:source]
   end
 
   test "a founding leaves a plot another city already holds alone" do
@@ -56,11 +56,11 @@ class TileOwnershipTest < ActiveSupport::TestCase
     assert_equal({ city: "Lhasa", civ: "Tibet", source: :owned }, tiles.owner([ 22, 20 ], turn: 6))
   end
 
-  test "a plot belongs to nobody on the turns before it was claimed" do
+  test "a plot is out of the index on the turns before it was claimed" do
     founded("India", "Delhi", 1, 10, 10)
     acquired("India", "Delhi", 4, 12, 10)
 
-    assert_nil tiles.owner([ 12, 10 ], turn: 3)
+    assert_equal :adjacent, tiles.owner([ 12, 10 ], turn: 3)[:source]
   end
 
   test "an acquisition names its city even when the founding predates the log" do
@@ -112,6 +112,74 @@ class TileOwnershipTest < ActiveSupport::TestCase
     destroyed("Iroquois", "Onondaga", 153, 29, 29)
 
     assert_equal "Onondaga", tiles.owner([ 29, 29 ], turn: 152)[:city]
+  end
+
+  test "a plot beside a city's land is read as that city's, as an inference" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_equal({ city: "Delhi", civ: "India", source: :adjacent }, tiles.owner([ 12, 10 ], turn: 1))
+  end
+
+  test "a plot the ring cannot name either belongs to nobody" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_nil tiles.owner([ 13, 10 ], turn: 1)
+  end
+
+  test "a plot is beside nothing until the city next to it exists" do
+    founded("India", "Delhi", 10, 10, 10)
+
+    assert_nil tiles.owner([ 12, 10 ], turn: 9)
+  end
+
+  test "holding a plot beats standing next to one" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 14, 10)
+    acquired("Tibet", "Lhasa", 5, 12, 10)
+
+    assert_equal({ city: "Lhasa", civ: "Tibet", source: :owned }, tiles.owner([ 12, 10 ], turn: 5))
+  end
+
+  test "two of a civ's cities beside a plot name the civ and leave the city open" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("India", "Agra", 2, 13, 10)
+
+    assert_equal({ city: nil, civ: "India", source: :adjacent }, tiles.owner([ 11, 9 ], turn: 2))
+  end
+
+  test "a border hex between two rivals names neither of them" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 13, 10)
+
+    assert_equal({ city: nil, civ: nil, source: :adjacent }, tiles.owner([ 11, 9 ], turn: 2))
+  end
+
+  test "a border hex keeps both its neighbours as candidates" do
+    founded("India", "Delhi", 1, 10, 10)
+    founded("Tibet", "Lhasa", 2, 13, 10)
+
+    found = tiles.candidates([ 11, 9 ], turn: 2)
+
+    assert_equal(
+      { cities: [ "Delhi", "Lhasa" ], civs: [ "India", "Tibet" ], source: :adjacent },
+      { cities: found[:cities].sort, civs: found[:civs].sort, source: found[:source] }
+    )
+  end
+
+  test "a plot in the index has itself as its only candidate" do
+    founded("India", "Delhi", 1, 10, 10)
+
+    assert_equal(
+      { cities: [ "Delhi" ], civs: [ "India" ], source: :owned },
+      tiles.candidates([ 10, 10 ], turn: 1)
+    )
+  end
+
+  test "the ring is the six plots a hex away, not the eight a square has" do
+    founded("Tibet", "Lhasa", 1, 20, 20)
+    acquired("Tibet", "Lhasa", 5, 11, 11)
+
+    assert_nil tiles.owner([ 10, 10 ], turn: 5)
   end
 
   private

@@ -18,19 +18,42 @@ class TileOwnership
     @events = REPLAYED_EVENTS.flat_map { |type| game.event_log.of_type(type) }.sort_by(&:seq)
   end
 
-  # The city holding `plot` at the end of `turn`, or nil where the log never
-  # put the plot in anybody's hands. A capture or a razing therefore counts
-  # for the whole turn it happened on.
+  # Who holds `plot` at the end of `turn`, filled in only as far as the
+  # candidates agree - a hex between two empires names neither side, and its
+  # `source` is what tells a consumer to go and read them off `candidates`.
   def owner(plot, turn:)
+    found = candidates(plot, turn: turn)
+    return unless found
+
+    { city: lone(found[:cities]), civ: lone(found[:civs]), source: found[:source] }
+  end
+
+  # Every city the log lets us name for `plot` - the one holding it, or the
+  # ones holding the ring around it - and nil where it names none. A capture
+  # or a razing counts for the whole turn it happened on.
+  def candidates(plot, turn:)
     replay
-    holder = Array(@history[plot]).reverse_each.find { |held_from, _| held_from <= turn }&.last
-    holder&.merge(source: :owned)
+    holder = holder_at(plot, turn)
+    return naming([ holder ], :owned) if holder
+
+    around = @grid.neighbours(plot).filter_map { |neighbour| holder_at(neighbour, turn) }
+    naming(around, :adjacent) if around.any?
   end
 
   private
 
+  def holder_at(plot, turn)
+    Array(@history[plot]).reverse_each.find { |held_from, _| held_from <= turn }&.last
+  end
+
+  def naming(holders, source)
+    { cities: holders.map { |h| h[:city] }.uniq, civs: holders.map { |h| h[:civ] }.uniq, source: source }
+  end
+
+  def lone(names) = (names.first if names.one?)
+
   # Ownership moves during a game, so the index is a replay in log order
-  # rather than one table: `@held` is the live picture, `@history` is every
+  # rather than one table. `@held` is the live picture, `@history` is every
   # change each plot went through, and `@plots` is what a city would lose.
   def replay
     @replay ||= begin
