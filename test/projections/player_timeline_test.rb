@@ -179,7 +179,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :bulb, city: nil, located: nil,
-          civ: nil, killed_by: nil } ],
+          civ: nil, killed_by: nil, confidence: nil } ],
       timeline.great_people("Rome")
     )
   end
@@ -352,7 +352,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       { turn: 40, great_person: "UNIT_SCIENTIST", fate: :expended, action: :academy, city: "Roma",
-        located: :owned, civ: "Rome", killed_by: nil },
+        located: :owned, civ: "Rome", killed_by: nil, confidence: nil },
       timeline.great_people("Rome").first
     )
   end
@@ -382,7 +382,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { turn: 60, great_person: "UNIT_GREAT_GENERAL", fate: :killed, action: nil, city: "Roma", located: :logged,
-          civ: nil, killed_by: "Greece" } ],
+          civ: nil, killed_by: "Greece", confidence: nil } ],
       timeline.great_people("Rome")
     )
   end
@@ -399,7 +399,7 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal(
       [ { turn: 60, great_person: "UNIT_ENGINEER", fate: :disbanded, action: nil, city: nil, located: nil,
-          civ: nil, killed_by: nil } ],
+          civ: nil, killed_by: nil, confidence: nil } ],
       timeline.great_people("Rome")
     )
   end
@@ -410,6 +410,49 @@ class PlayerTimelineTest < ActiveSupport::TestCase
 
     assert_equal 1, timeline.great_people("Rome").size
     assert_equal :expended, timeline.great_people("Rome").first[:fate]
+  end
+
+  # Austria's scientist, killed by Babylon on turn 192 while Austria spent
+  # another great person that same turn. The echo rule discards it; the
+  # reconciled log says outright that it was a kill.
+  test "great_people keeps a great person killed on a turn its civ also spent one" do
+    event("Austria", "great_person_expended", 192, great_person: "UNIT_ENGINEER")
+    event("Austria", "unit_lost", 192, unit: "UNIT_ENGINEER", cause: "expended", confidence: "confirmed")
+    event("Austria", "unit_lost", 192, unit: "UNIT_SCIENTIST", cause: "killed",
+          killer: "Babylon", confidence: "confirmed")
+
+    fates = timeline.great_people("Austria").map { |g| g.values_at(:great_person, :fate) }
+
+    assert_equal [ [ "UNIT_ENGINEER", :expended ], [ "UNIT_SCIENTIST", :killed ] ], fates.sort
+  end
+
+  test "great_people reads a killer the loss itself never named" do
+    event("Rome", "unit_lost", 60, unit: "UNIT_MUSICIAN", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+
+    killed = timeline.great_people("Rome").first
+
+    assert_equal :killed, killed[:fate]
+    assert_equal "Barbarians", killed[:killed_by]
+    assert_equal :inferred, killed[:confidence]
+  end
+
+  test "great_people leaves a removal the reconciler called an expend out of the losses" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "unit_lost", 40, unit: "UNIT_SCIENTIST", cause: "expended", confidence: "confirmed")
+
+    assert_equal [ :expended ], timeline.great_people("Rome").map { |g| g[:fate] }
+  end
+
+  # The mod's unique great people sit outside the reconciler's list, so
+  # their expends arrive mislabelled as barbarian kills. UnitLosses reads
+  # them as unclassified, which drops this civ back on the echo rule.
+  test "great_people falls back to the echo rule for a great person the reconciler mislabels" do
+    event("Tibet", "great_person_expended", 80, great_person: "UNIT_DALAILAMA")
+    event("Tibet", "unit_lost", 80, unit: "UNIT_DALAILAMA", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+
+    assert_equal [ :expended ], timeline.great_people("Tibet").map { |g| g[:fate] }
   end
 
   test "great_people ignores a lost unit that isn't a great person" do

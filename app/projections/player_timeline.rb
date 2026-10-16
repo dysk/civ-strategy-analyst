@@ -74,18 +74,13 @@ class PlayerTimeline
   end
 
   # Every great person's departure from play - expended, killed by an enemy,
-  # or disbanded - never its birth (see great_people_born). unit_lost fires
-  # for an expend too (UnitPrekill runs before the consuming effect), so a
-  # loss on the same turn as an expend for this civ is that echo, not a
-  # second great person - the log gives no per-unit identity to tell two
-  # genuinely simultaneous fates apart, and treating them as one is the
-  # far more common case.
+  # or disbanded - never its birth (see great_people_born).
   def great_people(civ)
     expends = of_type("great_person_expended").select { |e| e.civ == civ }
     expended_turns = expends.map(&:turn).to_set
 
     losses = of_type("unit_lost").select do |e|
-      e.civ == civ && GREAT_PERSON_UNITS.key?(e.payload["unit"]) && !expended_turns.include?(e.turn)
+      e.civ == civ && GREAT_PERSON_UNITS.key?(e.payload["unit"]) && lost?(e, expended_turns)
     end
 
     sort_events(expends.map { |e| expended_row(e) } + losses.map { |e| lost_row(e) })
@@ -247,7 +242,7 @@ class PlayerTimeline
 
     { turn: event.turn, great_person: event.payload["great_person"], fate: :expended,
       action: expended_action(event, planted), city: place&.dig(:city),
-      located: place&.dig(:source), civ: place&.dig(:civ), killed_by: nil }
+      located: place&.dig(:source), civ: place&.dig(:civ), killed_by: nil, confidence: nil }
   end
 
   def expended_action(event, planted)
@@ -310,17 +305,35 @@ class PlayerTimeline
 
   def tiles = @tiles ||= TileOwnership.for(@game)
 
+  def unit_losses = @unit_losses ||= UnitLosses.for(@game)
+
+  # A reconciled log names which removals were expends, so a loss it kept
+  # is a loss. Without one, unit_lost fires for an expend too (UnitPrekill
+  # runs before the consuming effect), and a loss on the same turn as an
+  # expend for this civ is read as that echo - the fallback, and wrong
+  # where one great person was killed the same turn another was spent.
+  def lost?(event, expended_turns)
+    cause = unit_losses.cause(event)
+    return cause == :killed if cause
+
+    !expended_turns.include?(event.turn)
+  end
+
   # `civ` is whose ground the great person stood on, not whose great person
   # it was - the row already sits under its owner. `located` grades the
   # claim: a logged city, land the civ held, land it bordered, or the
-  # nearest city the log can reach.
+  # nearest city the log can reach. The hook names a killer on the loss for
+  # a captured civilian alone, so a reconciled log's `killer` is what fills
+  # `killed_by` for every other death.
   def lost_row(event)
-    killed_by, logged = event.payload.values_at("killed_by", "city")
+    logged = event.payload["city"]
+    killed_by = unit_losses.killer(event) || event.payload["killed_by"]
     place = place_of(event) unless logged
 
     { turn: event.turn, great_person: event.payload["unit"],
       fate: killed_by ? :killed : :disbanded, action: nil, city: logged || place&.dig(:city),
-      located: logged ? :logged : place&.dig(:source), civ: place&.dig(:civ), killed_by: killed_by }
+      located: logged ? :logged : place&.dig(:source), civ: place&.dig(:civ),
+      killed_by: killed_by, confidence: unit_losses.confidence(event) }
   end
 
   # What a capture cost the side that lost it: the city's share of that
