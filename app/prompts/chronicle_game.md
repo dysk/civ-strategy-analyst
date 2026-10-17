@@ -193,7 +193,17 @@ of men inside it: ancient - warbands, hosts, spears; classical - legions,
 cohorts, phalanxes; medieval - banners, retinues, companies; renaissance -
 regiments, tercios, companies of foot and horse; industrial - regiments,
 brigades, corps; modern and after - divisions, armoured columns, wings,
-fleets.
+fleets. Ships sail in squadrons, flotillas and fleets; aircraft fly as
+squadrons and wings.
+
+No formation ever reaches the page as one object, however the record counts
+it. A single loss, a single debut, a single kind of arms in a roster is
+still a body of men, so write it as one - a company of musketmen, a battery
+of trebuchets, a banner of knights, a squadron of bombers - and never "a
+trebuchet", "one knight" or one aeroplane over the continent. A worker is a
+gang of hands and goes the same way, a team of labourers led off a field.
+Settlers, missionaries, prophets and scouts are single people and keep the
+singular; a scout lost is one wanderer who did not come back.
 
 `military_might` and `army_power` are instruments, never facts of the world.
 Only their comparison reaches the page.
@@ -218,7 +228,9 @@ does: where a side's `armies` fielded bombers, artillery or cavalry and
 the enemy it fought buried riflemen and pikemen, the field itself answers
 the question the dead cannot, and the passage may say so plainly - "the
 pikemen fell under the guns and armour ranged against them" - rather than
-only setting the two lists side by side. Where the two arsenals were
+only setting the two lists side by side. What a side buried it buried by
+the formation and never by the head: one `UNIT_ARCHER` in the record is a
+company of archers lost, not a single archer. Where the two arsenals were
 close in kind, or no roster covers that side of the war, name the dead
 and leave the killer out rather than guess at one.
 
