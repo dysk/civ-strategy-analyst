@@ -23,13 +23,24 @@ class ChronicleGameTest < ActiveSupport::TestCase
     assert JSON.parse(stub.received[:input]).key?("calendar")
   end
 
-  test "writes the chronicle to a file and returns its path" do
+  test "writes the chronicle to a file and returns where it landed" do
     stub = StubLlmClient.new(content: "In the first years of the world...")
 
-    path = ChronicleGame.new(@game, llm_client: stub, reports_dir: @reports_dir).call
+    result = ChronicleGame.new(@game, llm_client: stub, reports_dir: @reports_dir).call
 
-    assert_equal "In the first years of the world...", File.read(path)
-    assert_match(/chronicle-chronicle-test-game-\d{14}\.md\z/, path)
+    assert_equal "In the first years of the world...", File.read(result.path)
+    assert_match(/chronicle-chronicle-test-game-\d{14}\.md\z/, result.path)
+  end
+
+  test "reports which model wrote the chronicle and what it cost" do
+    stub = StubLlmClient.new(content: "chronicle", input_tokens: 900, output_tokens: 300, cost_usd: 0.0421)
+
+    result = ChronicleGame.new(@game, model: "test-model", llm_client: stub, reports_dir: @reports_dir).call
+
+    assert_equal "test-model", result.model
+    assert_equal 900, result.input_tokens
+    assert_equal 300, result.output_tokens
+    assert_equal 0.0421, result.cost_usd
   end
 
   test "leaves no record of the chronicle in the database" do
@@ -67,8 +78,10 @@ class ChronicleGameTest < ActiveSupport::TestCase
   class StubLlmClient
     attr_reader :received
 
-    def initialize(content:)
-      @response = LlmClient::Response.new(content: content)
+    def initialize(content:, input_tokens: nil, output_tokens: nil, cost_usd: nil)
+      @response = LlmClient::Response.new(
+        content: content, input_tokens: input_tokens, output_tokens: output_tokens, cost_usd: cost_usd
+      )
     end
 
     def call(model:, system_prompt:, input:)

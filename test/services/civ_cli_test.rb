@@ -118,20 +118,39 @@ class CivCliTest < ActiveSupport::TestCase
     assert_match(/Game #999999 not found/, @err.string)
   end
 
-  test "chronicle writes a chronicle file for the game and prints where it landed" do
+  test "chronicle writes a chronicle file for the game and prints where it landed and what it cost" do
     game = Game.create!(name: "Chronicle CLI Game", game_speed: "GAMESPEED_QUICK")
     game.game_events.create!(
       seq: 1, session_index: 0, turn: 1, event_type: "city_founded", civ: "Rome",
       payload: { "event" => "city_founded", "turn" => 1, "civ" => "Rome", "city" => "Rome" }
     )
-    stub = StubLlmClient.new(content: "In the first years of the world...")
+    stub = StubLlmClient.new(
+      content: "In the first years of the world...", input_tokens: 900, output_tokens: 300, cost_usd: 0.0421
+    )
 
     Dir.mktmpdir do |reports_dir|
-      status = cli(llm_client: stub).run([ "chronicle", game.id.to_s, "--reports-dir", reports_dir ])
+      status = cli(llm_client: stub).run(
+        [ "chronicle", game.id.to_s, "--model", "test-model", "--reports-dir", reports_dir ]
+      )
 
       assert_equal 0, status
       assert_match(/Chronicle saved to #{Regexp.escape(reports_dir)}/, @out.string)
     end
+
+    assert_match(/model: test-model/, @out.string)
+    assert_match(/900 in \+ 300 out tokens/, @out.string)
+    assert_match(/\$0\.0421/, @out.string)
+  end
+
+  test "chronicle prints without cost details when the llm client doesn't report them" do
+    game = Game.create!(name: "No Usage Chronicle Game", game_speed: "GAMESPEED_QUICK")
+    stub = StubLlmClient.new(content: "chronicle")
+
+    Dir.mktmpdir do |reports_dir|
+      assert_equal 0, cli(llm_client: stub).run([ "chronicle", game.id.to_s, "--reports-dir", reports_dir ])
+    end
+
+    assert_no_match(/tokens/, @out.string)
   end
 
   test "chronicle without a game id prints usage to stderr and fails" do

@@ -84,7 +84,8 @@ class CivCli
     game = find_game(parser, args) or return 1
 
     options[:llm_client] = @llm_client if @llm_client
-    @out.puts "Chronicle saved to #{ChronicleGame.new(game, **options).call}"
+    chronicle = ChronicleGame.new(game, **options).call
+    @out.puts "Chronicle saved to #{chronicle.path} (model: #{chronicle.model})#{usage_summary(chronicle)}"
     0
   end
 
@@ -98,11 +99,12 @@ class CivCli
     game
   end
 
-  def usage_summary(analysis)
-    return "" unless analysis.input_tokens && analysis.output_tokens
+  # Analyses and chronicles both come back carrying what the call cost.
+  def usage_summary(result)
+    return "" unless result.input_tokens && result.output_tokens
 
-    summary = " — #{analysis.input_tokens} in + #{analysis.output_tokens} out tokens"
-    summary += " (~$#{format("%.4f", analysis.cost_usd)})" if analysis.cost_usd
+    summary = " — #{result.input_tokens} in + #{result.output_tokens} out tokens"
+    summary += " (~$#{format("%.4f", result.cost_usd)})" if result.cost_usd
     summary
   end
 
