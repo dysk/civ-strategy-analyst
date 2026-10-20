@@ -69,7 +69,41 @@ at 47k. The rise is not a hidden quadratic; it is the per-civ loops in
 of 6.
 
 Projected to production, a full 8-player game opens its projections page in
-5–7 seconds. That needs a cache, not a faster projection.
+5–7 seconds, which is why both pages are cached rather than made faster.
+
+## The cache
+
+The two pages that walk the whole log — `/games/:id/projections` and
+`/games/:id` — render through `Rails.cache.fetch` in the controller. The
+body is cached and the layout renders every time, so the CSRF token stays
+fresh; neither view sets `content_for`, so nothing else needs the layout
+and the template to render together.
+
+The key is the log's own version. Events never change once imported, so
+the last event's seq and the game record say which page the cache holds:
+
+    [ :projections, @game, @game.game_events.maximum(:seq) ]
+
+The game page also shows the latest analysis and how many there are, and
+analyses come and go, so its key carries
+`@game.analyses.cache_key_with_version` as well.
+
+| page | cold | warm |
+| --- | --- | --- |
+| `/games/:id/projections` | 1664ms | 13–22ms |
+| `/games/:id` | 777ms | 21ms |
+
+Measured on the 47k-event synthetic game. The first visit after a deploy
+still pays the cold price, 5–7s in production, and each cached page is
+~300 KB on disk under `tmp/cache`.
+
+`DigestBuilder` is untouched by this. `bin/civ analyze` runs in its own
+process and builds every projection from scratch, so an analysis still
+pays the 1843ms in the table above.
+
+`bin/deploy` runs `bin/rails tmp:cache:clear`, because it pulls into the
+same checkout. Without that, a change to a projection or to the view
+would keep serving the HTML the old code built.
 
 ## Two defects the measurement turned up
 
