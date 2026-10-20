@@ -100,11 +100,8 @@ class Religion
   # `event` is the same, but a snapshot strictly between them shows the
   # field absent, so the city lost and regained it silently in between.
   def lapsed_between?(previous, event)
-    city = previous.payload["city"]
-
-    city_snapshots.any? do |snapshot|
-      snapshot.payload["city"] == city && snapshot.turn > previous.turn && snapshot.turn < event.turn &&
-        !snapshot.payload.key?("religion")
+    snapshots_of(previous.payload["city"]).any? do |snapshot|
+      snapshot.turn > previous.turn && snapshot.turn < event.turn && !snapshot.payload.key?("religion")
     end
   end
 
@@ -128,7 +125,18 @@ class Religion
   end
 
   def next_snapshot(city, to_turn)
-    city_snapshots.select { |event| event.payload["city"] == city && event.turn > to_turn }
-      .min_by(&:turn)
+    snapshots_of(city).find { |event| event.turn > to_turn }
+  end
+
+  # One city's snapshots in turn order. Every run and every hold asks about
+  # a single city, so indexing once replaces a walk of every snapshot in the
+  # game per question - the cost that grew with snapshots and conversions
+  # multiplied together.
+  def snapshots_of(city)
+    @snapshots_by_city ||= city_snapshots
+      .sort_by { |event| [ event.turn, event.seq ] }
+      .group_by { |event| event.payload["city"] }
+
+    @snapshots_by_city.fetch(city, [])
   end
 end
