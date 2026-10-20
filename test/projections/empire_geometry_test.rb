@@ -64,6 +64,18 @@ class EmpireGeometryTest < ActiveSupport::TestCase
     )
   end
 
+  # A razed city leaves no event behind, so the plot it stood on is still
+  # counted as held when somebody founds a new city there.
+  test "a city founded on a plot its owner already holds counts once" do
+    founded("Rome", 1, 10, 10)
+    founded("Rome", 5, 10, 10)
+
+    assert_equal(
+      { turn: 5, cities: 1, span: 0, mean_spacing: nil, elongation: nil },
+      geometry.series("Rome").last
+    )
+  end
+
   test "ignores a founding the log recorded without coordinates" do
     @seq += 1
     @game.game_events.create!(

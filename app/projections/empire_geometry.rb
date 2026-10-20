@@ -45,7 +45,7 @@ class EmpireGeometry
     return unless plot
 
     transfers_of(event).each do |civ, change|
-      change == :gained ? @owned[civ] << plot : @owned[civ].delete(plot)
+      change == :gained ? gain(civ, plot) : @owned[civ].delete(plot)
       @series[civ] << entry(event.turn, @owned[civ])
     end
   end
@@ -62,6 +62,12 @@ class EmpireGeometry
 
     @gaps[event.civ] = gap
     @discrepancies[event.civ] << { turn: event.turn, counted: counted, reported: reported } unless gap.zero?
+  end
+
+  # A plot is held once. Without the guard a razing - which leaves no event
+  # behind - lets the plot somebody founds there next count twice over.
+  def gain(civ, plot)
+    @owned[civ] << plot unless @owned[civ].include?(plot)
   end
 
   # A capture moves one plot between two empires, so both sides' shape changes.
