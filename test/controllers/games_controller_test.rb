@@ -279,7 +279,47 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", game_projections_path(game)
   end
 
+  test "show serves the page it already built while the log stands still" do
+    game = standings_game("Cached Game")
+
+    with_cache do
+      get game_url(game)
+      outscored(game, "Greece", 900)
+
+      get game_url(game)
+    end
+
+    assert_equal %w[Rome Greece], css_select("ol li").map(&:text)
+  end
+
+  test "show rebuilds the page once a new analysis lands" do
+    game = standings_game("Reanalyzed Game")
+
+    with_cache do
+      get game_url(game)
+      game.analyses.create!(model: "m", report: "# Verdict", digest: {})
+
+      get game_url(game)
+    end
+
+    assert_select "a[href=?]", game_analyses_path(game)
+  end
+
   private
+
+  def standings_game(name)
+    game = Game.create!(name: name, max_turns: 100)
+    snapshot(game, "Rome", 10, score: 300)
+    snapshot(game, "Greece", 10, score: 100)
+    game
+  end
+
+  # An edit the cache key cannot see - the last event's seq and the game record
+  # both stay put, so only a rebuilt page reorders the standings.
+  def outscored(game, civ, score)
+    event = game.game_events.find_by(civ: civ, event_type: "snapshot")
+    event.update_column(:payload, event.payload.merge("score" => score))
+  end
 
   def pangaea_game(name, civs: %w[Rome Greece])
     game = Game.create!(name: name, map_script: "Pangaea")

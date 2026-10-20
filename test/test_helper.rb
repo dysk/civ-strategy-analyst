@@ -13,5 +13,15 @@ module ActiveSupport
     fixtures :all
 
     # Add more helper methods to be used by all tests here...
+
+    # The test environment caches nothing, so a test about caching brings its
+    # own store.
+    def with_cache
+      original = Rails.cache
+      Rails.cache = ActiveSupport::Cache::MemoryStore.new
+      yield
+    ensure
+      Rails.cache = original
+    end
   end
 end

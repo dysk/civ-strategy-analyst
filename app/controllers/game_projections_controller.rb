@@ -3,6 +3,22 @@ class GameProjectionsController < ApplicationController
 
   def show
     @game = Game.find(params[:game_id])
+    render html: cached_page.html_safe, layout: true
+  end
+
+  private
+
+  # A game's events never change once imported, so the last one's seq and the
+  # game record itself say which page the cache holds. The layout is left out
+  # of it, which keeps the CSRF token fresh on every request.
+  def cached_page
+    Rails.cache.fetch([ :projections, @game, @game.game_events.maximum(:seq) ]) do
+      assign_projections
+      render_to_string(:show, layout: false)
+    end
+  end
+
+  def assign_projections
     @map_bounds = MapBounds.for(@game)
     @capital_distances = capital_distances
     @buffer_cities = BufferCities.for(@game).call
@@ -31,8 +47,6 @@ class GameProjectionsController < ApplicationController
     @city_state_alliance_rows = city_state_alliance_rows
     @city_state_attribution_rows = city_state_attribution_rows
   end
-
-  private
 
   # Closest neighbours first: who had to worry about whom is the reason to
   # look at this table at all.

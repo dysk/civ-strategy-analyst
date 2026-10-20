@@ -10,6 +10,23 @@ class GamesController < ApplicationController
 
   def show
     @game = Game.find(params[:id])
+    render html: cached_page.html_safe, layout: true
+  end
+
+  private
+
+  # The page reads the log, which only grows, and the analyses, which come and
+  # go - so the last event's seq, the game record and the analyses' own version
+  # together say which page the cache holds. The layout is left out of it,
+  # which keeps the CSRF token fresh on every request.
+  def cached_page
+    Rails.cache.fetch([ :game, @game, @game.game_events.maximum(:seq), @game.analyses.cache_key_with_version ]) do
+      assign_overview
+      render_to_string(:show, layout: false)
+    end
+  end
+
+  def assign_overview
     @outcome = OutcomeResolver.new(@game).call
     @duration = GameDuration.for(@game)
     @standings = MetricSeries.for(@game).final_ranking("score")
@@ -22,8 +39,6 @@ class GamesController < ApplicationController
     @corridor_segments = map_layout[:corridors]
     @latest_analysis = @game.analyses.order(created_at: :desc).first
   end
-
-  private
 
   # Canvas height is fixed; width follows the map's own aspect ratio so a
   # wide map isn't squeezed into a square. Maps are rarely square.

@@ -928,7 +928,52 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", game_city_states_path(game)
   end
 
+  test "show serves the page it already built while the log stands still" do
+    game = proximity_game("Cached Projections Game")
+
+    with_cache do
+      get game_projections_url(game)
+      moved_closer(game, "Greece", 16)
+
+      get game_projections_url(game)
+    end
+
+    assert_equal [ "20" ], last_cells("table.capital-distances")
+  end
+
+  test "show rebuilds the page once a new event lands in the log" do
+    game = proximity_game("Invalidated Projections Game")
+
+    with_cache do
+      get game_projections_url(game)
+      city(game, "Carthage", 0, 16, 10)
+
+      get game_projections_url(game)
+    end
+
+    assert_equal [ "6", "14", "20" ], last_cells("table.capital-distances")
+  end
+
   private
+
+  def proximity_game(name)
+    game = Game.create!(name: name, map_width: 46)
+    %w[Rome Greece Carthage].each { |civ| game.players.create!(civ: civ) }
+    city(game, "Rome", 0, 10, 10)
+    city(game, "Greece", 0, 30, 10)
+    game
+  end
+
+  # An edit the cache key cannot see - the last event's seq and the game record
+  # both stay put, so only a rebuilt page shows the new coordinate.
+  def moved_closer(game, civ, x)
+    event = game.game_events.find_by(civ: civ, event_type: "city_founded")
+    event.update_column(:payload, event.payload.merge("x" => x))
+  end
+
+  def last_cells(selector)
+    css_select("#{selector} tbody tr").map { |row| row.css("td").last.text }
+  end
 
   def pangaea_game(name, civs: %w[Rome Greece])
     game = Game.create!(name: name, map_script: "Pangaea")

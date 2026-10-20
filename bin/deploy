@@ -13,4 +13,5 @@ git pull --ff-only
 bundle install
 bin/rails assets:precompile
 bin/rails db:migrate
+bin/rails tmp:cache:clear # cached pages outlive a git pull
 sudo systemctl restart civ-strategy-analyst
