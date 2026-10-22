@@ -26,6 +26,7 @@ class Battles
     @tiles = TileOwnership.for(game)
     @window = GameSpeed.for(game).turns(WINDOW_STANDARD_TURNS)
     @log = game.event_log
+    @unit_losses = UnitLosses.for(game)
   end
 
   def all
@@ -51,8 +52,15 @@ class Battles
       next [] unless plot.all?
 
       cities = @tiles.candidates(plot, turn: event.turn)&.dig(:cities) || []
-      cities.map { |city| { city: city, turn: event.turn, civ: event.civ } }
+      cities.map { |city| { city: city, turn: event.turn, civ: event.civ, killed_by: killed_by(event) } }
     end
+  end
+
+  # A reconciled log names the killer on the loss itself; an unreconciled
+  # one, at most, the hook's own `killed_by` - populated only for a
+  # captured civilian, never a combat death, so most battles read nil here.
+  def killed_by(event)
+    @unit_losses.killer(event) || event.payload["killed_by"]
   end
 
   def clusters(city, losses)
@@ -65,6 +73,18 @@ class Battles
   def battle_for(city, cluster)
     { type: :battle, city: city, turn: cluster.first[:turn],
       from_turn: cluster.first[:turn], to_turn: cluster.last[:turn],
-      losses: cluster.each_with_object(Hash.new(0)) { |loss, tally| tally[loss[:civ]] += 1 } }
+      losses: cluster.each_with_object(Hash.new(0)) { |loss, tally| tally[loss[:civ]] += 1 },
+      attackers: attackers_for(cluster) }
+  end
+
+  # Per losing civ, who the record blames and how often - a loss the
+  # record names no killer for simply has none here, rather than a zero
+  # entry claiming an answer the log never gave.
+  def attackers_for(cluster)
+    cluster.each_with_object({}) do |loss, tally|
+      next unless loss[:killed_by]
+
+      (tally[loss[:civ]] ||= Hash.new(0))[loss[:killed_by]] += 1
+    end
   end
 end

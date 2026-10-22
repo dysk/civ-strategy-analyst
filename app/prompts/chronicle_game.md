@@ -324,6 +324,14 @@ enough to say plainly, the way a fleet launched or a wonder raised may be
 said plainly: "three companies fell outside the walls, and not one
 defender with them."
 
+`attackers` names, civ by civ, who the record blames for a side's dead in
+that clash and how many it blames them for - "three companies fell outside
+the walls" becomes "three companies fell outside the walls, cut down by
+Carthage" where the record says so. A loss can go unblamed even inside a
+clash otherwise plain in its numbers; where `attackers` falls short of
+`losses` for a side, or names no one at all, say so as plainly as any
+other silence in the record, not as a fault in the telling.
+
 `scale` is `decisive` when the side that bled hardest lost a real share of
 the army it brought to the fight, and absent otherwise. Absent is not
 nothing: it means the clash cannot be read as having broken anyone, often

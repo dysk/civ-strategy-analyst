@@ -159,6 +159,45 @@ class BattlesTest < ActiveSupport::TestCase
     assert_empty battles
   end
 
+  test "a battle names who the record blames for the losing side's dead" do
+    founded("Rome", "Roma", 1, 10, 10)
+    lost("Rome", 40, 10, 10, killed_by: "Greece")
+    lost("Rome", 41, 10, 10, killed_by: "Greece")
+    lost("Rome", 42, 10, 10, killed_by: "Greece")
+
+    assert_equal({ "Rome" => { "Greece" => 3 } }, battles.sole[:attackers])
+  end
+
+  test "a battle reads the attacker a reconciled log names through its killer field" do
+    founded("Rome", "Roma", 1, 10, 10)
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Greece", confidence: "confirmed")
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Greece", confidence: "confirmed")
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Greece", confidence: "confirmed")
+
+    assert_equal({ "Rome" => { "Greece" => 3 } }, battles.sole[:attackers])
+  end
+
+  test "a battle leaves a loss out of the attacker tally when the record names no killer" do
+    founded("Rome", "Roma", 1, 10, 10)
+    lost("Rome", 40, 10, 10, killed_by: "Greece")
+    lost("Rome", 41, 10, 10)
+    lost("Rome", 42, 10, 10)
+
+    assert_equal({ "Rome" => { "Greece" => 1 } }, battles.sole[:attackers])
+  end
+
+  test "a battle with no attributed killer has an empty attacker tally" do
+    founded("Rome", "Roma", 1, 10, 10)
+    lost("Rome", 40, 10, 10)
+    lost("Rome", 41, 10, 10)
+    lost("Rome", 42, 10, 10)
+
+    assert_equal({}, battles.sole[:attackers])
+  end
+
   test "battles are returned in turn order" do
     founded("Rome", "Roma", 1, 10, 10)
     founded("Tibet", "Lhasa", 1, 30, 30)
@@ -180,8 +219,8 @@ class BattlesTest < ActiveSupport::TestCase
     event(civ, "city_founded", turn, city: city, x: x, y: y)
   end
 
-  def lost(civ, turn, x, y, unit: "UNIT_WARRIOR")
-    event(civ, "unit_lost", turn, unit: unit, x: x, y: y)
+  def lost(civ, turn, x, y, unit: "UNIT_WARRIOR", **extra)
+    event(civ, "unit_lost", turn, unit: unit, x: x, y: y, **extra)
   end
 
   def event(civ, event_type, turn, **extra)
