@@ -59,8 +59,14 @@ class Battles
   # A reconciled log names the killer on the loss itself; an unreconciled
   # one, at most, the hook's own `killed_by` - populated only for a
   # captured civilian, never a combat death, so most battles read nil here.
+  # A killer the reconciler only inferred - always Barbarians, by
+  # elimination, where unit_killed never recorded one - is not named at
+  # all: per WarCasualties' own measurement, that guess disproportionately
+  # answers an AI kill the hook missed, not a real barbarian one.
   def killed_by(event)
-    @unit_losses.killer(event) || event.payload["killed_by"]
+    return event.payload["killed_by"] unless (killer = @unit_losses.killer(event))
+
+    killer unless @unit_losses.confidence(event) == :inferred
   end
 
   def clusters(city, losses)

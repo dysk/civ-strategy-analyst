@@ -44,16 +44,18 @@ class WarCasualties
 
   BARBARIANS = "Barbarians"
 
-  # The combat record is not written from every civilization's point of
-  # view. unit_killed names Babylon as a victim 3 times across
-  # babylon-domination and as a killer 59 times, because the hook fires on
-  # the host's own machine, so all 55 of Babylon's war dead fell through
-  # the reconciler's rules into the branch that names barbarians by
-  # elimination. Where a civilization's inferred deaths outnumber the ones
-  # the record itself names several times over, that branch is answering a
-  # default rather than reading evidence. The other civilizations in the
-  # two reconciled logs sit between 1.6 and 2.6 inferred per recorded
-  # death; Babylon sits at 18.
+  # The combat record does not name a killer evenly. unit_killed names
+  # Babylon - the human player - as a victim 3 times across
+  # babylon-domination and as a killer 59 times: the hook seems to fire
+  # reliably only when the attacking unit is human-controlled, so an AI's
+  # kill - a barbarian's, a city-state's, or another civilization's - very
+  # often leaves no killer for unit_killed to record. All 55 of Babylon's
+  # war dead fell through that gap into the reconciler's by-elimination
+  # branch, which names barbarians. Where a civilization's inferred deaths
+  # outnumber the ones the record itself names several times over, that
+  # branch is answering a default rather than reading evidence. The other
+  # civilizations in the two reconciled logs sit between 1.6 and 2.6
+  # inferred per recorded death; Babylon sits at 18.
   MAX_INFERRED_PER_RECORDED = 4
 
   def initialize(game)

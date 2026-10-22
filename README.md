@@ -114,9 +114,12 @@ projections — so run neither before importing:
   but the one thing it adds that the raw log cannot state is an inference —
   that an otherwise unexplained loss was a barbarian kill. That inference
   belongs in a projection, where it can be tested and corrected, and it needed
-  correcting. The combat record is written from the host's machine and barely
-  names the host's own deaths, so for the human player the inference collects
-  its war dead instead; `WarCasualties` sets those aside and says so.
+  correcting. The combat record seems to name a killer reliably only when the
+  attacking unit was human-controlled; an AI's kill — a barbarian's, a
+  city-state's, or another civilization's — often leaves no `killer` for
+  `unit_killed` to record, so the human player's own war dead disproportionately
+  fall through to the inference instead; `WarCasualties` sets those aside and
+  says so.
 
 Where a log does carry the fields, `UnitLosses` reads them, because `cause`
 settles three per-unit questions nothing else can — which removals were

@@ -198,6 +198,35 @@ class BattlesTest < ActiveSupport::TestCase
     assert_equal({}, battles.sole[:attackers])
   end
 
+  # The reconciler's by-elimination guess names Barbarians for any combat
+  # death unit_killed never recorded a killer for - which, per
+  # WarCasualties' own measurement, is disproportionately an AI kill
+  # misread as a raid rather than a real barbarian one. A battle should
+  # not repeat that guess as fact.
+  test "a battle leaves an inferred Barbarians guess out of the attacker tally" do
+    founded("Rome", "Roma", 1, 10, 10)
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Barbarians", confidence: "inferred")
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Barbarians", confidence: "inferred")
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Barbarians", confidence: "inferred")
+
+    assert_equal({}, battles.sole[:attackers])
+  end
+
+  test "a battle still trusts a confirmed Barbarians kill" do
+    founded("Rome", "Roma", 1, 10, 10)
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Barbarians", confidence: "confirmed")
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Barbarians", confidence: "confirmed")
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10,
+                                    cause: "killed", killer: "Barbarians", confidence: "confirmed")
+
+    assert_equal({ "Rome" => { "Barbarians" => 3 } }, battles.sole[:attackers])
+  end
+
   test "battles are returned in turn order" do
     founded("Rome", "Roma", 1, 10, 10)
     founded("Tibet", "Lhasa", 1, 30, 30)
