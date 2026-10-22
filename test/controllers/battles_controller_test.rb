@@ -34,7 +34,7 @@ class BattlesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "leaves a battle nobody's stock measured against unflagged" do
-    battle("Roma", 10, 10, turns: [ 40, 41, 42 ], civ: "Barbarians", stock: 0)
+    battle("Roma", 10, 10, turns: [ 40, 41, 42 ], civ: "Zurich", stock: 0)
 
     get game_battles_url(@game)
 

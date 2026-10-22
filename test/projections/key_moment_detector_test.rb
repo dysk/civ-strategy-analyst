@@ -1141,14 +1141,14 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_nil detector.battles.sole[:scale]
   end
 
-  # Barbarians and city-states barely reach OrderOfBattle's ledger, so a
-  # battle against them cannot be read as broken or as untouched - it
+  # A city-state's garrison barely reaches OrderOfBattle's ledger, so a
+  # battle against it cannot be read as broken or as untouched - it
   # still stands, just as texture rather than a confirmed rout.
   test "battles reads as background texture when no side has a stock to measure against" do
     event("Greece", "city_founded", 1, city: "Athens", x: 10, y: 10)
-    event("Barbarians", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
-    event("Barbarians", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
-    event("Barbarians", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Zurich", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Zurich", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Zurich", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
 
     assert_nil detector.battles.sole[:scale]
   end

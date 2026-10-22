@@ -44,6 +44,28 @@ class BattlesTest < ActiveSupport::TestCase
     assert_empty battles
   end
 
+  # A barbarian raid is routine background noise, not the kind of fight
+  # this projection is meant to surface - chasing off a horde is not a
+  # battle in the sense a chronicle means it.
+  test "barbarians dying near a city are not combat worth a battle of their own" do
+    founded("Rome", "Roma", 1, 10, 10)
+    lost("Barbarians", 40, 10, 10)
+    lost("Barbarians", 41, 10, 10)
+    lost("Barbarians", 42, 10, 10)
+
+    assert_empty battles
+  end
+
+  test "a civ's own losses still count even when barbarians died in the same window" do
+    founded("Rome", "Roma", 1, 10, 10)
+    lost("Rome", 40, 10, 10)
+    lost("Rome", 41, 10, 10)
+    lost("Rome", 42, 10, 10)
+    lost("Barbarians", 42, 10, 10)
+
+    assert_equal({ "Rome" => 3 }, battles.sole[:casualties])
+  end
+
   test "a battle names how many each side lost" do
     founded("Rome", "Roma", 1, 10, 10)
     lost("Rome", 40, 10, 10)

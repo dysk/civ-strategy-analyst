@@ -38,9 +38,13 @@ class Battles
 
   # Exploded one row per named candidate, so a border hex it cannot settle
   # between two cities still reaches each of them - the same generosity
-  # TileOwnership#candidates already extends to a war's theatre.
+  # TileOwnership#candidates already extends to a war's theatre. A
+  # barbarian horde is routine background noise rather than the fight
+  # this projection means to surface, so its own deaths count for
+  # nothing - though a civ's losses to one still do.
   def placed_losses
     @log.of_type("unit_lost").flat_map do |event|
+      next [] if event.civ == WarCasualties::BARBARIANS
       next [] if WarCasualties.kind_of(event.payload["unit"]) == :civilian
 
       plot = event.payload.values_at("x", "y")
