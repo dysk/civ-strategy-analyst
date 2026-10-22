@@ -14,6 +14,10 @@ Rails.application.routes.draw do
       get :prompt, on: :member
       get :digest, on: :member
     end
+    resources :chronicles, only: [ :show ] do
+      get :prompt, on: :member
+      get :digest, on: :member
+    end
     resources :events, only: [ :index ], controller: "game_events"
     resource :projections, only: [ :show ], controller: "game_projections"
     resource :geometry, only: [ :show ], controller: "empire_geometries"

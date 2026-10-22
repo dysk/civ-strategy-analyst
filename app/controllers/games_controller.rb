@@ -20,7 +20,8 @@ class GamesController < ApplicationController
   # together say which page the cache holds. The layout is left out of it,
   # which keeps the CSRF token fresh on every request.
   def cached_page
-    Rails.cache.fetch([ :game, @game, @game.game_events.maximum(:seq), @game.analyses.cache_key_with_version ]) do
+    Rails.cache.fetch([ :game, @game, @game.game_events.maximum(:seq),
+                        @game.analyses.cache_key_with_version, @game.chronicles.cache_key_with_version ]) do
       assign_overview
       render_to_string(:show, layout: false)
     end
@@ -38,6 +39,7 @@ class GamesController < ApplicationController
     @buffer_positions = map_layout[:buffers]
     @corridor_segments = map_layout[:corridors]
     @latest_analysis = @game.analyses.order(created_at: :desc).first
+    @latest_chronicle = @game.chronicles.order(created_at: :desc).first
   end
 
   # Canvas height is fixed; width follows the map's own aspect ratio so a

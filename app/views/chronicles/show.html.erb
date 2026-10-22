@@ -1,0 +1,18 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1><%= @game.name %></h1>
+<p class="meta">
+  Model: <%= @chronicle.model %> &middot; generated <%= @chronicle.created_at.strftime("%Y-%m-%d %H:%M") %>
+  <% if @chronicle.input_tokens && @chronicle.output_tokens %>
+    &middot; <%= @chronicle.input_tokens %> in + <%= @chronicle.output_tokens %> out tokens
+    <% if @chronicle.cost_usd %>
+      (~$<%= format("%.4f", @chronicle.cost_usd) %>)
+    <% end %>
+  <% end %>
+</p>
+<p>
+  <%= link_to "View prompt snapshot", prompt_game_chronicle_path(@game, @chronicle) %>
+  &middot; <%= link_to "View digest snapshot", digest_game_chronicle_path(@game, @chronicle) %>
+</p>
+
+<div class="report"><%= render_markdown(@chronicle.content) %></div>

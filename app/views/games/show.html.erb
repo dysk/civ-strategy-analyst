@@ -14,6 +14,9 @@
 <p>
   <%= link_to "View raw event data", game_events_path(@game) %> &middot;
   <%= link_to "All projections", game_projections_path(@game) %>
+  <% if @latest_chronicle %>
+    &middot; <%= link_to "Latest chronicle", game_chronicle_path(@game, @latest_chronicle) %>
+  <% end %>
 </p>
 
 <h2>Outcome</h2>

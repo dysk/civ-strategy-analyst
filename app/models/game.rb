@@ -2,6 +2,7 @@ class Game < ApplicationRecord
   has_many :players, dependent: :destroy
   has_many :game_events, dependent: :destroy
   has_many :analyses, dependent: :destroy
+  has_many :chronicles, dependent: :destroy
 
   validates :name, presence: true
 

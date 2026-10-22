@@ -279,6 +279,27 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", game_projections_path(game)
   end
 
+  test "show links to the latest chronicle" do
+    game = Game.create!(name: "Chronicled Game")
+    older = travel_to(2.days.ago) { game.chronicles.create!(model: "m", content: "older", digest: {}) }
+    newer = travel_to(1.day.ago) { game.chronicles.create!(model: "m", content: "newer", digest: {}) }
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "a[href=?]", game_chronicle_path(game, newer)
+    assert_select "a[href=?]", game_chronicle_path(game, older), false
+  end
+
+  test "show has no chronicle link when the game has no chronicle yet" do
+    game = Game.create!(name: "Unchronicled Game")
+
+    get game_url(game)
+
+    assert_response :success
+    assert_select "a[href=?]", game_chronicle_path(game, 0), false
+  end
+
   test "show serves the page it already built while the log stands still" do
     game = standings_game("Cached Game")
 
@@ -303,6 +324,19 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_select "a[href=?]", game_analyses_path(game)
+  end
+
+  test "show rebuilds the page once a new chronicle lands" do
+    game = standings_game("Rechronicled Game")
+
+    with_cache do
+      get game_url(game)
+      chronicle = game.chronicles.create!(model: "m", content: "chronicle", digest: {})
+
+      get game_url(game)
+    end
+
+    assert_select "a[href=?]", game_chronicle_path(game, game.chronicles.last)
   end
 
   private

@@ -1,7 +1,7 @@
-# Writes the history of a game as a chronicle. The chronicle is a piece of
-# writing, not a record of the game, so it lands in a file and nowhere else.
+# Writes the history of a game as a chronicle, saved both to a file and as
+# the newest Chronicle row for the game.
 class ChronicleGame
-  Result = Struct.new(:path, :model, :input_tokens, :output_tokens, :cost_usd, keyword_init: true)
+  Result = Struct.new(:chronicle, :path, :model, :input_tokens, :output_tokens, :cost_usd, keyword_init: true)
 
   PROMPT_PATH = Rails.root.join("app/prompts/chronicle_game.md")
   LANGUAGES = { "en" => "English", "pl" => "Polish" }.freeze
@@ -20,8 +20,8 @@ class ChronicleGame
   def call
     response = @llm_client.call(model: @model, system_prompt: prompt, input: digest.to_json)
     Result.new(
-      path: write(response.content), model: @model, input_tokens: response.input_tokens,
-      output_tokens: response.output_tokens, cost_usd: response.cost_usd
+      chronicle: persist(response), path: write(response.content), model: @model,
+      input_tokens: response.input_tokens, output_tokens: response.output_tokens, cost_usd: response.cost_usd
     )
   end
 
@@ -33,8 +33,16 @@ class ChronicleGame
     end
   end
 
+  def persist(response)
+    @game.chronicles.create!(
+      model: @model, content: response.content, digest: digest, prompt: prompt,
+      lekmod_version: @lekmod_version,
+      input_tokens: response.input_tokens, output_tokens: response.output_tokens, cost_usd: response.cost_usd
+    )
+  end
+
   def digest
-    ChronicleDigest.new(@game, lekmod_version: @lekmod_version, lekmod_root: @lekmod_root).call
+    @digest ||= ChronicleDigest.new(@game, lekmod_version: @lekmod_version, lekmod_root: @lekmod_root).call
   end
 
   def prompt

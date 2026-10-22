@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_125123) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_091401) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,6 +27,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_125123) do
     t.text "report", null: false
     t.datetime "updated_at", null: false
     t.index ["game_id"], name: "index_analyses_on_game_id"
+  end
+
+  create_table "chronicles", force: :cascade do |t|
+    t.text "content", null: false
+    t.decimal "cost_usd", precision: 10, scale: 6
+    t.datetime "created_at", null: false
+    t.jsonb "digest", default: {}, null: false
+    t.bigint "game_id", null: false
+    t.integer "input_tokens"
+    t.string "lekmod_version"
+    t.string "model", null: false
+    t.integer "output_tokens"
+    t.text "prompt"
+    t.datetime "updated_at", null: false
+    t.index ["game_id"], name: "index_chronicles_on_game_id"
   end
 
   create_table "game_events", force: :cascade do |t|
@@ -75,6 +90,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_125123) do
   end
 
   add_foreign_key "analyses", "games"
+  add_foreign_key "chronicles", "games"
   add_foreign_key "game_events", "games"
   add_foreign_key "players", "games"
 end

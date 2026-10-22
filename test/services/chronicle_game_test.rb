@@ -43,7 +43,26 @@ class ChronicleGameTest < ActiveSupport::TestCase
     assert_equal 0.0421, result.cost_usd
   end
 
-  test "leaves no record of the chronicle in the database" do
+  test "saves the chronicle to the database as the newest version" do
+    stub = StubLlmClient.new(
+      content: "In the first years of the world...", input_tokens: 900, output_tokens: 300, cost_usd: 0.0421
+    )
+
+    result = ChronicleGame.new(@game, model: "test-model", llm_client: stub, reports_dir: @reports_dir).call
+
+    chronicle = result.chronicle
+    assert_equal @game, chronicle.game
+    assert_equal "test-model", chronicle.model
+    assert_equal "In the first years of the world...", chronicle.content
+    assert_equal 900, chronicle.input_tokens
+    assert_equal 300, chronicle.output_tokens
+    assert_equal 0.0421, chronicle.cost_usd
+    assert JSON.parse(chronicle.digest.to_json).key?("calendar")
+    assert_includes chronicle.prompt, File.read(Rails.root.join("app/prompts/chronicle_game.md"))
+    assert_equal chronicle, @game.chronicles.order(created_at: :desc).first
+  end
+
+  test "leaves no record of the chronicle on the Analysis table" do
     stub = StubLlmClient.new(content: "chronicle")
 
     assert_no_difference -> { Analysis.count } do
