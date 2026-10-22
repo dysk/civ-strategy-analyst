@@ -39,8 +39,9 @@ class ChronicleSpine
 
   # A battle that broke nobody's army is texture, the same weight as a
   # spy's death; one that did reads the way a border city falling does.
-  # Every detected battle stays in the chronicle - only an entry of its
-  # own is earned.
+  # Every battle with a side to blame stays in the chronicle - only an
+  # entry of its own is earned. See chronicled_battles for the one kind
+  # dropped outright: a cluster with no attacker named at all.
   BATTLE_WEIGHTS = { decisive: ANCHOR_WEIGHT }.freeze
 
   # A war is worth what it cost. A declaration nobody acted on is an act of
@@ -163,7 +164,16 @@ class ChronicleSpine
       detector.leader_changes + detector.cultural_victory_imminent + detector.science_victory_imminent +
       detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies +
       detector.players_declared_irrelevant + detector.wonder_races_lost + detector.wonder_races +
-      detector.great_people_first_of_kind + detector.great_people_lost + detector.battles
+      detector.great_people_first_of_kind + detector.great_people_lost + chronicled_battles
+  end
+
+  # The battles page stays generous on purpose - every detected cluster, blamed
+  # or not. The chronicle can't: a battle with no attacker at all has nothing
+  # to tell beyond the record's own silence, not worth even a background
+  # clause. One blamed loss out of several is a different battle - a side to
+  # name - so only a battle with none at all is dropped.
+  def chronicled_battles
+    @detector.battles.select { |battle| battle[:attackers].any? }
   end
 
   # The chronicle is told the shape of a war's losses, never their size,

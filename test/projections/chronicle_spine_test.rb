@@ -451,9 +451,9 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   test "a decisive battle anchors an entry of its own" do
     event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
     3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
-    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
-    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
-    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
 
     battle = all_moments.find { |m| m[:type] == :battle }
 
@@ -467,12 +467,37 @@ class ChronicleSpineTest < ActiveSupport::TestCase
   test "a battle that broke nobody's army is background, not an entry of its own" do
     event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
     30.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
+
+    assert_empty spine.entries
+    assert_includes spine.background.map { |m| m[:type] }, :battle
+  end
+
+  # The chronicle can say "Rome lost three companies, blamed on no one" only
+  # by repeating the record's own silence - not worth an entry's room, nor
+  # even a background clause, when there is nothing else to say about it.
+  test "a battle whose killer the record never names is left out of the chronicle entirely" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
     event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
     event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
     event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
 
-    assert_empty spine.entries
-    assert_includes spine.background.map { |m| m[:type] }, :battle
+    refute_includes all_moments.map { |m| m[:type] }, :battle
+  end
+
+  # One loss out of several left unattributed is not the same silence -
+  # the battle still has a side to blame, so it stays.
+  test "a battle stays in the chronicle when at least one loss is attributed" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10, killed_by: "Greece")
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_includes all_moments.map { |m| m[:type] }, :battle
   end
 
   private
