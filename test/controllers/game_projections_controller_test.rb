@@ -413,6 +413,19 @@ class GameProjectionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", game_army_path(game)
   end
 
+  test "show links to the battles page" do
+    game = Game.create!(name: "Battles Link Game")
+    event(game, "Rome", "city_founded", 1, "city" => "Roma", "x" => 10, "y" => 10)
+    3.times { event(game, "Rome", "unit_created", 1, "unit" => "UNIT_WARRIOR") }
+    [ 40, 41, 42 ].each do |turn|
+      event(game, "Rome", "unit_lost", turn, "unit" => "UNIT_WARRIOR", "x" => 10, "y" => 10)
+    end
+
+    get game_projections_url(game)
+
+    assert_select "a[href=?]", game_battles_path(game)
+  end
+
   test "show omits the army table for a game whose snapshots carry no military data" do
     game = Game.create!(name: "Peaceful Game")
     game.players.create!(civ: "Rome")

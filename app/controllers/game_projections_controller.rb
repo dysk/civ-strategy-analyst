@@ -27,6 +27,7 @@ class GameProjectionsController < ApplicationController
     @early_game_deadline_turn = early_game.deadline_turn
     @opening_strategy_rows = opening_strategy_rows
     @key_moment_groups = key_moment_groups
+    @battles_count = KeyMomentDetector.new(@game).battles.size
     @wonder_races = wonder_races_view
     @army_rows = army_rows
     @city_census_rows = city_census_rows

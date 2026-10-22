@@ -309,6 +309,13 @@
   </details>
 <% end %>
 
+<%= section_heading("Battles", "battles") %>
+<% if @battles_count.zero? %>
+  <p class="empty-state">No battle detected in this game's events.</p>
+<% else %>
+  <p><%= link_to "See every battle detected", game_battles_path(@game) %> (<%= @battles_count %>)</p>
+<% end %>
+
 <%= section_heading("City Census", "city-census") %>
 <% if @city_census_rows.empty? %>
   <p class="empty-state">No city snapshot data in this game's log.</p>

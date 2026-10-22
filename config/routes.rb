@@ -18,6 +18,7 @@ Rails.application.routes.draw do
     resource :projections, only: [ :show ], controller: "game_projections"
     resource :geometry, only: [ :show ], controller: "empire_geometries"
     resource :army, only: [ :show ], controller: "army_compositions"
+    resource :battles, only: [ :show ], controller: "battles"
     resource :cultural, only: [ :show ], controller: "cultural_standings"
     resource :congress, only: [ :show ], controller: "congress_histories"
     resource :victory_progress, only: [ :show ], controller: "victory_progress_histories"

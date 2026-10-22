@@ -1,0 +1,35 @@
+<%= link_to "&laquo; #{@game.name}".html_safe, game_path(@game), class: "back-link" %>
+
+<h1>Battles</h1>
+<p class="subtitle">
+  Clusters of soldiers' deaths close together in time and near one city.
+  Decisive means the hardest-hit side lost a real share of the stock it
+  held going in; a dash means no side in the clash has a stock on record
+  to measure against, which is typical of a barbarian raid or a
+  city-state's garrison.
+</p>
+
+<% if @battles.empty? %>
+  <p class="empty-state">No battle detected in this game's events.</p>
+<% else %>
+  <table class="battles">
+    <thead>
+      <tr>
+        <th>City</th>
+        <th>Turns</th>
+        <th>Casualties</th>
+        <th>Decisive</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @battles.each do |battle| %>
+        <tr>
+          <td><%= battle[:city] %></td>
+          <td><%= battle[:from_turn] %>&ndash;<%= battle[:to_turn] %></td>
+          <td><%= battle[:casualties].map { |civ, n| "#{civ}: #{n}" }.join(", ") %></td>
+          <td class="decisive"><%= battle[:scale] == :decisive ? "Yes" : "&mdash;".html_safe %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
