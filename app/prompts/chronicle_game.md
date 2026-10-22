@@ -327,10 +327,14 @@ defender with them."
 `attackers` names, civ by civ, who the record blames for a side's dead in
 that clash and how many it blames them for - "three companies fell outside
 the walls" becomes "three companies fell outside the walls, cut down by
-Carthage" where the record says so. A loss can go unblamed even inside a
-clash otherwise plain in its numbers; where `attackers` falls short of
-`losses` for a side, or names no one at all, say so as plainly as any
-other silence in the record, not as a fault in the telling.
+Carthage" where the record says so. Write only what is named. Where the
+count falls short of a side's full `losses`, give the number you have and
+leave the rest out - "the record blames ten of them on India" needs no
+clause about the eleventh. A side with no entry in `attackers` at all adds
+nothing to the clash beyond the count `losses` already gave it: do not spend
+a sentence saying the record blames no one, here - unlike other silences
+in the record, that is not a fact worth its own clause, only a reason to
+say less.
 
 `scale` is `decisive` when the side that bled hardest lost a real share of
 the army it brought to the fight, and absent otherwise. Absent is not
