@@ -37,6 +37,12 @@ class ChronicleSpine
   # same weight as a spy's death.
   GREAT_PERSON_LOST_WEIGHTS = { general: ANCHOR_WEIGHT, musician: 3, other: 1 }.freeze
 
+  # A battle that broke nobody's army is texture, the same weight as a
+  # spy's death; one that did reads the way a border city falling does.
+  # Every detected battle stays in the chronicle - only an entry of its
+  # own is earned.
+  BATTLE_WEIGHTS = { decisive: ANCHOR_WEIGHT }.freeze
+
   # A war is worth what it cost. A declaration nobody acted on is an act of
   # diplomacy that the chronicle need not stop for, and a raid for a worker
   # earns a sentence where a war of conquest earns an entry.
@@ -142,6 +148,7 @@ class ChronicleSpine
     if moment[:type] == :great_person_lost
       return GREAT_PERSON_LOST_WEIGHTS.fetch(moment[:kind], GREAT_PERSON_LOST_WEIGHTS[:other])
     end
+    return BATTLE_WEIGHTS.fetch(moment[:scale], 1) if moment[:type] == :battle
 
     WEIGHTS.fetch(moment[:type], 1)
   end
@@ -156,7 +163,7 @@ class ChronicleSpine
       detector.leader_changes + detector.cultural_victory_imminent + detector.science_victory_imminent +
       detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies +
       detector.players_declared_irrelevant + detector.wonder_races_lost + detector.wonder_races +
-      detector.great_people_first_of_kind + detector.great_people_lost
+      detector.great_people_first_of_kind + detector.great_people_lost + detector.battles
   end
 
   # The chronicle is told the shape of a war's losses, never their size,

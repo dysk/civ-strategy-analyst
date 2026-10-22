@@ -417,6 +417,14 @@ class KeyMomentDetector
     end
   end
 
+  # A battle's drama is not its body count but what it cost the side that
+  # bled hardest - the same kind of swing MILITARY_MIGHT_SWING_THRESHOLD
+  # reads for an army's overall power, read here for one clash's share of
+  # the stock it was drawn from.
+  def battles
+    Battles.for(@game).all.map { |battle| battle.merge(scale: battle_scale(battle)) }
+  end
+
   # Losing a wonder race is the story the winning it already has a moment
   # for, so only the loss is surfaced - and only when the loser had put
   # real production behind it. A race abandoned before it was decided was a
@@ -485,6 +493,20 @@ class KeyMomentDetector
   # its strength, and a reader handed it draws the wrong one.
   def unrecorded?(side)
     side.values_at(:opening, :closing, :raised, :upgraded, :raised_civilian).all?(&:empty?)
+  end
+
+  # A side with no stock on record - a city-state's garrison, a barbarian
+  # horde - cannot be read as broken or as untouched, so it is left out of
+  # the judgment rather than guessed into either one. Decisive wherever the
+  # hardest-hit side with a stock to measure against lost a real share of
+  # it; a battle with no such side still stands, read as mere texture.
+  def battle_scale(battle)
+    fractions = battle[:casualties].filter_map do |civ, lost|
+      opening = @order_of_battle.at(battle[:from_turn] - 1, civ).values.sum
+      lost.to_f / opening if opening.positive?
+    end
+
+    :decisive if fractions.any? && fractions.max >= MILITARY_MIGHT_SWING_THRESHOLD
   end
 
   # A snapshot with no treasury cannot have the multiplier divided out,

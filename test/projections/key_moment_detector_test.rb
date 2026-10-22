@@ -1118,6 +1118,41 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_empty detector.research_rushes.select { |m| m[:civ] == "Zurich" }
   end
 
+  test "battles reads as decisive when the hardest-hit side lost a real share of its stock" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Greece", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Greece", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Greece", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_equal :decisive, detector.battles.sole[:scale]
+  end
+
+  test "battles reads as background texture when nobody lost a real share of its stock" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    30.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_nil detector.battles.sole[:scale]
+  end
+
+  # Barbarians and city-states barely reach OrderOfBattle's ledger, so a
+  # battle against them cannot be read as broken or as untouched - it
+  # still stands, just as texture rather than a confirmed rout.
+  test "battles reads as background texture when no side has a stock to measure against" do
+    event("Greece", "city_founded", 1, city: "Athens", x: 10, y: 10)
+    event("Barbarians", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Barbarians", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Barbarians", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_nil detector.battles.sole[:scale]
+  end
+
   private
 
   def lost_race(wonder, winner:, completed:, winner_from:, loser:, first:, last:, invested:, turns_left:,

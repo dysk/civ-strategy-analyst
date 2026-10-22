@@ -448,6 +448,33 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_nil war_moment[:forces]
   end
 
+  test "a decisive battle anchors an entry of its own" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    battle = all_moments.find { |m| m[:type] == :battle }
+
+    assert_equal :decisive, battle[:scale]
+    assert_operator battle[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
+  # With nothing else in the log to anchor on and too light to anchor by
+  # itself, a battle that cost its side little stays unreported rather
+  # than forcing an entry open for it.
+  test "a battle that broke nobody's army is background, not an entry of its own" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    30.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_empty spine.entries
+    assert_includes spine.background.map { |m| m[:type] }, :battle
+  end
+
   private
 
   def spine = ChronicleSpine.for(@game)
