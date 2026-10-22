@@ -98,35 +98,46 @@ needs testing against volume.
 
 ### Feed it raw logs
 
-The importer takes whatever the logger wrote, and that is what it should be
-given. The logger repo ships `tools/pipeline.sh`, which chains
-`reconcile-unit-lost.jq` (annotates each `unit_lost` with a `cause`) and
-`filter-major.sh` (drops lines naming no major nation). Both exist to squeeze a
-game into an LLM's context window when you hand it the log directly. This app
-has no such limit — it imports to Postgres and puts questions to it through
-projections — so run neither before importing:
+The importer takes whatever the logger wrote. The logger repo ships two
+separate prep tools, and only one belongs before an import.
 
-- `filter-major.sh` removes every unit event owned by a city-state or by the
-  barbarians. Measured on one raw log: 5999 lines in, 4514 out, 197
-  `unit_created` and 140 `unit_lost` gone. Majors' rosters survive intact, but
-  a minor's army can never be counted afterwards.
-- `reconcile-unit-lost.jq` is lossless by comparison — it only adds fields —
-  but the one thing it adds that the raw log cannot state is an inference —
-  that an otherwise unexplained loss was a barbarian kill. That inference
-  belongs in a projection, where it can be tested and corrected, and it needed
-  correcting. The combat record seems to name a killer reliably only when the
-  attacking unit was human-controlled; an AI's kill — a barbarian's, a
-  city-state's, or another civilization's — often leaves no `killer` for
-  `unit_killed` to record, so the human player's own war dead disproportionately
-  fall through to the inference instead; `WarCasualties` sets those aside and
-  says so.
+Run `tools/reconcile-unit-lost.jq` first, via `tools/pipeline.sh` (now a thin
+wrapper around just that tool):
 
-Where a log does carry the fields, `UnitLosses` reads them, because `cause`
-settles three per-unit questions nothing else can — which removals were
-expends, which were a caravan's last trip, and who killed a unit the hook
-named no killer on. `babylon-domination.jsonl` and `chile-vs-vietnam.jsonl` are
-pipeline output and take that path; the three later logs are raw and take the
-fallbacks, which is what keeps both paths tested. A new import should be raw.
+```sh
+tools/pipeline.sh events.jsonl --out prepared.jsonl   # in civ-narrative-logger
+bin/civ import prepared.jsonl                         # back here
+```
+
+It's lossless — it only adds fields — annotating every `unit_lost` with a
+`cause` and, where known, a `killer`. `UnitLosses` reads both, which settles
+three per-unit questions nothing else can — which removals were expends,
+which were a caravan's last trip, and who killed a unit the hook named no
+killer on. The one thing it adds that the raw log cannot state outright is an
+inference — that an otherwise unexplained loss was a barbarian kill, by
+elimination. The combat record seems to name a killer reliably only when the
+attacking unit was human-controlled; an AI's kill — a barbarian's, a
+city-state's, or another civilization's — often leaves no `killer` for
+`unit_killed` to record, so a human player's own war dead disproportionately
+fall through to that guess instead. `WarCasualties` and `Battles` both know
+this and distrust an inferred "Barbarians" the same way, setting it aside
+rather than reporting it as a named attacker — so reconciling before import
+adds real attacker names where the record supports them, without smuggling in
+false ones where it doesn't.
+
+Never run `filter-major.sh` before importing. It removes every unit event
+owned by a city-state or by the barbarians, which exists to squeeze a game
+into an LLM's context window when you hand the log directly to a prompt. This
+app has no such limit — it imports to Postgres and puts questions to it
+through projections, several of which read city-state and barbarian events
+directly. Measured on one raw log: 5999 lines in, 4514 out, 197
+`unit_created` and 140 `unit_lost` gone; majors' rosters survive intact, but a
+minor's army can never be counted afterwards.
+
+`babylon-domination.jsonl` and `chile-vs-vietnam.jsonl` are reconciled
+already; the other three example logs are raw and take `UnitLosses`'
+fallbacks, which is what keeps both paths tested. A new import should be
+reconciled.
 
 **Analyze a game:**
 
