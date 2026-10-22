@@ -25,6 +25,17 @@ class BattlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table.battles tbody td", text: "Rome: 3"
   end
 
+  test "names the attacker the record blames for the losses" do
+    founded("Rome", "Roma", 10, 10)
+    lost("Rome", 40, 10, 10, killed_by: "Greece")
+    lost("Rome", 41, 10, 10, killed_by: "Greece")
+    lost("Rome", 42, 10, 10, killed_by: "Greece")
+
+    get game_battles_url(@game)
+
+    assert_select "table.battles tbody td", text: "Rome: 3 (Greece: 3)"
+  end
+
   test "flags a battle that broke an army's stock as decisive" do
     battle("Roma", 10, 10, turns: [ 40, 41, 42 ], civ: "Rome", stock: 3)
 
@@ -76,8 +87,8 @@ class BattlesControllerTest < ActionDispatch::IntegrationTest
     event(civ, "unit_created", 1, unit: "UNIT_WARRIOR")
   end
 
-  def lost(civ, turn, x, y)
-    event(civ, "unit_lost", turn, unit: "UNIT_WARRIOR", x: x, y: y)
+  def lost(civ, turn, x, y, **extra)
+    event(civ, "unit_lost", turn, unit: "UNIT_WARRIOR", x: x, y: y, **extra)
   end
 
   def event(civ, event_type, turn, **extra)
