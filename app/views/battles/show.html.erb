@@ -26,7 +26,7 @@
         <tr>
           <td><%= battle[:city] %></td>
           <td><%= battle[:from_turn] %>&ndash;<%= battle[:to_turn] %></td>
-          <td><%= battle[:casualties].map { |civ, n| "#{civ}: #{n}" }.join(", ") %></td>
+          <td><%= battle[:losses].map { |civ, n| "#{civ}: #{n}" }.join(", ") %></td>
           <td class="decisive"><%= battle[:scale] == :decisive ? "Yes" : "&mdash;".html_safe %></td>
         </tr>
       <% end %>

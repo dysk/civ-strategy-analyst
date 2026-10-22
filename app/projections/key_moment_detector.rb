@@ -501,7 +501,7 @@ class KeyMomentDetector
   # hardest-hit side with a stock to measure against lost a real share of
   # it; a battle with no such side still stands, read as mere texture.
   def battle_scale(battle)
-    fractions = battle[:casualties].filter_map do |civ, lost|
+    fractions = battle[:losses].filter_map do |civ, lost|
       opening = @order_of_battle.at(battle[:from_turn] - 1, civ).values.sum
       lost.to_f / opening if opening.positive?
     end

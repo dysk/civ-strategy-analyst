@@ -314,6 +314,36 @@ stood; one mostly built raised fresh companies instead. Write the first as
 a treasury emptied and the second as a country under arms - the difference
 is a character, not a statistic.
 
+## Battles
+
+A `battle` moment is a single clash inside a war - or against a raid never
+declared as one - not the whole of the fighting, a spike of it concentrated
+on one `city` in the single year its `year` field dates. `losses` counts
+how many formations each side lost in that clash alone, a number small
+enough to say plainly, the way a fleet launched or a wonder raised may be
+said plainly: "three companies fell outside the walls, and not one
+defender with them."
+
+`scale` is `decisive` when the side that bled hardest lost a real share of
+the army it brought to the fight, and absent otherwise. Absent is not
+nothing: it means the clash cannot be read as having broken anyone, often
+because the side that bled was a raiding horde or a free city's garrison
+with no roster to measure against. A `decisive` battle earns an entry the
+way a border city falling does; one without the mark is a clause, folded
+into whatever passage already covers that war or those years.
+
+A battle that broke only one side - the other lost nothing - is not a
+lesser fight for being one-sided. A small force thrown back without loss
+is as real a turn in a war as a bloodbath, and often the better story: a
+handful of companies spent against a wall that held is a siege broken in
+an afternoon, and belongs in the chronicle as that.
+
+Where a battle's `city` and year fall inside a war already covered in
+this entry, write the two as one fight seen up close rather than as
+separate events - the war's `fought_at` and `armies` give the field and
+the roster, the battle gives the moment the line actually broke. Never
+narrate the same clash twice over as though two things had happened.
+
 ## Wonder races
 
 A `wonder_race_lost` moment is a great work another people finished first,

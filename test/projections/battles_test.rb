@@ -63,7 +63,7 @@ class BattlesTest < ActiveSupport::TestCase
     lost("Rome", 42, 10, 10)
     lost("Barbarians", 42, 10, 10)
 
-    assert_equal({ "Rome" => 3 }, battles.sole[:casualties])
+    assert_equal({ "Rome" => 3 }, battles.sole[:losses])
   end
 
   test "a battle names how many each side lost" do
@@ -74,7 +74,7 @@ class BattlesTest < ActiveSupport::TestCase
     lost("Greece", 43, 10, 10)
     lost("Greece", 44, 10, 10)
 
-    assert_equal({ "Rome" => 2, "Greece" => 3 }, battles.sole[:casualties])
+    assert_equal({ "Rome" => 2, "Greece" => 3 }, battles.sole[:losses])
   end
 
   # The small, one-sided clash that breaks a siege is as real a battle as
@@ -86,7 +86,7 @@ class BattlesTest < ActiveSupport::TestCase
     lost("Rome", 43, 10, 10)
     lost("Rome", 43, 10, 10)
 
-    assert_equal({ "Rome" => 3 }, battles.sole[:casualties])
+    assert_equal({ "Rome" => 3 }, battles.sole[:losses])
   end
 
   test "a battle spans from its first death to its last" do

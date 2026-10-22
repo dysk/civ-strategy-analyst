@@ -65,6 +65,6 @@ class Battles
   def battle_for(city, cluster)
     { type: :battle, city: city, turn: cluster.first[:turn],
       from_turn: cluster.first[:turn], to_turn: cluster.last[:turn],
-      casualties: cluster.each_with_object(Hash.new(0)) { |loss, tally| tally[loss[:civ]] += 1 } }
+      losses: cluster.each_with_object(Hash.new(0)) { |loss, tally| tally[loss[:civ]] += 1 } }
   end
 end
