@@ -3,6 +3,9 @@ class KeyMomentDetector
   INFLUENCE_TARGET_LEVELS = %w[INFLUENCE_LEVEL_INFLUENTIAL INFLUENCE_LEVEL_DOMINANT].freeze
   EARLY_GAME_GRACE_PERIOD_STANDARD_TURNS = 100
   MILITARY_MIGHT_SWING_THRESHOLD = 0.15
+
+  # See docs/decisive-battles.md.
+  DECISIVE_BATTLE_SHARE = 0.25
   HAPPINESS_SWING_THRESHOLD = 10
   SNOWBALL_WINDOW = 10
   SNOWBALL_MIN_STRETCH = 15
@@ -418,9 +421,7 @@ class KeyMomentDetector
   end
 
   # A battle's drama is not its body count but what it cost the side that
-  # bled hardest - the same kind of swing MILITARY_MIGHT_SWING_THRESHOLD
-  # reads for an army's overall power, read here for one clash's share of
-  # the stock it was drawn from.
+  # bled hardest - one clash's share of the stock it was drawn from.
   def battles
     Battles.for(@game).all.map { |battle| battle.merge(scale: battle_scale(battle)) }
   end
@@ -497,16 +498,20 @@ class KeyMomentDetector
 
   # A side with no stock on record - a city-state's garrison, a barbarian
   # horde - cannot be read as broken or as untouched, so it is left out of
-  # the judgment rather than guessed into either one. Decisive wherever the
-  # hardest-hit side with a stock to measure against lost a real share of
-  # it; a battle with no such side still stands, read as mere texture.
+  # the judgment rather than guessed into either one. A side that lost too
+  # few to make a battle on its own is left out too, because a few deaths
+  # from a tiny stock make a large share of very little. Decisive wherever
+  # a remaining side lost a real share of its stock; a battle with no such
+  # side still stands, read as mere texture.
   def battle_scale(battle)
     fractions = battle[:losses].filter_map do |civ, lost|
+      next if lost < Battles::MIN_LOSSES
+
       opening = @order_of_battle.soldiers_at(battle[:from_turn] - 1, civ)
       lost.to_f / opening if opening.positive?
     end
 
-    :decisive if fractions.any? && fractions.max >= MILITARY_MIGHT_SWING_THRESHOLD
+    :decisive if fractions.any? && fractions.max >= DECISIVE_BATTLE_SHARE
   end
 
   # A snapshot with no treasury cannot have the multiplier divided out,

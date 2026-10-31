@@ -1153,6 +1153,51 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_equal :decisive, detector.battles.sole[:scale]
   end
 
+  test "battles reads as decisive when a side lost a quarter of its soldiers" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    12.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_equal :decisive, detector.battles.sole[:scale]
+  end
+
+  test "battles reads as background texture when a side lost under a quarter of its soldiers" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    13.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_nil detector.battles.sole[:scale]
+  end
+
+  # Two deaths out of a garrison of three is a large share of very little.
+  test "battles reads as background texture when the hardest-hit side lost too few to count" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    20.times { event("Greece", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Greece", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_nil detector.battles.sole[:scale]
+  end
+
+  test "battles still reads as decisive when a side too thinly hit sits beside one that broke" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    3.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    10.times { event("Greece", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Greece", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Greece", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Greece", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_equal :decisive, detector.battles.sole[:scale]
+  end
+
   test "battles reads as background texture when a side's only stock on record is civilians" do
     event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
     5.times { event("Rome", "unit_created", 1, unit: "UNIT_WORKER") }
