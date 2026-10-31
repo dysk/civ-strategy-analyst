@@ -502,7 +502,7 @@ class KeyMomentDetector
   # it; a battle with no such side still stands, read as mere texture.
   def battle_scale(battle)
     fractions = battle[:losses].filter_map do |civ, lost|
-      opening = @order_of_battle.at(battle[:from_turn] - 1, civ).values.sum
+      opening = @order_of_battle.soldiers_at(battle[:from_turn] - 1, civ)
       lost.to_f / opening if opening.positive?
     end
 

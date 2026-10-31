@@ -50,6 +50,15 @@ class OrderOfBattleTest < ActiveSupport::TestCase
     assert_equal({}, roster(11, "Babylon"))
   end
 
+  test "counts soldiers on a turn without the civilians standing beside them" do
+    created("Babylon", "UNIT_WARRIOR", turn: 10)
+    created("Babylon", "UNIT_SCOUT", turn: 10)
+    created("Babylon", "UNIT_WORKER", turn: 10)
+    created("Babylon", "UNIT_GREAT_GENERAL", turn: 10)
+
+    assert_equal 2, OrderOfBattle.new(@game).soldiers_at(10, "Babylon")
+  end
+
   # The units a civilization starts the game with are placed before the
   # logger attaches, so they are lost without ever having been created.
   # That costs the count one unit; it must not cost it a negative army.

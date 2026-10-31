@@ -27,6 +27,8 @@ class OrderOfBattle
 
   def at(turn, civ) = ordered(stock_at(turn, civ))
 
+  def soldiers_at(turn, civ) = soldiers_in(stock_at(turn, civ))
+
   # A war is read from the turn before it was declared - what a side
   # marched in with - to the peace, or to the end of the log for a war
   # still burning when the record stops.

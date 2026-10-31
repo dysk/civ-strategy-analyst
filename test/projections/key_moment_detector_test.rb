@@ -1141,6 +1141,28 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_nil detector.battles.sole[:scale]
   end
 
+  # Workers and caravans can't fight, so they don't soften a blow to the army.
+  test "battles measures a side's losses against its soldiers, not its civilians" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    10.times { event("Rome", "unit_created", 1, unit: "UNIT_WARRIOR") }
+    20.times { event("Rome", "unit_created", 1, unit: "UNIT_WORKER") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_equal :decisive, detector.battles.sole[:scale]
+  end
+
+  test "battles reads as background texture when a side's only stock on record is civilians" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    5.times { event("Rome", "unit_created", 1, unit: "UNIT_WORKER") }
+    event("Rome", "unit_lost", 40, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 41, unit: "UNIT_WARRIOR", x: 10, y: 10)
+    event("Rome", "unit_lost", 42, unit: "UNIT_WARRIOR", x: 10, y: 10)
+
+    assert_nil detector.battles.sole[:scale]
+  end
+
   # A city-state's garrison barely reaches OrderOfBattle's ledger, so a
   # battle against it cannot be read as broken or as untouched - it
   # still stands, just as texture rather than a confirmed rout.
