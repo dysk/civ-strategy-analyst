@@ -187,6 +187,7 @@ class PlayerTimeline
     "UNIT_FAKEPROPHET" => :prophet,
     "UNIT_DALAILAMA" => :prophet,
     "UNIT_GREAT_GENERAL" => :general,
+    "UNIT_MONGOLIAN_KHAN" => :general,
     "UNIT_GREAT_ADMIRAL" => :admiral
   }.freeze
 

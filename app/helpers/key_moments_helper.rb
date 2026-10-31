@@ -80,6 +80,7 @@ module KeyMomentsHelper
     great_person_lost: ->(m) {
       "#{possessive(m[:civ])} Great #{m[:kind].to_s.capitalize} was killed by #{m[:killed_by]}#{by_elimination(m)}"
     },
+    citadel_built: ->(m) { "#{m[:civ]} built a citadel#{" near #{m[:city]}" if m[:city]}" },
     wonder_race: ->(m) { "#{m[:wonder_name]} became a contested build: #{m[:winner]} against #{m[:contenders].join(", ")}" },
     wonder_race_lost: ->(m) {
       rushed = " — #{m[:winner]} finished it ahead of a hard build" if m[:winner_finish] == :ahead_of_estimate

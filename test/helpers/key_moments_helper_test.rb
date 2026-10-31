@@ -270,6 +270,18 @@ class KeyMomentsHelperTest < ActionView::TestCase
                  key_moment_sentence(moment)
   end
 
+  test "narrates a citadel and the city it stands near" do
+    moment = { type: :citadel_built, turn: 70, civ: "Rome", city: "Athens", located: :owned, ground_civ: "Greece" }
+
+    assert_equal "Turn 70: Rome built a citadel near Athens", key_moment_sentence(moment)
+  end
+
+  test "narrates a citadel the log cannot place" do
+    moment = { type: :citadel_built, turn: 70, civ: "Rome", city: nil, located: nil, ground_civ: nil }
+
+    assert_equal "Turn 70: Rome built a citadel", key_moment_sentence(moment)
+  end
+
   test "marks a lost great person as a downward moment" do
     assert_match(/trend--down/, key_moment_trend({ type: :great_person_lost, turn: 140 }))
   end

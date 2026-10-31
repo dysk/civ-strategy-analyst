@@ -26,7 +26,7 @@ class ChronicleSpine
     reformation_added: 2, congress_host_change: 2, spaceship_part_assembled: 2,
     pantheon_founded: 1, resolution_passed: 1, natural_wonder: 1, golden_age: 1,
     player_declared_irrelevant: 3, wonder_race: 1, spy_killed: 1, coup: 2,
-    great_person_first_of_kind: 1
+    great_person_first_of_kind: 1, citadel_built: ANCHOR_WEIGHT
   }.freeze
 
   # A general lost to an enemy is a battle loss and a spent investment at
@@ -164,7 +164,7 @@ class ChronicleSpine
       detector.leader_changes + detector.cultural_victory_imminent + detector.science_victory_imminent +
       detector.diplomatic_victory_imminent + detector.apollo_completions + detector.spaceship_part_assemblies +
       detector.players_declared_irrelevant + detector.wonder_races_lost + detector.wonder_races +
-      detector.great_people_first_of_kind + detector.great_people_lost + chronicled_battles
+      detector.great_people_first_of_kind + detector.great_people_lost + detector.citadels_built + chronicled_battles
   end
 
   # The battles page stays generous on purpose - every detected cluster, blamed

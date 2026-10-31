@@ -191,6 +191,13 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal :academy, timeline.great_people("Rome").first[:action]
   end
 
+  test "great_people reads a khan's citadel the way it reads a general's" do
+    event("Mongolia", "great_person_expended", 40, great_person: "UNIT_MONGOLIAN_KHAN")
+    event("Mongolia", "improvement_built", 40, improvement: "IMPROVEMENT_CITADEL", x: 5, y: 5)
+
+    assert_equal :citadel, timeline.great_people("Mongolia").first[:action]
+  end
+
   test "great_people leaves an expend unplanted when the same-turn improvement doesn't match the kind" do
     event("Rome", "great_person_expended", 40, great_person: "UNIT_MUSICIAN")
     event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 5, y: 5)

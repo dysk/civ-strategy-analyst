@@ -295,6 +295,54 @@ class KeyMomentDetectorTest < ActiveSupport::TestCase
     assert_empty detector.great_people_lost
   end
 
+  test "great_people_lost reports a khan the record confirms killed, as a general" do
+    event("Mongolia", "unit_lost", 60, unit: "UNIT_MONGOLIAN_KHAN", cause: "killed",
+          killer: "Greece", confidence: "confirmed")
+
+    assert_equal [ [ :general, "Greece" ] ],
+                 detector.great_people_lost.map { |m| m.values_at(:kind, :killed_by) }
+  end
+
+  # The reconciler doesn't know the khan, so a khan's expend reaches its
+  # by-elimination branch and arrives as a barbarian kill.
+  test "great_people_lost does not mistake a khan's expend for a death" do
+    event("Mongolia", "great_person_expended", 60, great_person: "UNIT_MONGOLIAN_KHAN")
+    event("Mongolia", "unit_lost", 60, unit: "UNIT_MONGOLIAN_KHAN", cause: "killed",
+          killer: "Barbarians", confidence: "inferred")
+
+    assert_empty detector.great_people_lost
+  end
+
+  test "great_people_first_of_kind counts a khan as a general" do
+    event("Mongolia", "unit_created", 60, unit: "UNIT_MONGOLIAN_KHAN")
+
+    assert_equal [ [ :general, [ "Mongolia" ] ] ],
+                 detector.great_people_first_of_kind.map { |m| m.values_at(:kind, :civs) }
+  end
+
+  test "citadels_built reports who built a citadel and on whose ground" do
+    event("Greece", "city_founded", 1, city: "Athens", x: 10, y: 10)
+    event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_CITADEL", x: 10, y: 11)
+
+    assert_equal(
+      [ { type: :citadel_built, turn: 70, civ: "Rome", city: "Athens", located: :owned, ground_civ: "Greece" } ],
+      detector.citadels_built
+    )
+  end
+
+  test "citadels_built leaves the place empty when the log gives no plot" do
+    event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_CITADEL")
+
+    assert_equal [ [ nil, nil, nil ] ],
+                 detector.citadels_built.map { |m| m.values_at(:city, :located, :ground_civ) }
+  end
+
+  test "citadels_built ignores every other improvement" do
+    event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_ACADEMY", x: 10, y: 11)
+
+    assert_empty detector.citadels_built
+  end
+
   test "religion_foundings reports each founding in order, tagged with how early it was and which beliefs were chosen" do
     event("Greece", "religion_founded", 50, holy_city: "Athens", religion: "RELIGION_POLYTHEISM", beliefs: %w[BELIEF_X])
     event("Rome", "religion_founded", 35, holy_city: "Roma", religion: "RELIGION_JUDAISM", beliefs: %w[BELIEF_Y BELIEF_Z])

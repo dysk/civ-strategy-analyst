@@ -487,6 +487,14 @@ This is texture, not an entry of its own: a clause noting a realm was first
 among its neighbours to raise a mind of that kind, folded into a passage
 that already exists for other reasons.
 
+A `citadel_built` moment is a realm spending a great general to fortify a
+chosen piece of ground, and it earns an entry as a decision about where the
+front lies. `city` is the city it stands near and `ground_civ` is whose land
+holds it: one raised on a rival's land is an act of aggression, and one raised
+on the realm's own land is a line drawn in defence. Either may be empty where
+the record cannot place it, and then the ground goes unnamed. Never write that
+a citadel answered a battle or a war unless the same entry shows it.
+
 A `great_person_lost` moment is a genius killed in battle rather than spent
 on the work they were raised for - `kind` says what they were, `killed_by`
 the people whose army did it, which may be `Barbarians` and no realm at

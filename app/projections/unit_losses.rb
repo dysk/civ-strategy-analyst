@@ -14,7 +14,8 @@ class UnitLosses
   # people and none of the mod's unique ones, so an expend of a Dalai Lama
   # or a Pittore matches none of its rules and falls through to its
   # by-elimination branch as a barbarian kill. A great person outside this
-  # list is therefore read as unclassified rather than trusted.
+  # list is therefore read as unclassified, unless a record confirmed its
+  # fate before the reconciler reached that branch.
   RECONCILED_GREAT_PEOPLE = %w[
     UNIT_PROPHET UNIT_SCIENTIST UNIT_ENGINEER UNIT_WRITER UNIT_ARTIST
     UNIT_MUSICIAN UNIT_MERCHANT UNIT_GREAT_ADMIRAL UNIT_GREAT_GENERAL
@@ -44,13 +45,16 @@ class UnitLosses
 
   def classified(event)
     payload = event.payload
-    return NOTHING unless payload["cause"] && reconciled?(payload["unit"])
+    return NOTHING unless payload["cause"] && reconciled?(payload)
 
     payload
   end
 
-  def reconciled?(unit)
-    !PlayerTimeline::GREAT_PERSON_UNITS.key?(unit) || RECONCILED_GREAT_PEOPLE.include?(unit)
+  def reconciled?(payload)
+    unit = payload["unit"]
+
+    !PlayerTimeline::GREAT_PERSON_UNITS.key?(unit) || RECONCILED_GREAT_PEOPLE.include?(unit) ||
+      payload["confidence"] == "confirmed"
   end
 
   def losses = @losses ||= @log.of_type("unit_lost")

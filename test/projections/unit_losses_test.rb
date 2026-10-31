@@ -51,6 +51,20 @@ class UnitLossesTest < ActiveSupport::TestCase
     assert_nil losses.killer(event)
   end
 
+  # The reconciler matches unit_killed before it falls through to its
+  # by-elimination branch, so a confirmed kill is evidence for any unit.
+  test "a great person outside the reconciler's own list keeps a kill the record confirmed" do
+    event = lost("Tibet", "UNIT_DALAILAMA", 80, cause: "killed", killer: "Greece", confidence: "confirmed")
+
+    assert_equal "Greece", losses.killer(event)
+  end
+
+  test "a khan's inferred kill is unclassified, because the reconciler doesn't know the khan" do
+    event = lost("Mongolia", "UNIT_MONGOLIAN_KHAN", 80, cause: "killed", killer: "Barbarians", confidence: "inferred")
+
+    assert_nil losses.cause(event)
+  end
+
   test "a great person the reconciler does know keeps its cause" do
     event = lost("Babylon", "UNIT_PROPHET", 80, cause: "expended", confidence: "confirmed")
 

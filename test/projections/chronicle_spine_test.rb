@@ -383,6 +383,16 @@ class ChronicleSpineTest < ActiveSupport::TestCase
     assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
   end
 
+  # A citadel is a player's decision about where the front lies, and it can
+  # stand where nobody has died yet, so no battle can carry it.
+  test "building a citadel weighs enough to anchor an entry of its own" do
+    event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_CITADEL")
+
+    assert_includes spine.entries.map { |entry| entry[:turn] }, 70
+    moment = all_moments.find { |m| m[:type] == :citadel_built }
+    assert_operator moment[:weight], :>=, ChronicleSpine::ANCHOR_WEIGHT
+  end
+
   # A concert tour spends stored tourism for one push on a rival's people,
   # so a musician cut down before it weighs more than a scientist does.
   test "losing a musician weighs more than losing a scientist" do

@@ -74,6 +74,16 @@ class KeyMomentDetector
     end.sort_by { |moment| moment[:turn] }
   end
 
+  # A citadel marks where a player expects the front to be, so it is read
+  # off the improvement itself. Its place names the ground it stands on,
+  # which can be a rival's.
+  def citadels_built
+    of_type("improvement_built")
+      .select { |e| e.payload["improvement"] == "IMPROVEMENT_CITADEL" }
+      .map { |e| citadel_built(e) }
+      .sort_by { |moment| moment[:turn] }
+  end
+
   def religion_foundings
     of_type("religion_founded")
       .sort_by(&:turn)
@@ -424,6 +434,14 @@ class KeyMomentDetector
   # bled hardest - one clash's share of the stock it was drawn from.
   def battles
     Battles.for(@game).all.map { |battle| battle.merge(scale: battle_scale(battle)) }
+  end
+
+  def citadel_built(event)
+    plot = event.payload.values_at("x", "y")
+    place = TileOwnership.for(@game).owner(plot, turn: event.turn) if plot.all?
+
+    { type: :citadel_built, turn: event.turn, civ: event.civ, city: place&.dig(:city),
+      located: place&.dig(:source), ground_civ: place&.dig(:civ) }
   end
 
   # Losing a wonder race is the story the winning it already has a moment
