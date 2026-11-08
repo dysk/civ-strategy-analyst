@@ -5,22 +5,24 @@ iteration history; this file is the detailed plan for this change alone.
 
 ## Context
 
-`GameSpeed::FACTORS` holds one entry, `QUICK => 2/3`, and everything else
-falls through to `STANDARD_FACTOR = 1`. Three call sites scale a standard
-turn threshold through it:
+`GameSpeed::FACTORS` covers all five speeds, and an unrecognized string
+still falls through to `STANDARD_FACTOR = 1`. Three call sites scale a
+standard turn threshold through it:
 
 | Call site | Threshold | Meaning |
 |---|---|---|
 | `early_game.rb:33` | 150 | the latest turn the early game can run to |
-| `key_moment_detector.rb:622` | 100 | the grace period for early-game moments |
-| `opening_strategy.rb:288` | 100 | the turn a National College is late by |
+| `key_moment_detector.rb:667` | 100 | the grace period for early-game moments |
+| `opening_strategy.rb:287` | 100 | the turn a National College is late by |
 
-On an epic game all three fire a third of the way into the game instead of
-halfway; on a marathon game, a sixth. Both read as a civilization that was
-catastrophically slow. Every example log is `GAMESPEED_QUICK`, so nothing
-in the fixtures exercises it, and
-`test/models/game_speed_test.rb` currently *asserts* the bug — its
-"unknown speed" case uses `GAMESPEED_MARATHON`.
+Before `FACTORS` covered every speed, an epic or marathon game fired all
+three at standard turns and read as a civilization catastrophically slow.
+Every example log is `GAMESPEED_QUICK`, so the fixtures exercise no other
+speed; `test/models/game_speed_test.rb` covers them directly.
+
+`Battles::WINDOW_TURNS` deliberately stays out of this table. Speed scales
+production and growth, never damage, hit points, healing or movement, so
+a fight lasts the same number of turns at every speed.
 
 ## Ground truth
 
@@ -42,8 +44,9 @@ refuse to follow it.
 
 ## The rule
 
-1. One general pace factor scales a turn threshold. All three current call
-   sites are turn thresholds and keep using it.
+1. One general pace factor scales a turn threshold. All three call sites
+   are turn thresholds and use it. A threshold measured in combat turns
+   does not scale at all.
 2. A field that diverges gets its own factor and its own method. Nothing
    derives a divergent quantity from the general factor.
 3. An unrecognized speed string still reads as standard, because a wrong
@@ -55,10 +58,11 @@ Each step is one TDD cycle — failing tests first, left unstaged for
 review, then the smallest implementation that greens them, then one commit
 holding both.
 
-### 1. Complete the general factor
+### 1. Complete the general factor — done
 
-- `FACTORS` gains `MARATHON => 3`, `EPIC => Rational(3, 2)`,
-  `STANDARD => 1`, `ONLINE => Rational(1, 2)`, keeps `QUICK => Rational(2, 3)`.
+- `FACTORS` holds `MARATHON => 3`, `EPIC => Rational(3, 2)`,
+  `QUICK => Rational(2, 3)` and `ONLINE => Rational(1, 2)`. Standard is
+  the fallback, `STANDARD_FACTOR`.
 - The existing "falls back to standard speed for an unknown speed" test
   has to stop using `GAMESPEED_MARATHON`. Replace it with a string that is
   genuinely not a speed.
@@ -75,17 +79,14 @@ holding both.
 - Tests: `known?` across the five speeds and on a nonsense string; the
   digest key appears only for the nonsense case.
 
-### 3. Research pace, where it differs
+### 3. Research pace, where it differs — dropped
 
-- `research_turns(standard_turns)` uses `ResearchPercent`, which differs
-  from the general pace on online speed alone (67 against 50).
-- `OpeningStrategy`'s National College target is a research-pace
-  threshold, so it moves to `research_turns`. `EarlyGame`'s deadline and
-  the key-moment grace period stay on the general factor.
-- Tests: online research answers 67 where the general factor answers 50;
-  every other speed answers the same through both methods.
+`ResearchPercent` differs from the general pace on online speed alone
+(67 against 50). The National College target stays on the general factor,
+because building the college paces an opening more than researching it.
+No call site needs a research factor, so `research_turns` does not exist.
 
-### 4. Golden age
+### 4. Golden age — done
 
 Covered by `docs/great-people.md` step 3a — `GOLDEN_AGE_FACTORS` and
 `golden_age_turns`, built from the `GoldenAgePercent` row above. Listed
