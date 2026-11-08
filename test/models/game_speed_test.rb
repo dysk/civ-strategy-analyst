@@ -10,8 +10,22 @@ class GameSpeedTest < ActiveSupport::TestCase
     assert_equal 100, GameSpeed.new("GAMESPEED_STANDARD").turns(100)
   end
 
+  test "turns scales standard turns by one and a half on epic speed" do
+    assert_equal 150, GameSpeed.new("GAMESPEED_EPIC").turns(100)
+  end
+
+  test "turns triples standard turns on marathon speed" do
+    assert_equal 300, GameSpeed.new("GAMESPEED_MARATHON").turns(100)
+  end
+
+  # Online researches at 67% but builds and grows at 50%. Openings are
+  # paced by production and growth, so the turn factor follows those.
+  test "turns halves standard turns on online speed" do
+    assert_equal 50, GameSpeed.new("GAMESPEED_ONLINE").turns(100)
+  end
+
   test "turns falls back to standard speed for an unknown speed" do
-    assert_equal 150, GameSpeed.new("GAMESPEED_MARATHON").turns(150)
+    assert_equal 150, GameSpeed.new("GAMESPEED_UNKNOWN").turns(150)
   end
 
   test "turns falls back to standard speed when the speed is missing" do

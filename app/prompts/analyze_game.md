@@ -232,13 +232,16 @@ facts to weigh, not verdicts.
   `bullied_workers` (a worker demanded from a city-state) are two ways of
   stealing a worker. Each is a strong aggressive move that saves the
   production of building one. An empty list means it did not happen.
-- `national_college` compares `built_turn` with `target_turn` (67 on quick,
-  100 otherwise). The college multiplies the science of its city, and early
-  on that city produces most of the empire's science. A late or missing
-  college costs a civilization its tech lead, or its place in the race. `turns_early` is positive when ahead of target. For a
-  Liberty opening, read `turns_after_finisher` instead, because the
-  checklist expects the college only once Liberty closes. A small number
-  there means the college followed the finisher closely.
+- `national_college` compares `built_turn` with `target_turn`, turn 100 on
+  standard speed scaled to this game's speed. The college multiplies the
+  science of its city, and early on that city produces most of the
+  empire's science. A late or missing college costs a civilization its
+  tech lead, or its place in the race. `turns_early` is positive when
+  ahead of target. A Liberty opening also carries `turns_after_finisher`,
+  because the checklist expects the college only once Liberty closes. A
+  small number there means the college followed the finisher closely.
+  Liberty still aims for a college as near `target_turn` as it can, so
+  weigh both figures.
 - `unhappy_turns` gives `count` and `turns`. Zero is ideal. A turn or two
   can be a deliberate rush for a city site rather than careless growth.
 - `early_libraries` lists Libraries built under population 6, a premature

@@ -1,5 +1,12 @@
 class GameSpeed
-  FACTORS = { "QUICK" => Rational(2, 3) }.freeze
+  # Online researches at 67% but builds and grows at 50%. Openings are
+  # paced by production and growth, so its turn factor follows those.
+  FACTORS = {
+    "MARATHON" => 3,
+    "EPIC" => Rational(3, 2),
+    "QUICK" => Rational(2, 3),
+    "ONLINE" => Rational(1, 2)
+  }.freeze
 
   # A golden age keeps a pace of its own. The mod's GameSpeeds table carries
   # a GoldenAgePercent apart from the general turn percentage, and on quick

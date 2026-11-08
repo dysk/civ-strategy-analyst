@@ -282,9 +282,9 @@ class OpeningStrategyTest < ActiveSupport::TestCase
   end
 
   # docs/ideal-opening.md: for a Liberty opening the checklist expects the
-  # National College only after the tree closes, so the meaningful figure
-  # is turns after the finisher, not turns from game start.
-  test "national_college reports turns_after_finisher for a Liberty opening" do
+  # National College only after the tree closes, yet still as near the
+  # target turn as it can, so both figures apply.
+  test "national_college reports turns_after_finisher and turns_early for a Liberty opening" do
     event("Chile", "policy_branch_adopted", 6, branch: "POLICY_BRANCH_LIBERTY")
     event("Chile", "policy_adopted", 10, policy: "POLICY_REPUBLIC")
     event("Chile", "policy_adopted", 30, policy: "POLICY_COLLECTIVE_RULE")
@@ -294,7 +294,7 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     event("Chile", "building_constructed", 95, building: "BUILDING_NATIONAL_COLLEGE", city: "Santiago")
 
     assert_equal(
-      { built_turn: 95, target_turn: nil, turns_early: nil, turns_after_finisher: 5 },
+      { built_turn: 95, target_turn: 100, turns_early: 5, turns_after_finisher: 5 },
       strategy.national_college("Chile")
     )
   end
