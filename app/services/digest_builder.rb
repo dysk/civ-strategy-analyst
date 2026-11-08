@@ -13,12 +13,10 @@ class DigestBuilder
     production food gross_gold plots tourism civs_influential_on
   ].freeze
 
-  # LEKMOD rule: every owned city raises the cost of researching a new tech
-  # by +5%, and the cost of a culture-bought policy by +10% (additive per
-  # city). These multipliers let the LLM interpret raw tech/policy counts
-  # correctly instead of comparing wide and tall empires at face value.
-  TECH_COST_PER_CITY = 0.05
-  POLICY_COST_PER_CITY = 0.10
+  # LEKMOD rule: every city beyond the capital raises tech and policy cost
+  # by a per-city share that WorldSize reads off the map size. These
+  # multipliers let the LLM compare wide and tall empires' raw tech and
+  # policy counts fairly.
 
   def initialize(game, winner_civ: nil, victory_type: nil, lekmod_version: nil,
                  lekmod_root: Rails.root.join("db/lekmod"))
@@ -169,10 +167,11 @@ class DigestBuilder
     return {} unless cities
 
     cities_beyond_capital = [ cities - 1, 0 ].max
+    world_size = WorldSize.for(@game)
 
     {
-      "tech_cost_multiplier" => (1 + TECH_COST_PER_CITY * cities_beyond_capital).round(3),
-      "policy_cost_multiplier" => (1 + POLICY_COST_PER_CITY * cities_beyond_capital).round(3)
+      "tech_cost_multiplier" => (1 + world_size.tech_cost_per_city * cities_beyond_capital).round(3),
+      "policy_cost_multiplier" => (1 + world_size.policy_cost_per_city * cities_beyond_capital).round(3)
     }
   end
 

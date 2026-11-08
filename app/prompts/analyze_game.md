@@ -106,6 +106,11 @@ that, at two thirds. Combat does not scale. Damage, hit points, healing
 and movement are the same at every speed, so a siege or a war's opening
 blows take as many turns on marathon as on quick.
 
+`map_size` adds a pace of its own to research. Every tech costs 10% more
+on a standard map, 20% more on large and 30% more on huge than on small
+or below, so the tech-bound thresholds (`early_game_deadline_turn` and the
+National College `target_turn`) sit later there.
+
 **Pace and distance.** Speed stretches building and research but not
 marching or fighting. A slower game therefore shrinks the map relative to
 progress. An army covers more ground per era, and a tech lead buys more
@@ -296,8 +301,10 @@ upkeep consumes. A widening gap can mean an empire outgrowing its upkeep.
 `plots` measures land independently of city count.
 
 **Cost multipliers.** In LEKMOD the capital is free, and each further city
-adds 5% to technology cost and 10% to policy cost. The multipliers are
-`1 + 0.05 × (cities − 1)` and `1 + 0.10 × (cities − 1)`. Cite them
+adds a share to technology and policy cost that shrinks on larger maps.
+It is 5% and 10% up to a standard map, 3.75% and 7.5% on large, 2.5% and
+5% on huge. The multipliers are `1 + tech share × (cities − 1)` and
+`1 + policy share × (cities − 1)`, already computed for this map. Cite them
 separately and never merge them into one figure. They use the current city
 count, while the real rule uses the most cities ever held and exempts
 puppets, so treat them as directional.

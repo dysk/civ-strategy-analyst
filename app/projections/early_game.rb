@@ -30,7 +30,7 @@ class EarlyGame
   end
 
   def deadline_turn
-    @deadline_turn ||= GameSpeed.for(@game).turns(DEADLINE_STANDARD_TURNS)
+    @deadline_turn ||= WorldSize.for(@game).research_turns(GameSpeed.for(@game).turns(DEADLINE_STANDARD_TURNS))
   end
 
   def for_civ(civ)

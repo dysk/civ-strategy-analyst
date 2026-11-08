@@ -146,6 +146,16 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal 1.0, greece_checkpoint["policy_cost_multiplier"]
   end
 
+  test "lowers the per-city cost on a large map" do
+    @game.update!(map_size: "WORLDSIZE_LARGE")
+    snapshot("Rome", 25, score: 80, cities: 5)
+
+    rome_checkpoint = DigestBuilder.new(@game).call[:metrics]["Rome"][25]
+
+    assert_equal 1.15, rome_checkpoint["tech_cost_multiplier"]
+    assert_equal 1.3, rome_checkpoint["policy_cost_multiplier"]
+  end
+
   test "never drops the cost multiplier below 1.0 when a civ has no cities" do
     snapshot("Rome", 25, score: 80, cities: 0)
 

@@ -268,6 +268,12 @@ class OpeningStrategyTest < ActiveSupport::TestCase
     assert_equal 7, result[:turns_early]
   end
 
+  test "national_college stretches the target turn by the map's research percent" do
+    @game.update!(map_size: "WORLDSIZE_STANDARD")
+
+    assert_equal 110, strategy.national_college("Chile")[:target_turn]
+  end
+
   test "national_college recognizes a civ-unique replacement building" do
     event("Israel", "building_constructed", 95, building: "BUILDING_ISRAEL_NATIONAL_COLLEGE", city: "Jerusalem")
 

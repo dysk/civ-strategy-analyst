@@ -84,7 +84,7 @@ class OpeningStrategy
   end
 
   # docs/ideal-opening.md "National College timing": turn 100 on standard
-  # speed, scaled by GameSpeed and measured from game start. A Liberty
+  # speed, scaled by GameSpeed and WorldSize from game start. A Liberty
   # opening also reports turns after the finisher, since the checklist
   # expects its college only once the tree closes.
   NATIONAL_COLLEGE_TARGET_STANDARD_TURNS = 100
@@ -284,7 +284,7 @@ class OpeningStrategy
   end
 
   def national_college_target_turn
-    GameSpeed.for(@game).turns(NATIONAL_COLLEGE_TARGET_STANDARD_TURNS)
+    WorldSize.for(@game).research_turns(GameSpeed.for(@game).turns(NATIONAL_COLLEGE_TARGET_STANDARD_TURNS))
   end
 
   def worker_appeared?(civ, turn)

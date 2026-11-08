@@ -14,6 +14,14 @@ class EarlyGameTest < ActiveSupport::TestCase
     assert_equal 100, EarlyGame.new(@game).deadline_turn
   end
 
+  # The deadline waits on Education and Metal Casting, and a larger map
+  # makes every tech dearer.
+  test "deadline_turn stretches by the map's research percent" do
+    @game.update!(map_size: "WORLDSIZE_STANDARD")
+
+    assert_equal 165, EarlyGame.new(@game).deadline_turn
+  end
+
   test "for_civ ends the early game when Education meets a Workshop" do
     tech("Rome", 60, "TECH_EDUCATION")
     building("Rome", 80, "BUILDING_WORKSHOP")
