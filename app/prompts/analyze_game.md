@@ -98,9 +98,37 @@ inapplicable key never means "nothing happened".
 
 ## game
 
-Map, size, speed, start era and `max_turns`. `game_speed` scales every
-turn number: a quick game runs at about two thirds of standard. Compare
-turn numbers only within this game.
+Map, size, speed, start era and `max_turns`. `game_speed` scales how
+many turns growth, production, research and culture take. A marathon game
+runs at three times standard pace, an epic at one and a half, a quick at
+two thirds and an online at half. Online researches a little faster than
+that, at two thirds. Combat does not scale. Damage, hit points, healing
+and movement are the same at every speed, so a siege or a war's opening
+blows take as many turns on marathon as on quick.
+
+**Pace and distance.** Speed stretches building and research but not
+marching or fighting. A slower game therefore shrinks the map relative to
+progress. An army covers more ground per era, and a tech lead buys more
+turns of combat.
+
+- A neighbour at a short `capital_proximity` distance is a larger threat
+  on a slow speed, whatever the map size. A larger map moves distant
+  rivals away, not neighbours.
+- On a slow speed an attack can land before a defender trains an answer.
+  Judge a defender's readiness by the units it already held and its
+  treasury, not by its production. A civilization that kept a thin army
+  and little gold next to a militarist neighbour took a larger risk the
+  slower the game.
+- A unit that rivals cannot yet counter, reached through a
+  `research_rushes` rush, stays unanswered for more turns on a slow speed.
+  Weigh the damage it did accordingly.
+- Judge a science or culture leader's safety by its distance to the
+  nearest militarist, not by the map size.
+
+Every turn threshold in this digest, such as `early_game_deadline_turn`
+or a National College `target_turn`, is already scaled to this game's
+speed. Compare turn numbers only within this game, and never against a
+turn named in another game's report.
 
 `golden_age_base_turns` is how long a golden age an artist begins runs at
 this speed, before any ability, tenet or wonder stretches it. A golden age
