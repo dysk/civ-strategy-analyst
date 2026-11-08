@@ -144,17 +144,25 @@ class BattlesTest < ActiveSupport::TestCase
     assert_equal [ "Roma" ], battles.map { |battle| battle[:city] }
   end
 
-  # GAMESPEED_QUICK scales every standard-speed turn count by two thirds,
-  # the way EARLY_GAME_GRACE_PERIOD_STANDARD_TURNS already does for
-  # KeyMomentDetector - the same six-turn lull a standard game reads as
-  # one fight is too long a silence at quick speed, and the deaths split
-  # into two incidents too thin on their own to be a battle.
-  test "the same six-turn gap is too long to be one battle at quick speed" do
+  # Game speed scales production and growth, never damage, hit points,
+  # healing or movement, so a fight runs the same number of turns at
+  # every speed.
+  test "a six-turn gap still clusters into one battle at quick speed" do
     @game.update!(game_speed: "GAMESPEED_QUICK")
     founded("Rome", "Roma", 1, 10, 10)
     lost("Rome", 40, 10, 10)
     lost("Rome", 41, 10, 10)
     lost("Rome", 46, 10, 10)
+
+    assert_equal [ "Roma" ], battles.map { |battle| battle[:city] }
+  end
+
+  test "a seven-turn gap still splits the battle at marathon speed" do
+    @game.update!(game_speed: "GAMESPEED_MARATHON")
+    founded("Rome", "Roma", 1, 10, 10)
+    lost("Rome", 40, 10, 10)
+    lost("Rome", 41, 10, 10)
+    lost("Rome", 48, 10, 10)
 
     assert_empty battles
   end

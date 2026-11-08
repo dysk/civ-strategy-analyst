@@ -18,13 +18,13 @@ class Battles
   # against. A siege can fall quiet for several turns at a time - a wall
   # retaken, a relief force marching up - and still be the same fight; six
   # turns of silence breaks it into two. Two deaths reads as an incident,
-  # not yet a fight.
-  WINDOW_STANDARD_TURNS = 6
+  # not yet a fight. Game speed leaves combat, healing and movement alone,
+  # so the window holds at every speed.
+  WINDOW_TURNS = 6
   MIN_LOSSES = 3
 
   def initialize(game)
     @tiles = TileOwnership.for(game)
-    @window = GameSpeed.for(game).turns(WINDOW_STANDARD_TURNS)
     @log = game.event_log
     @unit_losses = UnitLosses.for(game)
   end
@@ -71,7 +71,7 @@ class Battles
 
   def clusters(city, losses)
     losses.sort_by { |loss| loss[:turn] }
-      .slice_when { |before, after| after[:turn] - before[:turn] > @window }
+      .slice_when { |before, after| after[:turn] - before[:turn] > WINDOW_TURNS }
       .select { |cluster| cluster.size >= MIN_LOSSES }
       .map { |cluster| battle_for(city, cluster) }
   end
