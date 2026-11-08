@@ -171,11 +171,32 @@ inside the same window `early_game.<civ>.end_turn` closes. The fields are
 facts to weigh, not verdicts.
 
 - `branch` is the policy branch it opened. No branch is better in itself.
-  Read `timelines.<civ>.policies` for what was taken inside it.
+  Read `timelines.<civ>.policies` for what was taken inside it. Each
+  branch pays off only with the play it was built for, so judge the
+  branch by how well the civilization followed through:
+  - Tradition is the tall branch and Liberty the wide one, as in vanilla.
+    Tradition with many cities, or Liberty with few, worked against its
+    own bonuses.
+  - Piety asks for an early pantheon and religion. Check
+    `pantheon_foundings` and `religion_foundings`, whether the beliefs fit
+    the civilization's wider plan, and how many cities the religion held
+    in `religion.by_civ`. Piety without a religion of its own wasted the
+    branch.
+  - Honor asks for fighting: barbarians, bullying city-states, taking
+    city-states or a neighbour's cities. Look for it in `wars`,
+    `bullied_workers`, `worker_raids`, `city_state_conquered` and
+    `barbarian_losses`. Honor that never fights is usually a poor
+    opening.
 - `closed_opening` gives `opened_turn`, `finished_turn` and
   `turns_to_close` for that branch's finisher, null when it never finished.
   Every branch has exactly one finisher and none is structurally faster to
   close, so a difference in `turns_to_close` reflects play, not branch.
+  The finisher adds its own bonus on top of the last policy, which is why
+  the expected order is to close the opening branch before opening
+  another. A hybrid path rarely pays: open A, stop at one policy in it,
+  open B, close B, then finish A. Where `timelines.<civ>.policies` shows
+  that path, name the policy in A it stopped at, say what that bonus was
+  for, and judge whether it paid off.
 - `playstyle.style` is `tall`, `wide`, or null when a tie at exactly six
   cities leaves it open. It picks which style-specific band applies below.
   `city_count` and `mean_spacing` are what decided it.
@@ -185,12 +206,18 @@ facts to weigh, not verdicts.
   than later, because an opening wonder competed directly with settlers and
   workers.
 - `workers_per_city.ratio` should sit near 1–1.5 for wide and 2 for tall.
-- `caravans_to_capital` matters only for tall. `routes` lists each caravan
-  (`turn`, `from_city`), `first_turn` the earliest. At least one is the
-  baseline for a tall opening, and each further one compounds the capital's
-  growth.
-- A null style grades against the universal wonder list only and says
-  nothing about workers or caravans.
+  Tall cities grow larger and each works more tiles, so each needs more
+  workers to improve them. Unimproved tiles slow every city, so a ratio under 1 is a miss in any
+  style.
+- `caravans_to_capital` lists food caravans sent to the capital. `routes`
+  lists each caravan (`turn`, `from_city`), `first_turn` the earliest. At
+  least one is the baseline for a tall opening, and each further one
+  compounds the capital's growth. Every style gains from some caravans, so
+  an opening with none at all is a miss. Outside tall, check
+  `trade_routes` before calling it, since a wide civilization's caravans
+  often go elsewhere.
+- A null style grades against the universal wonder list only. It still
+  expects at least one worker per city and some caravans.
 - `opening_scouts.category` is `opened_with_two_scouts`,
   `two_scouts_interrupted`, `one_scout` or `no_scouts`. `interrupted_by`
   names what was built instead, and `items` lists the opening build order.
@@ -206,7 +233,9 @@ facts to weigh, not verdicts.
   stealing a worker. Each is a strong aggressive move that saves the
   production of building one. An empty list means it did not happen.
 - `national_college` compares `built_turn` with `target_turn` (67 on quick,
-  100 otherwise). `turns_early` is positive when ahead of target. For a
+  100 otherwise). The college multiplies the science of its city, and early
+  on that city produces most of the empire's science. A late or missing
+  college costs a civilization its tech lead, or its place in the race. `turns_early` is positive when ahead of target. For a
   Liberty opening, read `turns_after_finisher` instead, because the
   checklist expects the college only once Liberty closes. A small number
   there means the college followed the finisher closely.
