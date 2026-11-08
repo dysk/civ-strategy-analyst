@@ -15,6 +15,11 @@ standard turn threshold through it:
 | `key_moment_detector.rb:667` | 100 | the grace period for early-game moments |
 | `opening_strategy.rb:287` | 100 | the turn a National College is late by |
 
+The early-game deadline and the National College target are tech-bound,
+so `WorldSize#research_turns` stretches them a second time by map size
+(see "Map size" below). The grace period measures small-number noise, not
+tech pace, and stays on game speed alone.
+
 Before `FACTORS` covered every speed, an epic or marathon game fired all
 three at standard turns and read as a civilization catastrophically slow.
 Every example log is `GAMESPEED_QUICK`, so the fixtures exercise no other
@@ -92,18 +97,35 @@ Covered by `docs/great-people.md` step 3a — `GOLDEN_AGE_FACTORS` and
 `golden_age_turns`, built from the `GoldenAgePercent` row above. Listed
 here so the three factors stay in one file and one test class.
 
-### 5. Prompt
+### 5. Prompt — done
 
-`analyze_game.md` lines 101-103 state the quick case as if it were the
-only one:
+The `game` section of `analyze_game.md` gives every speed's factor, says
+combat does not scale, and that every turn threshold in the digest is
+already scaled. A "Pace and distance" paragraph reads what that means for
+war. The `game_speed_recognized` warning waits on step 2.
 
-> Map, size, speed, start era and `max_turns`. `game_speed` scales every
-> turn number — a marathon game runs at three times standard pace, an epic
-> at one and a half, a quick at two thirds, an online at half. Compare turn
-> numbers only within this game, and never against a turn named in another
-> game's report. Where `game_speed_recognized` is false, the speed string
-> was not one this tool knows: treat every turn threshold as standard-paced
-> and say so once rather than reading lateness into it.
+## Map size
+
+From `<Worlds>` in the same `CIV5Units.xml`:
+
+| Size | ResearchPercent | Tech cost per city | Policy cost per city |
+|---|---|---|---|
+| Duel / Tiny / Small | 100 | 5% | 10% |
+| Standard | 110 | 5% | 10% |
+| Large | 120 | 3.75% | 7.5% |
+| Huge | 130 | 2.5% | 5% |
+
+`WorldSize` (`app/models/world_size.rb`) carries the three columns.
+
+- `research_turns` scales the two tech-bound thresholds, after `GameSpeed`.
+- `tech_cost_per_city` and `policy_cost_per_city` feed
+  `DigestBuilder#cost_multipliers`.
+- An unknown size reads as small, the base row.
+
+Map size does not stretch movement either. Distance between players
+matters more than map size, because the player count grows with the map
+and a neighbour stays close. `analyze_game.md` reads distance from
+`capital_proximity`.
 
 ## Not in scope
 
