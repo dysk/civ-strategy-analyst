@@ -238,7 +238,7 @@ class PlayerTimeline
   # logs; a citadel is the one kind that can land on a rival's border, and
   # then the city it names is the one it was planted against.
   def expended_row(event)
-    planted = planted_improvement(GREAT_PERSON_UNITS[event.payload["great_person"]], event.civ, event.turn)
+    planted = planted_claims(event.civ)[event.seq]
     place = planted && place_of(planted)
 
     { turn: event.turn, great_person: event.payload["great_person"], fate: :expended,
@@ -277,9 +277,11 @@ class PlayerTimeline
     (founded + enhanced).group_by(&:first).transform_values { |pairs| pairs.map(&:last) }
   end
 
+  # A prophet that planted a holy site spent itself on the plot.
   def prophet_candidates(civ)
     of_type("great_person_expended")
       .select { |e| e.civ == civ && GREAT_PERSON_UNITS[e.payload["great_person"]] == :prophet }
+      .reject { |e| planted_claims(civ).key?(e.seq) }
       .group_by(&:turn)
   end
 
@@ -287,14 +289,26 @@ class PlayerTimeline
   # planted improvement belongs to a particular expend. Filtering candidate
   # improvements to the ones this kind can plant is what separates three
   # great people expended the same turn against three unrelated
-  # improvements finished that same turn.
-  def planted_improvement(kind, civ, turn)
-    plantable = PLANTED_ACTIONS[kind]
-    return unless plantable
+  # improvements finished that same turn. Each improvement is claimed once,
+  # so two prophets and one holy site leave the second unplanted. Great
+  # people of one kind are interchangeable, so the pairing follows log order.
+  def planted_claims(civ)
+    @planted_claims ||= {}
+    @planted_claims[civ] ||= begin
+      built = of_type("improvement_built").select { |e| e.civ == civ }.group_by(&:turn)
 
-    of_type("improvement_built").find do |e|
-      e.civ == civ && e.turn == turn && plantable.key?(e.payload["improvement"])
+      expends_by_turn_and_kind(civ).each_with_object({}) do |((turn, kind), expends), claims|
+        plantable = PLANTED_ACTIONS.fetch(kind, {})
+        improvements = built.fetch(turn, []).select { |e| plantable.key?(e.payload["improvement"]) }
+        expends.zip(improvements).each { |expend, improvement| claims[expend.seq] = improvement if improvement }
+      end
     end
+  end
+
+  def expends_by_turn_and_kind(civ)
+    of_type("great_person_expended")
+      .select { |e| e.civ == civ }
+      .group_by { |e| [ e.turn, GREAT_PERSON_UNITS[e.payload["great_person"]] ] }
   end
 
   # A golden age leaves nothing on the expend that began it, so it is
@@ -324,7 +338,7 @@ class PlayerTimeline
   def golden_age_candidates(civ)
     of_type("great_person_expended")
       .select { |e| e.civ == civ && GOLDEN_AGE_UNITS.include?(e.payload["great_person"]) }
-      .reject { |e| planted_improvement(GREAT_PERSON_UNITS[e.payload["great_person"]], civ, e.turn) }
+      .reject { |e| planted_claims(civ).key?(e.seq) }
       .group_by(&:turn)
   end
 

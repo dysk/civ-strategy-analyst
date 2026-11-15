@@ -218,6 +218,39 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal({ "UNIT_ENGINEER" => :manufactory, "UNIT_SCIENTIST" => :academy, "UNIT_MUSICIAN" => :festival }, actions)
   end
 
+  test "great_people lets one same-turn improvement be claimed by one of two expends of its kind" do
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 1, y: 1)
+
+    assert_equal %i[academy bulb], timeline.great_people("Rome").map { |g| g[:action] }.sort
+  end
+
+  test "great_people places two same-turn expends of one kind on their own improvements" do
+    event("Rome", "city_founded", 1, city: "Roma", x: 10, y: 10)
+    event("Rome", "city_founded", 2, city: "Antium", x: 30, y: 30)
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 10, y: 11)
+    event("Rome", "great_person_expended", 40, great_person: "UNIT_SCIENTIST")
+    event("Rome", "improvement_built", 40, improvement: "IMPROVEMENT_ACADEMY", x: 30, y: 31)
+
+    assert_equal %w[Antium Roma], timeline.great_people("Rome").map { |g| g[:city] }.sort
+  end
+
+  # Chile's turn 149 in chile-vs-vietnam, less the other kinds expended that turn.
+  test "great_people leaves the founding to the prophet no holy site was claimed by" do
+    event("Chile", "religion_founded", 149, religion: "RELIGION_X", beliefs: [ "BELIEF_X" ])
+    event("Chile", "great_person_expended", 149, great_person: "UNIT_PROPHET")
+    event("Chile", "improvement_built", 149, improvement: "IMPROVEMENT_HOLY_SITE", x: 13, y: 29)
+    event("Chile", "great_person_expended", 149, great_person: "UNIT_PROPHET")
+    event("Chile", "improvement_built", 149, improvement: "IMPROVEMENT_HOLY_SITE", x: 13, y: 31)
+    event("Chile", "great_person_expended", 149, great_person: "UNIT_PROPHET")
+
+    actions = timeline.great_people("Chile").map { |g| g[:action] }
+
+    assert_equal %i[found_religion holy_site holy_site], actions.sort
+  end
+
   test "great_people treats the mod's civ-unique prophet analogues as prophets" do
     event("Tibet", "great_person_expended", 64, great_person: "UNIT_DALAILAMA")
     event("Tibet", "great_person_expended", 79, great_person: "UNIT_DALAILAMA")
