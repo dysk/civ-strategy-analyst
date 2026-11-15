@@ -210,6 +210,18 @@ facts to weigh, not verdicts.
   - Tradition is the tall branch and Liberty the wide one, as in vanilla.
     Tradition with many cities, or Liberty with few, worked against its
     own bonuses.
+  - The Liberty finisher grants one free great person of the player's
+    choice. Find it in `great_people_born` on or just after
+    `closed_opening.finished_turn`, and its fate in `great_people`. Say
+    which kind was chosen and why it fit the empire or did not. Then say
+    whether it was invested or consumed. An investment plants a permanent
+    improvement (`academy`, `manufactory`, `customs_house`, `holy_site`)
+    that pays every turn left. A consumption spends it at once (`bulb`,
+    `hurry`, `trade_mission`, `golden_age`, `great_work`). Follow the
+    choice forward and judge what it bought in the long run: a wonder
+    it hurried, the tech lead a bulb opened, or the yield an improvement
+    added over the rest of the game. A free great person left to die or
+    disbanded wasted the finisher.
   - Piety asks for an early pantheon and religion. Check
     `pantheon_foundings` and `religion_foundings`, whether the beliefs fit
     the civilization's wider plan, and how many cities the religion held
