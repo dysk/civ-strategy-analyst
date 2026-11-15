@@ -158,7 +158,8 @@ change, now that the authoritative table is located.
 - `great_people_profile` splits `permanent`, `one_off` and `unresolved`
   instead of `infrastructure` and `consumption`.
   - permanent: academy, manufactory, customs_house, holy_site,
-    sacred_grove, citadel, festival, dock, great_work
+    sacred_grove, citadel, festival, dock, great_work, found_religion,
+    enhance_religion
   - one_off: bulb, hurry, trade_mission, religious_action, golden_age
   - unresolved: `:instant`, and a nil action (general or admiral whose use
     left no trace)

@@ -229,7 +229,7 @@ class PlayerTimeline
   # however long it runs. Anything else - :instant, or a nil action where a
   # general or admiral left no trace - is unresolved, which is a limit of
   # the record rather than a use of its own.
-  PERMANENT_ACTIONS = %i[academy manufactory customs_house holy_site sacred_grove festival citadel dock great_work].freeze
+  PERMANENT_ACTIONS = %i[academy manufactory customs_house holy_site sacred_grove festival citadel dock great_work found_religion enhance_religion].freeze
   ONE_OFF_ACTIONS = %i[bulb hurry trade_mission religious_action golden_age].freeze
 
   # A planted improvement is the only great-person act that leaves a plot
@@ -251,7 +251,36 @@ class PlayerTimeline
     return PLANTED_ACTIONS.dig(kind, planted.payload["improvement"]) if planted
     return :golden_age if golden_age_claims(event.civ).include?(event.seq)
 
-    UNPLANTED_ACTIONS[kind]
+    religion_claims(event.civ).fetch(event.seq) { UNPLANTED_ACTIONS[kind] }
+  end
+
+  # A founding or enhancement names no prophet, so it is claimed by (turn,
+  # civ) coincidence. All 29 of them across the logs share a turn with a
+  # prophet expend of their own civ. Each is claimed once, founding first,
+  # so three prophets against a founding and an enhancement leave the third
+  # a plain religious action.
+  def religion_claims(civ)
+    @religion_claims ||= {}
+    @religion_claims[civ] ||= begin
+      acts = religion_acts(civ)
+
+      prophet_candidates(civ).each_with_object({}) do |(turn, expends), claims|
+        expends.zip(acts.fetch(turn, [])).each { |expend, act| claims[expend.seq] = act if act }
+      end
+    end
+  end
+
+  def religion_acts(civ)
+    founded = of_type("religion_founded").select { |e| e.civ == civ }.map { |e| [ e.turn, :found_religion ] }
+    enhanced = of_type("religion_enhanced").select { |e| e.civ == civ }.map { |e| [ e.turn, :enhance_religion ] }
+
+    (founded + enhanced).group_by(&:first).transform_values { |pairs| pairs.map(&:last) }
+  end
+
+  def prophet_candidates(civ)
+    of_type("great_person_expended")
+      .select { |e| e.civ == civ && GREAT_PERSON_UNITS[e.payload["great_person"]] == :prophet }
+      .group_by(&:turn)
   end
 
   # (turn, civ) coincidence, not an id - the log has no other way to say a

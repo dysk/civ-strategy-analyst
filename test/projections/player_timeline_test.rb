@@ -228,6 +228,37 @@ class PlayerTimelineTest < ActiveSupport::TestCase
     assert_equal [ :religious_action, :holy_site ], religious_actions
   end
 
+  test "great_people reads a prophet expended the turn its civ founded a religion as the founding" do
+    event("Arabia", "great_person_expended", 50, great_person: "UNIT_PROPHET")
+    event("Arabia", "religion_founded", 50, religion: "RELIGION_ISLAM", beliefs: [ "BELIEF_X" ])
+
+    assert_equal :found_religion, timeline.great_people("Arabia").first[:action]
+  end
+
+  test "great_people reads a prophet expended the turn its civ enhanced a religion as the enhancement" do
+    event("Arabia", "great_person_expended", 51, great_person: "UNIT_PROPHET")
+    event("Arabia", "religion_enhanced", 51, religion: "RELIGION_ISLAM", beliefs: [ "BELIEF_Y" ])
+
+    assert_equal :enhance_religion, timeline.great_people("Arabia").first[:action]
+  end
+
+  test "great_people lets each founding and enhancement be claimed by one of the prophets expended that turn" do
+    3.times { event("Chile", "great_person_expended", 149, great_person: "UNIT_PROPHET") }
+    event("Chile", "religion_founded", 149, religion: "RELIGION_X", beliefs: [ "BELIEF_X" ])
+    event("Chile", "religion_enhanced", 149, religion: "RELIGION_X", beliefs: [ "BELIEF_Y" ])
+
+    actions = timeline.great_people("Chile").map { |g| g[:action] }
+
+    assert_equal [ :found_religion, :enhance_religion, :religious_action ], actions
+  end
+
+  test "great_people leaves another civ's founding unclaimed by this one's prophet" do
+    event("Rome", "great_person_expended", 50, great_person: "UNIT_PROPHET")
+    event("Greece", "religion_founded", 50, religion: "RELIGION_X", beliefs: [ "BELIEF_X" ])
+
+    assert_equal :religious_action, timeline.great_people("Rome").first[:action]
+  end
+
   test "great_people gives a general a citadel action when planted, nil when not" do
     event("Rome", "great_person_expended", 70, great_person: "UNIT_GREAT_GENERAL")
     event("Rome", "improvement_built", 70, improvement: "IMPROVEMENT_CITADEL", x: 1, y: 1)

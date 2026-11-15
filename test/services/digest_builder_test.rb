@@ -238,6 +238,19 @@ class DigestBuilderTest < ActiveSupport::TestCase
     assert_equal({ early: 1, late: 0 }, profile[:permanent])
   end
 
+  # A founded religion's beliefs pay in every follower city for the rest of
+  # the game, so the prophet who founded it is invested, not spent.
+  test "great_people_profile counts a prophet's religion founding as permanent yield" do
+    snapshot("Rome", 40, score: 10)
+
+    event("Rome", "great_person_expended", 15, great_person: "UNIT_PROPHET")
+    event("Rome", "religion_founded", 15, religion: "RELIGION_X", beliefs: [ "BELIEF_X" ])
+
+    profile = DigestBuilder.new(@game).call[:timelines]["Rome"][:great_people_profile]
+
+    assert_equal({ early: 1, late: 0 }, profile[:permanent])
+  end
+
   test "great_people_profile counts an artist's golden age as a one-off" do
     snapshot("Rome", 40, score: 10)
 

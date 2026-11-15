@@ -216,8 +216,9 @@ facts to weigh, not verdicts.
     which kind was chosen and why it fit the empire or did not. Then say
     whether it was invested or consumed. An investment plants a permanent
     improvement (`academy`, `manufactory`, `customs_house`, `holy_site`)
-    that pays every turn left. A consumption spends it at once (`bulb`,
-    `hurry`, `trade_mission`, `golden_age`, `great_work`). Follow the
+    or founds or enhances a religion (`found_religion`,
+    `enhance_religion`), and pays every turn left. A consumption spends it
+    at once (`bulb`, `hurry`, `trade_mission`, `golden_age`, `great_work`). Follow the
     choice forward and judge what it bought in the long run: a wonder
     it hurried, the tech lead a bulb opened, or the yield an improvement
     added over the rest of the game. A free great person left to die or
@@ -431,8 +432,13 @@ became of each one:
   merchant, prophet, musician, general or admiral can plant a permanent
   improvement: `academy`, `manufactory`, `customs_house`, `holy_site`,
   `sacred_grove` (Lithuania's prophet alone), `festival`, `citadel`, `dock`.
+  A prophet can also found a religion (`found_religion`) or enhance it
+  (`enhance_religion`). Both are investments, because the beliefs pay in
+  every follower city for the rest of the game.
   A scientist, engineer, merchant or prophet instead has an instant use:
-  `bulb`, `hurry`, `trade_mission`, `religious_action`.
+  `bulb`, `hurry`, `trade_mission`, `religious_action`. A prophet's
+  `religious_action` is a spread of the faith, which rival pressure can
+  wear away.
 - An artist either makes a great work (`great_work`) or begins a golden age
   (`golden_age`). It plants nothing - a landmark is an archaeologist's work,
   not a great person's.
@@ -1144,7 +1150,9 @@ as a cost. A wonder count is never evidence of a lead.
 Judge a civilization by what its great people did, never by how many were
 born. One spent well beats three left to die. Weigh the choice against the
 clock: permanent yield wants turns to pay for itself, a one-off use wants a
-game near its end or a crisis in front of it. An `instant` or a null
+game near its end or a crisis in front of it. A prophet who founded or
+enhanced a religion was invested, never consumed. Judge it by the beliefs
+chosen and by how far the religion spread in `religion.by_civ`. An `instant` or a null
 `action` is the record's limit, so say the great person was spent and leave
 the use unnamed rather than guessing which it was.
 
